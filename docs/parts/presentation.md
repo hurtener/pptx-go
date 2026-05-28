@@ -251,4 +251,4 @@ func EMUFromMM(mm float64) int
 func MMFromEMU(emu int) float64
 ```
 
-Converts between millimetres and EMU (1 mm = 36000 EMU).
+Converts between millimeters and EMU (1 mm = 36000 EMU).

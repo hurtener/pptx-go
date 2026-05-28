@@ -2,7 +2,6 @@ package opc
 
 import (
 	"path"
-	"path/filepath"
 	"strings"
 )
 
@@ -15,7 +14,7 @@ type PackURI struct {
 
 // NewPackURI creates a new PackURI.
 func NewPackURI(uri string) *PackURI {
-	// Normalise: ensure the URI starts with /.
+	// Normalize: ensure the URI starts with /.
 	if !strings.HasPrefix(uri, "/") {
 		uri = "/" + uri
 	}
@@ -291,10 +290,11 @@ func IsValidPackURI(uri string) bool {
 	return true
 }
 
-// NormalizeURI normalises a URI string.
+// NormalizeURI normalizes a URI string.
 func NormalizeURI(uri string) string {
-	// Convert backslashes to forward slashes.
-	uri = filepath.ToSlash(uri)
+	// Convert backslashes to forward slashes. Use an explicit replace rather
+	// than filepath.ToSlash, which is a no-op on non-Windows platforms.
+	uri = strings.ReplaceAll(uri, "\\", "/")
 
 	// Ensure a leading slash.
 	if !strings.HasPrefix(uri, "/") {
@@ -314,7 +314,7 @@ func NormalizeURI(uri string) string {
 	return uri
 }
 
-// NormalizeZipPath normalises an internal ZIP path.
+// NormalizeZipPath normalizes an internal ZIP path.
 // Designed specifically for paths read from ZIP archives, handling Windows backslash issues.
 // Unlike NormalizeURI, this function does not add a leading slash — it preserves the relative form.
 func NormalizeZipPath(path string) string {

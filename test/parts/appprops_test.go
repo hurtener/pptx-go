@@ -67,26 +67,26 @@ func TestAppProperties_RoundTripAndMutate(t *testing.T) {
 	appProps.Company = "My AI Company"
 	*appProps.Slides = 99
 
-	// Re-serialise.
+	// Re-serialize.
 	outputBytes, err := xml.Marshal(appProps)
 	if err != nil {
-		t.Fatalf("serialising app.xml failed: %v", err)
+		t.Fatalf("serializing app.xml failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
 	// Verify the mutated values were written correctly.
 	if !strings.Contains(outputXML, "<Application>Go-pptx Engine</Application>") {
-		t.Error("Application field was not modified and serialised correctly")
+		t.Error("Application field was not modified and serialized correctly")
 	}
 	if !strings.Contains(outputXML, "<Company>My AI Company</Company>") {
-		t.Error("Company field was not modified and serialised correctly")
+		t.Error("Company field was not modified and serialized correctly")
 	}
 	if !strings.Contains(outputXML, "<Slides>99</Slides>") {
-		t.Error("Slides field was not modified and serialised correctly")
+		t.Error("Slides field was not modified and serialized correctly")
 	}
 	// Verify nested structures were preserved (HeadingPairs and vt:vector).
 	if !strings.Contains(outputXML, "<HeadingPairs>") || !strings.Contains(outputXML, "vt:vector") {
-		t.Error("nested elements (HeadingPairs/vt:vector) were lost during round-trip serialisation")
+		t.Error("nested elements (HeadingPairs/vt:vector) were lost during round-trip serialization")
 	}
 
 	t.Log("App properties round-trip and mutation test passed")
@@ -102,7 +102,7 @@ func TestAppProperties_Namespaces(t *testing.T) {
 
 	outputBytes, err := xml.Marshal(appProps)
 	if err != nil {
-		t.Fatalf("serialisation failed: %v", err)
+		t.Fatalf("serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
@@ -129,7 +129,7 @@ func TestAppProperties_Omitempty(t *testing.T) {
 
 	outputBytes, err := xml.Marshal(appProps)
 	if err != nil {
-		t.Fatalf("serialisation failed: %v", err)
+		t.Fatalf("serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 

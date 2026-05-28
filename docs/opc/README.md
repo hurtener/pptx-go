@@ -198,7 +198,7 @@ func IsImmutableContentType(contentType string) bool
 
 func IsLargeBinaryContentType(contentType string) bool
     IsLargeBinaryContentType reports whether the content type represents a large
-    binary blob. Used to determine whether zero-copy optimisation is worthwhile.
+    binary blob. Used to determine whether zero-copy optimization is worthwhile.
 
 func IsMediaContentType(contentType string) bool
     IsMediaContentType reports whether the content type is an audio or video type
@@ -207,7 +207,7 @@ func IsValidPackURI(uri string) bool
     IsValidPackURI reports whether the URI is a valid pack URI
 
 func NormalizeURI(uri string) string
-    NormalizeURI normalises a URI
+    NormalizeURI normalizes a URI
 
 
 TYPES
@@ -302,7 +302,7 @@ func (ct *ContentTypes) RemoveOverride(uri *PackURI)
     RemoveOverride removes a content type override
 
 func (ct *ContentTypes) ToXML() ([]byte, error)
-    ToXML serialises the content types to XML
+    ToXML serializes the content types to XML
 
 type ContentTypesStreamer struct {
 	// Has unexported fields.
@@ -396,7 +396,7 @@ func (cp *CoreProperties) Title() string
     Title returns the title
 
 func (cp *CoreProperties) ToXML() ([]byte, error)
-    ToXML serialises the core properties to XML
+    ToXML serializes the core properties to XML
 
 type DefaultPartFactory struct{}
     DefaultPartFactory is the default part factory
@@ -606,7 +606,7 @@ type Part struct {
 }
     Part represents a part within the package. It supports two data modes:
     exclusive mode (blob) and shared mode (sharedBlob). Shared mode is used
-    for zero-copy optimisation of immutable resources.
+    for zero-copy optimization of immutable resources.
 
 func NewPart(uri *PackURI, contentType string, blob []byte) *Part
     NewPart creates a new part (exclusive data mode)
@@ -654,7 +654,7 @@ func (p *Part) LoadRelationships(data []byte) error
     LoadRelationships loads relationships from XML
 
 func (p *Part) MarshalToBlob(v interface{}) error
-    MarshalToBlob serialises v to XML and stores it in the blob
+    MarshalToBlob serializes v to XML and stores it in the blob
 
 func (p *Part) PartURI() *PackURI
     PartURI returns the part URI
@@ -901,7 +901,7 @@ func (rs *Relationships) GetByType(relType string) []*Relationship
     GetByType returns all relationships for a given type
 
 func (rs *Relationships) InitRIDCounter()
-    InitRIDCounter initialises the rID counter from the maximum value found
+    InitRIDCounter initializes the rID counter from the maximum value found
     among existing relationships. Call this after loading relationships from XML
     to ensure newly allocated IDs do not conflict with existing ones.
 
@@ -923,7 +923,7 @@ func (rs *Relationships) SourceURI() *PackURI
     SourceURI returns the source URI
 
 func (rs *Relationships) ToXML() ([]byte, error)
-    ToXML serialises the relationships collection to XML
+    ToXML serializes the relationships collection to XML
 
 func (rs *Relationships) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
     UnmarshalXML implements xml.Unmarshaler

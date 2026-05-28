@@ -4,8 +4,8 @@
 
 ## Design Principles
 
-1. All struct fields are read-only (lowercase fields initialised via constructors; uppercase fields are immutable values).
-2. Optimised for high-concurrency reads — safe to read without locking.
+1. All struct fields are read-only (lowercase fields initialized via constructors; uppercase fields are immutable values).
+2. Optimized for high-concurrency reads — safe to read without locking.
 3. Data is built once at parse time and never modified afterwards.
 
 ---
@@ -78,7 +78,7 @@ Layout type enum.
 
 ### TextStyle
 
-Text style, used to define the default font, size, colour, etc. for text in a placeholder.
+Text style, used to define the default font, size, color, etc. for text in a placeholder.
 
 | Field | Type | Accessor | Description |
 |------|------|--------|------|
@@ -182,7 +182,7 @@ func (m *SlideMasterData) LayoutByID(id string) *SlideLayoutData
 
 ## MasterCache
 
-Read-only master/layout cache. All fields are read-only after initialisation; lock-free concurrent access is safe.
+Read-only master/layout cache. All fields are read-only after initialization; lock-free concurrent access is safe.
 
 ### Create
 
@@ -190,7 +190,7 @@ Read-only master/layout cache. All fields are read-only after initialisation; lo
 func NewMasterCache() *MasterCache
 ```
 
-### Initialise
+### Initialize
 
 ```go
 func (c *MasterCache) Init(masters []*SlideMasterData, layouts []*SlideLayoutData)
@@ -312,5 +312,5 @@ Parses slide master XML and returns master data.
 var EMUToPixels      = utils.EMUToPixels      // EMU -> pixels (96 DPI)
 var EMUToPoints       = utils.EMUToPoints       // EMU -> points
 var EMUToInches       = utils.EMUToInches       // EMU -> inches
-var EMUToCentimeters  = utils.EMUToCentimeters  // EMU -> centimetres
+var EMUToCentimeters  = utils.EMUToCentimeters  // EMU -> centimeters
 ```

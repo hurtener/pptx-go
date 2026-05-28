@@ -320,7 +320,7 @@ func TestParseXMLPlaceholder(t *testing.T) {
 			wantIdx:  "",
 		},
 		{
-			name:     "centre-title-placeholder",
+			name:     "center-title-placeholder",
 			xmlData:  `<ph type="ctrTitle"/>`,
 			wantType: "ctrTitle",
 			wantIdx:  "",

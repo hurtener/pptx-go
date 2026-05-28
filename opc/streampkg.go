@@ -114,7 +114,7 @@ func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
 // loadContentTypes loads content types (must be done eagerly).
 func (p *StreamPackage) loadContentTypes() error {
 	for _, f := range p.zipReader.File {
-		// Normalise path.
+		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
 		if normalizedName == PathContentTypes {
 			rc, err := f.Open()
@@ -135,7 +135,7 @@ func (p *StreamPackage) loadContentTypes() error {
 // loadPartMetadata loads only part metadata, deferring content loading.
 func (p *StreamPackage) loadPartMetadata() error {
 	for _, f := range p.zipReader.File {
-		// Normalise path.
+		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		// Skip special files.
@@ -165,7 +165,7 @@ func (p *StreamPackage) loadPartMetadata() error {
 // loadRelationships loads all relationship files.
 func (p *StreamPackage) loadRelationships() error {
 	for _, f := range p.zipReader.File {
-		// Normalise path.
+		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {

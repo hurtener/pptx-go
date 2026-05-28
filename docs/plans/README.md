@@ -21,7 +21,7 @@
 ### 1.1 Phase numbering
 
 Two-digit, zero-padded, monotonically increasing. Numbers are reserved when
-a phase plan lands; gaps are allowed (a planned-then-cancelled phase
+a phase plan lands; gaps are allowed (a planned-then-canceled phase
 leaves its number unfilled rather than re-numbering downstream phases).
 
 ### 1.2 Wave grouping
@@ -84,7 +84,7 @@ SKIPs gracefully when the surface isn't built yet. Format: prints
 — <details>`. Phase done requires `OK ≥ count(criteria)` and `FAIL = 0`.
 
 The smoke script is a thin script — it doesn't re-implement the test
-suite; it spot-checks user-visible behaviour (the binary builds, the
+suite; it spot-checks user-visible behavior (the binary builds, the
 example runs, the example output passes a round-trip read, etc.).
 
 ### 1.8 Round-trip golden tests
@@ -157,7 +157,7 @@ the end of Wave 7.
 - The `internal/coveragecheck` package + initial `coverage.json`.
 **Acceptance criteria:**
 - `make build` succeeds (upstream code compiles under the new module
-  name with no behaviour change).
+  name with no behavior change).
 - `make test` passes (upstream tests still green).
 - `make preflight` passes.
 - `make check-mirror` passes (`AGENTS.md == CLAUDE.md`).
@@ -173,7 +173,7 @@ the end of Wave 7.
 **RFC sections:** §6
 **Deps:** Phase 00.
 **What lands:**
-- Move upstream `opc/` → `internal/opc/` (rename only; no behaviour change).
+- Move upstream `opc/` → `internal/opc/` (rename only; no behavior change).
 - Reorganize upstream `parts/` → `internal/ooxml/{presentation, slide,
   theme, core, drawing, relations, media}/`. Each subpackage's types
   are extracted from the upstream's monolithic `parts/` package.
@@ -213,7 +213,7 @@ the end of Wave 7.
 - A token resolves to the same OOXML value across two writes with the
   same theme.
 - A theme swap re-resolves: same builder state, two themes → two
-  different OOXML colours.
+  different OOXML colors.
 - A presentation with a registered `FontSource` and an explicit
   `pres.EmbedFont(...)` call ships the font bytes (round-trip
   preserves the embed).
@@ -333,7 +333,7 @@ divider, quote, callout, chip, arrow, code_block, section_divider)
 - Code_block path: the IR's `asset_id` resolves through `AssetResolver`;
   the renderer composes a `pic` shape + optional caption text shape.
 - No render modes. No legibility heuristics. No render-time policy
-  options. Product behaviour lives in callers (D-026).
+  options. Product behavior lives in callers (D-026).
 **Acceptance criteria:**
 - A scene with one of each text-heavy leaf renders to a PPTX whose
   shape count matches the per-node policy table.
@@ -397,7 +397,7 @@ divider, quote, callout, chip, arrow, code_block, section_divider)
 - Loading a PowerPoint-emitted template's theme produces a `Theme`
   whose `Resolve(ColorAccent)` returns the template's accent.
 - A scene rendered with `scene.WithTheme(brandTheme)` uses the brand's
-  colours.
+  colors.
 
 #### Phase 10 — Frame chrome
 
@@ -462,7 +462,7 @@ divider, quote, callout, chip, arrow, code_block, section_divider)
 **Acceptance criteria:**
 - Each curated ornament renders at the named anchor.
 - A bleed-anchored ornament uses negative offsets correctly.
-- Foreground vs background layer ordering is honoured.
+- Foreground vs background layer ordering is honored.
 
 #### Phase 14 — Card + CardSection
 

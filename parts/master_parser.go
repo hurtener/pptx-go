@@ -339,5 +339,5 @@ var EMUToPoints = utils.EMUToPoints
 // EMUToInches converts EMU to inches.
 var EMUToInches = utils.EMUToInches
 
-// EMUToCentimeters converts EMU to centimetres.
+// EMUToCentimeters converts EMU to centimeters.
 var EMUToCentimeters = utils.EMUToCentimeters

@@ -6,7 +6,7 @@ package utils
 //
 // PowerPoint uses EMU (English Metric Units) as its internal unit of length.
 //   1 inch      = 914 400 EMU
-//   1 centimetre = 360 000 EMU
+//   1 centimeter = 360 000 EMU
 //
 // Reference: ECMA-376 Office Open XML File Formats
 // ============================================================================
@@ -21,10 +21,10 @@ const (
 	// EMUsPerInch is the number of EMU in one inch.
 	EMUsPerInch int64 = 914400
 
-	// EMUsPerCentimeter is the number of EMU in one centimetre.
+	// EMUsPerCentimeter is the number of EMU in one centimeter.
 	EMUsPerCentimeter int64 = 360000
 
-	// EMUsPerMillimeter is the number of EMU in one millimetre.
+	// EMUsPerMillimeter is the number of EMU in one millimeter.
 	EMUsPerMillimeter int64 = 36000
 
 	// EMUsPerPoint is the number of EMU in one point (1 pt = 1/72 inch).
@@ -71,8 +71,8 @@ type UnitType int
 const (
 	UnitTypeEMU        UnitType = iota // EMU
 	UnitTypeInch                       // inches
-	UnitTypeCentimeter                 // centimetres
-	UnitTypeMillimeter                 // millimetres
+	UnitTypeCentimeter                 // centimeters
+	UnitTypeMillimeter                 // millimeters
 	UnitTypePoint                      // points
 	UnitTypePixel                      // pixels
 )
@@ -91,22 +91,22 @@ func EMUToInches(emu int64) float64 {
 	return float64(emu) / EMUsPerInchF
 }
 
-// CentimetersToEMU converts centimetres to EMU.
+// CentimetersToEMU converts centimeters to EMU.
 func CentimetersToEMU(cm float64) int64 {
 	return int64(math.Round(cm * EMUsPerCentimeterF))
 }
 
-// EMUToCentimeters converts EMU to centimetres.
+// EMUToCentimeters converts EMU to centimeters.
 func EMUToCentimeters(emu int64) float64 {
 	return float64(emu) / EMUsPerCentimeterF
 }
 
-// MillimetersToEMU converts millimetres to EMU.
+// MillimetersToEMU converts millimeters to EMU.
 func MillimetersToEMU(mm float64) int64 {
 	return int64(math.Round(mm * EMUsPerMillimeterF))
 }
 
-// EMUToMillimeters converts EMU to millimetres.
+// EMUToMillimeters converts EMU to millimeters.
 func EMUToMillimeters(emu int64) float64 {
 	return float64(emu) / EMUsPerMillimeterF
 }
@@ -145,12 +145,12 @@ func (e EMU) Inches() float64 {
 	return EMUToInches(int64(e))
 }
 
-// Centimeters converts the EMU value to centimetres.
+// Centimeters converts the EMU value to centimeters.
 func (e EMU) Centimeters() float64 {
 	return EMUToCentimeters(int64(e))
 }
 
-// Millimeters converts the EMU value to millimetres.
+// Millimeters converts the EMU value to millimeters.
 func (e EMU) Millimeters() float64 {
 	return EMUToMillimeters(int64(e))
 }
@@ -270,7 +270,7 @@ func (r RectEMU) FromInches(x, y, width, height float64) RectEMU {
 	}
 }
 
-// FromCentimeters returns a RectEMU constructed from centimetre measurements.
+// FromCentimeters returns a RectEMU constructed from centimeter measurements.
 func (r RectEMU) FromCentimeters(x, y, width, height float64) RectEMU {
 	return RectEMU{
 		X:  CentimetersToEMU(x),

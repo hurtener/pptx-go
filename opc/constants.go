@@ -217,7 +217,7 @@ func IsImmutableContentType(contentType string) bool {
 }
 
 // IsLargeBinaryContentType reports whether the content type represents a large binary payload.
-// Used to determine whether zero-copy optimisation is worthwhile.
+// Used to determine whether zero-copy optimization is worthwhile.
 func IsLargeBinaryContentType(contentType string) bool {
 	switch contentType {
 	case ContentTypePNG, ContentTypeJPEG, ContentTypeGIF,

@@ -227,7 +227,7 @@ func TestPackURI_Join(t *testing.T) {
 		relative string
 		expected string
 	}{
-		// Note: Join's behaviour may differ from expectations; this tests the actual behaviour.
+		// Note: Join's behavior may differ from expectations; this tests the actual behavior.
 		{"absolute", "/ppt/slides", "/docProps/core.xml", "/docProps/core.xml"},
 	}
 

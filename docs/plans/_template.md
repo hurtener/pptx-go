@@ -36,7 +36,7 @@ implemented (split across phases), say so and name the sibling phase.
 For each research brief cited:
 
 - `docs/research/NN-slug.md` — `{ finding }` → `{ how this plan
-  honours it }`.
+  honors it }`.
 
 A phase that cites **no** brief is a drift signal. Either name a brief or
 say explicitly *"no informing brief — this is foundational scaffolding

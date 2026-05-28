@@ -63,7 +63,7 @@ internal/  (opc, ooxml, render, ids, coveragecheck — PRIVATE)
 ```
 
 A direct consumer of `pptx` writes generic Go and gets a production-grade
-deck. A consumer of `scene` builds a typed `Scene` (an IR modelled on
+deck. A consumer of `scene` builds a typed `Scene` (an IR modeled on
 pengui-slides v4) and gets a PPTX with no opinionated PowerPoint
 boilerplate. The two consumer paths are independent: `pptx` doesn't know
 the IR; `scene` doesn't reach under the builder.
@@ -76,7 +76,7 @@ reach for the RFC, not the keyboard.
    nothing in `scene` reaches under it. A new scene primitive adds a new
    builder call **only** when the primitive requires a genuinely new
    OOXML capability.
-2. **P2 — Tokens, not literals.** All visual properties (colour,
+2. **P2 — Tokens, not literals.** All visual properties (color,
    typography, spacing, radius, elevation) flow through a `Theme` whose
    semantic tokens map to OOXML values. The token path is the documented
    default; literals are an escape hatch. A theme swap re-renders the
@@ -291,7 +291,7 @@ store — pptx-go is stateless, §9).
   `errors.Join`. Wrap with context. **Never `panic` for control flow**
   and never panic across a public API boundary.
 - **Context.** `context.Context` is the first parameter of any call
-  that does I/O, blocks, or can be cancelled. Honour cancellation.
+  that does I/O, blocks, or can be canceled. Honor cancellation.
 - **Logging.** `log/slog` only — no `log.Printf`, no `logrus`/`zap`.
   Callers inject the logger via `pptx.WithLogger` / `scene.WithLogger`;
   there's no global logger. No unredacted secrets in logs.
@@ -316,7 +316,7 @@ These enforce P1–P4 (§1). They are binding on every phase.
   `pptx` via the builder API, never the reverse. New scene primitives
   add new builder capability only when a genuinely new OOXML feature is
   needed; otherwise they're composers.
-- **Tokens, not literals (P2).** Builder APIs that take a colour/font/
+- **Tokens, not literals (P2).** Builder APIs that take a color/font/
   spacing/etc. accept a token type. Literal escape hatches exist
   (`pptx.RGB`, `pptx.Pt`) but the *documented* path in godoc, examples,
   skills, and docs site is **tokens**. A new visual property added to
@@ -335,7 +335,7 @@ These enforce P1–P4 (§1). They are binding on every phase.
   caller-supplied bytes; the choice is intrinsic to the node type
   (whether its IR carries an `asset_id` field). No deck-wide mode
   toggle, no `Disposition` enum, no per-deck "raster everything"
-  switch — product behaviour lives in callers (D-026).
+  switch — product behavior lives in callers (D-026).
 - **Round-trip fidelity for self-authored decks (G6).** Every shape /
   text run / fill / line / table / image pptx-go emits round-trips
   losslessly through `pptx.Open`. A phase that adds builder API ships a
@@ -343,7 +343,7 @@ These enforce P1–P4 (§1). They are binding on every phase.
 - **Single-module distribution (D-010).** `scene` is a subpackage of
   `github.com/hurtener/pptx-go`, not a separate module.
 - **Engine, not product (D-026).** pptx-go converts a typed scene IR
-  into PPTX and nothing else. Product behaviour — render modes,
+  into PPTX and nothing else. Product behavior — render modes,
   legibility heuristics, validation pipelines, markdown ingestion,
   comments, recipes — lives in callers. A proposed feature that
   encodes an opinion about *what* the deck should contain, *how it
@@ -506,8 +506,8 @@ I/O mode, not a persistence layer.
 - Hardcoding per-PowerPoint-version branches in a codec (the
   multi-version codec pattern is V2 only — §10).
 - Adding a render-mode toggle, a legibility heuristic, a doc-mode IR
-  node, or any other **product-style behaviour** to the library
-  (violates D-026). The library is the engine; product behaviour
+  node, or any other **product-style behavior** to the library
+  (violates D-026). The library is the engine; product behavior
   lives in callers. Mechanisms that callers can drive (asset
   resolution, font embedding, theme tokens, slide grouping, speaker
   notes) are fine.

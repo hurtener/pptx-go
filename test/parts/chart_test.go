@@ -49,10 +49,10 @@ func TestChartPart_RawXMLCarrier(t *testing.T) {
 	chartPart := parts.NewChartPart(1)
 	chartPart.SetRawXML([]byte(routeCChartXML))
 
-	// Simulate serialisation.
+	// Simulate serialization.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("chart serialisation failed: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
@@ -114,10 +114,10 @@ func TestChartPart_PlaceholderReplacement(t *testing.T) {
 	chartPart.ReplacePlaceholder("CAT_COUNT", "3")
 	chartPart.ReplacePlaceholder("CAT_COUNT_PLUS_1", "4")
 
-	// Serialise.
+	// Serialize.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("chart serialisation failed: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
@@ -158,15 +158,15 @@ func TestChartPart_ExternalDataReference(t *testing.T) {
 		t.Errorf("expected rId1, got %s", chartPart.GetExternalDataRID())
 	}
 
-	// Serialised output must contain the externalData tag.
+	// Serialized output must contain the externalData tag.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("chart serialisation failed: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
 	if !strings.Contains(outputXML, `<c:externalData`) {
-		t.Error("serialised output should contain an externalData tag")
+		t.Error("serialized output should contain an externalData tag")
 	}
 	if !strings.Contains(outputXML, `r:id="rId1"`) {
 		t.Error("externalData tag should contain the correct r:id")

@@ -114,8 +114,8 @@ Media resource manager (concurrency-safe cache).
 
 ### Design Principles
 
-1. Write once, read everywhere — after initialisation the primary operation is reads.
-2. Read-optimised — uses `sync.RWMutex`; read operations do not block.
+1. Write once, read everywhere — after initialization the primary operation is reads.
+2. Read-optimized — uses `sync.RWMutex`; read operations do not block.
 3. Dual index — fast lookup by both rID and fileName.
 
 ### Index Structure

@@ -19,7 +19,7 @@ import (
 //
 // Design principles:
 //  1. Write once, read everywhere - after initialization the dominant operation is reads.
-//  2. Read-optimised - uses sync.Map; reads do not block.
+//  2. Read-optimized - uses sync.Map; reads do not block.
 //  3. Multi-index - fast lookup by rID, fileName, target, or content hash.
 //  4. Content deduplication - automatic dedup based on content hash; identical
 //     media is stored only once.

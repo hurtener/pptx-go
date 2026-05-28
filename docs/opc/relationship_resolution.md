@@ -88,7 +88,7 @@ targetURI := sourcePart.GetRelatedPart(rID)
 rel.RID()         // Relationship ID, e.g. "rId1"
 rel.Type()        // Relationship type URI
 rel.TargetURI()   // Absolute path of the target (after resolution)
-rel.TargetRef()   // Relative reference for the target (used in serialisation)
+rel.TargetRef()   // Relative reference for the target (used in serialization)
 rel.IsExternal()  // Whether this is an external relationship
 rel.SourceURI()   // Source part URI
 ```
@@ -130,5 +130,5 @@ resolved := pkg.ResolveRelationship(presPart, "http://.../slide")
 
 1. **Relative path format**: use forward slashes `/`; do not use backslashes.
 2. **Path resolution**: relative paths are resolved against the directory of the source part.
-3. **Serialisation**: `TargetRef()` returns a relative path suitable for writing to XML.
+3. **Serialization**: `TargetRef()` returns a relative path suitable for writing to XML.
 4. **External relationships**: set `isExternal` to `true` for external targets.

@@ -45,7 +45,7 @@ func TestThemePart_FromXML(t *testing.T) {
 		t.Errorf("Expected theme name 'Office Theme', got '%s'", theme.Name)
 	}
 
-	// Verify the colour scheme.
+	// Verify the color scheme.
 	colorScheme := themePart.ColorScheme()
 	if colorScheme == nil {
 		t.Fatal("ColorScheme is nil")
@@ -86,10 +86,10 @@ func TestThemePart_GetColor(t *testing.T) {
 		expected string
 		isSystem bool
 	}{
-		{parts.ColorRoleDark1, "000000", true},   // system colour
-		{parts.ColorRoleLight1, "FFFFFF", true},  // system colour
-		{parts.ColorRoleDark2, "44546A", false},  // RGB colour
-		{parts.ColorRoleLight2, "E7E6E6", false}, // RGB colour
+		{parts.ColorRoleDark1, "000000", true},   // system color
+		{parts.ColorRoleLight1, "FFFFFF", true},  // system color
+		{parts.ColorRoleDark2, "44546A", false},  // RGB color
+		{parts.ColorRoleLight2, "E7E6E6", false}, // RGB color
 		{parts.ColorRoleAccent1, "5B9BD5", false},
 		{parts.ColorRoleAccent2, "ED7D31", false},
 		{parts.ColorRoleAccent3, "A5A5A5", false},
@@ -145,10 +145,10 @@ func TestTheme_RoundTrip(t *testing.T) {
 		t.Fatal("DefaultTheme returned nil")
 	}
 
-	// Serialise.
+	// Serialize.
 	outputBytes, err := xml.Marshal(theme)
 	if err != nil {
-		t.Fatalf("serialising Theme failed: %v", err)
+		t.Fatalf("serializing Theme failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
@@ -166,7 +166,7 @@ func TestTheme_RoundTrip(t *testing.T) {
 
 	for _, tag := range requiredTags {
 		if !strings.Contains(outputXML, tag) {
-			t.Errorf("round-trip failed: key tag %s was lost after serialisation", tag)
+			t.Errorf("round-trip failed: key tag %s was lost after serialization", tag)
 		}
 	}
 	t.Log("Theme round-trip losslessness test passed")
@@ -208,7 +208,7 @@ func TestTheme_CloneSafety(t *testing.T) {
 }
 
 // ============================================================================
-// Test 3: Low-level mutator behaviour test
+// Test 3: Low-level mutator behavior test
 // Goal: prove that SetThemeColorRGB correctly modifies the XML node tree.
 // ============================================================================
 func TestTheme_SetThemeColorRGB(t *testing.T) {
@@ -220,23 +220,23 @@ func TestTheme_SetThemeColorRGB(t *testing.T) {
 	targetColor := "00FF00"
 	part.SetThemeColorRGB(parts.ColorRoleAccent1, targetColor)
 
-	// Verify the retrieved colour reflects the new value.
+	// Verify the retrieved color reflects the new value.
 	gotColor := part.GetThemeColorRGB(parts.ColorRoleAccent1)
 	if gotColor != targetColor {
 		t.Errorf("mutator test failed: expected '%s', got '%s'", targetColor, gotColor)
 	}
 
-	// After serialisation the RGB value must be present in the XML string.
+	// After serialization the RGB value must be present in the XML string.
 	themeData := part.Theme()
 	outputBytes, err := xml.Marshal(themeData)
 	if err != nil {
-		t.Fatalf("serialisation failed: %v", err)
+		t.Fatalf("serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
 	expectedNode := `<srgbClr val="00FF00"`
 	if !strings.Contains(outputXML, expectedNode) {
-		t.Errorf("mutator test failed: modified colour node %s not found in XML tree", expectedNode)
+		t.Errorf("mutator test failed: modified color node %s not found in XML tree", expectedNode)
 	}
 
 	t.Log("Theme low-level mutator test passed")

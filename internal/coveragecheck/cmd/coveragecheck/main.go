@@ -37,7 +37,7 @@ func run(profilePath, configPath string) error {
 	if err != nil {
 		return fmt.Errorf("open profile: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	cov, err := coveragecheck.ParseProfile(f)
 	if err != nil {

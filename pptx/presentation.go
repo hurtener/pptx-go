@@ -86,7 +86,7 @@ func New() *Presentation {
 		relCounter:       0,
 	}
 
-	// Initialise the package structure.
+	// Initialize the package structure.
 	pres.initPackage()
 
 	return pres
@@ -169,7 +169,7 @@ func NewFromFile(path string) (*Presentation, error) {
 }
 
 // ============================================================================
-// Initialisation
+// Initialization
 // ============================================================================
 
 // initPackage sets up the OPC package structure.
@@ -200,7 +200,7 @@ func (p *Presentation) loadPresentationPart() error {
 		return err
 	}
 
-	// Synchronise the slide counter.
+	// Synchronize the slide counter.
 	p.slideCounter = int32(p.presentationPart.SlideCount())
 
 	return nil
@@ -266,7 +266,7 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 		mediaManager: p.mediaManager,
 		index:        len(p.slides),
 	}
-	// Initialise the atomic counter (OOXML spec: shapeId starts at 2; 1 is
+	// Initialize the atomic counter (OOXML spec: shapeId starts at 2; 1 is
 	// reserved for the root node).
 	s.shapeIDCounter.Store(1)
 
@@ -316,7 +316,7 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 		mediaManager: p.mediaManager,
 		index:        index,
 	}
-	// Initialise the atomic counter (OOXML spec: shapeId starts at 2; 1 is
+	// Initialize the atomic counter (OOXML spec: shapeId starts at 2; 1 is
 	// reserved for the root node).
 	s.shapeIDCounter.Store(1)
 
@@ -393,7 +393,7 @@ func (p *Presentation) Slides() []*Slide {
 // Save methods
 // ============================================================================
 
-// Save serialises the presentation and writes it to a file.
+// Save serializes the presentation and writes it to a file.
 func (p *Presentation) Save(path string) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -412,7 +412,7 @@ func (p *Presentation) Save(path string) error {
 	return p.pkg.SaveFile(path)
 }
 
-// Write serialises the presentation and writes it to an io.Writer.
+// Write serializes the presentation and writes it to an io.Writer.
 // This is suitable for high-concurrency streaming output such as HTTP responses.
 func (p *Presentation) Write(w io.Writer) error {
 	p.mu.RLock()
@@ -432,7 +432,7 @@ func (p *Presentation) Write(w io.Writer) error {
 	return p.pkg.Save(w)
 }
 
-// WriteToBytes serialises the presentation and returns it as a byte slice.
+// WriteToBytes serializes the presentation and returns it as a byte slice.
 func (p *Presentation) WriteToBytes() ([]byte, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -455,12 +455,12 @@ func (p *Presentation) WriteToBytes() ([]byte, error) {
 // Sync helpers
 // ============================================================================
 
-// syncSlides serialises all slides into the OPC package.
+// syncSlides serializes all slides into the OPC package.
 func (p *Presentation) syncSlides() error {
 	for _, s := range p.slides {
 		blob, err := s.part.ToXML()
 		if err != nil {
-			return fmt.Errorf("failed to serialise slide %d: %w", s.index+1, err)
+			return fmt.Errorf("failed to serialize slide %d: %w", s.index+1, err)
 		}
 
 		// Update or create the part.
@@ -477,11 +477,11 @@ func (p *Presentation) syncSlides() error {
 	return nil
 }
 
-// syncPresentationPart serialises presentation.xml into the OPC package.
+// syncPresentationPart serializes presentation.xml into the OPC package.
 func (p *Presentation) syncPresentationPart() error {
 	blob, err := p.presentationPart.ToXML()
 	if err != nil {
-		return fmt.Errorf("failed to serialise presentation.xml: %w", err)
+		return fmt.Errorf("failed to serialize presentation.xml: %w", err)
 	}
 
 	uri := opc.NewPackURI("/ppt/presentation.xml")

@@ -500,7 +500,7 @@ func DefaultColorMap() *ColorMap {
 	cm.Set("cyan", ColorCyan)
 	cm.Set("magenta", ColorMagenta)
 	cm.Set("gray", ColorGray)
-	cm.Set("grey", ColorGray)
+	cm.Set("gray", ColorGray)
 	cm.Set("lightgray", ColorLightGray)
 	cm.Set("lightgrey", ColorLightGray)
 	cm.Set("darkgray", ColorDarkGray)

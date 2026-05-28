@@ -187,7 +187,7 @@ rewritten incrementally across Wave 1 with the upstream API preserved as
 deprecation aliases where the new API isn't a drop-in. Each phase
 preserves the upstream's test coverage on the surface it touches.
 **Consequences:** A phase plan that proposes to drop upstream code
-without preserving its tested behaviour needs a documented rationale and
+without preserving its tested behavior needs a documented rationale and
 a passing round-trip test in the same PR.
 
 ---
@@ -305,7 +305,7 @@ renders the code (typically via a syntax-highlighter into a PNG) and
 pptx-go embeds it. A caption text shape renders below the image if
 `caption` is present.
 **Consequences:** Caller is responsible for code-snippet rendering.
-pengui-slides v4 already does this; the V1 behaviour preserves the
+pengui-slides v4 already does this; the V1 behavior preserves the
 existing flow. V2 may revisit if the OOXML mono-text problem becomes
 addressable.
 
@@ -568,12 +568,12 @@ PPTX-export tool against.
 
 ---
 
-## D-026 — pptx-go is the engine; product behaviour lives in callers
+## D-026 — pptx-go is the engine; product behavior lives in callers
 
 **Date:** 2026-05-28
 **Status:** Settled
 **Context:** A library that grows render-mode toggles, legibility
-heuristics, validation pipelines, or other product behaviour becomes a
+heuristics, validation pipelines, or other product behavior becomes a
 small product itself. The intended consumer (go-slides) already has
 the natural home for those decisions; pushing them into pptx-go means
 every other consumer inherits go-slides' opinions whether they wanted
@@ -598,7 +598,7 @@ The library decides only:
 - *which mechanisms to expose* (theme tokens, asset resolver, font
   source, section grouping, speaker notes, slide formats, etc.).
 
-Product behaviour belongs in go-slides (or any other caller).
+Product behavior belongs in go-slides (or any other caller).
 **Consequences:** A smaller API surface. A clearer mental model: "what
 would an engine need to do?" answers most "should we add this?"
 questions. Document-mode concepts (TOCs, bibliographies, page breaks,

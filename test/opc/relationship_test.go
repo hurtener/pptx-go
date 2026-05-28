@@ -476,6 +476,9 @@ func TestParseRelationshipsFromFile(t *testing.T) {
 	// read a real .rels file
 	data, err := os.ReadFile("../test-data/test/ppt/slides/_rels/slide4.xml.rels")
 	if err != nil {
+		if os.IsNotExist(err) {
+			t.Skipf("fixture not present; skipping (gitignored, not committed upstream): %v", err)
+		}
 		t.Fatalf("failed to read .rels file: %v", err)
 	}
 

@@ -135,7 +135,7 @@ func (ctx *SlideContext) AddMedia(data []byte, fileName string) (string, error) 
 
 // AddMediaWithMIME adds a media resource with an explicit MIME type.
 func (ctx *SlideContext) AddMediaWithMIME(data []byte, fileName, mimeType string) (string, error) {
-	// currently delegates to AddMedia; can be extended to honour mimeType
+	// currently delegates to AddMedia; can be extended to honor mimeType
 	return ctx.AddMedia(data, fileName)
 }
 

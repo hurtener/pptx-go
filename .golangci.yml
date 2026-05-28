@@ -1,48 +1,59 @@
-# golangci-lint configuration for pptx-go.
+# golangci-lint v2 configuration for pptx-go.
 # See CLAUDE.md §5 (code conventions) and §13 (forbidden practices).
+#
+# Scope ramp: the upstream-inherited packages (opc, parts, pptx, utils, test)
+# are excluded for now — Wave 1 reorganizes them into internal/opc and
+# internal/ooxml/* (Phase 01) and rewrites the builder (Phase 02–03). Each
+# package comes under the linter as that migration lands; new code
+# (internal/...) is fully linted today.
+version: "2"
 
 run:
   timeout: 5m
-  tests: true
 
 linters:
+  default: standard # govet, errcheck, ineffassign, staticcheck, unused
   enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - revive
     - bodyclose
+    - copyloopvar
     - errorlint
     - gocritic
+    - misspell
     - nolintlint
+    - revive
     - unconvert
-    - copyloopvar
+  settings:
+    misspell:
+      locale: US
+    errorlint:
+      errorf: true
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+  exclusions:
+    generated: lax
+    paths:
+      - ^opc/
+      - ^parts/
+      - ^pptx/
+      - ^utils/
+      - ^test/
 
-linters-settings:
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: github.com/hurtener/pptx-go
-  misspell:
-    locale: US
-  errorlint:
-    errorf: true
-  revive:
-    rules:
-      - name: package-comments
-        disabled: true
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude-rules:
-    # Test files may use dot-imports and skip some hardening.
-    - path: _test\.go
-      linters:
-        - errcheck
-        - bodyclose
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/hurtener/pptx-go
+  exclusions:
+    paths:
+      - ^opc/
+      - ^parts/
+      - ^pptx/
+      - ^utils/
+      - ^test/

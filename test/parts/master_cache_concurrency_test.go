@@ -14,7 +14,7 @@ import (
 // ============================================================================
 
 func TestMasterCache_ConcurrentRead(t *testing.T) {
-	// Initialise the cache from real files.
+	// Initialize the cache from real files.
 	cache := pptx.NewMasterCache()
 	masters, layouts := loadTestMasterData()
 	cache.Init(masters, layouts)

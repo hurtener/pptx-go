@@ -13,7 +13,7 @@
 |---------|---------------|------|
 | ZIP reading | `archive/zip.Reader` | `package.go:64-89` |
 | ZIP writing | `archive/zip.Writer` + `CreateHeader` | `package.go:454-485` |
-| Path normalisation | `NormalizeZipPath()` | `packuri.go:318-340` |
+| Path normalization | `NormalizeZipPath()` | `packuri.go:318-340` |
 | Timestamp handling | `time.Now()` + MS-DOS format | `package.go:468` |
 
 ### Key Implementation
@@ -53,7 +53,7 @@ func createZipEntry(zipWriter *zip.Writer, path string, size int) (io.Writer, er
 |---------|---------------|------|
 | Automatic rId allocation | `atomic.Int32` atomic counter | `relation.go:110` |
 | Monotonically increasing, no duplicates | `allocateRID()` | `relation.go:246-248` |
-| Counter initialisation | `InitRIDCounter()` | `relation.go:252-256` |
+| Counter initialization | `InitRIDCounter()` | `relation.go:252-256` |
 | Thread safety | `sync.RWMutex` | `relation.go:108` |
 
 ### Key Implementation
@@ -72,7 +72,7 @@ func (rs *Relationships) allocateRID() string {
     return fmt.Sprintf("rId%d", rs.rIDCounter.Add(1))
 }
 
-// Initialise the counter after loading from XML to avoid conflicts
+// Initialize the counter after loading from XML to avoid conflicts
 func (rs *Relationships) initRIDCounterLocked() {
     maxNum := int32(0)
     for rID := range rs.relationships {
@@ -217,7 +217,7 @@ func (p *Part) Clone() *Part {
 |-----------|---------|------|
 | `CoreProperties` | Dublin Core metadata | `coreprops.go` |
 | Title/author/timestamps/etc. | 12 properties | `coreprops.go:11-23` |
-| XML serialisation | `ToXML()` / `FromXML()` | `coreprops.go:263-300` |
+| XML serialization | `ToXML()` / `FromXML()` | `coreprops.go:263-300` |
 
 ### 5.5 URI Handling (PackURI)
 
@@ -225,7 +225,7 @@ func (p *Part) Clone() *Part {
 |---------|--------|------|
 | Path resolution | `Join()`, `RelPathFrom()` | `packuri.go:96-158` |
 | Relationships file | `RelationshipsURI()`, `SourceURI()` | `packuri.go:174-211` |
-| Normalisation | `NormalizeURI()`, `NormalizeZipPath()` | `packuri.go:295-340` |
+| Normalization | `NormalizeURI()`, `NormalizeZipPath()` | `packuri.go:295-340` |
 
 ---
 
@@ -246,7 +246,7 @@ func (p *Part) Clone() *Part {
 | `TestPackage_Clone_SmartCloning` | Smart copy strategy |
 | `TestZipEntry_Timestamp` | Timestamp correctness |
 | `TestZipEntry_TimestampNotZero` | Windows compatibility |
-| `TestNormalizeZipPath_*` | Path normalisation |
+| `TestNormalizeZipPath_*` | Path normalization |
 
 ---
 
@@ -268,7 +268,7 @@ func (p *Part) Clone() *Part {
 
 ### Design Highlights
 
-1. **Zero-copy optimisation**: Immutable resources share their underlying data, reducing memory usage.
+1. **Zero-copy optimization**: Immutable resources share their underlying data, reducing memory usage.
 2. **Atomic operations**: rId allocation uses `atomic.Int32`, eliminating lock contention.
 3. **Lazy loading**: `StreamPackage` supports on-demand loading, making large-file handling more efficient.
 4. **Concurrent collection**: `ConcurrentZipCollector` uses goroutines for parallel writes.

@@ -33,7 +33,7 @@ every visual property. A direct consumer of `pptx` writes generic Go and gets
 a production-grade deck.
 
 Layer 2 — `scene` — is an optional **renderer** for a high-level scene IR
-modelled on pengui-slides' v4 IR (hero/prose/card/grid/flow/decoration/…). A
+modeled on pengui-slides' v4 IR (hero/prose/card/grid/flow/decoration/…). A
 consumer of `scene` builds a typed `Scene` value, calls `Render`, and gets a
 PPTX. The renderer is a thin composer of `pptx` calls; nothing in `scene`
 reaches under the builder. This decoupling means pengui-slides v2 (running on
@@ -63,7 +63,7 @@ write path (§6).
 **Engine, not opinion.** pptx-go is the IR-to-PPTX engine. It does not
 decide *what* should be in the deck (that's the caller's IR) or *how*
 the deck should look (that's the caller's Theme); it decides only how
-to render valid OOXML faithfully. Product behaviours — image-only
+to render valid OOXML faithfully. Product behaviors — image-only
 deck modes, projection-legibility text boosts, validation pipelines,
 HTML preview, markdown ingestion — live in callers (go-slides), not
 here (D-026).
@@ -306,7 +306,7 @@ OOXML through `scene` is wrong.
 
 ### P2 — Tokens, not literals
 
-All visual properties — colours, typography, spacing, radius, elevation —
+All visual properties — colors, typography, spacing, radius, elevation —
 flow through a `Theme` whose semantic tokens map to OOXML values. The default
 authoring path on the builder is **token-typed**: `slide.SetFill(theme.Color
 (pptx.ColorAccent))`, not `slide.SetFillHex("#3366FF")`.
@@ -314,7 +314,7 @@ authoring path on the builder is **token-typed**: `slide.SetFill(theme.Color
 Literal/escape-hatch APIs exist for power users (`pptx.RGB(0x33, 0x66, 0xFF)`
 returns a `Color` that the builder accepts), but the *idiomatic* and
 *documented* path is tokens. The library's "make it look right by default"
-behaviour comes from theme inheritance, not from hardcoded defaults.
+behavior comes from theme inheritance, not from hardcoded defaults.
 
 This matches pengui-slides' design-soul guarantee: change the theme, the same
 scene renders in the new visual language. We push the same guarantee into the
@@ -409,7 +409,7 @@ preserve:
 - `ResourceDedupPool` — `sync.Map`-based media deduplication.
 
 These move to `internal/opc/` in Wave 0. The public package retains all of
-the upstream's behaviour; the move is a rename, not a rewrite.
+the upstream's behavior; the move is a rename, not a rewrite.
 
 ### 6.2 `internal/ooxml`
 
@@ -557,7 +557,7 @@ t.Paragraph(pptx.AlignLeft).
 
 `pptx.TokenColor(role)` returns a `Color` whose representation defers to the
 active theme at write time; `pptx.RGB(...)` returns a literal `Color`. Both
-satisfy the same interface (`pptx.Color`), so APIs that take a colour are
+satisfy the same interface (`pptx.Color`), so APIs that take a color are
 not duplicated.
 
 ### 7.3 Theme sources
@@ -567,7 +567,7 @@ A Theme can be:
 1. **Defined inline in Go** — `pptx.NewTheme()` with field-by-field setters
    or a struct literal.
 2. **Loaded from a `.pptx` template** — `pptx.LoadTheme("brand.pptx")`
-   reads `theme1.xml` and the master/layout colour map, plus the first
+   reads `theme1.xml` and the master/layout color map, plus the first
    master's font scheme, and exposes them under the role taxonomy.
 3. **Loaded from a JSON/YAML theme file** — `pptx.LoadThemeFile(path)`
    is V1.1+; V1 ships the two above.
@@ -697,7 +697,7 @@ struct is reserved.
 `PatternFill`, `BlipFill` (image fill), and `NoFill`. Theme tokens compose:
 `pptx.SolidFill(pptx.TokenColor(pptx.ColorSurface))`.
 
-`Line` covers stroke colour, width (EMU), dash style, cap, join, and head/
+`Line` covers stroke color, width (EMU), dash style, cap, join, and head/
 tail arrow. `Line{}` (zero value) means "no line".
 
 ### 8.4 Rich text model
@@ -735,7 +735,7 @@ type RunStyle struct {
 }
 ```
 
-Whitespace and line-wrap behaviour is exact OOXML behaviour: spaces are
+Whitespace and line-wrap behavior is exact OOXML behavior: spaces are
 preserved, line breaks are explicit (`AddBreak`), and word-wrap is the
 text frame's responsibility. `AutoFit` modes are `AutoFitNone`,
 `AutoFitNormal` (font-size shrink), `AutoFitShape` (shape grows to text).
@@ -838,9 +838,9 @@ string), an inline style (font weight, italic, underline, code, link), and
 a `color` (a `TextColorRole` token). The scene renderer maps `TextRun[]`
 directly to a builder `Paragraph` with one `Run` per `TextRun`.
 
-The token-based color model means inline run colors honour theme swaps the
+The token-based color model means inline run colors honor theme swaps the
 same way page colors do. Power users can still emit literals via
-`scene.LiteralColor(...)` when they need an unbound colour.
+`scene.LiteralColor(...)` when they need an unbound color.
 
 ---
 
@@ -987,7 +987,7 @@ a layout policy, a disposition decision (§12), and a builder composition.
 | `list` | Bullet / numbered / checklist. |
 | `divider` | Horizontal rule with spacing. |
 | `quote` | Pull quote with optional attribution. |
-| `callout` | Note / warning / tip / important — coloured side-bar. |
+| `callout` | Note / warning / tip / important — colored side-bar. |
 | `image` | Asset image with optional frame chrome. |
 | `chip` | Inline pill (tint / solid / outline tone). |
 | `arrow` | Inline directional connector with optional label. |
@@ -1420,7 +1420,7 @@ pengui-slides v4's surface that pptx-go has no concept of, by
 construction (D-026):
 
 - **Soul motion / tone / narrative voice / do-don't rules** — these
-  govern the LLM's authoring behaviour, not the file's rendered
+  govern the LLM's authoring behavior, not the file's rendered
   output. The Theme model carries only the visual layers (`RFC §7.1`).
 - **Doc-mode IR nodes** (`toc`, `bibliography`, `page_break`) — no
   PPTX semantics.
@@ -1564,7 +1564,7 @@ These are settled and will not re-litigate without a superseding D-NNN.
 - **Q16: AssetResolver scheme?** Free-form `AssetID` strings; helper
   for `asset://`-URI scheme. (D-024)
 - **Q17: Engine vs product?** Engine. pptx-go is the IR-to-PPTX
-  conversion mechanism. Product behaviour (render modes, legibility
+  conversion mechanism. Product behavior (render modes, legibility
   heuristics, doc-mode constructs, validation pipelines) lives in
   callers. (D-026)
 

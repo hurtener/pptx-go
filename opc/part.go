@@ -174,7 +174,7 @@ func (p *Part) LoadRelationships(data []byte) error {
 	return p.relationships.FromXML(data)
 }
 
-// RelationshipsBlob returns the serialised XML of the relationships.
+// RelationshipsBlob returns the serialized XML of the relationships.
 func (p *Part) RelationshipsBlob() ([]byte, error) {
 	if p.relationships.Count() == 0 {
 		return nil, nil

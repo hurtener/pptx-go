@@ -156,11 +156,11 @@ func TestParseCoreProps(t *testing.T) {
 }
 
 // ============================================================================
-// Core Properties serialisation tests
+// Core Properties serialization tests
 // ============================================================================
 
 func TestCorePropsToXML(t *testing.T) {
-	t.Run("serialise-full-props", func(t *testing.T) {
+	t.Run("serialize-full-props", func(t *testing.T) {
 		cp := parts.NewXMLCoreProperties()
 		cp.Title = "Test Title"
 		cp.Creator = "Test Author"
@@ -173,7 +173,7 @@ func TestCorePropsToXML(t *testing.T) {
 
 		data, err := cp.ToXML()
 		if err != nil {
-			t.Fatalf("serialisation failed: %v", err)
+			t.Fatalf("serialization failed: %v", err)
 		}
 
 		// Verify the output can be re-parsed.
@@ -193,12 +193,12 @@ func TestCorePropsToXML(t *testing.T) {
 		}
 	})
 
-	t.Run("serialise-empty-props", func(t *testing.T) {
+	t.Run("serialize-empty-props", func(t *testing.T) {
 		cp := parts.NewXMLCoreProperties()
 
 		data, err := cp.ToXML()
 		if err != nil {
-			t.Fatalf("serialisation failed: %v", err)
+			t.Fatalf("serialization failed: %v", err)
 		}
 
 		// Verify the output can be re-parsed.

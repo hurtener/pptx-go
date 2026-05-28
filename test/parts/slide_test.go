@@ -9,7 +9,7 @@ import (
 	"github.com/hurtener/pptx-go/pptx"
 )
 
-// writeSlideToXML is a helper that serialises an XSlide using XMLWriter.
+// writeSlideToXML is a helper that serializes an XSlide using XMLWriter.
 func writeSlideToXML(xs *parts.XSlide) ([]byte, error) {
 	xw := parts.NewXMLWriterBuffered(4096)
 	if err := xw.Declaration(); err != nil {
@@ -21,7 +21,7 @@ func writeSlideToXML(xs *parts.XSlide) ([]byte, error) {
 	return xw.Bytes(), nil
 }
 
-// writeTextBodyToXML is a helper that serialises an XTextBody using XMLWriter.
+// writeTextBodyToXML is a helper that serializes an XTextBody using XMLWriter.
 func writeTextBodyToXML(xtb *parts.XTextBody) ([]byte, error) {
 	xw := parts.NewXMLWriterBuffered(4096)
 	if err := xw.Declaration(); err != nil {
@@ -34,7 +34,7 @@ func writeTextBodyToXML(xtb *parts.XTextBody) ([]byte, error) {
 }
 
 // TestSlideBuilder_AddText tests the text-addition logic of the Slide Builder API.
-// It asserts directly on the Go struct without involving XML serialisation.
+// It asserts directly on the Go struct without involving XML serialization.
 func TestSlideBuilder_AddText(t *testing.T) {
 	// Instantiate a blank SlidePart.
 	slidePart := parts.NewSlidePart(1)
@@ -163,10 +163,10 @@ func TestSlideBuilder_AddTextBox_VerifyStructure(t *testing.T) {
 	t.Logf("position verified: offset=(%d, %d), extent=(%d, %d)", offset.X, offset.Y, extent.Cx, extent.Cy)
 }
 
-// TestSlide_MarshalComponents tests XML serialisation of low-level components.
+// TestSlide_MarshalComponents tests XML serialization of low-level components.
 // It verifies that omitempty tags suppress zero-value attributes correctly.
 func TestSlide_MarshalComponents(t *testing.T) {
-	// Test XTextParagraph serialisation.
+	// Test XTextParagraph serialization.
 	// Note: XTextParagraph has no XMLName field, so the root tag is the struct name.
 	t.Run("XTextParagraph_OmitEmpty", func(t *testing.T) {
 		// Construct a minimal XTextParagraph with a single XTextRun containing "Hello".
@@ -177,7 +177,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 			},
 		}
 
-		// Serialise with xml.Marshal.
+		// Serialize with xml.Marshal.
 		data, err := xml.Marshal(&para)
 		if err != nil {
 			t.Fatalf("xml.Marshal failed: %v", err)
@@ -200,13 +200,13 @@ func TestSlide_MarshalComponents(t *testing.T) {
 			}
 		}
 
-		// Verify text content is serialised correctly.
+		// Verify text content is serialized correctly.
 		if !strings.Contains(xmlStr, "Hello") {
 			t.Error("should contain text 'Hello'")
 		}
 	})
 
-	// Test XTextRun serialisation — verify omitempty on TextProperties.
+	// Test XTextRun serialization — verify omitempty on TextProperties.
 	t.Run("XTextRun_OmitEmpty", func(t *testing.T) {
 		// TextProperties is not set.
 		run := parts.XTextRun{
@@ -254,7 +254,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 		if !strings.Contains(xmlStr, `sz="2400"`) {
 			t.Error("should contain sz=\"2400\" attribute")
 		}
-		// Note: Go's xml package serialises bool as "true"/"false".
+		// Note: Go's xml package serializes bool as "true"/"false".
 		if !strings.Contains(xmlStr, `b="true"`) {
 			t.Error("should contain b=\"true\" attribute")
 		}
@@ -272,7 +272,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 	t.Run("XTextParagraph_WithAttributes", func(t *testing.T) {
 		para := parts.XTextParagraph{
 			Level:     1,     // set attribute
-			Alignment: "ctr", // centre alignment
+			Alignment: "ctr", // center alignment
 			TextRuns: []parts.XTextRun{
 				{Text: "Centered"},
 			},
@@ -341,10 +341,10 @@ func TestSlide_MarshalComponents(t *testing.T) {
 	})
 }
 
-// TestSlide_MarshalFullPage is a full-slide serialisation smoke test.
+// TestSlide_MarshalFullPage is a full-slide serialization smoke test.
 // It verifies namespace declarations, which are critical for PowerPoint to open the file.
 func TestSlide_MarshalFullPage(t *testing.T) {
-	// Construct XSlide directly to test namespace serialisation.
+	// Construct XSlide directly to test namespace serialization.
 	xslide := parts.XSlide{
 		XmlnsA:    "http://schemas.openxmlformats.org/drawingml/2006/main",
 		XmlnsR:    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
@@ -355,7 +355,7 @@ func TestSlide_MarshalFullPage(t *testing.T) {
 		},
 	}
 
-	// Serialise using WriteXML (produces OOXML format with namespace prefixes).
+	// Serialize using WriteXML (produces OOXML format with namespace prefixes).
 	data, err := writeSlideToXML(&xslide)
 	if err != nil {
 		t.Fatalf("WriteXML failed: %v", err)
@@ -396,7 +396,7 @@ func TestSlide_MarshalFullPage(t *testing.T) {
 	t.Logf("namespace and root element verification passed")
 }
 
-// TestSlide_MarshalFullPage_WithContent tests full-slide serialisation with content.
+// TestSlide_MarshalFullPage_WithContent tests full-slide serialization with content.
 func TestSlide_MarshalFullPage_WithContent(t *testing.T) {
 	// Construct an XTextBody containing text.
 	textBody := parts.XTextBody{
@@ -409,7 +409,7 @@ func TestSlide_MarshalFullPage_WithContent(t *testing.T) {
 		},
 	}
 
-	// Serialise using WriteXML (produces OOXML format with namespace prefixes).
+	// Serialize using WriteXML (produces OOXML format with namespace prefixes).
 	data, err := writeTextBodyToXML(&textBody)
 	if err != nil {
 		t.Fatalf("WriteXML failed: %v", err)
@@ -428,5 +428,5 @@ func TestSlide_MarshalFullPage_WithContent(t *testing.T) {
 		t.Error("missing text tag <a:t>")
 	}
 
-	t.Logf("text content serialisation verified")
+	t.Logf("text content serialization verified")
 }

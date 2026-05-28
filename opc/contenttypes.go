@@ -107,9 +107,9 @@ func (ct *ContentTypes) Overrides() map[string]string {
 	return result
 }
 
-// ===== XML serialisation =====
+// ===== XML serialization =====
 
-// XContentTypes is the root element for XML serialisation of content types.
+// XContentTypes is the root element for XML serialization of content types.
 type XContentTypes struct {
 	XMLName   xml.Name    `xml:"Types"`
 	Xmlns     string      `xml:"xmlns,attr"`
@@ -154,7 +154,7 @@ func (ct *ContentTypes) FromXML(data []byte) error {
 	return nil
 }
 
-// ToXML serialises the content types to XML.
+// ToXML serializes the content types to XML.
 func (ct *ContentTypes) ToXML() ([]byte, error) {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()

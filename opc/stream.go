@@ -381,7 +381,7 @@ func (p *StreamPart) HasRelationships() bool {
 	return p.relationships.Count() > 0
 }
 
-// RelationshipsBlob returns the serialised XML of the relationships.
+// RelationshipsBlob returns the serialized XML of the relationships.
 func (p *StreamPart) RelationshipsBlob() ([]byte, error) {
 	if p.relationships.Count() == 0 {
 		return nil, nil

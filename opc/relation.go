@@ -246,7 +246,7 @@ func (rs *Relationships) allocateRID() string {
 	return fmt.Sprintf("rId%d", rs.rIDCounter.Add(1))
 }
 
-// InitRIDCounter initialises the rID counter from the existing relationships,
+// InitRIDCounter initializes the rID counter from the existing relationships,
 // ensuring newly allocated IDs do not clash with existing ones.
 // Call this after loading relationships from XML.
 func (rs *Relationships) InitRIDCounter() {
@@ -290,7 +290,7 @@ func (rs *Relationships) Clone() *Relationships {
 	return newRs
 }
 
-// XML structs for serialising relationships.
+// XML structs for serializing relationships.
 
 // XRelationships is the XML root element for relationships.
 type XRelationships struct {
@@ -352,13 +352,13 @@ func (rs *Relationships) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 		rs.order = append(rs.order, xrel.ID)
 	}
 
-	// Initialise the counter so new IDs do not clash with existing ones.
+	// Initialize the counter so new IDs do not clash with existing ones.
 	rs.initRIDCounterLocked()
 
 	return nil
 }
 
-// initRIDCounterLocked initialises the rID counter while the lock is already held.
+// initRIDCounterLocked initializes the rID counter while the lock is already held.
 func (rs *Relationships) initRIDCounterLocked() {
 	maxNum := int32(0)
 	for rID := range rs.relationships {
@@ -373,7 +373,7 @@ func (rs *Relationships) initRIDCounterLocked() {
 	rs.rIDCounter.Store(maxNum)
 }
 
-// ToXML serialises the relationship collection to XML.
+// ToXML serializes the relationship collection to XML.
 func (rs *Relationships) ToXML() ([]byte, error) {
 	output, err := xml.Marshal(rs)
 	if err != nil {

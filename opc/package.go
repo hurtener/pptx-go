@@ -134,7 +134,7 @@ func (p *Package) loadContentTypes(zipReader *zip.Reader) error {
 
 func (p *Package) loadParts(zipReader *zip.Reader) error {
 	for _, f := range zipReader.File {
-		// Normalise path to handle Windows backslash issues.
+		// Normalize path to handle Windows backslash issues.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if normalizedName == PathContentTypes {
@@ -174,7 +174,7 @@ func (p *Package) loadParts(zipReader *zip.Reader) error {
 
 func (p *Package) loadRelationships(zipReader *zip.Reader) error {
 	for _, f := range zipReader.File {
-		// Normalise path.
+		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {

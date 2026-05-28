@@ -12,7 +12,7 @@ import (
 // ============================================================================
 
 func TestMediaManager_AddAndGet(t *testing.T) {
-	// Initialise an empty MediaManager.
+	// Initialize an empty MediaManager.
 	mgr := pptx.NewMediaManager()
 
 	// Add an image.

@@ -195,7 +195,7 @@ func (cp *CoreProperties) SetLanguage(language string) {
 	cp.language = language
 }
 
-// ===== XML serialisation =====
+// ===== XML serialization =====
 
 // XCoreProperties is the XML representation of core properties.
 type XCoreProperties struct {
@@ -260,7 +260,7 @@ func (cp *CoreProperties) FromXML(data []byte) error {
 	return nil
 }
 
-// ToXML serialises the core properties to XML.
+// ToXML serializes the core properties to XML.
 func (cp *CoreProperties) ToXML() ([]byte, error) {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
