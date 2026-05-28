@@ -8,7 +8,7 @@ import (
 
 	"github.com/hurtener/pptx-go/opc"
 	"github.com/hurtener/pptx-go/parts"
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
@@ -108,7 +108,7 @@ func TestBlankPresentation_Hardcore(t *testing.T) {
 
 	// --- 5. Create slide and link it to the layout ---
 	slidePart := parts.NewSlidePart(1)
-	builder := slide.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart)
 	builder.AddTextBox(914400, 457200, 4572000, 457200, "Hello from Go Engine!")
 	slideXML, _ := slidePart.ToXML()
 

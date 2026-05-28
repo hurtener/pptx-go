@@ -3,7 +3,7 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
@@ -11,7 +11,7 @@ import (
 // ============================================================================
 
 func TestMediaManager_Deduplication(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// First add.
 	rID1, res1 := mgr.AddMediaAuto("company_logo.png", []byte("logo_data"))
@@ -39,7 +39,7 @@ func TestMediaManager_Deduplication(t *testing.T) {
 }
 
 func TestMediaManager_Deduplication_Multiple(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// Simulate the same logo appearing on every slide.
 	const pages = 100
@@ -54,7 +54,7 @@ func TestMediaManager_Deduplication_Multiple(t *testing.T) {
 }
 
 func TestMediaManager_Deduplication_DifferentFiles(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// Add different files.
 	rID1, _ := mgr.AddMediaAuto("logo.png", []byte("data1"))
@@ -86,7 +86,7 @@ func TestMediaManager_Deduplication_DifferentFiles(t *testing.T) {
 }
 
 func TestMediaManager_Deduplication_SameNameDifferentData(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// First add.
 	rID1, res1 := mgr.AddMediaAuto("image.png", []byte("original_data"))
@@ -114,7 +114,7 @@ func TestMediaManager_Deduplication_SameNameDifferentData(t *testing.T) {
 }
 
 func TestMediaManager_Deduplication_DifferentNameSameContent(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	sameData := []byte("identical_logo_bytes")
 
@@ -143,7 +143,7 @@ func TestMediaManager_Deduplication_DifferentNameSameContent(t *testing.T) {
 }
 
 func TestMediaManager_Deduplication_HashConsistency(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	data := []byte("test_content")
 

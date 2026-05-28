@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hurtener/pptx-go/parts"
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
@@ -15,7 +15,7 @@ import (
 
 func TestMasterCache_ConcurrentRead(t *testing.T) {
 	// Initialise the cache from real files.
-	cache := slide.NewMasterCache()
+	cache := pptx.NewMasterCache()
 	masters, layouts := loadTestMasterData()
 	cache.Init(masters, layouts)
 
@@ -72,7 +72,7 @@ func TestMasterCache_ConcurrentRead(t *testing.T) {
 // ============================================================================
 
 func TestMasterCache_HighConcurrency(t *testing.T) {
-	cache := slide.NewMasterCache()
+	cache := pptx.NewMasterCache()
 	masters, layouts := loadTestMasterData()
 	cache.Init(masters, layouts)
 

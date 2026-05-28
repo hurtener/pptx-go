@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hurtener/pptx-go/parts"
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // writeSlideToXML is a helper that serialises an XSlide using XMLWriter.
@@ -42,10 +42,10 @@ func TestSlideBuilder_AddText(t *testing.T) {
 		t.Fatal("NewSlidePart returned nil")
 	}
 
-	// Add text via slide.Builder.
+	// Add text via the SlideBuilder API.
 	testText := "Test Title"
 	x, y, cx, cy := 914400, 457200, 9144000, 1143000 // EMU units
-	builder := slide.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart)
 	sp := builder.AddTextBox(x, y, cx, cy, testText)
 
 	// The returned shape must not be nil (proves ShapeTree gained a shape).
@@ -79,7 +79,7 @@ func TestSlideBuilder_AddText(t *testing.T) {
 // TestSlideBuilder_AddTextBox_Multiple tests adding multiple text boxes.
 func TestSlideBuilder_AddTextBox_Multiple(t *testing.T) {
 	slidePart := parts.NewSlidePart(1)
-	builder := slide.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart)
 
 	// Add several text boxes and collect the returned shape pointers.
 	texts := []string{"Heading Text", "Body Paragraph 1", "Body Paragraph 2"}
@@ -120,7 +120,7 @@ func TestSlideBuilder_AddTextBox_Multiple(t *testing.T) {
 // TestSlideBuilder_AddTextBox_VerifyStructure tests the full structure created by AddTextBox.
 func TestSlideBuilder_AddTextBox_VerifyStructure(t *testing.T) {
 	slidePart := parts.NewSlidePart(1)
-	builder := slide.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart)
 
 	testText := "Full Structure Test"
 	x, y, cx, cy := 1000000, 2000000, 3000000, 4000000

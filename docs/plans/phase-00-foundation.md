@@ -120,25 +120,29 @@ module prefix. No deprecation aliases needed.
 
 ## 10. Risks
 
-- **R1 — Pre-existing red test suite (independent of the rename).** Three
-  categories of failure exist on the upstream tree before this phase and
-  the rename touches none of them:
-  1. `test/` and `test/parts/` import a `slide` package that an upstream
-     commit renamed to `pptx` without updating the imports — those two
-     packages do not compile.
-  2. `test/opc` has a failing assertion `TestNormalizeURI_vs_NormalizeZipPath`
-     (backslash normalization) — a real `opc` behaviour question.
-  3. `test/opc/TestParseRelationshipsFromFile` reads `test/test-data/…`,
-     which is `.gitignore`d and absent from a clean checkout.
-  **Mitigation:** all out of scope for Phase 00 (build/CI scaffolding +
-  rename). The test relocation + reorg is Phase 01 (`parts/` →
-  `internal/ooxml/*`); the normalization bug and the test-data fixture are
-  Phase 01 cleanup items. `make build`, `make preflight`,
+- **R1 — Pre-existing red test suite (independent of the rename).**
+  Completing the rename surfaced (and partly fixed) inherited breakage:
+  1. *(Fixed in this phase.)* `test/` and `test/parts/` imported a `slide`
+     package that an upstream commit had renamed to `pptx` without updating
+     the imports, so they did not compile and broke `go vet` / lint. The
+     module rename is incomplete while those imports dangle, so the 7 files
+     were repointed at `pptx` (the package that now hosts `NewSlideBuilder`,
+     `NewMediaManager`, `NewMasterCache`). `go vet ./...` is now clean.
+  2. `test/opc/TestNormalizeURI_vs_NormalizeZipPath` fails on a backslash-
+     normalization assertion — a real `opc` behaviour question.
+  3. Many `*FromFile` tests (`test/`, `test/opc`, `test/parts`) read
+     fixtures under `test/test-data/`, which is `.gitignore`d and was never
+     committed upstream — absent from any clean checkout, so these tests
+     cannot run here.
+  **Mitigation:** (1) is done. (2) and (3) are Phase 01 cleanup (the OPC +
+  OOXML reorg relocates these tests and owns the fixture/normalization
+  questions). `make build`, `make vet`, `make preflight`,
   `make check-mirror`, and `make drift-audit` are green; `make test` /
-  `make coverage` carry these known-red packages until Phase 01. The
-  Phase 00 acceptance criteria (§11) deliberately do not assert a fully
-  green suite for this reason; the master-plan Phase 00 entry's "upstream
-  tests still green" assumption did not hold on the inherited tree.
+  `make coverage` still carry the fixture-dependent and normalization
+  failures until Phase 01. The Phase 00 acceptance criteria (§11)
+  deliberately do not assert a fully green suite; the master-plan Phase 00
+  entry's "upstream tests still green" assumption did not hold on the
+  inherited tree.
 - **R2 — Coverage gate too strict for the pre-reorg tree.** Enabling
   `require_configured` now would fail on every un-banded upstream package.
   **Mitigation:** ship the gate with `require_configured=false` and only

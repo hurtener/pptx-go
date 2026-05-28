@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/hurtener/pptx-go/parts"
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
@@ -13,7 +13,7 @@ import (
 
 func TestMediaManager_AddAndGet(t *testing.T) {
 	// Initialise an empty MediaManager.
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// Add an image.
 	rID1, img := mgr.AddMediaAuto("logo.png", []byte("fake_image_data"))
@@ -62,7 +62,7 @@ func TestMediaManager_AddAndGet(t *testing.T) {
 // ============================================================================
 
 func TestMediaManager_ContentTypeInference(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	tests := []struct {
 		fileName        string
@@ -104,7 +104,7 @@ func TestMediaManager_ContentTypeInference(t *testing.T) {
 // ============================================================================
 
 func TestMediaManager_GetByIndex(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 
 	// Add media.
 	mgr.AddMediaAuto("logo.png", []byte("img_data"))
@@ -152,7 +152,7 @@ func TestMediaManager_GetByIndex(t *testing.T) {
 
 func TestMediaManager_RemoveAndClear(t *testing.T) {
 	t.Run("RemoveMedia", func(t *testing.T) {
-		mgr := slide.NewMediaManager()
+		mgr := pptx.NewMediaManager()
 		mgr.AddMediaAuto("test.png", []byte("data"))
 
 		if !mgr.RemoveMedia("rId1") {
@@ -167,7 +167,7 @@ func TestMediaManager_RemoveAndClear(t *testing.T) {
 	})
 
 	t.Run("Clear", func(t *testing.T) {
-		mgr := slide.NewMediaManager()
+		mgr := pptx.NewMediaManager()
 		mgr.AddMediaAuto("a.png", []byte("a"))
 		mgr.AddMediaAuto("b.mp3", []byte("b"))
 		mgr.AddMediaAuto("c.mp4", []byte("c"))

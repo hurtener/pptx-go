@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hurtener/pptx-go/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
@@ -14,7 +14,7 @@ import (
 // ============================================================================
 
 func TestMediaManager_Concurrency(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const goroutines = 100
 	const opsPerGoroutine = 50
 
@@ -72,7 +72,7 @@ func TestMediaManager_Concurrency(t *testing.T) {
 // ============================================================================
 
 func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const writers = 20
 	const readers = 80
 	const iterations = 100
@@ -115,7 +115,7 @@ func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
 // ============================================================================
 
 func TestMediaManager_ConcurrentCount(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const ops = 1000
 
 	var wg sync.WaitGroup
