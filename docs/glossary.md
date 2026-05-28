@@ -107,6 +107,16 @@ mechanically by `internal/coveragecheck` against
 `make coverage`. Class defaults live in `CLAUDE.md §11`; a band override
 records a class + reason. See also `Drift audit`, `Preflight`.
 
+## Conformance (validity layers)
+
+How pptx-go proves emitted decks are *valid*, not merely round-trippable
+(D-031): **(1)** `internal/conformance` — pure-Go OPC integrity (content
+types, resolved relationships, no dangling `rId`, pack URIs); **(2)**
+`xmllint` schema validation against vendored ISO 29500 transitional XSDs;
+**(3)** a LibreOffice headless **open-proxy** CI job; **(4)** a manual
+per-wave PowerPoint check. Layers 1–3 are automated/CI; layer 4 is the
+ground truth they approximate.
+
 ## Decoration
 
 A scene IR leaf that places a curated `Ornament` or asset image at a slide

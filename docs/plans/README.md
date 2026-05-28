@@ -109,6 +109,18 @@ on (`CLAUDE.md §17`).
 - PR body: link the phase plan, list deviations, link the RFC sections
   the phase implements.
 
+### 1.11 PPTX validity layers (D-031)
+
+Round-trip tests prove read-back fidelity, not validity. Emitted decks are
+checked in four layers (cheapest first): **(1)** `internal/conformance` —
+pure-Go OPC integrity, gating every emitted deck in tests; **(2)** `xmllint`
+against vendored ISO 29500 transitional XSDs (`docs/specifications/`, SKIPs
+until vendored); **(3)** a LibreOffice headless open-proxy CI job
+(`.github/workflows/validate.yml`); **(4)** a manual per-wave PowerPoint
+check (`docs/validation/POWERPOINT-CHECKS.md`). The harness landed before
+Phase 03; Phase 03 (first complete deck + the D-020 hygiene pass) turns on
+the full-deck completeness gate.
+
 ---
 
 ## 2. Wave map

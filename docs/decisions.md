@@ -718,4 +718,44 @@ it does not disturb the upstream struct ahead of the builder rewrite.
 
 ---
 
+## D-031 — PPTX validity is verified in four layers; harness lands before Phase 03
+
+**Date:** 2026-05-28
+**Status:** Settled
+**Context:** Round-trip tests (write → our own Open → assert) prove we read
+back what we wrote, but not that the output is *valid* — a malformed writer
+and a matching reader pass round-trip while PowerPoint rejects the file.
+`CLAUDE.md §11` already mandates: spec compliance against vendored specs
+(not live PowerPoint), and PowerPoint compatibility tested manually on
+reference decks, one per wave. This decision operationalizes that.
+**Decision:** Validity is checked in four layers, cheapest/most-deterministic
+first:
+1. **OPC integrity** — `internal/conformance`, pure-Go, gates every emitted
+   deck in tests: content-type coverage, relationship-target resolution,
+   dangling `rId` references, pack-URI validity, required-parts.
+2. **Schema conformance** — vendored ISO/IEC 29500 *transitional* XSDs in
+   `docs/specifications/`, validated via `xmllint --schema` in CI. Known
+   PowerPoint-isms get annotated exceptions, not a chase for 100%.
+3. **Office-app open proxy** — a CI job runs LibreOffice headless
+   (`soffice --headless --convert-to`) over reference decks; a failed
+   convert = invalid. The closest automatable proxy to "a real app opens
+   it without the repaired prompt."
+4. **Manual PowerPoint check** — one reference deck per wave opened in real
+   PowerPoint (the maintainer's Mac); result recorded in `docs/validation/`.
+   The ground truth the first three layers approximate.
+All automated tooling (xmllint, LibreOffice, python-pptx) is **test/CI-only**
+and never enters the shipped artifact (P4 holds). The harness is built
+**before** the Phase 03 builder spine so the new builder is developed
+against a working validator; Phase 03's acceptance turns on the full-deck
+conformance gate (it is the first phase to emit a complete deck + the D-020
+hygiene pass).
+**Consequences:** A malformed-output regression fails CI at layer 1–3 long
+before a human opens PowerPoint. The validator applied to *current* output
+establishes a baseline of known gaps (e.g. relationship attributes emitted
+as `rid=` rather than `r:id=`) that Phase 03 must close. Vendoring the full
+ISO schemas requires obtaining the schema bundle; until present, the xmllint
+layer SKIPs rather than failing.
+
+---
+
 *Append new entries below this line.*
