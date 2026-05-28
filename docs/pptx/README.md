@@ -36,7 +36,7 @@
 ### 安装
 
 ```bash
-go get github.com/Muprprpr/Go-pptx/pptx
+go get github.com/hurtener/pptx-go/pptx
 ```
 
 ### 创建演示文稿
@@ -45,7 +45,7 @@ go get github.com/Muprprpr/Go-pptx/pptx
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/pptx"
+    "github.com/hurtener/pptx-go/pptx"
 )
 
 func main() {

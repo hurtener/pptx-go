@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================

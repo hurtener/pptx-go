@@ -17,12 +17,12 @@ When developing locally, you need to use the local code instead of the remote re
 Add a `replace` directive to your `go.mod`:
 
 ```go
-module github.com/Muprprpr/Go-pptx
+module github.com/hurtener/pptx-go
 
 go 1.24.5
 
 // For local development, point to local directory
-replace github.com/Muprprpr/Go-pptx => /path/to/your/local/Go-pptx
+replace github.com/hurtener/pptx-go => /path/to/your/local/Go-pptx
 ```
 
 This tells Go to use the local directory instead of fetching from GitHub.
@@ -32,7 +32,7 @@ This tells Go to use the local directory instead of fetching from GitHub.
 If your project using this library is in a sibling directory:
 
 ```go
-replace github.com/Muprprpr/Go-pptx => ../Go-pptx
+replace github.com/hurtener/pptx-go => ../Go-pptx
 ```
 
 #### Method 3: Using `go.work` (Go 1.18+)
@@ -52,9 +52,9 @@ use (
 
 ```bash
 # Clone to GOPATH
-mkdir -p $GOPATH/src/github.com/Muprprpr
-cd $GOPATH/src/github.com/Muprprpr
-git clone https://github.com/Muprprpr/Go-pptx.git
+mkdir -p $GOPATH/src/github.com/hurtener
+cd $GOPATH/src/github.com/hurtener
+git clone https://github.com/hurtener/pptx-go.git
 ```
 
 ### Quick Setup Script
@@ -66,10 +66,10 @@ Create a `dev_setup.sh` (or `dev_setup.bat` for Windows):
 # Run this in your project that uses go-pptx
 
 # Add replace directive temporarily for development
-go mod edit -replace github.com/Muprprpr/Go-pptx=/path/to/Go-pptx
+go mod edit -replace github.com/hurtener/pptx-go=/path/to/Go-pptx
 
 # Verify
-go list -m github.com/Muprprpr/Go-pptx
+go list -m github.com/hurtener/pptx-go
 ```
 
 ### Before Publishing
@@ -77,7 +77,7 @@ go list -m github.com/Muprprpr/Go-pptx
 **Important:** Remove or comment out the `replace` directive before publishing your project:
 
 ```go
-// replace github.com/Muprprpr/Go-pptx => ../Go-pptx  // Uncomment for local dev
+// replace github.com/hurtener/pptx-go => ../Go-pptx  // Uncomment for local dev
 ```
 
 Or use a separate `go.mod.dev` file and swap as needed.
@@ -97,12 +97,12 @@ Or use a separate `go.mod.dev` file and swap as needed.
 在 `go.mod` 中添加 `replace` 指令：
 
 ```go
-module github.com/Muprprpr/Go-pptx
+module github.com/hurtener/pptx-go
 
 go 1.24.5
 
 // 本地开发时，指向本地目录
-replace github.com/Muprprpr/Go-pptx => /path/to/your/local/Go-pptx
+replace github.com/hurtener/pptx-go => /path/to/your/local/Go-pptx
 ```
 
 这告诉 Go 使用本地目录而不是从 GitHub 获取。
@@ -112,7 +112,7 @@ replace github.com/Muprprpr/Go-pptx => /path/to/your/local/Go-pptx
 如果你使用此库的项目在相邻目录：
 
 ```go
-replace github.com/Muprprpr/Go-pptx => ../Go-pptx
+replace github.com/hurtener/pptx-go => ../Go-pptx
 ```
 
 #### 方法 3：使用 `go.work`（Go 1.18+）
@@ -132,19 +132,19 @@ use (
 
 ```bash
 # 克隆到 GOPATH
-mkdir -p $GOPATH/src/github.com/Muprprpr
-cd $GOPATH/src/github.com/Muprprpr
-git clone https://github.com/Muprprpr/Go-pptx.git
+mkdir -p $GOPATH/src/github.com/hurtener
+cd $GOPATH/src/github.com/hurtener
+git clone https://github.com/hurtener/pptx-go.git
 ```
 
 ### Windows 路径示例
 
 ```go
 // Windows 绝对路径
-replace github.com/Muprprpr/Go-pptx => C:\Users\ASUS\mywork\Go-pptx
+replace github.com/hurtener/pptx-go => C:\Users\ASUS\mywork\Go-pptx
 
 // Windows 相对路径
-replace github.com/Muprprpr/Go-pptx => ..\Go-pptx
+replace github.com/hurtener/pptx-go => ..\Go-pptx
 ```
 
 ### 快速设置脚本
@@ -156,10 +156,10 @@ replace github.com/Muprprpr/Go-pptx => ..\Go-pptx
 REM 在使用 go-pptx 的项目中运行此脚本
 
 REM 添加临时的 replace 指令用于开发
-go mod edit -replace github.com/Muprprpr/Go-pptx=C:\Users\ASUS\mywork\Go-pptx
+go mod edit -replace github.com/hurtener/pptx-go=C:\Users\ASUS\mywork\Go-pptx
 
 REM 验证
-go list -m github.com/Muprprpr/Go-pptx
+go list -m github.com/hurtener/pptx-go
 ```
 
 ### 发布前
@@ -167,7 +167,7 @@ go list -m github.com/Muprprpr/Go-pptx
 **重要：** 在发布项目之前，移除或注释掉 `replace` 指令：
 
 ```go
-// replace github.com/Muprprpr/Go-pptx => ../Go-pptx  // 本地开发时取消注释
+// replace github.com/hurtener/pptx-go => ../Go-pptx  // 本地开发时取消注释
 ```
 
 或使用单独的 `go.mod.dev` 文件，按需切换。

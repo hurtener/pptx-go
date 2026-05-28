@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/pptx"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================

@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 // AppPropsPart 应用程序属性部件

@@ -3,8 +3,8 @@ package pptx_test
 import (
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
-	"github.com/Muprprpr/Go-pptx/pptx"
+	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================

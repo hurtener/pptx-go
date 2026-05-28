@@ -18,7 +18,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 // ChartPart 图表部件

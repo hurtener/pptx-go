@@ -4,7 +4,7 @@
 
 ---
 
-package opc // import "github.com/Muprprpr/Go-pptx/opc"
+package opc // import "github.com/hurtener/pptx-go/opc"
 
 Package opc 提供 OOXML Open Packaging Convention (OPC) 的 Go 实现 用于处理 PPTX 等 Office
 Open XML 文件格式

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
-	"github.com/Muprprpr/Go-pptx/utils"
+	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/utils"
 )
 
 // NewShapeIDAllocator 创建新的 ID 分配器

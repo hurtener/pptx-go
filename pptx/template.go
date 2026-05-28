@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 // ============================================================================

@@ -15,7 +15,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 // EmbeddingType 嵌入类型

@@ -1,0 +1,12 @@
+{
+  "require_configured": false,
+  "ignore": [
+    "github.com/hurtener/pptx-go/internal/coveragecheck/cmd"
+  ],
+  "packages": {
+    "github.com/hurtener/pptx-go/internal/coveragecheck": {
+      "min": 70,
+      "reason": "tooling band (CLAUDE.md §11 — CLI/tooling default 70%)"
+    }
+  }
+}

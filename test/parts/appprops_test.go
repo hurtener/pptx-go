@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // 一段典型的、由 PowerPoint 原生生成的最小化 app.xml

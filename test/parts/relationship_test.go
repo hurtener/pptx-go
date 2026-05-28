@@ -3,7 +3,7 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================

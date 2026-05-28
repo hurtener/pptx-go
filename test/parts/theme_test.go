@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 func TestThemePart_FromXML(t *testing.T) {

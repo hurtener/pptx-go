@@ -2,7 +2,7 @@
 package pptx
 
 import (
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================

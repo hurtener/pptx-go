@@ -1,3 +1,24 @@
+# Test fixtures / scratch output
+# (curated/embedded template .pptx assets are committed — do not blanket-ignore *.pptx)
 test/test-data/
 test/test.pptx
 test/test_hardcore_output.pptx
+/tmp.pptx
+*_output.pptx
+
+# Coverage artifacts
+coverage.out
+coverage.html
+*.cover
+
+# Go build / tooling
+/bin/
+*.test
+*.out
+*.prof
+
+# Editor / OS cruft
+.DS_Store
+*.swp
+.idea/
+.vscode/

@@ -371,7 +371,7 @@ func (p *Presentation) MediaManager() *MediaManager
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/pptx"
+    "github.com/hurtener/pptx-go/pptx"
 )
 
 func main() {

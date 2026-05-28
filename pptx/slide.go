@@ -5,9 +5,9 @@ import (
 	"io"
 	"sync/atomic"
 
-	"github.com/Muprprpr/Go-pptx/opc"
-	"github.com/Muprprpr/Go-pptx/parts"
-	"github.com/Muprprpr/Go-pptx/utils"
+	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/utils"
 )
 
 // ============================================================================

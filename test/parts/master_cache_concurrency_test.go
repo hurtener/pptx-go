@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
-	"github.com/Muprprpr/Go-pptx/slide"
+	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/slide"
 )
 
 // ============================================================================

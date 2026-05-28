@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // 这是一个极其经典的【无 Excel 图表 XML】(路线 C 的核心图纸)

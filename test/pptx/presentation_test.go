@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
-	"github.com/Muprprpr/Go-pptx/pptx"
+	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // TestNewPresentation 测试创建空白演示文稿

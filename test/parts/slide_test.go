@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
-	"github.com/Muprprpr/Go-pptx/slide"
+	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/slide"
 )
 
 // writeSlideToXML 辅助函数：使用 XMLWriter 序列化 XSlide

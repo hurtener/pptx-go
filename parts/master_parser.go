@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Muprprpr/Go-pptx/utils"
+	"github.com/hurtener/pptx-go/utils"
 )
 
 // ============================================================================

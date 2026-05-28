@@ -28,7 +28,7 @@ A Go library for creating, reading, and modifying PowerPoint (PPTX) files with s
 ### Installation
 
 ```bash
-go get github.com/Muprprpr/Go-pptx
+go get github.com/hurtener/pptx-go
 ```
 
 ### Quick Start
@@ -39,7 +39,7 @@ go get github.com/Muprprpr/Go-pptx
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/opc"
+    "github.com/hurtener/pptx-go/opc"
 )
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/opc"
+    "github.com/hurtener/pptx-go/opc"
 )
 
 func main() {
@@ -230,7 +230,7 @@ MIT License
 ### 安装
 
 ```bash
-go get github.com/Muprprpr/Go-pptx
+go get github.com/hurtener/pptx-go
 ```
 
 ### 快速开始
@@ -241,7 +241,7 @@ go get github.com/Muprprpr/Go-pptx
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/opc"
+    "github.com/hurtener/pptx-go/opc"
 )
 
 func main() {
@@ -266,7 +266,7 @@ func main() {
 package main
 
 import (
-    "github.com/Muprprpr/Go-pptx/opc"
+    "github.com/hurtener/pptx-go/opc"
 )
 
 func main() {

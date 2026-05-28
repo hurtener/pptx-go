@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 // TestResourcePool_Basic 测试资源池基本功能
