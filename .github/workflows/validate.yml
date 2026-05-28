@@ -1,0 +1,46 @@
+name: Validate (PPTX validity)
+
+# Validity layers 2–3 of D-031: schema conformance (xmllint against vendored
+# ISO 29500 transitional XSDs — SKIPs until vendored) and the office-app
+# open-proxy (LibreOffice headless). Layer 1 (OPC integrity) runs in the main
+# Test job; layer 4 (real PowerPoint) is a manual per-wave check
+# (docs/validation/POWERPOINT-CHECKS.md). Separate workflow so the heavy
+# LibreOffice install does not slow the core gates.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  open-proxy:
+    name: LibreOffice open-proxy + schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install tooling
+        run: sudo apt-get update && sudo apt-get install -y libreoffice-impress libxml2-utils
+
+      - name: Emit reference deck
+        run: go run ./_gen/genrefdeck test-output/reference.pptx
+
+      - name: Schema validation (xmllint)
+        run: ./scripts/validate-schema.sh test-output/reference.pptx
+
+      - name: LibreOffice open-proxy
+        run: |
+          set -e
+          soffice --headless --nologo --convert-to pdf --outdir test-output test-output/reference.pptx
+          if [ ! -s test-output/reference.pdf ]; then
+            echo "FAIL: LibreOffice produced no PDF — the deck did not open cleanly"
+            exit 1
+          fi
+          echo "OK: LibreOffice opened and converted the reference deck"

@@ -7,6 +7,10 @@
     "github.com/hurtener/pptx-go/internal/coveragecheck": {
       "min": 70,
       "reason": "tooling band (CLAUDE.md §11 — CLI/tooling default 70%)"
+    },
+    "github.com/hurtener/pptx-go/internal/conformance": {
+      "min": 85,
+      "reason": "validity-gate validator (D-031); codec-band coverage"
     }
   }
 }

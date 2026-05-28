@@ -22,3 +22,6 @@ coverage.html
 *.swp
 .idea/
 .vscode/
+
+# Validation harness scratch output
+test-output/
