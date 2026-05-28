@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
 // writeSlideToXML is a helper that serializes an XSlide using XMLWriter.
-func writeSlideToXML(xs *parts.XSlide) ([]byte, error) {
-	xw := parts.NewXMLWriterBuffered(4096)
+func writeSlideToXML(xs *slide.XSlide) ([]byte, error) {
+	xw := slide.NewXMLWriterBuffered(4096)
 	if err := xw.Declaration(); err != nil {
 		return nil, err
 	}
@@ -22,8 +22,8 @@ func writeSlideToXML(xs *parts.XSlide) ([]byte, error) {
 }
 
 // writeTextBodyToXML is a helper that serializes an XTextBody using XMLWriter.
-func writeTextBodyToXML(xtb *parts.XTextBody) ([]byte, error) {
-	xw := parts.NewXMLWriterBuffered(4096)
+func writeTextBodyToXML(xtb *slide.XTextBody) ([]byte, error) {
+	xw := slide.NewXMLWriterBuffered(4096)
 	if err := xw.Declaration(); err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func writeTextBodyToXML(xtb *parts.XTextBody) ([]byte, error) {
 // It asserts directly on the Go struct without involving XML serialization.
 func TestSlideBuilder_AddText(t *testing.T) {
 	// Instantiate a blank SlidePart.
-	slidePart := parts.NewSlidePart(1)
+	slidePart := slide.NewSlidePart(1)
 	if slidePart == nil {
 		t.Fatal("NewSlidePart returned nil")
 	}
@@ -78,12 +78,12 @@ func TestSlideBuilder_AddText(t *testing.T) {
 
 // TestSlideBuilder_AddTextBox_Multiple tests adding multiple text boxes.
 func TestSlideBuilder_AddTextBox_Multiple(t *testing.T) {
-	slidePart := parts.NewSlidePart(1)
+	slidePart := slide.NewSlidePart(1)
 	builder := pptx.NewSlideBuilder(slidePart)
 
 	// Add several text boxes and collect the returned shape pointers.
 	texts := []string{"Heading Text", "Body Paragraph 1", "Body Paragraph 2"}
-	var shapes []*parts.XSp
+	var shapes []*slide.XSp
 	for i, text := range texts {
 		y := 457200 + i*914400 // incrementing Y coordinate
 		sp := builder.AddTextBox(914400, y, 9144000, 457200, text)
@@ -119,7 +119,7 @@ func TestSlideBuilder_AddTextBox_Multiple(t *testing.T) {
 
 // TestSlideBuilder_AddTextBox_VerifyStructure tests the full structure created by AddTextBox.
 func TestSlideBuilder_AddTextBox_VerifyStructure(t *testing.T) {
-	slidePart := parts.NewSlidePart(1)
+	slidePart := slide.NewSlidePart(1)
 	builder := pptx.NewSlideBuilder(slidePart)
 
 	testText := "Full Structure Test"
@@ -171,8 +171,8 @@ func TestSlide_MarshalComponents(t *testing.T) {
 	t.Run("XTextParagraph_OmitEmpty", func(t *testing.T) {
 		// Construct a minimal XTextParagraph with a single XTextRun containing "Hello".
 		// Leave all optional fields at their zero values.
-		para := parts.XTextParagraph{
-			TextRuns: []parts.XTextRun{
+		para := slide.XTextParagraph{
+			TextRuns: []slide.XTextRun{
 				{Text: "Hello"},
 			},
 		}
@@ -209,7 +209,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 	// Test XTextRun serialization — verify omitempty on TextProperties.
 	t.Run("XTextRun_OmitEmpty", func(t *testing.T) {
 		// TextProperties is not set.
-		run := parts.XTextRun{
+		run := slide.XTextRun{
 			Text: "World",
 		}
 
@@ -234,9 +234,9 @@ func TestSlide_MarshalComponents(t *testing.T) {
 
 	// Test XTextRun with properties — verify attribute-level omitempty.
 	t.Run("XTextRun_WithProperties", func(t *testing.T) {
-		run := parts.XTextRun{
+		run := slide.XTextRun{
 			Text: "Styled",
-			TextProperties: &parts.XTextProperties{
+			TextProperties: &slide.XTextProperties{
 				FontSize: 2400, // 24pt
 				Bold:     true,
 			},
@@ -270,10 +270,10 @@ func TestSlide_MarshalComponents(t *testing.T) {
 
 	// Test XTextParagraph with attributes — verify omitempty applies to attributes too.
 	t.Run("XTextParagraph_WithAttributes", func(t *testing.T) {
-		para := parts.XTextParagraph{
+		para := slide.XTextParagraph{
 			Level:     1,     // set attribute
 			Alignment: "ctr", // center alignment
-			TextRuns: []parts.XTextRun{
+			TextRuns: []slide.XTextRun{
 				{Text: "Centered"},
 			},
 		}
@@ -302,23 +302,23 @@ func TestSlide_MarshalComponents(t *testing.T) {
 
 	// Test XShapeProperties omitempty.
 	t.Run("XShapeProperties_OmitEmpty", func(t *testing.T) {
-		sp := parts.XSp{
-			NonVisual: parts.XNonVisualDrawingShape{
-				CNvPr: &parts.XNvCxnSpPr{
+		sp := slide.XSp{
+			NonVisual: slide.XNonVisualDrawingShape{
+				CNvPr: &slide.XNvCxnSpPr{
 					ID:   1,
 					Name: "Test",
 				},
-				CNvSpPr: &parts.XNvSpPr{},
+				CNvSpPr: &slide.XNvSpPr{},
 			},
-			ShapeProperties: &parts.XShapeProperties{
-				Transform2D: &parts.XTransform2D{
-					Offset: &parts.XOv2DrOffset{X: 0, Y: 0},
-					Extent: &parts.XOv2DrExtent{Cx: 100, Cy: 100},
+			ShapeProperties: &slide.XShapeProperties{
+				Transform2D: &slide.XTransform2D{
+					Offset: &slide.XOv2DrOffset{X: 0, Y: 0},
+					Extent: &slide.XOv2DrExtent{Cx: 100, Cy: 100},
 				},
 			},
-			TextBody: &parts.XTextBody{
-				Paragraphs: []parts.XTextParagraph{
-					{TextRuns: []parts.XTextRun{{Text: "Test"}}},
+			TextBody: &slide.XTextBody{
+				Paragraphs: []slide.XTextParagraph{
+					{TextRuns: []slide.XTextRun{{Text: "Test"}}},
 				},
 			},
 		}
@@ -345,13 +345,13 @@ func TestSlide_MarshalComponents(t *testing.T) {
 // It verifies namespace declarations, which are critical for PowerPoint to open the file.
 func TestSlide_MarshalFullPage(t *testing.T) {
 	// Construct XSlide directly to test namespace serialization.
-	xslide := parts.XSlide{
+	xslide := slide.XSlide{
 		XmlnsA:    "http://schemas.openxmlformats.org/drawingml/2006/main",
 		XmlnsR:    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 		XmlnsP:    "http://schemas.openxmlformats.org/presentationml/2006/main",
-		ClrMapOvr: &parts.XClrMapOvr{Accent1: "accent1"},
-		CSld: &parts.XCSld{
-			SpTree: parts.NewXSpTree(),
+		ClrMapOvr: &slide.XClrMapOvr{Accent1: "accent1"},
+		CSld: &slide.XCSld{
+			SpTree: slide.NewXSpTree(),
 		},
 	}
 
@@ -399,10 +399,10 @@ func TestSlide_MarshalFullPage(t *testing.T) {
 // TestSlide_MarshalFullPage_WithContent tests full-slide serialization with content.
 func TestSlide_MarshalFullPage_WithContent(t *testing.T) {
 	// Construct an XTextBody containing text.
-	textBody := parts.XTextBody{
-		Paragraphs: []parts.XTextParagraph{
+	textBody := slide.XTextBody{
+		Paragraphs: []slide.XTextParagraph{
 			{
-				TextRuns: []parts.XTextRun{
+				TextRuns: []slide.XTextRun{
 					{Text: "Presentation Title"},
 				},
 			},

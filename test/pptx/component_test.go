@@ -3,7 +3,7 @@ package pptx_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	slidex "github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
@@ -32,26 +32,26 @@ func (t *TextComponent) Render(ctx *pptx.SlideContext) error {
 	id := ctx.NextShapeID()
 
 	// Build shape XML.
-	sp := &parts.XSp{
-		NonVisual: parts.XNonVisualDrawingShape{
-			CNvPr: &parts.XNvCxnSpPr{
+	sp := &slidex.XSp{
+		NonVisual: slidex.XNonVisualDrawingShape{
+			CNvPr: &slidex.XNvCxnSpPr{
 				ID:   int(id),
 				Name: "TextBox",
 			},
-			CNvSpPr: &parts.XNvSpPr{},
+			CNvSpPr: &slidex.XNvSpPr{},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: t.x, Y: t.y},
-				Extent: &parts.XOv2DrExtent{Cx: t.cx, Cy: t.cy},
+		ShapeProperties: &slidex.XShapeProperties{
+			Transform2D: &slidex.XTransform2D{
+				Offset: &slidex.XOv2DrOffset{X: t.x, Y: t.y},
+				Extent: &slidex.XOv2DrExtent{Cx: t.cx, Cy: t.cy},
 			},
 		},
-		TextBody: &parts.XTextBody{
-			BodyPr:   &parts.XBodyPr{},
-			LstStyle: &parts.XTextParagraphList{},
-			Paragraphs: []parts.XTextParagraph{
+		TextBody: &slidex.XTextBody{
+			BodyPr:   &slidex.XBodyPr{},
+			LstStyle: &slidex.XTextParagraphList{},
+			Paragraphs: []slidex.XTextParagraph{
 				{
-					TextRuns: []parts.XTextRun{
+					TextRuns: []slidex.XTextRun{
 						{Text: t.text},
 					},
 				},
@@ -76,18 +76,18 @@ func NewRectangleComponent(x, y, cx, cy int) *RectangleComponent {
 func (r *RectangleComponent) Render(ctx *pptx.SlideContext) error {
 	id := ctx.NextShapeID()
 
-	sp := &parts.XSp{
-		NonVisual: parts.XNonVisualDrawingShape{
-			CNvPr: &parts.XNvCxnSpPr{
+	sp := &slidex.XSp{
+		NonVisual: slidex.XNonVisualDrawingShape{
+			CNvPr: &slidex.XNvCxnSpPr{
 				ID:   int(id),
 				Name: "Rectangle",
 			},
-			CNvSpPr: &parts.XNvSpPr{},
+			CNvSpPr: &slidex.XNvSpPr{},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: r.x, Y: r.y},
-				Extent: &parts.XOv2DrExtent{Cx: r.cx, Cy: r.cy},
+		ShapeProperties: &slidex.XShapeProperties{
+			Transform2D: &slidex.XTransform2D{
+				Offset: &slidex.XOv2DrOffset{X: r.x, Y: r.y},
+				Extent: &slidex.XOv2DrExtent{Cx: r.cx, Cy: r.cy},
 			},
 		},
 		ShapePreset: "rect",
@@ -183,18 +183,18 @@ func TestFuncComponent(t *testing.T) {
 		renderCount++
 		id := ctx.NextShapeID()
 
-		sp := &parts.XSp{
-			NonVisual: parts.XNonVisualDrawingShape{
-				CNvPr: &parts.XNvCxnSpPr{
+		sp := &slidex.XSp{
+			NonVisual: slidex.XNonVisualDrawingShape{
+				CNvPr: &slidex.XNvCxnSpPr{
 					ID:   int(id),
 					Name: "FuncComponent",
 				},
-				CNvSpPr: &parts.XNvSpPr{},
+				CNvSpPr: &slidex.XNvSpPr{},
 			},
-			ShapeProperties: &parts.XShapeProperties{
-				Transform2D: &parts.XTransform2D{
-					Offset: &parts.XOv2DrOffset{X: 100, Y: 100},
-					Extent: &parts.XOv2DrExtent{Cx: 200, Cy: 100},
+			ShapeProperties: &slidex.XShapeProperties{
+				Transform2D: &slidex.XTransform2D{
+					Offset: &slidex.XOv2DrOffset{X: 100, Y: 100},
+					Extent: &slidex.XOv2DrExtent{Cx: 200, Cy: 100},
 				},
 			},
 		}
@@ -363,17 +363,17 @@ func TestShapeComponent(t *testing.T) {
 	slide := pres.AddSlide()
 
 	// Create a shape component.
-	sp := &parts.XSp{
-		NonVisual: parts.XNonVisualDrawingShape{
-			CNvPr: &parts.XNvCxnSpPr{
+	sp := &slidex.XSp{
+		NonVisual: slidex.XNonVisualDrawingShape{
+			CNvPr: &slidex.XNvCxnSpPr{
 				ID:   1,
 				Name: "TestShape",
 			},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: 100, Y: 100},
-				Extent: &parts.XOv2DrExtent{Cx: 200, Cy: 100},
+		ShapeProperties: &slidex.XShapeProperties{
+			Transform2D: &slidex.XTransform2D{
+				Offset: &slidex.XOv2DrOffset{X: 100, Y: 100},
+				Extent: &slidex.XOv2DrExtent{Cx: 200, Cy: 100},
 			},
 		},
 	}

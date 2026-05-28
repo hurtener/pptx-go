@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 func TestCoreProperties_GettersSetters(t *testing.T) {

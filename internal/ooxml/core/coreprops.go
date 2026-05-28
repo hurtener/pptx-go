@@ -1,7 +1,9 @@
-package parts
+package core
 
 import (
 	"encoding/xml"
+
+	"github.com/hurtener/pptx-go/internal/ooxml"
 )
 
 // ============================================================================
@@ -72,7 +74,7 @@ const (
 	W3CDTFType = "dcterms:W3CDTF"
 )
 
-// XMLDeclaration is defined in xmlutils.go.
+// ooxml.XMLDeclaration is defined in xmlutils.go.
 
 // ============================================================================
 // Constructor
@@ -130,7 +132,7 @@ func (cp *XMLCoreProperties) ToXML() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte(XMLDeclaration), output...), nil
+	return append([]byte(ooxml.XMLDeclaration), output...), nil
 }
 
 // FromXML deserializes core properties from XML bytes.

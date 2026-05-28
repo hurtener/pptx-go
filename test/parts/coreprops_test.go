@@ -3,7 +3,7 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/core"
 )
 
 // ============================================================================
@@ -104,7 +104,7 @@ func TestParseCoreProps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cp, err := parts.ParseCoreProps([]byte(tt.xmlData))
+			cp, err := core.ParseCoreProps([]byte(tt.xmlData))
 
 			if tt.wantError {
 				if err == nil {
@@ -161,7 +161,7 @@ func TestParseCoreProps(t *testing.T) {
 
 func TestCorePropsToXML(t *testing.T) {
 	t.Run("serialize-full-props", func(t *testing.T) {
-		cp := parts.NewXMLCoreProperties()
+		cp := core.NewXMLCoreProperties()
 		cp.Title = "Test Title"
 		cp.Creator = "Test Author"
 		cp.Subject = "Test Subject"
@@ -177,7 +177,7 @@ func TestCorePropsToXML(t *testing.T) {
 		}
 
 		// Verify the output can be re-parsed.
-		parsed, err := parts.ParseCoreProps(data)
+		parsed, err := core.ParseCoreProps(data)
 		if err != nil {
 			t.Fatalf("re-parse failed: %v", err)
 		}
@@ -194,7 +194,7 @@ func TestCorePropsToXML(t *testing.T) {
 	})
 
 	t.Run("serialize-empty-props", func(t *testing.T) {
-		cp := parts.NewXMLCoreProperties()
+		cp := core.NewXMLCoreProperties()
 
 		data, err := cp.ToXML()
 		if err != nil {
@@ -202,7 +202,7 @@ func TestCorePropsToXML(t *testing.T) {
 		}
 
 		// Verify the output can be re-parsed.
-		parsed, err := parts.ParseCoreProps(data)
+		parsed, err := core.ParseCoreProps(data)
 		if err != nil {
 			t.Fatalf("re-parse failed: %v", err)
 		}

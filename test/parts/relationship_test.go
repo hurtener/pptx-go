@@ -3,7 +3,7 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/relations"
 )
 
 // ============================================================================
@@ -56,7 +56,7 @@ func TestParseRelationships(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rs, err := parts.ParseRelationships([]byte(tt.xmlData))
+			rs, err := relations.ParseRelationships([]byte(tt.xmlData))
 
 			if tt.wantError {
 				if err == nil {
@@ -106,17 +106,17 @@ func TestXMLRelationshipsMethods(t *testing.T) {
     <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/video" Target="../media/media1.mp4"/>
 </Relationships>`
 
-		rs, err := parts.ParseRelationships([]byte(xmlData))
+		rs, err := relations.ParseRelationships([]byte(xmlData))
 		if err != nil {
 			t.Fatalf("parse failed: %v", err)
 		}
 
-		images := rs.GetByType(parts.RelTypeImage)
+		images := rs.GetByType(relations.RelTypeImage)
 		if len(images) != 2 {
 			t.Errorf("GetByType(image) returned %d, want 2", len(images))
 		}
 
-		videos := rs.GetByType(parts.RelTypeMedia)
+		videos := rs.GetByType(relations.RelTypeMedia)
 		if len(videos) != 1 {
 			t.Errorf("GetByType(video) returned %d, want 1", len(videos))
 		}
@@ -128,7 +128,7 @@ func TestXMLRelationshipsMethods(t *testing.T) {
     <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>
 </Relationships>`
 
-		rs, err := parts.ParseRelationships([]byte(xmlData))
+		rs, err := relations.ParseRelationships([]byte(xmlData))
 		if err != nil {
 			t.Fatalf("parse failed: %v", err)
 		}
@@ -149,7 +149,7 @@ func TestXMLRelationshipsMethods(t *testing.T) {
     <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>
 </Relationships>`
 
-		rs, err := parts.ParseRelationships([]byte(xmlData))
+		rs, err := relations.ParseRelationships([]byte(xmlData))
 		if err != nil {
 			t.Fatalf("parse failed: %v", err)
 		}

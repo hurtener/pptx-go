@@ -1,4 +1,4 @@
-package parts
+package chart
 
 // ============================================================================
 // ChartPart - chart part
@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ChartPart holds a chart part for a presentation slide.

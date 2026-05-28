@@ -4,8 +4,8 @@ package pptx
 import (
 	"fmt"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================
@@ -23,18 +23,18 @@ import (
 // SlideBuilder wraps a SlidePart and provides helper methods for building
 // slide content.
 type SlideBuilder struct {
-	slide *parts.SlidePart
+	slide *slide.SlidePart
 }
 
 // NewSlideBuilder creates a SlideBuilder for the given SlidePart.
-func NewSlideBuilder(slide *parts.SlidePart) *SlideBuilder {
+func NewSlideBuilder(slide *slide.SlidePart) *SlideBuilder {
 	return &SlideBuilder{
 		slide: slide,
 	}
 }
 
 // Slide returns the underlying SlidePart.
-func (b *SlideBuilder) Slide() *parts.SlidePart {
+func (b *SlideBuilder) Slide() *slide.SlidePart {
 	return b.slide
 }
 
@@ -44,27 +44,27 @@ func (b *SlideBuilder) Slide() *parts.SlidePart {
 
 // AddTextBox adds a text box to the slide.
 // x, y, cx, cy are the position and size in EMU; text is the initial content.
-func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
-	sp := &parts.XSp{
-		NonVisual: parts.XNonVisualDrawingShape{
-			CNvPr: &parts.XNvCxnSpPr{
+func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
+	sp := &slide.XSp{
+		NonVisual: slide.XNonVisualDrawingShape{
+			CNvPr: &slide.XNvCxnSpPr{
 				ID:   int(b.slide.AllocateShapeID()),
 				Name: fmt.Sprintf("TextBox %d", b.slide.CurrentShapeID()),
 			},
-			CNvSpPr: &parts.XNvSpPr{},
+			CNvSpPr: &slide.XNvSpPr{},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: x, Y: y},
-				Extent: &parts.XOv2DrExtent{Cx: cx, Cy: cy},
+		ShapeProperties: &slide.XShapeProperties{
+			Transform2D: &slide.XTransform2D{
+				Offset: &slide.XOv2DrOffset{X: x, Y: y},
+				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
 		},
-		TextBody: &parts.XTextBody{
-			BodyPr:   &parts.XBodyPr{},
-			LstStyle: &parts.XTextParagraphList{},
-			Paragraphs: []parts.XTextParagraph{
+		TextBody: &slide.XTextBody{
+			BodyPr:   &slide.XBodyPr{},
+			LstStyle: &slide.XTextParagraphList{},
+			Paragraphs: []slide.XTextParagraph{
 				{
-					TextRuns: []parts.XTextRun{
+					TextRuns: []slide.XTextRun{
 						{Text: text},
 					},
 				},
@@ -79,19 +79,19 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
 // AddAutoShape adds an auto shape to the slide.
 // x, y, cx, cy are the position and size in EMU.
 // presetID is the preset shape type (e.g. "rectangle", "ellipse", "roundRect").
-func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp {
-	sp := &parts.XSp{
-		NonVisual: parts.XNonVisualDrawingShape{
-			CNvPr: &parts.XNvCxnSpPr{
+func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XSp {
+	sp := &slide.XSp{
+		NonVisual: slide.XNonVisualDrawingShape{
+			CNvPr: &slide.XNvCxnSpPr{
 				ID:   int(b.slide.AllocateShapeID()),
 				Name: fmt.Sprintf("%s %d", presetID, b.slide.CurrentShapeID()),
 			},
-			CNvSpPr: &parts.XNvSpPr{},
+			CNvSpPr: &slide.XNvSpPr{},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: x, Y: y},
-				Extent: &parts.XOv2DrExtent{Cx: cx, Cy: cy},
+		ShapeProperties: &slide.XShapeProperties{
+			Transform2D: &slide.XTransform2D{
+				Offset: &slide.XOv2DrOffset{X: x, Y: y},
+				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
 		},
 		ShapePreset: presetID,
@@ -104,25 +104,25 @@ func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XS
 // AddPicture adds an image to the slide.
 // x, y, cx, cy are the position and size in EMU; imageRId is the image
 // relationship ID.
-func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture {
-	pic := &parts.XPicture{
-		NonVisual: parts.XNonVisualDrawingPic{
-			CNvPr: &parts.XNvCxnSpPr{
+func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPicture {
+	pic := &slide.XPicture{
+		NonVisual: slide.XNonVisualDrawingPic{
+			CNvPr: &slide.XNvCxnSpPr{
 				ID:   int(b.slide.AllocateShapeID()),
 				Name: fmt.Sprintf("Picture %d", b.slide.CurrentShapeID()),
 			},
-			CNvPicPr: &parts.XNvPicPr{},
+			CNvPicPr: &slide.XNvPicPr{},
 		},
-		BlipFill: &parts.XBlipFillProperties{
-			Blip: &parts.XBlip{
+		BlipFill: &slide.XBlipFillProperties{
+			Blip: &slide.XBlip{
 				Embed: imageRId,
 			},
-			Stretch: &parts.XStretchProperties{},
+			Stretch: &slide.XStretchProperties{},
 		},
-		ShapeProperties: &parts.XShapeProperties{
-			Transform2D: &parts.XTransform2D{
-				Offset: &parts.XOv2DrOffset{X: x, Y: y},
-				Extent: &parts.XOv2DrExtent{Cx: cx, Cy: cy},
+		ShapeProperties: &slide.XShapeProperties{
+			Transform2D: &slide.XTransform2D{
+				Offset: &slide.XOv2DrOffset{X: x, Y: y},
+				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
 		},
 	}
@@ -134,53 +134,53 @@ func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPic
 // AddTable adds a table to the slide.
 // x, y, cx, cy are the position and size in EMU; rows and cols are the table
 // dimensions.
-func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame {
+func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFrame {
 	// compute per-column width
 	cellW := cx / cols
 
 	// build the table grid
-	gridCols := make([]parts.XTableColumn, cols)
+	gridCols := make([]slide.XTableColumn, cols)
 	for i := range gridCols {
-		gridCols[i] = parts.XTableColumn{W: cellW}
+		gridCols[i] = slide.XTableColumn{W: cellW}
 	}
 
 	// build the table rows
-	tableRows := make([]parts.XTableRow, rows)
+	tableRows := make([]slide.XTableRow, rows)
 	for r := range tableRows {
-		cells := make([]parts.XTableCell, cols)
+		cells := make([]slide.XTableCell, cols)
 		for c := range cells {
-			cells[c] = parts.XTableCell{
-				TextBody: &parts.XTextBody{
-					BodyPr:   &parts.XBodyPr{},
-					LstStyle: &parts.XTextParagraphList{},
-					Paragraphs: []parts.XTextParagraph{
-						{TextRuns: []parts.XTextRun{{Text: ""}}},
+			cells[c] = slide.XTableCell{
+				TextBody: &slide.XTextBody{
+					BodyPr:   &slide.XBodyPr{},
+					LstStyle: &slide.XTextParagraphList{},
+					Paragraphs: []slide.XTextParagraph{
+						{TextRuns: []slide.XTextRun{{Text: ""}}},
 					},
 				},
 			}
 		}
-		tableRows[r] = parts.XTableRow{GridSpan: 1, Cells: cells}
+		tableRows[r] = slide.XTableRow{GridSpan: 1, Cells: cells}
 	}
 
-	table := parts.XTable{
-		Grid: &parts.XTableGrid{GridCols: gridCols},
+	table := slide.XTable{
+		Grid: &slide.XTableGrid{GridCols: gridCols},
 		Rows: tableRows,
 	}
 
-	gf := &parts.XGraphicFrame{
-		NonVisual: parts.XNonVisualGraphicFrame{
-			CNvPr: &parts.XNvCxnSpPr{
+	gf := &slide.XGraphicFrame{
+		NonVisual: slide.XNonVisualGraphicFrame{
+			CNvPr: &slide.XNvCxnSpPr{
 				ID:   int(b.slide.AllocateShapeID()),
 				Name: fmt.Sprintf("Table %d", b.slide.CurrentShapeID()),
 			},
-			CNvGraphicFramePr: &parts.XNvGraphicFramePr{},
+			CNvGraphicFramePr: &slide.XNvGraphicFramePr{},
 		},
-		Graphic: &parts.XGraphic{
+		Graphic: &slide.XGraphic{
 			Table: &table,
 		},
-		Transform2D: &parts.XTransform2D{
-			Offset: &parts.XOv2DrOffset{X: x, Y: y},
-			Extent: &parts.XOv2DrExtent{Cx: cx, Cy: cy},
+		Transform2D: &slide.XTransform2D{
+			Offset: &slide.XOv2DrOffset{X: x, Y: y},
+			Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 		},
 	}
 
@@ -189,7 +189,7 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFra
 }
 
 // SetTableCellText sets the text of the cell at (row, col) in the given table.
-func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, text string) {
+func (b *SlideBuilder) SetTableCellText(gf *slide.XGraphicFrame, row, col int, text string) {
 	if gf == nil || gf.Graphic == nil || gf.Graphic.Table == nil {
 		return
 	}
@@ -202,7 +202,7 @@ func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, t
 
 // GetOrAddPicture adds an image to the slide by URI and returns its XPicture.
 // The image relationship is created automatically.
-func (b *SlideBuilder) GetOrAddPicture(x, y, cx, cy int, imageURI string) *parts.XPicture {
+func (b *SlideBuilder) GetOrAddPicture(x, y, cx, cy int, imageURI string) *slide.XPicture {
 	rId := b.GetImageRId(imageURI)
 	return b.AddPicture(x, y, cx, cy, rId)
 }

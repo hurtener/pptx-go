@@ -1,4 +1,4 @@
-package parts
+package chart
 
 // ============================================================================
 // Chart XML templates - correspond to /ppt/charts/chartN.xml

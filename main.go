@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 func main() {

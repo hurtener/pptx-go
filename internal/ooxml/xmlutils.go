@@ -1,4 +1,4 @@
-package parts
+package ooxml
 
 import (
 	"bytes"

@@ -1,9 +1,7 @@
 // Package pptx provides a high-level API for authoring PPTX files.
 package pptx
 
-import (
-	"github.com/hurtener/pptx-go/parts"
-)
+import "github.com/hurtener/pptx-go/internal/ooxml/slide"
 
 // ============================================================================
 // Component interface — the building-block abstraction
@@ -27,7 +25,7 @@ import (
 //
 //	func (t *TitleComponent) Render(ctx *SlideContext) error {
 //		id := ctx.NextShapeID()
-//		sp := &parts.XSp{...}
+//		sp := &slide.XSp{...}
 //		ctx.AppendShape(sp)
 //		return nil
 //	}
@@ -278,13 +276,13 @@ func (rc *RepeatedComponent) Render(ctx *SlideContext) error {
 
 // ShapeComponent is the simplest component type: it wraps a single XSp shape.
 type ShapeComponent struct {
-	sp   *parts.XSp
+	sp   *slide.XSp
 	x, y int
 	name string
 }
 
 // NewShapeComponent creates a ShapeComponent at the given position (EMU).
-func NewShapeComponent(sp *parts.XSp, x, y int) *ShapeComponent {
+func NewShapeComponent(sp *slide.XSp, x, y int) *ShapeComponent {
 	return &ShapeComponent{
 		sp: sp,
 		x:  x,

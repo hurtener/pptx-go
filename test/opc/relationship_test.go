@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 func TestRelationship_New(t *testing.T) {

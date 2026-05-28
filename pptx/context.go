@@ -6,8 +6,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/chart"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================
@@ -36,7 +37,7 @@ import (
 //		}
 //
 //		// 3. build the shape XML
-//		sp := &parts.XSp{...}
+//		sp := &slide.XSp{...}
 //
 //		// 4. mount it onto the slide
 //		ctx.AppendShape(sp)
@@ -175,7 +176,7 @@ func (ctx *SlideContext) AddChartXML(chartXML []byte) (string, error) {
 	chartNum := int(atomic.AddInt32(&pres.chartCounter, 1))
 
 	// create the chart part
-	chartPart := parts.NewChartPart(chartNum)
+	chartPart := chart.NewChartPart(chartNum)
 	chartPart.SetRawXML(chartXML)
 
 	// add the part to the OPC package
@@ -195,14 +196,14 @@ func (ctx *SlideContext) AddChartXML(chartXML []byte) (string, error) {
 
 // AddChart adds a chart part using a template and the provided data map.
 // Returns the relationship ID and any error.
-func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]interface{}) (string, error) {
+func (ctx *SlideContext) AddChart(chartType chart.ChartType, data map[string]interface{}) (string, error) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 
 	pres := ctx.slide.presentation
 	chartNum := int(atomic.AddInt32(&pres.chartCounter, 1))
 
-	chartPart := parts.NewChartPartWithType(chartNum, chartType)
+	chartPart := chart.NewChartPartWithType(chartNum, chartType)
 
 	// substitute placeholders
 	for key, value := range data {
@@ -229,7 +230,7 @@ func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]int
 // ============================================================================
 
 // AppendShape appends a shape to the slide.
-// shape may be *parts.XSp, *parts.XPicture, *parts.XGraphicFrame, etc.
+// shape may be *slide.XSp, *slide.XPicture, *slide.XGraphicFrame, etc.
 func (ctx *SlideContext) AppendShape(shape interface{}) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -304,7 +305,7 @@ func (ctx *SlideContext) SlideSize() (cx, cy int) {
 }
 
 // SlidePart returns the underlying SlidePart (advanced use).
-func (ctx *SlideContext) SlidePart() *parts.SlidePart {
+func (ctx *SlideContext) SlidePart() *slide.SlidePart {
 	return ctx.slide.part
 }
 

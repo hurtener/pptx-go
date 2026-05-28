@@ -9,8 +9,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================
@@ -43,7 +44,7 @@ type Presentation struct {
 	pkg *opc.Package
 
 	// presentationPart wraps presentation.xml.
-	presentationPart *parts.PresentationPart
+	presentationPart *presentation.PresentationPart
 
 	// slides is the ordered list of slides.
 	slides []*Slide
@@ -78,7 +79,7 @@ type Presentation struct {
 func New() *Presentation {
 	pres := &Presentation{
 		pkg:              opc.NewPackage(),
-		presentationPart: parts.NewPresentationPart(),
+		presentationPart: presentation.NewPresentationPart(),
 		slides:           make([]*Slide, 0),
 		mediaManager:     NewMediaManager(),
 		masterManager:    NewMasterManager(),
@@ -190,12 +191,12 @@ func (p *Presentation) loadPresentationPart() error {
 	part := p.pkg.GetPartByRelType(opc.RelTypeOfficeDocument)
 	if part == nil {
 		// Not found; create a new empty part.
-		p.presentationPart = parts.NewPresentationPart()
+		p.presentationPart = presentation.NewPresentationPart()
 		return nil
 	}
 
 	// Parse the XML.
-	p.presentationPart = parts.NewPresentationPart()
+	p.presentationPart = presentation.NewPresentationPart()
 	if err := p.presentationPart.FromXML(part.Blob()); err != nil {
 		return err
 	}
@@ -226,7 +227,7 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	slideNum := int(atomic.AddInt32(&p.slideCounter, 1))
 
 	// Create the slide part.
-	slidePart := parts.NewSlidePart(slideNum)
+	slidePart := slide.NewSlidePart(slideNum)
 
 	// Resolve layout.
 	layoutRId := ""
@@ -286,7 +287,7 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 
 	// Create the slide.
 	slideNum := int(atomic.AddInt32(&p.slideCounter, 1))
-	slidePart := parts.NewSlidePart(slideNum)
+	slidePart := slide.NewSlidePart(slideNum)
 
 	// Resolve layout.
 	layoutRId := ""
@@ -512,7 +513,7 @@ func (p *Presentation) Package() *opc.Package {
 }
 
 // PresentationPart returns the presentation part.
-func (p *Presentation) PresentationPart() *parts.PresentationPart {
+func (p *Presentation) PresentationPart() *presentation.PresentationPart {
 	return p.presentationPart
 }
 
@@ -530,12 +531,12 @@ func (p *Presentation) MasterCache() *MasterCache {
 func (p *Presentation) SetSlideSize(cx, cy int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.presentationPart.SetSlideSize(parts.SlideSize{Cx: cx, Cy: cy})
+	p.presentationPart.SetSlideSize(presentation.SlideSize{Cx: cx, Cy: cy})
 }
 
 // SetSlideSizeStandard sets the slide size to a named standard (e.g. "widescreen").
 func (p *Presentation) SetSlideSizeStandard(name string) {
-	size := parts.NewSlideSizeFromStandard(name)
+	size := presentation.NewSlideSizeFromStandard(name)
 	p.SetSlideSize(size.Cx, size.Cy)
 }
 
@@ -581,7 +582,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 	}
 
 	// Clone the presentation part.
-	newPres.presentationPart = parts.NewPresentationPart()
+	newPres.presentationPart = presentation.NewPresentationPart()
 	presPartData, err := p.presentationPart.ToXML()
 	if err != nil {
 		return nil, err
@@ -592,7 +593,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 
 	// Clone each slide.
 	for i, s := range p.slides {
-		newSlidePart := parts.NewSlidePartWithURI(s.part.PartURI())
+		newSlidePart := slide.NewSlidePartWithURI(s.part.PartURI())
 		slideData, err := s.part.ToXML()
 		if err != nil {
 			return nil, err

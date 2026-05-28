@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 )
 
 // ============================================================================
@@ -30,8 +30,8 @@ type MasterCache struct {
 	once sync.Once
 
 	// read-only data (frozen after init)
-	masters map[string]*parts.SlideMasterData // key: masterID
-	layouts map[string]*parts.SlideLayoutData // key: layoutID
+	masters map[string]*slide.SlideMasterData // key: masterID
+	layouts map[string]*slide.SlideLayoutData // key: layoutID
 
 	// auxiliary indexes (built during init)
 	layoutByName map[string]string // layoutName -> layoutID
@@ -39,17 +39,17 @@ type MasterCache struct {
 
 	// placeholder index (built during init)
 	// key format: "layoutID:phType" or "masterID:phType"
-	placeholderIndex map[string]*parts.Placeholder
+	placeholderIndex map[string]*slide.Placeholder
 }
 
 // NewMasterCache creates a new MasterCache instance.
 func NewMasterCache() *MasterCache {
 	return &MasterCache{
-		masters:          make(map[string]*parts.SlideMasterData),
-		layouts:          make(map[string]*parts.SlideLayoutData),
+		masters:          make(map[string]*slide.SlideMasterData),
+		layouts:          make(map[string]*slide.SlideLayoutData),
 		layoutByName:     make(map[string]string),
 		masterByName:     make(map[string]string),
-		placeholderIndex: make(map[string]*parts.Placeholder),
+		placeholderIndex: make(map[string]*slide.Placeholder),
 	}
 }
 
@@ -59,7 +59,7 @@ func NewMasterCache() *MasterCache {
 
 // Init populates the cache with the provided data. Only the first call has
 // any effect; subsequent calls are silently ignored.
-func (c *MasterCache) Init(masters []*parts.SlideMasterData, layouts []*parts.SlideLayoutData) {
+func (c *MasterCache) Init(masters []*slide.SlideMasterData, layouts []*slide.SlideLayoutData) {
 	c.once.Do(func() {
 		c.buildIndex(masters, layouts)
 	})
@@ -67,7 +67,7 @@ func (c *MasterCache) Init(masters []*parts.SlideMasterData, layouts []*parts.Sl
 
 // InitFunc lazily initializes the cache using the provided factory function.
 // The function is called only on the first access.
-func (c *MasterCache) InitFunc(initFn func() ([]*parts.SlideMasterData, []*parts.SlideLayoutData)) {
+func (c *MasterCache) InitFunc(initFn func() ([]*slide.SlideMasterData, []*slide.SlideLayoutData)) {
 	c.once.Do(func() {
 		masters, layouts := initFn()
 		c.buildIndex(masters, layouts)
@@ -75,7 +75,7 @@ func (c *MasterCache) InitFunc(initFn func() ([]*parts.SlideMasterData, []*parts
 }
 
 // buildIndex constructs all internal indexes. Called only during initialization.
-func (c *MasterCache) buildIndex(masters []*parts.SlideMasterData, layouts []*parts.SlideLayoutData) {
+func (c *MasterCache) buildIndex(masters []*slide.SlideMasterData, layouts []*slide.SlideLayoutData) {
 	// index slide masters
 	for _, master := range masters {
 		if master == nil {
@@ -120,13 +120,13 @@ func (c *MasterCache) buildIndex(masters []*parts.SlideMasterData, layouts []*pa
 // ============================================================================
 
 // GetMaster returns the slide master with the given ID.
-func (c *MasterCache) GetMaster(masterID string) (*parts.SlideMasterData, bool) {
+func (c *MasterCache) GetMaster(masterID string) (*slide.SlideMasterData, bool) {
 	m, ok := c.masters[masterID]
 	return m, ok
 }
 
 // GetMasterByName returns the slide master with the given name.
-func (c *MasterCache) GetMasterByName(name string) (*parts.SlideMasterData, bool) {
+func (c *MasterCache) GetMasterByName(name string) (*slide.SlideMasterData, bool) {
 	if id, ok := c.masterByName[name]; ok {
 		return c.GetMaster(id)
 	}
@@ -134,13 +134,13 @@ func (c *MasterCache) GetMasterByName(name string) (*parts.SlideMasterData, bool
 }
 
 // GetLayout returns the slide layout with the given ID.
-func (c *MasterCache) GetLayout(layoutID string) (*parts.SlideLayoutData, bool) {
+func (c *MasterCache) GetLayout(layoutID string) (*slide.SlideLayoutData, bool) {
 	l, ok := c.layouts[layoutID]
 	return l, ok
 }
 
 // GetLayoutByName returns the slide layout with the given name.
-func (c *MasterCache) GetLayoutByName(name string) (*parts.SlideLayoutData, bool) {
+func (c *MasterCache) GetLayoutByName(name string) (*slide.SlideLayoutData, bool) {
 	if id, ok := c.layoutByName[name]; ok {
 		return c.GetLayout(id)
 	}
@@ -150,7 +150,7 @@ func (c *MasterCache) GetLayoutByName(name string) (*parts.SlideLayoutData, bool
 // GetPlaceholder returns the placeholder for the given layout ID and placeholder
 // type. phType should be a value returned by PlaceholderType.String(), e.g.
 // "title" or "body".
-func (c *MasterCache) GetPlaceholder(layoutID, phType string) (*parts.Placeholder, bool) {
+func (c *MasterCache) GetPlaceholder(layoutID, phType string) (*slide.Placeholder, bool) {
 	key := layoutID + ":" + phType
 	ph, ok := c.placeholderIndex[key]
 	return ph, ok
@@ -158,7 +158,7 @@ func (c *MasterCache) GetPlaceholder(layoutID, phType string) (*parts.Placeholde
 
 // GetPlaceholderByID returns the placeholder for the given layout ID and
 // placeholder ID.
-func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*parts.Placeholder, bool) {
+func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*slide.Placeholder, bool) {
 	key := layoutID + ":" + placeholderID
 	ph, ok := c.placeholderIndex[key]
 	return ph, ok
@@ -166,7 +166,7 @@ func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*parts
 
 // GetMasterPlaceholder returns the placeholder for the given master ID and
 // placeholder type.
-func (c *MasterCache) GetMasterPlaceholder(masterID, phType string) (*parts.Placeholder, bool) {
+func (c *MasterCache) GetMasterPlaceholder(masterID, phType string) (*slide.Placeholder, bool) {
 	key := masterID + ":" + phType
 	ph, ok := c.placeholderIndex[key]
 	return ph, ok
@@ -177,12 +177,12 @@ func (c *MasterCache) GetMasterPlaceholder(masterID, phType string) (*parts.Plac
 // ============================================================================
 
 // AllMasters returns all slide masters (read-only).
-func (c *MasterCache) AllMasters() map[string]*parts.SlideMasterData {
+func (c *MasterCache) AllMasters() map[string]*slide.SlideMasterData {
 	return c.masters
 }
 
 // AllLayouts returns all slide layouts (read-only).
-func (c *MasterCache) AllLayouts() map[string]*parts.SlideLayoutData {
+func (c *MasterCache) AllLayouts() map[string]*slide.SlideLayoutData {
 	return c.layouts
 }
 
@@ -280,8 +280,8 @@ func (m *MasterManager) Cache() *MasterCache {
 // LoadFromZip loads slide masters and layouts from the given ZIP reader.
 // It scans /ppt/slideMasters/ and /ppt/slideLayouts/ inside the ZIP.
 func (m *MasterManager) LoadFromZip(zipReader *zip.Reader) error {
-	var masters []*parts.SlideMasterData
-	var layouts []*parts.SlideLayoutData
+	var masters []*slide.SlideMasterData
+	var layouts []*slide.SlideLayoutData
 
 	// collect master and layout files
 	masterFiles := m.collectFiles(zipReader, "ppt/slideMasters/", "slideMaster")
@@ -302,7 +302,7 @@ func (m *MasterManager) LoadFromZip(zipReader *zip.Reader) error {
 			return fmt.Errorf("reading master file %s: %w", f.name, err)
 		}
 
-		master, err := parts.ParseMaster(data)
+		master, err := slide.ParseMaster(data)
 		if err != nil {
 			return fmt.Errorf("parsing master %s: %w", f.name, err)
 		}
@@ -317,7 +317,7 @@ func (m *MasterManager) LoadFromZip(zipReader *zip.Reader) error {
 			return fmt.Errorf("reading layout file %s: %w", f.name, err)
 		}
 
-		layout, err := parts.ParseLayout(data)
+		layout, err := slide.ParseLayout(data)
 		if err != nil {
 			return fmt.Errorf("parsing layout %s: %w", f.name, err)
 		}
@@ -396,37 +396,37 @@ func (m *MasterManager) readFile(f *zip.File) ([]byte, error) {
 // ============================================================================
 
 // GetLayout returns the layout with the given ID.
-func (m *MasterManager) GetLayout(layoutID string) (*parts.SlideLayoutData, bool) {
+func (m *MasterManager) GetLayout(layoutID string) (*slide.SlideLayoutData, bool) {
 	return m.cache.GetLayout(layoutID)
 }
 
 // GetLayoutByName returns the layout with the given name.
-func (m *MasterManager) GetLayoutByName(name string) (*parts.SlideLayoutData, bool) {
+func (m *MasterManager) GetLayoutByName(name string) (*slide.SlideLayoutData, bool) {
 	return m.cache.GetLayoutByName(name)
 }
 
 // GetMaster returns the master with the given ID.
-func (m *MasterManager) GetMaster(masterID string) (*parts.SlideMasterData, bool) {
+func (m *MasterManager) GetMaster(masterID string) (*slide.SlideMasterData, bool) {
 	return m.cache.GetMaster(masterID)
 }
 
 // GetMasterByName returns the master with the given name.
-func (m *MasterManager) GetMasterByName(name string) (*parts.SlideMasterData, bool) {
+func (m *MasterManager) GetMasterByName(name string) (*slide.SlideMasterData, bool) {
 	return m.cache.GetMasterByName(name)
 }
 
 // GetPlaceholder returns the placeholder for the given layout ID and type.
-func (m *MasterManager) GetPlaceholder(layoutID, phType string) (*parts.Placeholder, bool) {
+func (m *MasterManager) GetPlaceholder(layoutID, phType string) (*slide.Placeholder, bool) {
 	return m.cache.GetPlaceholder(layoutID, phType)
 }
 
 // AllLayouts returns all slide layouts.
-func (m *MasterManager) AllLayouts() map[string]*parts.SlideLayoutData {
+func (m *MasterManager) AllLayouts() map[string]*slide.SlideLayoutData {
 	return m.cache.AllLayouts()
 }
 
 // AllMasters returns all slide masters.
-func (m *MasterManager) AllMasters() map[string]*parts.SlideMasterData {
+func (m *MasterManager) AllMasters() map[string]*slide.SlideMasterData {
 	return m.cache.AllMasters()
 }
 

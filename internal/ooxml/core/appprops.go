@@ -1,4 +1,4 @@
-package parts
+package core
 
 // ============================================================================
 // AppPropsPart - application properties part
@@ -14,7 +14,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/ooxml"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // AppPropsPart holds the application properties part (/docProps/app.xml).
@@ -293,7 +294,7 @@ func (a *AppPropsPart) ToXML() ([]byte, error) {
 		return nil, err
 	}
 
-	return append([]byte(XMLDeclaration), output...), nil
+	return append([]byte(ooxml.XMLDeclaration), output...), nil
 }
 
 // FromXML deserializes application properties from XML.

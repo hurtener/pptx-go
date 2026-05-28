@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
+	slidex "github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
@@ -137,7 +138,7 @@ func TestParts_Deserialize(t *testing.T) {
 		t.Fatal("missing presentation.xml")
 	}
 
-	pres := parts.NewPresentationPart()
+	pres := presentation.NewPresentationPart()
 	if err := pres.FromXML(presPart.Blob()); err != nil {
 		t.Fatalf("PresentationPart.FromXML failed: %v", err)
 	}
@@ -161,7 +162,7 @@ func TestParts_Deserialize(t *testing.T) {
 		t.Fatal("missing slide1.xml")
 	}
 
-	slide := parts.NewSlidePart(1)
+	slide := slidex.NewSlidePart(1)
 	if err := slide.FromXML(slidePart.Blob()); err != nil {
 		t.Fatalf("SlidePart.FromXML failed: %v", err)
 	}
@@ -181,10 +182,10 @@ func TestParts_Deserialize(t *testing.T) {
 // parts and serialize them.
 func TestParts_CreateAndSerialize(t *testing.T) {
 	// 3.1 Create a new PresentationPart.
-	pres := parts.NewPresentationPart()
+	pres := presentation.NewPresentationPart()
 
 	// 3.2 Create a new SlidePart and add text via the builder.
-	slidePart := parts.NewSlidePart(1)
+	slidePart := slidex.NewSlidePart(1)
 	builder := pptx.NewSlideBuilder(slidePart)
 	builder.AddTextBox(914400, 457200, 4572000, 457200, "Hello from Go Engine!")
 
@@ -228,7 +229,7 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 	pkg := opc.NewPackage()
 
 	// 4.2 Create PresentationPart.
-	pres := parts.NewPresentationPart()
+	pres := presentation.NewPresentationPart()
 	presXML, _ := pres.ToXML()
 	presPart, err := pkg.CreatePart(
 		opc.NewPackURI("/ppt/presentation.xml"),
@@ -240,7 +241,7 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 	}
 
 	// 4.3 Create SlidePart.
-	slidePart4 := parts.NewSlidePart(1)
+	slidePart4 := slidex.NewSlidePart(1)
 	slideBuilder4 := pptx.NewSlideBuilder(slidePart4)
 	slideBuilder4.AddTextBox(914400, 457200, 4572000, 457200, "Hello from OPC!")
 	slideXML, _ := slidePart4.ToXML()
@@ -350,7 +351,7 @@ func TestParts_Update(t *testing.T) {
 		t.Fatal("missing slide1.xml")
 	}
 
-	slidePart5 := parts.NewSlidePart(1)
+	slidePart5 := slidex.NewSlidePart(1)
 	if err := slidePart5.FromXML(slidePart.Blob()); err != nil {
 		t.Fatalf("SlidePart.FromXML failed: %v", err)
 	}
@@ -418,7 +419,7 @@ func TestOPC_SecurePackaging(t *testing.T) {
 	_ = string(originalSlidePart.Blob()) // capture for later verification
 
 	// 6.3 Replace SlidePart content.
-	slide6 := parts.NewSlidePart(1)
+	slide6 := slidex.NewSlidePart(1)
 	slideBuilder6 := pptx.NewSlideBuilder(slide6)
 	slideBuilder6.AddTextBox(1000000, 1000000, 2000000, 500000, "Modified Content!")
 	newSlideXML, _ := slide6.ToXML()
@@ -499,7 +500,7 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	// Stage 2: deserialize
 	t.Log("----- Stage 2: Parts deserialization -----")
 	presPart := pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))
-	pres := parts.NewPresentationPart()
+	pres := presentation.NewPresentationPart()
 	if err := pres.FromXML(presPart.Blob()); err != nil {
 		t.Fatalf("Stage 2 failed: %v", err)
 	}
@@ -507,7 +508,7 @@ func TestPipeline_FullIntegration(t *testing.T) {
 
 	// Stage 3: create
 	t.Log("----- Stage 3: Parts creation and serialization -----")
-	newSlidePart3 := parts.NewSlidePart(1)
+	newSlidePart3 := slidex.NewSlidePart(1)
 	newSlidePart3Builder := pptx.NewSlideBuilder(newSlidePart3)
 	newSlidePart3Builder.AddTextBox(914400, 457200, 4572000, 457200, "Integration Test!")
 	newSlideXML, err := newSlidePart3.ToXML()
@@ -548,7 +549,7 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	// Stage 5: update
 	t.Log("----- Stage 5: Parts data update -----")
 	updatedPkg, _ := opc.OpenFile(outputPath)
-	updatedSlide := parts.NewSlidePart(1)
+	updatedSlide := slidex.NewSlidePart(1)
 	updatedSlideBuilder := pptx.NewSlideBuilder(updatedSlide)
 	updatedSlideBuilder.AddTextBox(500000, 500000, 3000000, 300000, "Updated via Stage 5!")
 	updatedXML, _ := updatedSlide.ToXML()

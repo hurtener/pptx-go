@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 )
 
 // ============================================================================
@@ -59,7 +59,7 @@ func TestParseXMLOffset(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var off parts.XMLOffset
+			var off slide.XMLOffset
 			err := xml.Unmarshal([]byte(tt.xmlData), &off)
 
 			if tt.wantError {
@@ -131,7 +131,7 @@ func TestParseXMLExtents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ext parts.XMLExtents
+			var ext slide.XMLExtents
 			err := xml.Unmarshal([]byte(tt.xmlData), &ext)
 
 			if tt.wantError {
@@ -161,7 +161,7 @@ func TestParseXMLExtents(t *testing.T) {
 
 // xmlSpPrWrapper is a test wrapper for XMLTransform (via p:spPr).
 type xmlSpPrWrapper struct {
-	Xfrm *parts.XMLTransform `xml:"xfrm"`
+	Xfrm *slide.XMLTransform `xml:"xfrm"`
 }
 
 func TestParseXMLTransform(t *testing.T) {
@@ -365,7 +365,7 @@ func TestParseXMLPlaceholder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ph parts.XMLPlaceholder
+			var ph slide.XMLPlaceholder
 			err := xml.Unmarshal([]byte(tt.xmlData), &ph)
 			if err != nil {
 				t.Fatalf("parse failed: %v", err)

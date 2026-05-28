@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 )
 
 // ============================================================================
@@ -30,7 +30,7 @@ func TestParseLayoutFromFile(t *testing.T) {
 				t.Fatalf("reading file failed: %v", err)
 			}
 
-			layout, err := parts.ParseLayout(xmlData)
+			layout, err := slide.ParseLayout(xmlData)
 			if err != nil {
 				t.Fatalf("ParseLayout returned an error: %v", err)
 			}
@@ -59,13 +59,13 @@ func TestParseLayout_PlaceholderDetails(t *testing.T) {
 		t.Fatalf("reading file failed: %v", err)
 	}
 
-	layout, err := parts.ParseLayout(xmlData)
+	layout, err := slide.ParseLayout(xmlData)
 	if err != nil {
 		t.Fatalf("ParseLayout returned an error: %v", err)
 	}
 
 	// Retrieve the title placeholder.
-	titlePh := layout.PlaceholderByType(parts.PlaceholderTypeTitle)
+	titlePh := layout.PlaceholderByType(slide.PlaceholderTypeTitle)
 	if titlePh == nil {
 		t.Fatal("title-type placeholder not found")
 	}
@@ -85,7 +85,7 @@ func TestParseLayout_PlaceholderDetails(t *testing.T) {
 	}
 
 	// Attempt to retrieve the body placeholder (may not exist in this layout).
-	bodyPh := layout.PlaceholderByType(parts.PlaceholderTypeBody)
+	bodyPh := layout.PlaceholderByType(slide.PlaceholderTypeBody)
 	if bodyPh != nil {
 		// Body placeholder coordinates and size must all be positive.
 		if bodyPh.X() <= 0 {

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
@@ -33,8 +33,8 @@ func TestMasterCache_ConcurrentRead(t *testing.T) {
 				// Read a layout.
 				if layout, ok := cache.GetLayout("layout_1"); ok {
 					_ = layout.Placeholders()
-					_ = layout.PlaceholderByType(parts.PlaceholderTypeTitle)
-					_ = layout.PlaceholderByType(parts.PlaceholderTypeBody)
+					_ = layout.PlaceholderByType(slide.PlaceholderTypeTitle)
+					_ = layout.PlaceholderByType(slide.PlaceholderTypeBody)
 				}
 
 				// Read a master.
@@ -121,19 +121,19 @@ func TestMasterCache_HighConcurrency(t *testing.T) {
 // MasterCache helper functions
 // ============================================================================
 
-func loadTestMasterData() ([]*parts.SlideMasterData, []*parts.SlideLayoutData) {
-	var masters []*parts.SlideMasterData
-	var layouts []*parts.SlideLayoutData
+func loadTestMasterData() ([]*slide.SlideMasterData, []*slide.SlideLayoutData) {
+	var masters []*slide.SlideMasterData
+	var layouts []*slide.SlideLayoutData
 
 	// Load a master.
 	masterXML, _ := os.ReadFile("../test-data/test/ppt/slideMasters/slideMaster2.xml")
-	if master, err := parts.ParseMaster(masterXML); err == nil {
+	if master, err := slide.ParseMaster(masterXML); err == nil {
 		masters = append(masters, master)
 	}
 
 	// Load a layout.
 	layoutXML, _ := os.ReadFile("../test-data/test/ppt/slideLayouts/slideLayout5.xml")
-	if layout, err := parts.ParseLayout(layoutXML); err == nil {
+	if layout, err := slide.ParseLayout(layoutXML); err == nil {
 		layouts = append(layouts, layout)
 	}
 

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/chart"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // routeCChartXML is a minimal chart XML with no Excel dependency (Route C).
@@ -46,7 +46,7 @@ const routeCChartXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 // ============================================================================
 func TestChartPart_RawXMLCarrier(t *testing.T) {
 	// Load raw XML via SetRawXML.
-	chartPart := parts.NewChartPart(1)
+	chartPart := chart.NewChartPart(1)
 	chartPart.SetRawXML([]byte(routeCChartXML))
 
 	// Simulate serialization.
@@ -106,7 +106,7 @@ func TestChartPart_NoExcelRelationship(t *testing.T) {
 // Goal: prove that the template-placeholder strategy injects data correctly.
 // ============================================================================
 func TestChartPart_PlaceholderReplacement(t *testing.T) {
-	chartPart := parts.NewChartPartWithType(1, parts.ChartTypeBar)
+	chartPart := chart.NewChartPartWithType(1, chart.ChartTypeBar)
 
 	// Replace placeholders.
 	chartPart.ReplacePlaceholder("CHART_TITLE", "Sales Report")
@@ -140,7 +140,7 @@ func TestChartPart_PlaceholderReplacement(t *testing.T) {
 // Goal: prove that an external Excel data reference can be set correctly.
 // ============================================================================
 func TestChartPart_ExternalDataReference(t *testing.T) {
-	chartPart := parts.NewChartPart(1)
+	chartPart := chart.NewChartPart(1)
 
 	// A newly created chart must not have external data.
 	if chartPart.HasExternalData() {

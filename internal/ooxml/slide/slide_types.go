@@ -1,10 +1,10 @@
-package parts
+package slide
 
 import (
 	"io"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================

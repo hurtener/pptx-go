@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/core"
 )
 
 // ============================================================================
@@ -22,7 +22,7 @@ func TestParseCorePropsFromFile(t *testing.T) {
 	}
 
 	// Parse.
-	cp, err := parts.ParseCoreProps(xmlData)
+	cp, err := core.ParseCoreProps(xmlData)
 	if err != nil {
 		t.Fatalf("ParseCoreProps returned an error: %v", err)
 	}

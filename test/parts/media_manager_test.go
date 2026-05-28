@@ -3,7 +3,7 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/media"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
@@ -23,8 +23,8 @@ func TestMediaManager_AddAndGet(t *testing.T) {
 	if img.ContentType() != "image/png" {
 		t.Errorf("image ContentType = %q, want %q", img.ContentType(), "image/png")
 	}
-	if img.MediaType() != parts.MediaTypeImage {
-		t.Errorf("image MediaType = %v, want %v", img.MediaType(), parts.MediaTypeImage)
+	if img.MediaType() != media.MediaTypeImage {
+		t.Errorf("image MediaType = %v, want %v", img.MediaType(), media.MediaTypeImage)
 	}
 
 	// Add a video.
@@ -35,8 +35,8 @@ func TestMediaManager_AddAndGet(t *testing.T) {
 	if video.ContentType() != "video/mp4" {
 		t.Errorf("video ContentType = %q, want %q", video.ContentType(), "video/mp4")
 	}
-	if video.MediaType() != parts.MediaTypeVideo {
-		t.Errorf("video MediaType = %v, want %v", video.MediaType(), parts.MediaTypeVideo)
+	if video.MediaType() != media.MediaTypeVideo {
+		t.Errorf("video MediaType = %v, want %v", video.MediaType(), media.MediaTypeVideo)
 	}
 
 	// Verify GetMedia retrieves the correct resource.
@@ -67,21 +67,21 @@ func TestMediaManager_ContentTypeInference(t *testing.T) {
 	tests := []struct {
 		fileName        string
 		wantContentType string
-		wantMediaType   parts.MediaType
+		wantMediaType   media.MediaType
 	}{
-		{"image.png", "image/png", parts.MediaTypeImage},
-		{"photo.jpg", "image/jpeg", parts.MediaTypeImage},
-		{"photo.jpeg", "image/jpeg", parts.MediaTypeImage},
-		{"animation.gif", "image/gif", parts.MediaTypeImage},
-		{"icon.bmp", "image/bmp", parts.MediaTypeImage},
-		{"modern.webp", "image/webp", parts.MediaTypeImage},
-		{"video.mp4", "video/mp4", parts.MediaTypeVideo},
-		{"clip.webm", "video/webm", parts.MediaTypeVideo},
-		{"movie.avi", "video/x-msvideo", parts.MediaTypeVideo},
-		{"audio.mp3", "audio/mpeg", parts.MediaTypeAudio},
-		{"sound.wav", "audio/wav", parts.MediaTypeAudio},
-		{"music.aac", "audio/aac", parts.MediaTypeAudio},
-		{"unknown.xyz", "application/octet-stream", parts.MediaTypeUnknown},
+		{"image.png", "image/png", media.MediaTypeImage},
+		{"photo.jpg", "image/jpeg", media.MediaTypeImage},
+		{"photo.jpeg", "image/jpeg", media.MediaTypeImage},
+		{"animation.gif", "image/gif", media.MediaTypeImage},
+		{"icon.bmp", "image/bmp", media.MediaTypeImage},
+		{"modern.webp", "image/webp", media.MediaTypeImage},
+		{"video.mp4", "video/mp4", media.MediaTypeVideo},
+		{"clip.webm", "video/webm", media.MediaTypeVideo},
+		{"movie.avi", "video/x-msvideo", media.MediaTypeVideo},
+		{"audio.mp3", "audio/mpeg", media.MediaTypeAudio},
+		{"sound.wav", "audio/wav", media.MediaTypeAudio},
+		{"music.aac", "audio/aac", media.MediaTypeAudio},
+		{"unknown.xyz", "application/octet-stream", media.MediaTypeUnknown},
 	}
 
 	for _, tt := range tests {

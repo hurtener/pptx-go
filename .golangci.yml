@@ -34,8 +34,8 @@ linters:
   exclusions:
     generated: lax
     paths:
-      - ^opc/
-      - ^parts/
+      - ^internal/opc/
+      - ^internal/ooxml/
       - ^pptx/
       - ^utils/
       - ^test/
@@ -52,8 +52,8 @@ formatters:
         - github.com/hurtener/pptx-go
   exclusions:
     paths:
-      - ^opc/
-      - ^parts/
+      - ^internal/opc/
+      - ^internal/ooxml/
       - ^pptx/
       - ^utils/
       - ^test/

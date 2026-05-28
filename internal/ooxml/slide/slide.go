@@ -1,4 +1,4 @@
-package parts
+package slide
 
 import (
 	"encoding/xml"
@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/ooxml"
+	"github.com/hurtener/pptx-go/internal/ooxml/relations"
+	"github.com/hurtener/pptx-go/internal/opc"
 	"github.com/hurtener/pptx-go/utils"
 )
 
@@ -384,7 +386,7 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 // FromXML deserializes a SlidePart from XML.
 func (s *SlidePart) FromXML(data []byte) error {
 	// Strip namespace prefixes for compatibility with Go's xml.Unmarshal.
-	cleanData, err := StripNamespacePrefixes(data)
+	cleanData, err := ooxml.StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
 	}
@@ -459,7 +461,7 @@ func (s *SlidePart) AddImageRel(targetURI string) string {
 	}
 
 	// Create a new relationship.
-	rel, err := s.rels.AddNew(RelTypeImage, targetURI, false)
+	rel, err := s.rels.AddNew(relations.RelTypeImage, targetURI, false)
 	if err != nil {
 		return ""
 	}
@@ -478,7 +480,7 @@ func (s *SlidePart) AddMediaRel(targetURI string) string {
 		return existing.RID()
 	}
 
-	rel, err := s.rels.AddNew(RelTypeMedia, targetURI, false)
+	rel, err := s.rels.AddNew(relations.RelTypeMedia, targetURI, false)
 	if err != nil {
 		return ""
 	}
@@ -497,7 +499,7 @@ func (s *SlidePart) AddChartRel(targetURI string) string {
 		return existing.RID()
 	}
 
-	rel, err := s.rels.AddNew(RelTypeChart, targetURI, false)
+	rel, err := s.rels.AddNew(relations.RelTypeChart, targetURI, false)
 	if err != nil {
 		return ""
 	}
@@ -516,7 +518,7 @@ func (s *SlidePart) AddTableRel(targetURI string) string {
 		return existing.RID()
 	}
 
-	rel, err := s.rels.AddNew(RelTypeTable, targetURI, false)
+	rel, err := s.rels.AddNew(relations.RelTypeTable, targetURI, false)
 	if err != nil {
 		return ""
 	}
