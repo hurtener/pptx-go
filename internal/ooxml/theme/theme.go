@@ -319,9 +319,9 @@ func (t *ThemePart) SetThemeMajorFont(latin, eastAsia, complex string) {
 		fontScheme.MajorFont = &XFontCollection{}
 	}
 
-	fontScheme.MajorFont.Latin = latin
-	fontScheme.MajorFont.EastAsia = eastAsia
-	fontScheme.MajorFont.Complex = complex
+	fontScheme.MajorFont.Latin = &XFontFace{Typeface: latin}
+	fontScheme.MajorFont.EastAsia = &XFontFace{Typeface: eastAsia}
+	fontScheme.MajorFont.Complex = &XFontFace{Typeface: complex}
 }
 
 // SetThemeMinorFont sets the minor (body) font.
@@ -336,9 +336,9 @@ func (t *ThemePart) SetThemeMinorFont(latin, eastAsia, complex string) {
 		fontScheme.MinorFont = &XFontCollection{}
 	}
 
-	fontScheme.MinorFont.Latin = latin
-	fontScheme.MinorFont.EastAsia = eastAsia
-	fontScheme.MinorFont.Complex = complex
+	fontScheme.MinorFont.Latin = &XFontFace{Typeface: latin}
+	fontScheme.MinorFont.EastAsia = &XFontFace{Typeface: eastAsia}
+	fontScheme.MinorFont.Complex = &XFontFace{Typeface: complex}
 }
 
 // SetThemeScriptFont sets a script-specific font.

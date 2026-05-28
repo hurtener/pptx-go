@@ -692,4 +692,30 @@ in D-027; the strict-mode intent stands.
 
 ---
 
+## D-030 — Color interface + token builder constructors land in Phase 03
+
+**Date:** 2026-05-28
+**Status:** Settled (sequences D-012)
+**Context:** RFC §7.2 / D-012 make `pptx.Color` an interface with a
+write-time-lazy `tokenColor` and a `literalColor`, surfaced via
+`pptx.TokenColor(role)` and `pptx.RGB(...)`. The inherited `pptx` package
+already defines a concrete `Color` struct used by the upstream shape
+builder. Turning `Color` into the interface is part of migrating the
+builder to take tokens — the Phase 03 builder spine, which explicitly
+"migrates the upstream pptx incrementally; new files supersede old ones;
+old API kept as deprecated aliases." Doing it in Phase 02 would pull that
+migration forward without the builder context that fixes its exact shape.
+**Decision:** Phase 02 ships the `Theme` model and a **deterministic
+resolver** returning concrete OOXML values (`ResolveColor → RGB`,
+`ResolveSpace → EMU`, `ResolveType → FontSpec`, …). The lazy `Color`
+interface and the `TokenColor`/`RGB` constructors land in Phase 03 with
+the builder API that consumes them. D-012's lazy-resolution intent is
+preserved — only its surfacing point moves.
+**Consequences:** The theme-swap guarantee is proven at the resolver
+level in Phase 02 (one token, two themes → two values) and end-to-end
+through the builder in Phase 03. Phase 02 introduces no `type Color`, so
+it does not disturb the upstream struct ahead of the builder rewrite.
+
+---
+
 *Append new entries below this line.*
