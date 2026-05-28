@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Package 表示一个 OPC 包（如 PPTX 文件）
+// Package represents an OPC package (e.g. a PPTX file).
 type Package struct {
 	parts          *PartCollection
 	relationships  *Relationships
@@ -21,7 +21,7 @@ type Package struct {
 	mu             sync.RWMutex
 }
 
-// NewPackage 创建一个新的空 OPC 包
+// NewPackage creates a new, empty OPC package.
 func NewPackage() *Package {
 	return &Package{
 		parts:         NewPartCollection(),
@@ -30,38 +30,38 @@ func NewPackage() *Package {
 	}
 }
 
-// Parts 返回部件集合
+// Parts returns the part collection.
 func (p *Package) Parts() *PartCollection {
 	return p.parts
 }
 
-// Relationships 返回包级别关系
+// Relationships returns the package-level relationships.
 func (p *Package) Relationships() *Relationships {
 	return p.relationships
 }
 
-// ContentTypes 返回内容类型定义
+// ContentTypes returns the content type definitions.
 func (p *Package) ContentTypes() *ContentTypes {
 	return p.contentTypes
 }
 
-// CoreProperties 返回核心属性
+// CoreProperties returns the core properties.
 func (p *Package) CoreProperties() *CoreProperties {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.coreProperties
 }
 
-// SetCoreProperties 设置核心属性
+// SetCoreProperties sets the core properties.
 func (p *Package) SetCoreProperties(props *CoreProperties) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.coreProperties = props
 }
 
-// ===== 包的打开 =====
+// ===== Opening a package =====
 
-// Open 从 ZIP 流打开一个 OPC 包
+// Open opens an OPC package from a ZIP stream.
 func Open(r io.ReaderAt, size int64) (*Package, error) {
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
@@ -89,7 +89,7 @@ func Open(r io.ReaderAt, size int64) (*Package, error) {
 	return pkg, nil
 }
 
-// OpenFile 从文件路径打开一个 OPC 包
+// OpenFile opens an OPC package from a file path.
 func OpenFile(path string) (*Package, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -134,7 +134,7 @@ func (p *Package) loadContentTypes(zipReader *zip.Reader) error {
 
 func (p *Package) loadParts(zipReader *zip.Reader) error {
 	for _, f := range zipReader.File {
-		// 规范化路径：处理 Windows 斜杠问题
+		// Normalise path to handle Windows backslash issues.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if normalizedName == PathContentTypes {
@@ -174,7 +174,7 @@ func (p *Package) loadParts(zipReader *zip.Reader) error {
 
 func (p *Package) loadRelationships(zipReader *zip.Reader) error {
 	for _, f := range zipReader.File {
-		// 规范化路径
+		// Normalise path.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {
@@ -213,14 +213,14 @@ func (p *Package) loadRelationships(zipReader *zip.Reader) error {
 	return nil
 }
 
-// ===== 部件管理 =====
+// ===== Part management =====
 
-// AddPart 添加部件到包
+// AddPart adds a part to the package.
 func (p *Package) AddPart(part *Part) error {
 	return p.parts.Add(part)
 }
 
-// CreatePart 创建并添加新部件
+// CreatePart creates and adds a new part.
 func (p *Package) CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error) {
 	part := NewPart(uri, contentType, blob)
 	if err := p.parts.Add(part); err != nil {
@@ -229,7 +229,7 @@ func (p *Package) CreatePart(uri *PackURI, contentType string, blob []byte) (*Pa
 	return part, nil
 }
 
-// CreatePartFromReader 从 Reader 创建并添加部件
+// CreatePartFromReader creates and adds a part from a Reader.
 func (p *Package) CreatePartFromReader(uri *PackURI, contentType string, r io.Reader) (*Part, error) {
 	part, err := NewPartFromReader(uri, contentType, r)
 	if err != nil {
@@ -241,7 +241,7 @@ func (p *Package) CreatePartFromReader(uri *PackURI, contentType string, r io.Re
 	return part, nil
 }
 
-// CreatePartFromXML 从 XML 结构创建并添加部件
+// CreatePartFromXML creates and adds a part from an XML struct.
 func (p *Package) CreatePartFromXML(uri *PackURI, contentType string, v interface{}) (*Part, error) {
 	data, err := xml.Marshal(v)
 	if err != nil {
@@ -251,69 +251,69 @@ func (p *Package) CreatePartFromXML(uri *PackURI, contentType string, v interfac
 	return p.CreatePart(uri, contentType, data)
 }
 
-// GetPart 根据 URI 获取部件
+// GetPart returns the part with the given URI.
 func (p *Package) GetPart(uri *PackURI) *Part {
 	return p.parts.Get(uri)
 }
 
-// GetPartByStr 根据字符串 URI 获取部件
+// GetPartByStr returns the part with the given string URI.
 func (p *Package) GetPartByStr(uri string) *Part {
 	return p.parts.GetByStr(uri)
 }
 
-// GetPartsByType 根据内容类型获取所有部件
+// GetPartsByType returns all parts with the given content type.
 func (p *Package) GetPartsByType(contentType string) []*Part {
 	return p.parts.GetByType(contentType)
 }
 
-// ContainsPart 检查部件是否存在
+// ContainsPart reports whether a part with the given URI exists.
 func (p *Package) ContainsPart(uri *PackURI) bool {
 	return p.parts.Contains(uri)
 }
 
-// RemovePart 从包中移除部件
+// RemovePart removes a part from the package.
 func (p *Package) RemovePart(uri *PackURI) error {
 	return p.parts.Remove(uri)
 }
 
-// PartCount 返回部件数量
+// PartCount returns the number of parts.
 func (p *Package) PartCount() int {
 	return p.parts.Count()
 }
 
-// AllParts 返回所有部件
+// AllParts returns all parts.
 func (p *Package) AllParts() []*Part {
 	return p.parts.All()
 }
 
-// PartURIs 返回所有部件 URI
+// PartURIs returns all part URIs.
 func (p *Package) PartURIs() []*PackURI {
 	return p.parts.URIs()
 }
 
-// DirtyParts 返回所有被修改的部件
+// DirtyParts returns all modified parts.
 func (p *Package) DirtyParts() []*Part {
 	return p.parts.DirtyParts()
 }
 
-// ===== 关系管理 =====
+// ===== Relationship management =====
 
-// AddRelationship 添加包级别关系
+// AddRelationship adds a package-level relationship.
 func (p *Package) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error) {
 	return p.relationships.AddNew(relType, targetURI, isExternal)
 }
 
-// GetRelationship 根据 rID 获取包级别关系
+// GetRelationship returns the package-level relationship with the given rID.
 func (p *Package) GetRelationship(rID string) *Relationship {
 	return p.relationships.Get(rID)
 }
 
-// GetRelationshipsByType 根据类型获取包级别关系
+// GetRelationshipsByType returns all package-level relationships of the given type.
 func (p *Package) GetRelationshipsByType(relType string) []*Relationship {
 	return p.relationships.GetByType(relType)
 }
 
-// GetPartByRelType 通过关系类型获取目标部件
+// GetPartByRelType returns the target part of the first package-level relationship with the given type.
 func (p *Package) GetPartByRelType(relType string) *Part {
 	rels := p.relationships.GetByType(relType)
 	if len(rels) == 0 {
@@ -322,7 +322,7 @@ func (p *Package) GetPartByRelType(relType string) *Part {
 	return p.parts.Get(rels[0].TargetURI())
 }
 
-// ResolveRelationship 解析部件间关系获取目标部件
+// ResolveRelationship resolves the target part of the first relationship of the given type from source.
 func (p *Package) ResolveRelationship(source *Part, relType string) *Part {
 	rels := source.Relationships().GetByType(relType)
 	if len(rels) == 0 {
@@ -331,9 +331,9 @@ func (p *Package) ResolveRelationship(source *Part, relType string) *Part {
 	return p.parts.Get(rels[0].TargetURI())
 }
 
-// ===== 包的保存 =====
+// ===== Saving a package =====
 
-// Save 将包保存为 ZIP 格式写入到 w
+// Save writes the package as a ZIP archive to w.
 func (p *Package) Save(w io.Writer) error {
 	zipWriter := zip.NewWriter(w)
 	defer zipWriter.Close()
@@ -359,7 +359,7 @@ func (p *Package) Save(w io.Writer) error {
 	return nil
 }
 
-// SaveFile 将包保存到文件
+// SaveFile saves the package to a file.
 func (p *Package) SaveFile(path string) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -370,7 +370,7 @@ func (p *Package) SaveFile(path string) error {
 	return p.Save(file)
 }
 
-// SaveToBytes 将包保存到字节数组
+// SaveToBytes saves the package to a byte slice.
 func (p *Package) SaveToBytes() ([]byte, error) {
 	buf := &bytesBuffer{}
 	if err := p.Save(buf); err != nil {
@@ -451,27 +451,27 @@ func (p *Package) writeZipEntry(zipWriter *zip.Writer, path string, data []byte)
 	return nil
 }
 
-// createZipEntry 创建一个 ZIP 条目，使用正确的时间戳和兼容性设置
-// 这是一个内部方法，确保所有 ZIP 条目都以统一、安全的方式创建
+// createZipEntry creates a ZIP entry with correct timestamps and compatibility settings.
+// This internal helper ensures all ZIP entries are created in a uniform, safe manner.
 func createZipEntry(zipWriter *zip.Writer, path string, size int) (io.Writer, error) {
-	// 1. 剥离前导斜杠，确保符合 ZIP 规范
-	// ZIP 内部路径是相对路径，绝对不能有前导斜杠
+	// 1. Strip the leading slash to comply with the ZIP spec.
+	//    ZIP internal paths are relative and must not start with a slash.
 	path = strings.TrimPrefix(path, "/")
 
-	// 2. 精密构建 FileHeader
+	// 2. Build a precise FileHeader.
 	header := &zip.FileHeader{
 		Name:               path,
 		UncompressedSize:   uint32(size),
 		UncompressedSize64: uint64(size),
-		Modified:           time.Now(), // 设置当前时间戳（解决 Windows 资源管理器 MS-DOS 时间解析 bug）
+		Modified:           time.Now(), // Set current timestamp (works around a Windows Explorer MS-DOS time parsing bug).
 	}
 
-	// 3. 设置压缩方法（Deflate 用于文本文件，Store 用于已压缩文件）
+	// 3. Set compression method (Deflate for text, Store for already-compressed data).
 	header.Method = zip.Deflate
 
-	// 4. 增强兼容性标记
-	// - 使用 UTF-8 编码文件名（Bit 11）
-	// - 这对于包含非 ASCII 字符的文件名很重要
+	// 4. Compatibility flags.
+	//    - Use UTF-8 file names (Bit 11).
+	//    - Important for file names that contain non-ASCII characters.
 	header.Flags |= 0x800 // UTF-8 file name flag
 
 	writer, err := zipWriter.CreateHeader(header)
@@ -508,9 +508,9 @@ func (p *Package) updateContentTypes() {
 	}
 }
 
-// ===== 其他方法 =====
+// ===== Other methods =====
 
-// Clone 克隆整个包（智能拷贝：静态资源 zero-copy，动态资源深拷贝）
+// Clone clones the entire package (smart copy: zero-copy for static resources, deep copy for dynamic ones).
 func (p *Package) Clone() *Package {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -520,12 +520,12 @@ func (p *Package) Clone() *Package {
 	for _, part := range p.parts.All() {
 		var newPart *Part
 
-		// 根据内容类型选择拷贝策略
+		// Choose the copy strategy based on the content type.
 		if IsImmutableContentType(part.ContentType()) {
-			// 不可变资源：使用 zero-copy
+			// Immutable resource: use zero-copy.
 			newPart = part.CloneShared()
 		} else {
-			// 可变资源：使用深拷贝
+			// Mutable resource: use deep copy.
 			newPart = part.Clone()
 		}
 		_ = newPkg.parts.Add(newPart)
@@ -563,8 +563,8 @@ func (p *Package) Clone() *Package {
 	return newPkg
 }
 
-// CloneDeep 克隆整个包（完全深拷贝，不使用 zero-copy）
-// 用于需要完全独立副本的场景
+// CloneDeep clones the entire package using a full deep copy (no zero-copy sharing).
+// Use this when a fully independent replica is required.
 func (p *Package) CloneDeep() *Package {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -572,7 +572,7 @@ func (p *Package) CloneDeep() *Package {
 	newPkg := NewPackage()
 
 	for _, part := range p.parts.All() {
-		newPart := part.Clone() // 全部使用深拷贝
+		newPart := part.Clone() // Always deep copy.
 		_ = newPkg.parts.Add(newPart)
 	}
 
@@ -608,7 +608,7 @@ func (p *Package) CloneDeep() *Package {
 	return newPkg
 }
 
-// Close 关闭包，释放资源
+// Close closes the package and releases its resources.
 func (p *Package) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -619,7 +619,7 @@ func (p *Package) Close() error {
 	return nil
 }
 
-// bytesBuffer 简单的 bytes buffer，实现 io.Writer
+// bytesBuffer is a simple bytes buffer that implements io.Writer.
 type bytesBuffer struct {
 	data []byte
 }

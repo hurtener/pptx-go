@@ -1,41 +1,41 @@
-// Package opc 提供 OOXML Open Packaging Convention (OPC) 的 Go 实现
-// 用于处理 PPTX 等 Office Open XML 文件格式
+// Package opc provides a Go implementation of the OOXML Open Packaging Convention (OPC),
+// used for processing Office Open XML file formats such as PPTX.
 package opc
 
-// 内容类型常量 (Content Types)
+// Content type constants (Content Types)
 const (
-	// OPC 关系类型
+	// OPC relationship content type
 	ContentTypeRelationships = "application/vnd.openxmlformats-package.relationships+xml"
 
-	// PPTX 核心内容类型
-	ContentTypePresentation    = "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
-	ContentTypeSlide           = "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
-	ContentTypeSlideLayout     = "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
-	ContentTypeSlideMaster     = "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
-	ContentTypeNotesSlide      = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"
-	ContentTypeHandoutMaster   = "application/vnd.openxmlformats-officedocument.presentationml.handoutMaster+xml"
-	ContentTypeNotesMaster     = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"
-	ContentTypePresentationML  = "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
+	// PPTX core content types
+	ContentTypePresentation   = "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
+	ContentTypeSlide          = "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+	ContentTypeSlideLayout    = "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
+	ContentTypeSlideMaster    = "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
+	ContentTypeNotesSlide     = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"
+	ContentTypeHandoutMaster  = "application/vnd.openxmlformats-officedocument.presentationml.handoutMaster+xml"
+	ContentTypeNotesMaster    = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"
+	ContentTypePresentationML = "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
 
-	// 主题和样式
-	ContentTypeTheme          = "application/vnd.openxmlformats-officedocument.theme+xml"
-	ContentTypeThemeOverride  = "application/vnd.openxmlformats-officedocument.themeOverride+xml"
-	ContentTypeStyles         = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
+	// Theme and styles
+	ContentTypeTheme         = "application/vnd.openxmlformats-officedocument.theme+xml"
+	ContentTypeThemeOverride = "application/vnd.openxmlformats-officedocument.themeOverride+xml"
+	ContentTypeStyles        = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
 
-	// 图表
-	ContentTypeChart          = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml"
-	ContentTypeChartEx        = "application/vnd.ms-office.chartex+xml"
+	// Charts
+	ContentTypeChart   = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml"
+	ContentTypeChartEx = "application/vnd.ms-office.chartex+xml"
 
-	// 核心属性
+	// Core properties
 	ContentTypeCoreProperties = "application/vnd.openxmlformats-package.core-properties+xml"
 
-	// 扩展属性
+	// Extended properties
 	ContentTypeExtendedProperties = "application/vnd.openxmlformats-officedocument.extended-properties+xml"
 
-	// 自定义属性
+	// Custom properties
 	ContentTypeCustomProperties = "application/vnd.openxmlformats-officedocument.custom-properties+xml"
 
-	// 图片内容类型
+	// Image content types
 	ContentTypePNG  = "image/png"
 	ContentTypeJPEG = "image/jpeg"
 	ContentTypeGIF  = "image/gif"
@@ -45,71 +45,71 @@ const (
 	ContentTypeEMF  = "image/x-emf"
 	ContentTypeSVG  = "image/svg+xml"
 
-	// 音频内容类型
+	// Audio content types
 	ContentTypeWAV  = "audio/wav"
 	ContentTypeMP3  = "audio/mpeg"
 	ContentTypeMIDI = "audio/midi"
 
-	// 视频内容类型
-	ContentTypeMP4  = "video/mp4"
-	ContentTypeAVI  = "video/x-msvideo"
-	ContentTypeWMV  = "video/x-ms-wmv"
+	// Video content types
+	ContentTypeMP4 = "video/mp4"
+	ContentTypeAVI = "video/x-msvideo"
+	ContentTypeWMV = "video/x-ms-wmv"
 
-	// 其他
+	// Other
 	ContentTypeXML  = "application/xml"
 	ContentTypeFont = "application/x-font"
 
-	// 默认内容类型映射（基于扩展名）
+	// Default content type (fallback for unknown extensions)
 	ContentTypeDefault = "application/octet-stream"
 )
 
-// 关系类型常量 (Relationship Types)
+// Relationship type constants (Relationship Types)
 const (
-	// OPC 核心关系
+	// OPC core relationship
 	RelTypeCoreProperties = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
 
-	// Office 文档关系
+	// Office document relationship
 	RelTypeOfficeDocument = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
 
-	// 扩展属性
+	// Extended and custom properties
 	RelTypeExtendedProperties = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
 	RelTypeCustomProperties   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties"
 
-	// 幻灯片关系
-	RelTypeSlide        = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
-	RelTypeSlideLayout  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout"
-	RelTypeSlideMaster  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster"
-	RelTypeNotesSlide   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide"
-	RelTypeNotesMaster  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"
+	// Slide relationships
+	RelTypeSlide         = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
+	RelTypeSlideLayout   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout"
+	RelTypeSlideMaster   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster"
+	RelTypeNotesSlide    = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide"
+	RelTypeNotesMaster   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"
 	RelTypeHandoutMaster = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster"
 
-	// 主题关系
+	// Theme relationships
 	RelTypeTheme         = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
 	RelTypeThemeOverride = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride"
 
-	// 媒体关系
+	// Media relationships
 	RelTypeImage = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
 	RelTypeAudio = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio"
 	RelTypeVideo = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video"
 	RelTypeMedia = "http://schemas.microsoft.com/office/2007/relationships/media"
 
-	// 超链接
+	// Hyperlinks
 	RelTypeHyperlink = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
 
-	// 字体
+	// Fonts
 	RelTypeFont = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font"
 
-	// OLE 对象
+	// OLE objects
 	RelTypeOLEObject = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject"
 
-	// 缩略图
+	// Thumbnails
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 
-	// 样式
+	// Styles
 	RelTypeStyles = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
 )
 
-// 默认内容类型映射（扩展名 -> 内容类型）
+// DefaultContentTypes maps file extensions to their default content types.
 var DefaultContentTypes = map[string]string{
 	".xml":   ContentTypeXML,
 	".rels":  ContentTypeRelationships,
@@ -134,7 +134,7 @@ var DefaultContentTypes = map[string]string{
 	".odttf": ContentTypeFont,
 }
 
-// 内容类型到扩展名的反向映射
+// ContentTypeToExtension maps content types to their canonical file extensions.
 var ContentTypeToExtension = map[string]string{
 	ContentTypePNG:           ".png",
 	ContentTypeJPEG:          ".jpg",
@@ -154,7 +154,7 @@ var ContentTypeToExtension = map[string]string{
 	ContentTypeXML:           ".xml",
 }
 
-// GetContentTypeByExtension 根据文件扩展名获取内容类型
+// GetContentTypeByExtension returns the content type for the given file extension.
 func GetContentTypeByExtension(ext string) string {
 	if ct, ok := DefaultContentTypes[ext]; ok {
 		return ct
@@ -162,7 +162,7 @@ func GetContentTypeByExtension(ext string) string {
 	return ContentTypeDefault
 }
 
-// GetExtensionByContentType 根据内容类型获取文件扩展名
+// GetExtensionByContentType returns the file extension for the given content type.
 func GetExtensionByContentType(contentType string) string {
 	if ext, ok := ContentTypeToExtension[contentType]; ok {
 		return ext
@@ -170,44 +170,44 @@ func GetExtensionByContentType(contentType string) string {
 	return ".bin"
 }
 
-// OPC 命名空间
+// OPC namespaces
 const (
 	NamespaceOPCPackage      = "http://schemas.openxmlformats.org/package/2006/content-types"
 	NamespaceRelationships   = "http://schemas.openxmlformats.org/package/2006/relationships"
 	NamespaceRelationshipsNs = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 )
 
-// OPC 默认路径
+// OPC default paths
 const (
 	PathContentTypes = "[Content_Types].xml"
 	PathRelsDir      = "_rels"
 	PathRelsFile     = ".rels"
 )
 
-// XMLDeclaration OPC 包中所有 XML 文件的标准声明头
+// XMLDeclaration is the standard XML declaration header used in all XML files within an OPC package.
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
 
-// IsImmutableContentType 判断内容类型是否为不可变资源
-// 不可变资源可以使用 zero-copy 共享，无需深拷贝
+// IsImmutableContentType reports whether the content type represents an immutable resource.
+// Immutable resources can be shared via zero-copy without deep-copying their data.
 func IsImmutableContentType(contentType string) bool {
 	switch contentType {
-	// 图片类型 - 二进制数据，只读
+	// Image types — binary data, read-only
 	case ContentTypePNG, ContentTypeJPEG, ContentTypeGIF,
 		ContentTypeBMP, ContentTypeTIFF, ContentTypeWMF,
 		ContentTypeEMF, ContentTypeSVG:
 		return true
 
-	// 音视频类型 - 二进制数据，只读
+	// Audio and video types — binary data, read-only
 	case ContentTypeWAV, ContentTypeMP3, ContentTypeMIDI,
 		ContentTypeMP4, ContentTypeAVI, ContentTypeWMV:
 		return true
 
-	// 主题和母版 - 模板文件，通常不变
+	// Themes and masters — template files that are typically unchanged
 	case ContentTypeTheme, ContentTypeThemeOverride,
 		ContentTypeSlideMaster, ContentTypeSlideLayout:
 		return true
 
-	// 字体文件 - 只读
+	// Font files — read-only
 	case ContentTypeFont:
 		return true
 
@@ -216,8 +216,8 @@ func IsImmutableContentType(contentType string) bool {
 	}
 }
 
-// IsLargeBinaryContentType 判断是否为大块二进制内容
-// 用于判断是否值得使用 zero-copy 优化
+// IsLargeBinaryContentType reports whether the content type represents a large binary payload.
+// Used to determine whether zero-copy optimisation is worthwhile.
 func IsLargeBinaryContentType(contentType string) bool {
 	switch contentType {
 	case ContentTypePNG, ContentTypeJPEG, ContentTypeGIF,
@@ -232,7 +232,7 @@ func IsLargeBinaryContentType(contentType string) bool {
 	}
 }
 
-// IsImageContentType 判断是否为图片内容类型
+// IsImageContentType reports whether the content type represents an image.
 func IsImageContentType(contentType string) bool {
 	switch contentType {
 	case ContentTypePNG, ContentTypeJPEG, ContentTypeGIF,
@@ -244,7 +244,7 @@ func IsImageContentType(contentType string) bool {
 	}
 }
 
-// IsMediaContentType 判断是否为音视频内容类型
+// IsMediaContentType reports whether the content type represents audio or video.
 func IsMediaContentType(contentType string) bool {
 	switch contentType {
 	case ContentTypeWAV, ContentTypeMP3, ContentTypeMIDI,

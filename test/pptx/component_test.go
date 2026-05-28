@@ -8,10 +8,10 @@ import (
 )
 
 // ============================================================================
-// 测试用组件定义
+// Test component definitions
 // ============================================================================
 
-// TextComponent 简单文本组件
+// TextComponent is a simple text component used in tests.
 type TextComponent struct {
 	x, y, cx, cy int
 	text         string
@@ -28,10 +28,10 @@ func NewTextComponent(x, y, cx, cy int, text string) *TextComponent {
 }
 
 func (t *TextComponent) Render(ctx *pptx.SlideContext) error {
-	// 分配形状 ID
+	// Allocate a shape ID.
 	id := ctx.NextShapeID()
 
-	// 构建形状 XML
+	// Build shape XML.
 	sp := &parts.XSp{
 		NonVisual: parts.XNonVisualDrawingShape{
 			CNvPr: &parts.XNvCxnSpPr{
@@ -59,12 +59,12 @@ func (t *TextComponent) Render(ctx *pptx.SlideContext) error {
 		},
 	}
 
-	// 挂载到幻灯片
+	// Mount onto the slide.
 	ctx.AppendShape(sp)
 	return nil
 }
 
-// RectangleComponent 矩形组件
+// RectangleComponent is a simple rectangle component used in tests.
 type RectangleComponent struct {
 	x, y, cx, cy int
 }
@@ -97,7 +97,7 @@ func (r *RectangleComponent) Render(ctx *pptx.SlideContext) error {
 	return nil
 }
 
-// CompositeTestComponent 组合组件
+// CompositeTestComponent composes multiple child components.
 type CompositeTestComponent struct {
 	children []pptx.Component
 }
@@ -111,56 +111,56 @@ func (c *CompositeTestComponent) Render(ctx *pptx.SlideContext) error {
 		if err := child.Render(ctx); err != nil {
 			return err
 		}
-		_ = i // 使用 i 避免编译警告
+		_ = i // suppress unused-variable warning
 	}
 	return nil
 }
 
 // ============================================================================
-// 测试用例
+// Test cases
 // ============================================================================
 
-// TestAddComponent 测试添加组件
+// TestAddComponent tests adding a single component to a slide.
 func TestAddComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 添加文本组件
+	// Add text component.
 	textComp := NewTextComponent(100, 100, 500, 50, "Hello Component")
 	err := slide.AddComponent(textComp)
 	if err != nil {
-		t.Fatalf("AddComponent 失败: %v", err)
+		t.Fatalf("AddComponent failed: %v", err)
 	}
 
-	// 验证形状 ID 分配
+	// Verify shape ID was allocated.
 	ctx := slide.NewContext()
 	if ctx.CurrentShapeID() < 1 {
-		t.Error("形状 ID 未正确分配")
+		t.Error("shape ID was not allocated correctly")
 	}
 }
 
-// TestAddComponents 批量添加组件
+// TestAddComponents tests adding multiple components at once.
 func TestAddComponents(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 批量添加组件
+	// Add components in bulk.
 	err := slide.AddComponents(
 		NewTextComponent(100, 100, 500, 50, "Title"),
 		NewRectangleComponent(100, 200, 300, 150),
 		NewTextComponent(100, 400, 500, 30, "Footer"),
 	)
 	if err != nil {
-		t.Fatalf("AddComponents 失败: %v", err)
+		t.Fatalf("AddComponents failed: %v", err)
 	}
 }
 
-// TestCompositeComponent 测试组合组件
+// TestCompositeComponent tests a composite component.
 func TestCompositeComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 创建组合组件
+	// Create composite component.
 	composite := NewCompositeTestComponent(
 		NewTextComponent(100, 100, 500, 50, "Header"),
 		NewRectangleComponent(100, 200, 300, 150),
@@ -168,16 +168,16 @@ func TestCompositeComponent(t *testing.T) {
 
 	err := slide.AddComponent(composite)
 	if err != nil {
-		t.Fatalf("AddComponent(组合组件) 失败: %v", err)
+		t.Fatalf("AddComponent(composite) failed: %v", err)
 	}
 }
 
-// TestFuncComponent 测试函数式组件
+// TestFuncComponent tests the functional component adapter.
 func TestFuncComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 使用函数式组件
+	// Use a functional component.
 	renderCount := 0
 	funcComp := pptx.FuncComponent(func(ctx *pptx.SlideContext) error {
 		renderCount++
@@ -205,36 +205,36 @@ func TestFuncComponent(t *testing.T) {
 
 	err := slide.AddComponent(funcComp)
 	if err != nil {
-		t.Fatalf("AddComponent(函数式组件) 失败: %v", err)
+		t.Fatalf("AddComponent(functional component) failed: %v", err)
 	}
 
 	if renderCount != 1 {
-		t.Errorf("期望 renderCount=1, 实际=%d", renderCount)
+		t.Errorf("expected renderCount=1, got=%d", renderCount)
 	}
 }
 
-// TestSlideContextShapeID 测试形状 ID 分配
+// TestSlideContextShapeID tests shape ID allocation via SlideContext.
 func TestSlideContextShapeID(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 	ctx := slide.NewContext()
 
-	// 分配多个形状 ID
+	// Allocate several shape IDs.
 	id1 := ctx.NextShapeID()
 	id2 := ctx.NextShapeID()
 	id3 := ctx.NextShapeID()
 
 	if id1 == id2 || id2 == id3 || id1 == id3 {
-		t.Error("形状 ID 重复分配")
+		t.Error("duplicate shape IDs allocated")
 	}
 
-	// 验证 ID 递增
+	// Verify monotonic increase.
 	if id2 <= id1 || id3 <= id2 {
-		t.Error("形状 ID 未正确递增")
+		t.Error("shape IDs are not monotonically increasing")
 	}
 }
 
-// TestSlideContextSlideSize 测试幻灯片尺寸获取
+// TestSlideContextSlideSize tests retrieving slide dimensions via SlideContext.
 func TestSlideContextSlideSize(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
@@ -242,70 +242,70 @@ func TestSlideContextSlideSize(t *testing.T) {
 
 	cx, cy := ctx.SlideSize()
 	if cx == 0 || cy == 0 {
-		t.Error("幻灯片尺寸无效")
+		t.Error("invalid slide size")
 	}
 
-	// 验证默认尺寸（16:9 宽屏）
+	// Log if the size differs from the expected default (16:9 widescreen).
 	if cx != 12192000 || cy != 6858000 {
-		t.Logf("幻灯片尺寸: cx=%d, cy=%d (非默认 16:9)", cx, cy)
+		t.Logf("slide size: cx=%d, cy=%d (not the default 16:9)", cx, cy)
 	}
 }
 
-// TestSlideContextUnitConversion 测试单位转换
+// TestSlideContextUnitConversion tests unit conversion helpers on SlideContext.
 func TestSlideContextUnitConversion(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 	ctx := slide.NewContext()
 
-	// 测试 px -> EMU 转换 (96 DPI: 1 px = 9525 EMU)
+	// Test px -> EMU (96 DPI: 1 px = 9525 EMU).
 	px := 96
 	emu := ctx.PxToEMU(px)
-	if emu != 914400 { // 96 * 9525 = 914400 (即 1 英寸)
-		t.Errorf("PxToEMU(96) = %d, 期望 914400", emu)
+	if emu != 914400 { // 96 * 9525 = 914400 (= 1 inch)
+		t.Errorf("PxToEMU(96) = %d, expected 914400", emu)
 	}
 
-	// 测试 EMU -> px 转换
+	// Test EMU -> px conversion.
 	backPx := ctx.EMUToPx(914400)
 	if backPx != 96 {
-		t.Errorf("EMUToPx(914400) = %d, 期望 96", backPx)
+		t.Errorf("EMUToPx(914400) = %d, expected 96", backPx)
 	}
 
-	// 测试 1 px = 9525 EMU
+	// Test 1 px = 9525 EMU.
 	emu = ctx.PxToEMU(1)
 	if emu != 9525 {
-		t.Errorf("PxToEMU(1) = %d, 期望 9525", emu)
+		t.Errorf("PxToEMU(1) = %d, expected 9525", emu)
 	}
 }
 
-// TestComponentWithSave 测试组件渲染后保存
+// TestComponentWithSave tests saving a presentation that contains components.
 func TestComponentWithSave(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 添加多个组件
+	// Add multiple components.
 	slide.AddComponent(NewTextComponent(100, 100, 500, 50, "Title"))
 	slide.AddComponent(NewRectangleComponent(100, 200, 300, 150))
 	slide.AddComponent(NewTextComponent(100, 400, 500, 30, "Footer"))
 
-	// 保存到字节
+	// Save to bytes.
 	data, err := pres.WriteToBytes()
 	if err != nil {
-		t.Fatalf("WriteToBytes 失败: %v", err)
+		t.Fatalf("WriteToBytes failed: %v", err)
 	}
 
 	if len(data) == 0 {
-		t.Error("输出数据为空")
+		t.Error("output data is empty")
 	}
 
-	t.Logf("生成 PPTX 大小: %d 字节", len(data))
+	t.Logf("generated PPTX size: %d bytes", len(data))
 }
 
-// TestBuiltInCompositeComponent 测试内置组合组件
+// TestBuiltInCompositeComponent tests the built-in CompositeComponent helper.
 func TestBuiltInCompositeComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 使用内置的 CompositeComponent
+	// Use the built-in CompositeComponent.
 	composite := pptx.NewCompositeComponent("test-composite",
 		NewTextComponent(100, 100, 500, 50, "Header"),
 		NewRectangleComponent(100, 200, 300, 150),
@@ -313,22 +313,22 @@ func TestBuiltInCompositeComponent(t *testing.T) {
 
 	err := slide.AddComponent(composite)
 	if err != nil {
-		t.Fatalf("AddComponent(CompositeComponent) 失败: %v", err)
+		t.Fatalf("AddComponent(CompositeComponent) failed: %v", err)
 	}
 
 	if composite.Name() != "test-composite" {
-		t.Errorf("期望名称 'test-composite', 实际 '%s'", composite.Name())
+		t.Errorf("expected name 'test-composite', got '%s'", composite.Name())
 	}
 }
 
-// TestConditionalComponent 测试条件组件
+// TestConditionalComponent tests a conditional component.
 func TestConditionalComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
 	condition := true
 
-	// 创建条件组件
+	// Create conditional component.
 	condComp := pptx.NewConditionalComponent(
 		func() bool { return condition },
 		NewTextComponent(100, 100, 500, 50, "Condition is true"),
@@ -337,32 +337,32 @@ func TestConditionalComponent(t *testing.T) {
 
 	err := slide.AddComponent(condComp)
 	if err != nil {
-		t.Fatalf("AddComponent(ConditionalComponent) 失败: %v", err)
+		t.Fatalf("AddComponent(ConditionalComponent) failed: %v", err)
 	}
 }
 
-// TestRepeatedComponent 测试重复组件
+// TestRepeatedComponent tests a repeated component.
 func TestRepeatedComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 创建重复组件（生成 3 个文本框）
+	// Create a repeated component (generates 3 text boxes).
 	repeatedComp := pptx.NewRepeatedComponent(3, func(index int) pptx.Component {
 		return NewTextComponent(100, 100+index*60, 500, 50, "Item")
 	})
 
 	err := slide.AddComponent(repeatedComp)
 	if err != nil {
-		t.Fatalf("AddComponent(RepeatedComponent) 失败: %v", err)
+		t.Fatalf("AddComponent(RepeatedComponent) failed: %v", err)
 	}
 }
 
-// TestShapeComponent 测试形状组件
+// TestShapeComponent tests the ShapeComponent wrapper.
 func TestShapeComponent(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 创建形状组件
+	// Create a shape component.
 	sp := &parts.XSp{
 		NonVisual: parts.XNonVisualDrawingShape{
 			CNvPr: &parts.XNvCxnSpPr{
@@ -383,33 +383,33 @@ func TestShapeComponent(t *testing.T) {
 
 	err := slide.AddComponent(shapeComp)
 	if err != nil {
-		t.Fatalf("AddComponent(ShapeComponent) 失败: %v", err)
+		t.Fatalf("AddComponent(ShapeComponent) failed: %v", err)
 	}
 
 	if shapeComp.Name() != "TestShapeComponent" {
-		t.Errorf("期望名称 'TestShapeComponent', 实际 '%s'", shapeComp.Name())
+		t.Errorf("expected name 'TestShapeComponent', got '%s'", shapeComp.Name())
 	}
 }
 
-// TestComponentList 组件列表测试
+// TestComponentList tests the ComponentList helper.
 func TestComponentList(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// 创建组件列表
+	// Build a component list.
 	var list pptx.ComponentList
 	list.Add(NewTextComponent(100, 100, 500, 50, "Item 1"))
 	list.Add(NewTextComponent(100, 160, 500, 50, "Item 2"))
 	list.Add(NewTextComponent(100, 220, 500, 50, "Item 3"))
 
 	if list.Count() != 3 {
-		t.Errorf("期望 3 个组件, 实际 %d", list.Count())
+		t.Errorf("expected 3 components, got %d", list.Count())
 	}
 
-	// 使用上下文渲染
+	// Render all components via context.
 	ctx := slide.NewContext()
 	err := list.RenderAll(ctx)
 	if err != nil {
-		t.Fatalf("RenderAll 失败: %v", err)
+		t.Fatalf("RenderAll failed: %v", err)
 	}
 }

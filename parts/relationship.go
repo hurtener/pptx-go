@@ -5,47 +5,47 @@ import (
 )
 
 // ============================================================================
-// OpenXML Relationships XML 结构体 - 对应 *.rels 文件
+// OpenXML Relationships XML structs - correspond to *.rels files
 // ============================================================================
 //
-// 关系文件位置示例：
-//   - 包级别: /_rels/.rels
-//   - 幻灯片: /ppt/slides/_rels/slide1.xml.rels
-//   - 母版:   /ppt/slideMasters/_rels/slideMaster1.xml.rels
+// Relationship file locations:
+//   - package level: /_rels/.rels
+//   - slide:         /ppt/slides/_rels/slide1.xml.rels
+//   - master:        /ppt/slideMasters/_rels/slideMaster1.xml.rels
 //
-// 命名空间: http://schemas.openxmlformats.org/package/2006/relationships
+// Namespace: http://schemas.openxmlformats.org/package/2006/relationships
 // ============================================================================
 
-// XMLRelationships 关系集合根节点
-// 对应 XML: <Relationships xmlns="...">...</Relationships>
+// XMLRelationships is the root element of a .rels file.
+// XML: <Relationships xmlns="...">...</Relationships>
 type XMLRelationships struct {
 	XMLName       xml.Name          `xml:"Relationships"`
 	Xmlns         string            `xml:"xmlns,attr,omitempty"`
 	Relationships []XMLRelationship `xml:"Relationship"`
 }
 
-// XMLRelationship 单个关系
-// 对应 XML: <Relationship Id="rId1" Type="..." Target="..."/>
+// XMLRelationship represents a single relationship entry.
+// XML: <Relationship Id="rId1" Type="..." Target="..."/>
 type XMLRelationship struct {
-	ID         string `xml:"Id,attr"`              // 关系 ID（如 rId1, rId2）
-	Type       string `xml:"Type,attr"`            // 关系类型 URI
-	Target     string `xml:"Target,attr"`          // 目标路径（相对或绝对）
-	TargetMode string `xml:"TargetMode,attr,omitempty"` // Internal（默认）或 External
+	ID         string `xml:"Id,attr"`                   // relationship ID (e.g. rId1, rId2)
+	Type       string `xml:"Type,attr"`                 // relationship type URI
+	Target     string `xml:"Target,attr"`               // target path (relative or absolute)
+	TargetMode string `xml:"TargetMode,attr,omitempty"` // Internal (default) or External
 }
 
 // ============================================================================
-// 常量定义
+// Constants
 // ============================================================================
 
 const (
-	// 关系命名空间
+	// NamespaceRelationships is the OPC relationships namespace URI.
 	NamespaceRelationships = "http://schemas.openxmlformats.org/package/2006/relationships"
 
-	// 目标模式
+	// target mode values
 	TargetModeInternal = "Internal"
 	TargetModeExternal = "External"
 
-	// 常用关系类型
+	// common relationship type URIs
 	RelTypeImage       = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
 	RelTypeHyperlink   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
 	RelTypeSlide       = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
@@ -61,10 +61,10 @@ const (
 )
 
 // ============================================================================
-// 构造函数
+// Constructors
 // ============================================================================
 
-// NewXMLRelationships 创建带默认命名空间的关系集合
+// NewXMLRelationships creates a relationships collection with the default namespace.
 func NewXMLRelationships() *XMLRelationships {
 	return &XMLRelationships{
 		Xmlns:         NamespaceRelationships,
@@ -72,7 +72,7 @@ func NewXMLRelationships() *XMLRelationships {
 	}
 }
 
-// NewXMLRelationship 创建单个关系
+// NewXMLRelationship creates a single relationship.
 func NewXMLRelationship(id, relType, target string) XMLRelationship {
 	return XMLRelationship{
 		ID:     id,
@@ -81,7 +81,7 @@ func NewXMLRelationship(id, relType, target string) XMLRelationship {
 	}
 }
 
-// NewXMLRelationshipExternal 创建外部关系
+// NewXMLRelationshipExternal creates an external relationship.
 func NewXMLRelationshipExternal(id, relType, target string) XMLRelationship {
 	return XMLRelationship{
 		ID:         id,
@@ -92,20 +92,20 @@ func NewXMLRelationshipExternal(id, relType, target string) XMLRelationship {
 }
 
 // ============================================================================
-// 辅助方法
+// Helper methods
 // ============================================================================
 
-// Add 添加关系到集合
+// Add appends a relationship to the collection.
 func (rs *XMLRelationships) Add(rel XMLRelationship) {
 	rs.Relationships = append(rs.Relationships, rel)
 }
 
-// AddNew 创建并添加新关系
+// AddNew creates and appends a new relationship.
 func (rs *XMLRelationships) AddNew(id, relType, target string) {
 	rs.Add(NewXMLRelationship(id, relType, target))
 }
 
-// GetByID 根据 ID 获取关系
+// GetByID returns the relationship with the given ID, or nil if not found.
 func (rs *XMLRelationships) GetByID(id string) *XMLRelationship {
 	for i := range rs.Relationships {
 		if rs.Relationships[i].ID == id {
@@ -115,7 +115,7 @@ func (rs *XMLRelationships) GetByID(id string) *XMLRelationship {
 	return nil
 }
 
-// GetByType 根据类型获取所有关系
+// GetByType returns all relationships of the given type.
 func (rs *XMLRelationships) GetByType(relType string) []XMLRelationship {
 	var result []XMLRelationship
 	for _, rel := range rs.Relationships {
@@ -126,7 +126,7 @@ func (rs *XMLRelationships) GetByType(relType string) []XMLRelationship {
 	return result
 }
 
-// GetByTarget 根据目标路径获取关系
+// GetByTarget returns the relationship with the given target path, or nil if not found.
 func (rs *XMLRelationships) GetByTarget(target string) *XMLRelationship {
 	for i := range rs.Relationships {
 		if rs.Relationships[i].Target == target {
@@ -136,21 +136,21 @@ func (rs *XMLRelationships) GetByTarget(target string) *XMLRelationship {
 	return nil
 }
 
-// Count 返回关系数量
+// Count returns the number of relationships.
 func (rs *XMLRelationships) Count() int {
 	return len(rs.Relationships)
 }
 
-// IsExternal 检查是否为外部关系
+// IsExternal reports whether this is an external relationship.
 func (r *XMLRelationship) IsExternal() bool {
 	return r.TargetMode == TargetModeExternal
 }
 
 // ============================================================================
-// XML 序列化/反序列化
+// XML serialization / deserialization
 // ============================================================================
 
-// ToXML 将关系集合序列化为 XML 字节
+// ToXML serializes the relationships collection to XML bytes.
 func (rs *XMLRelationships) ToXML() ([]byte, error) {
 	output, err := xml.MarshalIndent(rs, "", "  ")
 	if err != nil {
@@ -159,8 +159,7 @@ func (rs *XMLRelationships) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从 XML 字节反序列化关系集合
-// 统一命名规范，与其他 Part 保持一致
+// FromXML deserializes a relationships collection from XML bytes.
 func (rs *XMLRelationships) FromXML(data []byte) error {
 	if err := xml.Unmarshal(data, rs); err != nil {
 		return err
@@ -168,8 +167,7 @@ func (rs *XMLRelationships) FromXML(data []byte) error {
 	return nil
 }
 
-// ParseRelationships 从 XML 字节解析关系集合
-// 这是创建新实例的便捷方法
+// ParseRelationships parses a relationships collection from XML bytes.
 func ParseRelationships(data []byte) (*XMLRelationships, error) {
 	var rs XMLRelationships
 	if err := rs.FromXML(data); err != nil {

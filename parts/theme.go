@@ -9,28 +9,28 @@ import (
 )
 
 // ============================================================================
-// ThemePart - 主题部件
+// ThemePart - theme part
 // ============================================================================
 //
-// 对应 /ppt/theme/themeN.xml
-// 定义演示文稿的颜色方案、字体方案和格式方案
+// Corresponds to /ppt/theme/themeN.xml
+// Defines the presentation's color scheme, font scheme, and format scheme.
 //
 // ============================================================================
 
-// ThemePart 主题部件
+// ThemePart holds the theme part for a presentation.
 type ThemePart struct {
 	uri *opc.PackURI
 
-	// 主题数据
+	// theme data
 	theme *XTheme
 
-	// 缓存的颜色查找表
+	// cached color lookup table
 	colorCache map[ColorRole]*XColorVariant
 
 	mu sync.RWMutex
 }
 
-// NewThemePart 创建新的主题部件
+// NewThemePart creates a new theme part with the given numeric ID.
 func NewThemePart(id int) *ThemePart {
 	return &ThemePart{
 		uri:        opc.NewPackURI(fmt.Sprintf("/ppt/theme/theme%d.xml", id)),
@@ -38,7 +38,7 @@ func NewThemePart(id int) *ThemePart {
 	}
 }
 
-// NewThemePartWithURI 使用指定 URI 创建主题部件
+// NewThemePartWithURI creates a theme part using the specified URI.
 func NewThemePartWithURI(uri *opc.PackURI) *ThemePart {
 	return &ThemePart{
 		uri:        uri,
@@ -46,28 +46,28 @@ func NewThemePartWithURI(uri *opc.PackURI) *ThemePart {
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (t *ThemePart) PartURI() *opc.PackURI {
 	return t.uri
 }
 
-// Theme 返回主题数据
+// Theme returns the theme data.
 func (t *ThemePart) Theme() *XTheme {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.theme
 }
 
-// SetThemeData 设置主题数据（用于设置克隆后的主题）
+// SetThemeData sets the theme data (used when assigning a cloned theme).
 func (t *ThemePart) SetThemeData(theme *XTheme) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.theme = theme
-	// 清空缓存
+	// clear the cache
 	t.colorCache = make(map[ColorRole]*XColorVariant)
 }
 
-// ColorScheme 返回颜色方案
+// ColorScheme returns the color scheme.
 func (t *ThemePart) ColorScheme() *XColorScheme {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -77,7 +77,7 @@ func (t *ThemePart) ColorScheme() *XColorScheme {
 	return t.theme.ThemeElements.ColorScheme
 }
 
-// FontScheme 返回字体方案
+// FontScheme returns the font scheme.
 func (t *ThemePart) FontScheme() *XFontScheme {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -88,20 +88,20 @@ func (t *ThemePart) FontScheme() *XFontScheme {
 }
 
 // ============================================================================
-// 颜色访问方法
+// Color access methods
 // ============================================================================
 
-// GetThemeColor 获取指定角色的颜色
+// GetThemeColor returns the color for the given role.
 func (t *ThemePart) GetThemeColor(role ColorRole) *XColorVariant {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	// 检查缓存
+	// check the cache
 	if c, ok := t.colorCache[role]; ok {
 		return c
 	}
 
-	// 从颜色方案中获取
+	// look up in the color scheme
 	scheme := t.ColorScheme()
 	if scheme == nil {
 		return nil
@@ -135,7 +135,7 @@ func (t *ThemePart) GetThemeColor(role ColorRole) *XColorVariant {
 		color = scheme.FollowedHyperlink
 	}
 
-	// 缓存结果
+	// cache the result
 	if color != nil {
 		t.colorCache[role] = color
 	}
@@ -143,8 +143,8 @@ func (t *ThemePart) GetThemeColor(role ColorRole) *XColorVariant {
 	return color
 }
 
-// GetThemeColorRGB 获取指定角色的 RGB 颜色值
-// 返回 6 位十六进制字符串（如 "FF0000"），如果无法获取则返回空字符串
+// GetThemeColorRGB returns the RGB value for the given role as a 6-digit hex
+// string (e.g. "FF0000"), or an empty string if unavailable.
 func (t *ThemePart) GetThemeColorRGB(role ColorRole) string {
 	color := t.GetThemeColor(role)
 	if color == nil {
@@ -162,7 +162,7 @@ func (t *ThemePart) GetThemeColorRGB(role ColorRole) string {
 	return ""
 }
 
-// GetThemeColorType 获取指定角色的颜色类型
+// GetThemeColorType returns the color type for the given role.
 func (t *ThemePart) GetThemeColorType(role ColorRole) ColorType {
 	color := t.GetThemeColor(role)
 	if color == nil {
@@ -181,26 +181,26 @@ func (t *ThemePart) GetThemeColorType(role ColorRole) ColorType {
 }
 
 // ============================================================================
-// 颜色设置方法
+// Color setter methods
 // ============================================================================
 
-// SetThemeColorRGB 设置指定角色的 RGB 颜色值
-// rgb 为 6 位十六进制字符串（如 "FF0000"）
+// SetThemeColorRGB sets the RGB color for the given role.
+// rgb must be a 6-digit hex string (e.g. "FF0000").
 func (t *ThemePart) SetThemeColorRGB(role ColorRole, rgb string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// 确保主题结构存在
+	// ensure the theme structure exists
 	t.ensureThemeStructure()
 
 	scheme := t.theme.ThemeElements.ColorScheme
 
-	// 创建颜色变体
+	// create the color variant
 	color := &XColorVariant{
 		SRGBColor: &XSRGBColor{Val: rgb},
 	}
 
-	// 设置对应角色的颜色
+	// assign the color to the appropriate role
 	switch role {
 	case ColorRoleDark1:
 		scheme.Dark1 = color
@@ -228,23 +228,23 @@ func (t *ThemePart) SetThemeColorRGB(role ColorRole, rgb string) {
 		scheme.FollowedHyperlink = color
 	}
 
-	// 更新缓存
+	// update the cache
 	t.colorCache[role] = color
 }
 
-// SetThemeColorSystem 设置指定角色的系统颜色
-// sysColorName 为系统颜色名称（如 "windowText", "window"）
-// lastClr 为回退 RGB 颜色值（6 位十六进制）
+// SetThemeColorSystem sets a system color for the given role.
+// sysColorName is the system color name (e.g. "windowText", "window").
+// lastClr is the fallback RGB value (6-digit hex).
 func (t *ThemePart) SetThemeColorSystem(role ColorRole, sysColorName, lastClr string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// 确保主题结构存在
+	// ensure the theme structure exists
 	t.ensureThemeStructure()
 
 	scheme := t.theme.ThemeElements.ColorScheme
 
-	// 创建颜色变体
+	// create the color variant
 	color := &XColorVariant{
 		SysColor: &XSysColor{
 			Val:     sysColorName,
@@ -252,7 +252,7 @@ func (t *ThemePart) SetThemeColorSystem(role ColorRole, sysColorName, lastClr st
 		},
 	}
 
-	// 设置对应角色的颜色
+	// assign the color to the appropriate role
 	switch role {
 	case ColorRoleDark1:
 		scheme.Dark1 = color
@@ -280,11 +280,11 @@ func (t *ThemePart) SetThemeColorSystem(role ColorRole, sysColorName, lastClr st
 		scheme.FollowedHyperlink = color
 	}
 
-	// 更新缓存
+	// update the cache
 	t.colorCache[role] = color
 }
 
-// ensureThemeStructure 确保主题结构存在（调用时需持有锁）
+// ensureThemeStructure ensures the theme structure is initialized (must be called with the lock held).
 func (t *ThemePart) ensureThemeStructure() {
 	if t.theme == nil {
 		t.theme = &XTheme{
@@ -303,10 +303,10 @@ func (t *ThemePart) ensureThemeStructure() {
 }
 
 // ============================================================================
-// 字体设置方法
+// Font setter methods
 // ============================================================================
 
-// SetThemeMajorFont 设置标题字体
+// SetThemeMajorFont sets the major (heading) font.
 func (t *ThemePart) SetThemeMajorFont(latin, eastAsia, complex string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -323,7 +323,7 @@ func (t *ThemePart) SetThemeMajorFont(latin, eastAsia, complex string) {
 	fontScheme.MajorFont.Complex = complex
 }
 
-// SetThemeMinorFont 设置正文字体
+// SetThemeMinorFont sets the minor (body) font.
 func (t *ThemePart) SetThemeMinorFont(latin, eastAsia, complex string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -340,8 +340,8 @@ func (t *ThemePart) SetThemeMinorFont(latin, eastAsia, complex string) {
 	fontScheme.MinorFont.Complex = complex
 }
 
-// SetThemeScriptFont 设置脚本特定字体
-// isMajor: true 为标题字体，false 为正文字体
+// SetThemeScriptFont sets a script-specific font.
+// isMajor: true for the major (heading) font collection, false for minor (body).
 func (t *ThemePart) SetThemeScriptFont(isMajor bool, script, typeface string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -362,7 +362,7 @@ func (t *ThemePart) SetThemeScriptFont(isMajor bool, script, typeface string) {
 		fontColl = fontScheme.MinorFont
 	}
 
-	// 查找是否已存在该脚本的字体
+	// update existing script font if found
 	for i, f := range fontColl.Fonts {
 		if f.Script == script {
 			fontColl.Fonts[i].Typeface = typeface
@@ -370,7 +370,7 @@ func (t *ThemePart) SetThemeScriptFont(isMajor bool, script, typeface string) {
 		}
 	}
 
-	// 添加新字体
+	// otherwise append a new entry
 	fontColl.Fonts = append(fontColl.Fonts, XScriptFont{
 		Script:   script,
 		Typeface: typeface,
@@ -378,10 +378,10 @@ func (t *ThemePart) SetThemeScriptFont(isMajor bool, script, typeface string) {
 }
 
 // ============================================================================
-// XML 序列化/反序列化
+// XML serialization / deserialization
 // ============================================================================
 
-// ToXML 将主题序列化为 XML
+// ToXML serializes the theme to XML.
 func (t *ThemePart) ToXML() ([]byte, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -398,9 +398,9 @@ func (t *ThemePart) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从 XML 反序列化主题
+// FromXML deserializes the theme from XML.
 func (t *ThemePart) FromXML(data []byte) error {
-	// 去除命名空间前缀以兼容 Go 的 xml.Unmarshal
+	// strip namespace prefixes for compatibility with Go's xml.Unmarshal
 	cleanData, err := StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
@@ -416,13 +416,13 @@ func (t *ThemePart) FromXML(data []byte) error {
 
 	t.theme = &theme
 
-	// 清空缓存
+	// clear the cache
 	t.colorCache = make(map[ColorRole]*XColorVariant)
 
 	return nil
 }
 
-// ParseTheme 从 XML 字节解析主题
+// ParseTheme parses a theme from XML bytes.
 func ParseTheme(data []byte) (*XTheme, error) {
 	cleanData, err := StripNamespacePrefixes(data)
 	if err != nil {
@@ -438,10 +438,10 @@ func ParseTheme(data []byte) (*XTheme, error) {
 }
 
 // ============================================================================
-// XColorVariant 辅助方法
+// XColorVariant helper methods
 // ============================================================================
 
-// Type 返回颜色类型
+// Type returns the color type.
 func (c *XColorVariant) Type() ColorType {
 	if c == nil {
 		return ColorTypeUnknown
@@ -455,9 +455,9 @@ func (c *XColorVariant) Type() ColorType {
 	return ColorTypeUnknown
 }
 
-// RGB 返回 RGB 颜色值
-// 对于 RGB 颜色，直接返回值
-// 对于系统颜色，返回 LastClr（回退颜色）
+// RGB returns the RGB color value.
+// For RGB colors the value is returned directly; for system colors the
+// LastClr fallback is returned.
 func (c *XColorVariant) RGB() string {
 	if c == nil {
 		return ""
@@ -474,17 +474,17 @@ func (c *XColorVariant) RGB() string {
 	return ""
 }
 
-// IsRGB 判断是否为 RGB 颜色
+// IsRGB reports whether this is an RGB color.
 func (c *XColorVariant) IsRGB() bool {
 	return c != nil && c.SRGBColor != nil
 }
 
-// IsSystem 判断是否为系统颜色
+// IsSystem reports whether this is a system color.
 func (c *XColorVariant) IsSystem() bool {
 	return c != nil && c.SysColor != nil
 }
 
-// SystemColorName 返回系统颜色名称
+// SystemColorName returns the system color name.
 func (c *XColorVariant) SystemColorName() string {
 	if c == nil || c.SysColor == nil {
 		return ""

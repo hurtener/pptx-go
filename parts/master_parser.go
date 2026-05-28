@@ -9,28 +9,28 @@ import (
 )
 
 // ============================================================================
-// 母版/版式 XML 解析器
+// Slide master / layout XML parser
 // ============================================================================
 //
-// 将嵌套的 XML 结构体转换为干净的只读领域模型
+// Converts nested XML structs into clean, read-only domain models.
 // ============================================================================
 
-// ParseLayout 解析幻灯片版式 XML
-// 传入 xml 字节，解析并提取出该版式中所有的占位符坐标和类型
+// ParseLayout parses a slide layout XML, extracting all placeholder
+// positions and types.
 func ParseLayout(xmlData []byte) (*SlideLayoutData, error) {
 	var xmlLayout XMLSlideLayout
 	if err := xml.Unmarshal(xmlData, &xmlLayout); err != nil {
-		return nil, fmt.Errorf("解析版式 XML 失败: %w", err)
+		return nil, fmt.Errorf("failed to parse layout XML: %w", err)
 	}
 
 	if xmlLayout.CSld == nil || xmlLayout.CSld.SpTree == nil {
-		return nil, fmt.Errorf("版式缺少必要节点 p:cSld 或 p:spTree")
+		return nil, fmt.Errorf("layout is missing required nodes p:cSld or p:spTree")
 	}
 
-	// 提取占位符
+	// extract placeholders
 	placeholders := extractPlaceholders(xmlLayout.CSld.SpTree)
 
-	// 提取背景
+	// extract background
 	var background *Background
 	if xmlLayout.CSld.Bg != nil {
 		background = parseBackground(xmlLayout.CSld.Bg)
@@ -44,22 +44,21 @@ func ParseLayout(xmlData []byte) (*SlideLayoutData, error) {
 	}, nil
 }
 
-// ParseMaster 解析幻灯片母版 XML
-// 传入 xml 字节，解析并提取出母版中的占位符定义
+// ParseMaster parses a slide master XML, extracting all placeholder definitions.
 func ParseMaster(xmlData []byte) (*SlideMasterData, error) {
 	var xmlMaster XMLSlideMaster
 	if err := xml.Unmarshal(xmlData, &xmlMaster); err != nil {
-		return nil, fmt.Errorf("解析母版 XML 失败: %w", err)
+		return nil, fmt.Errorf("failed to parse master XML: %w", err)
 	}
 
 	if xmlMaster.CSld == nil || xmlMaster.CSld.SpTree == nil {
-		return nil, fmt.Errorf("母版缺少必要节点 p:cSld 或 p:spTree")
+		return nil, fmt.Errorf("master is missing required nodes p:cSld or p:spTree")
 	}
 
-	// 提取占位符
+	// extract placeholders
 	placeholders := extractPlaceholders(xmlMaster.CSld.SpTree)
 
-	// 提取背景
+	// extract background
 	var background *Background
 	if xmlMaster.CSld.Bg != nil {
 		background = parseBackground(xmlMaster.CSld.Bg)
@@ -74,14 +73,14 @@ func ParseMaster(xmlData []byte) (*SlideMasterData, error) {
 }
 
 // ============================================================================
-// 占位符提取
+// Placeholder extraction
 // ============================================================================
 
-// extractPlaceholders 从形状树中提取所有占位符
+// extractPlaceholders extracts all placeholders from a shape tree.
 func extractPlaceholders(spTree *XMLShapeTree) map[string]*Placeholder {
 	placeholders := make(map[string]*Placeholder)
 
-	// 提取普通形状中的占位符
+	// extract from regular shapes
 	for _, shape := range spTree.Shapes {
 		ph := extractPlaceholderFromShape(shape)
 		if ph != nil {
@@ -89,7 +88,7 @@ func extractPlaceholders(spTree *XMLShapeTree) map[string]*Placeholder {
 		}
 	}
 
-	// 递归提取组形状中的占位符
+	// recurse into group shapes
 	for _, grpSp := range spTree.GroupShapes {
 		extractPlaceholdersFromGroup(&grpSp, placeholders)
 	}
@@ -97,7 +96,7 @@ func extractPlaceholders(spTree *XMLShapeTree) map[string]*Placeholder {
 	return placeholders
 }
 
-// extractPlaceholdersFromGroup 从组形状中递归提取占位符
+// extractPlaceholdersFromGroup recursively extracts placeholders from a group shape.
 func extractPlaceholdersFromGroup(grpSp *XMLGroupShape, placeholders map[string]*Placeholder) {
 	for _, shape := range grpSp.Shapes {
 		ph := extractPlaceholderFromShape(shape)
@@ -107,22 +106,22 @@ func extractPlaceholdersFromGroup(grpSp *XMLGroupShape, placeholders map[string]
 	}
 }
 
-// extractPlaceholderFromShape 从单个形状中提取占位符信息
+// extractPlaceholderFromShape extracts placeholder information from a single shape.
 func extractPlaceholderFromShape(shape XMLShape) *Placeholder {
-	// 检查是否有占位符定义
+	// skip shapes that have no placeholder element
 	if shape.NvSpPr == nil || shape.NvSpPr.NvPr == nil || shape.NvSpPr.NvPr.Ph == nil {
 		return nil
 	}
 
 	xmlPh := shape.NvSpPr.NvPr.Ph
 
-	// 解析占位符类型
+	// parse placeholder type
 	phType := parsePlaceholderType(xmlPh.Type)
 
-	// 生成占位符 ID
+	// generate placeholder ID
 	phID := generatePlaceholderID(xmlPh.Idx, shape.NvSpPr.CNvPr)
 
-	// 提取坐标和尺寸
+	// extract position and size
 	var x, y, cx, cy int64
 	if shape.SpPr != nil && shape.SpPr.Xfrm != nil {
 		if shape.SpPr.Xfrm.Off != nil {
@@ -146,28 +145,28 @@ func extractPlaceholderFromShape(shape XMLShape) *Placeholder {
 }
 
 // ============================================================================
-// 背景解析
+// Background parsing
 // ============================================================================
 
-// parseBackground 解析背景 XML 结构
+// parseBackground parses a background XML element into a Background struct.
 func parseBackground(xmlBg *XMLBackground) *Background {
-	// 处理 <p:bgRef> 背景引用（主题色引用）
+	// handle <p:bgRef> background reference (theme color reference)
 	if xmlBg.BgRef != nil {
 		return &Background{
 			backgroundType: BackgroundTypeThemeColor,
-			solidColorRGB: xmlBg.BgRef.Clr.Val, // 主题色名称，如 "bg1"
+			solidColorRGB:  xmlBg.BgRef.Clr.Val, // theme color name, e.g. "bg1"
 			opacity:        1.0,
 		}
 	}
 
-	// 处理 <p:bgPr> 背景属性
+	// handle <p:bgPr> background properties
 	if xmlBg.BgPr == nil || xmlBg.BgPr.Fill == nil {
 		return nil
 	}
 
 	fill := xmlBg.BgPr.Fill
 
-	// 纯色填充
+	// solid fill
 	if fill.SolidFill != nil {
 		rgb := extractColorFromSolidFill(fill.SolidFill)
 		if rgb != "" {
@@ -179,12 +178,12 @@ func parseBackground(xmlBg *XMLBackground) *Background {
 		}
 	}
 
-	// 渐变填充
+	// gradient fill
 	if fill.GradFill != nil {
 		return parseGradientBackground(fill.GradFill)
 	}
 
-	// 图片填充
+	// picture fill
 	if fill.BlipFill != nil && fill.BlipFill.Blip != nil {
 		return &Background{
 			backgroundType: BackgroundTypePicture,
@@ -193,7 +192,7 @@ func parseBackground(xmlBg *XMLBackground) *Background {
 		}
 	}
 
-	// 无填充
+	// no fill
 	if fill.NoFill != nil {
 		return &Background{
 			backgroundType: BackgroundTypeNone,
@@ -204,19 +203,19 @@ func parseBackground(xmlBg *XMLBackground) *Background {
 	return nil
 }
 
-// parseGradientBackground 解析渐变背景
+// parseGradientBackground parses a gradient fill into a Background struct.
 func parseGradientBackground(gradFill *XMLGradFill) *Background {
 	bg := &Background{
 		backgroundType: BackgroundTypeGradient,
 		opacity:        1.0,
 	}
 
-	// 解析渐变角度
+	// parse gradient angle
 	if gradFill.Lin != nil {
-		bg.gradientAngle = int32(gradFill.Lin.Ang / 60000) // 转换为度
+		bg.gradientAngle = int32(gradFill.Lin.Ang / 60000) // convert to degrees
 	}
 
-	// 解析渐变色标
+	// parse gradient stops
 	if gradFill.GsLst != nil {
 		bg.gradientColors = make([]GradientStop, 0, len(gradFill.GsLst.Stops))
 		for _, stop := range gradFill.GsLst.Stops {
@@ -226,7 +225,7 @@ func parseGradientBackground(gradFill *XMLGradFill) *Background {
 			}
 			if rgb != "" {
 				bg.gradientColors = append(bg.gradientColors, GradientStop{
-					position: float32(stop.Pos) / 100000.0, // 转换为 0.0-1.0
+					position: float32(stop.Pos) / 100000.0, // convert to 0.0–1.0
 					colorRGB: rgb,
 				})
 			}
@@ -236,24 +235,24 @@ func parseGradientBackground(gradFill *XMLGradFill) *Background {
 	return bg
 }
 
-// extractColorFromSolidFill 从纯色填充中提取颜色
+// extractColorFromSolidFill extracts an RGB hex value from a solid fill element.
 func extractColorFromSolidFill(solidFill *XMLSolidFill) string {
 	if solidFill.SrgbClr != nil {
 		return solidFill.SrgbClr.Val
 	}
 	if solidFill.SchemeClr != nil {
-		// 主题色需要查表，这里暂时返回空
-		// 后续可以扩展为主题色名称
+		// theme colors require a lookup table; return empty for now
+		// can be extended to return theme color names in the future
 		return ""
 	}
 	return ""
 }
 
 // ============================================================================
-// 占位符类型转换
+// Placeholder type conversion
 // ============================================================================
 
-// parsePlaceholderType 将 XML 字符串类型转换为枚举
+// parsePlaceholderType converts an XML type string to a PlaceholderType enum value.
 func parsePlaceholderType(typeStr string) PlaceholderType {
 	switch typeStr {
 	case "title":
@@ -294,28 +293,28 @@ func parsePlaceholderType(typeStr string) PlaceholderType {
 }
 
 // ============================================================================
-// ID 生成
+// ID generation
 // ============================================================================
 
 var (
-	layoutIDCounter  int64
-	masterIDCounter  int64
+	layoutIDCounter int64
+	masterIDCounter int64
 )
 
-// generateLayoutID 生成版式 ID
+// generateLayoutID generates a unique layout ID.
 func generateLayoutID() string {
 	layoutIDCounter++
 	return "layout_" + strconv.FormatInt(layoutIDCounter, 10)
 }
 
-// generateMasterID 生成母版 ID
+// generateMasterID generates a unique master ID.
 func generateMasterID() string {
 	masterIDCounter++
 	return "master_" + strconv.FormatInt(masterIDCounter, 10)
 }
 
-// generatePlaceholderID 生成占位符 ID
-// 优先使用 XML 中的 idx，否则使用 cNvPr 中的 id
+// generatePlaceholderID generates a placeholder ID.
+// Prefers the XML idx attribute; falls back to the cNvPr id.
 func generatePlaceholderID(xmlIdx string, cnvPr *XMLCNvPr) string {
 	if xmlIdx != "" {
 		return "ph_" + xmlIdx
@@ -323,22 +322,22 @@ func generatePlaceholderID(xmlIdx string, cnvPr *XMLCNvPr) string {
 	if cnvPr != nil && cnvPr.ID > 0 {
 		return "ph_" + strconv.Itoa(cnvPr.ID)
 	}
-	// 生成随机 ID
+	// fallback ID
 	return "ph_unknown"
 }
 
 // ============================================================================
-// EMU 单位转换辅助（便捷方法）
+// EMU unit conversion helpers (convenience aliases)
 // ============================================================================
 
-// EMUToPixels 将 EMU 转换为像素（96 DPI）
+// EMUToPixels converts EMU to pixels at 96 DPI.
 var EMUToPixels = utils.EMUToPixels
 
-// EMUToPoints 将 EMU 转换为磅
+// EMUToPoints converts EMU to points.
 var EMUToPoints = utils.EMUToPoints
 
-// EMUToInches 将 EMU 转换为英寸
+// EMUToInches converts EMU to inches.
 var EMUToInches = utils.EMUToInches
 
-// EMUToCentimeters 将 EMU 转换为厘米
+// EMUToCentimeters converts EMU to centimetres.
 var EMUToCentimeters = utils.EMUToCentimeters

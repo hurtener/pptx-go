@@ -12,65 +12,67 @@ import (
 )
 
 // ============================================================================
-// Go-pptx 完整能力测试流水线
+// Full-capability pipeline test for pptx-go
 // ============================================================================
 //
-// 测试目标：证明整个库从解析到创建的完整数据流能力
+// Goal: prove the complete data flow from parsing to creation across the
+// entire library stack.
 //
-// 阶段划分：
-//   Stage 1: OPC层【解析与解包】能力
-//   Stage 2: Parts层【反序列化】能力
-//   Stage 3: Parts层【创建与序列化】能力
-//   Stage 4: OPC层【写入与路由】能力 (极其关键)
-//   Stage 5: Parts层【数据更新】能力
-//   Stage 6: OPC层【安全打包】能力
+// Stages:
+//   Stage 1: OPC layer — parsing and unpacking
+//   Stage 2: Parts layer — deserialization
+//   Stage 3: Parts layer — creation and serialization
+//   Stage 4: OPC layer — writing and routing (critical)
+//   Stage 5: Parts layer — data update
+//   Stage 6: OPC layer — safe repackaging
 //
-// 依赖：test/test.pptx (真实 PPTX 文件)
+// Dependency: test/test.pptx (a real PPTX file)
 // ============================================================================
 
 const testPPTXPath = "test.pptx"
 
 // ============================================================================
-// Stage 1: OPC层【解析与解包】能力
+// Stage 1: OPC layer — parsing and unpacking
 // ============================================================================
 
-// TestOPC_ParseAndUnpack 阶段1：证明 OPC 层能够正确解析和解包 PPTX 文件
+// TestOPC_ParseAndUnpack proves that the OPC layer can correctly parse and
+// unpack a PPTX file.
 func TestOPC_ParseAndUnpack(t *testing.T) {
-	// 1.1 验证测试文件存在
+	// 1.1 Verify the test file exists.
 	if _, err := os.Stat(testPPTXPath); os.IsNotExist(err) {
-		t.Fatalf("测试文件不存在: %s", testPPTXPath)
+		t.Fatalf("test file not found: %s", testPPTXPath)
 	}
 
-	// 1.2 打开 OPC 包
+	// 1.2 Open the OPC package.
 	pkg, err := opc.OpenFile(testPPTXPath)
 	if err != nil {
-		t.Fatalf("OPC OpenFile 失败: %v", err)
+		t.Fatalf("opc.OpenFile failed: %v", err)
 	}
 	defer pkg.Close()
 
-	// 1.3 验证包级别关系存在
+	// 1.3 Verify package-level relationships exist.
 	rootRels := pkg.Relationships()
 	if rootRels == nil {
-		t.Fatal("包级别关系为空")
+		t.Fatal("package-level relationships are nil")
 	}
 	if rootRels.Count() == 0 {
-		t.Fatal("包级别关系数量为 0")
+		t.Fatal("package-level relationship count is 0")
 	}
 
-	// 1.4 验证 ContentTypes 正确加载
+	// 1.4 Verify ContentTypes loaded correctly.
 	ct := pkg.ContentTypes()
 	if ct == nil {
-		t.Fatal("ContentTypes 为空")
+		t.Fatal("ContentTypes is nil")
 	}
 
-	// 1.5 验证部件数量（test.pptx 包含多个部件）
+	// 1.5 Verify part count (test.pptx contains several parts).
 	partCount := pkg.PartCount()
 	if partCount == 0 {
-		t.Fatal("部件数量为 0")
+		t.Fatal("part count is 0")
 	}
-	t.Logf("Stage 1: OPC 解包成功，部件数量 = %d", partCount)
+	t.Logf("Stage 1: OPC unpack succeeded, part count = %d", partCount)
 
-	// 1.6 验证核心部件存在
+	// 1.6 Verify required parts are present.
 	requiredParts := []string{
 		"/ppt/presentation.xml",
 		"/ppt/slides/slide1.xml",
@@ -78,17 +80,17 @@ func TestOPC_ParseAndUnpack(t *testing.T) {
 	}
 	for _, uri := range requiredParts {
 		if !pkg.ContainsPart(opc.NewPackURI(uri)) {
-			t.Errorf("缺少必需部件: %s", uri)
+			t.Errorf("missing required part: %s", uri)
 		}
 	}
 
-	// 1.7 验证 ZIP 结构完整性
+	// 1.7 Verify ZIP structural integrity.
 	file, _ := os.Open(testPPTXPath)
 	defer file.Close()
 	stat, _ := file.Stat()
 	zipReader, err := zip.NewReader(file, stat.Size())
 	if err != nil {
-		t.Fatalf("ZIP 读取失败: %v", err)
+		t.Fatalf("ZIP read failed: %v", err)
 	}
 
 	files := make(map[string]bool)
@@ -96,125 +98,128 @@ func TestOPC_ParseAndUnpack(t *testing.T) {
 		files[f.Name] = true
 	}
 
-	// 验证 ZIP 中没有以 "/" 开头的路径（Windows ZIP 规范）
+	// Verify no ZIP entries have a leading "/" (Windows ZIP spec violation).
 	for _, f := range zipReader.File {
 		if strings.HasPrefix(f.Name, "/") {
-			t.Errorf("ZIP 路径违规（以 / 开头）: %s", f.Name)
+			t.Errorf("ZIP path violation (leading /): %s", f.Name)
 		}
 	}
 
-	t.Logf("Stage 1: OPC 解析与解包能力验证通过 (files=%d)", len(files))
-	_ = files // 使用变量避免编译错误
+	t.Logf("Stage 1: OPC parse and unpack passed (files=%d)", len(files))
+	_ = files // suppress unused-variable warning
 }
 
 // ============================================================================
-// Stage 2: Parts层【反序列化】能力
+// Stage 2: Parts layer — deserialization
 // ============================================================================
 
-// TestParts_Deserialize 阶段2：证明 Parts 层能够正确反序列化 XML
+// TestParts_Deserialize proves that the Parts layer can correctly deserialize
+// XML from a PPTX file.
 func TestParts_Deserialize(t *testing.T) {
-	// 2.1 打开 OPC 包
+	// 2.1 Open OPC package.
 	pkg, err := opc.OpenFile(testPPTXPath)
 	if err != nil {
-		t.Fatalf("OPC OpenFile 失败: %v", err)
+		t.Fatalf("opc.OpenFile failed: %v", err)
 	}
 	defer pkg.Close()
 
-	// 2.2 获取 PresentationPart 并反序列化
+	// 2.2 Get PresentationPart and deserialize.
 	presPart := pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))
 	if presPart == nil {
-		t.Fatal("缺少 presentation.xml")
+		t.Fatal("missing presentation.xml")
 	}
 
 	pres := parts.NewPresentationPart()
 	if err := pres.FromXML(presPart.Blob()); err != nil {
-		t.Fatalf("PresentationPart.FromXML 失败: %v", err)
+		t.Fatalf("PresentationPart.FromXML failed: %v", err)
 	}
 
-	// 2.3 验证 PresentationPart 数据正确性
+	// 2.3 Verify PresentationPart data.
 	slideCount := pres.SlideCount()
 	if slideCount == 0 {
-		t.Error("幻灯片数量为 0")
+		t.Error("slide count is 0")
 	}
-	t.Logf("Stage 2: Presentation 反序列化成功，幻灯片数量 = %d", slideCount)
+	t.Logf("Stage 2: Presentation deserialized, slide count = %d", slideCount)
 
 	slideSize := pres.SlideSize()
 	if slideSize.Cx == 0 || slideSize.Cy == 0 {
-		t.Error("幻灯片尺寸无效")
+		t.Error("invalid slide size")
 	}
-	t.Logf("Stage 2: 幻灯片尺寸 = %dx%d EMU", slideSize.Cx, slideSize.Cy)
+	t.Logf("Stage 2: slide size = %dx%d EMU", slideSize.Cx, slideSize.Cy)
 
-	// 2.4 获取 SlidePart 并反序列化
+	// 2.4 Get SlidePart and deserialize.
 	slidePart := pkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	if slidePart == nil {
-		t.Fatal("缺少 slide1.xml")
+		t.Fatal("missing slide1.xml")
 	}
 
 	slide := parts.NewSlidePart(1)
 	if err := slide.FromXML(slidePart.Blob()); err != nil {
-		t.Fatalf("SlidePart.FromXML 失败: %v", err)
+		t.Fatalf("SlidePart.FromXML failed: %v", err)
 	}
 
-	// 2.5 验证 SlidePart 数据正确性
+	// 2.5 Verify SlidePart data.
 	shapeCount := slide.ShapeIDCount()
-	t.Logf("Stage 2: Slide 反序列化成功，形状数量 = %d", shapeCount)
+	t.Logf("Stage 2: Slide deserialized, shape count = %d", shapeCount)
 
-	t.Log("Stage 2: Parts 层反序列化能力验证通过")
+	t.Log("Stage 2: Parts layer deserialization passed")
 }
 
 // ============================================================================
-// Stage 3: Parts层【创建与序列化】能力
+// Stage 3: Parts layer — creation and serialization
 // ============================================================================
 
-// TestParts_CreateAndSerialize 阶段3：证明 Parts 层能够创建新部件并序列化
+// TestParts_CreateAndSerialize proves that the Parts layer can create new
+// parts and serialize them.
 func TestParts_CreateAndSerialize(t *testing.T) {
-	// 3.1 创建新的 PresentationPart
+	// 3.1 Create a new PresentationPart.
 	pres := parts.NewPresentationPart()
 
-	// 3.2 创建新的 SlidePart 并使用 Builder 添加文本
+	// 3.2 Create a new SlidePart and add text via the builder.
 	slidePart := parts.NewSlidePart(1)
 	builder := slide.NewSlideBuilder(slidePart)
 	builder.AddTextBox(914400, 457200, 4572000, 457200, "Hello from Go Engine!")
 
-	// 3.3 序列化 PresentationPart
+	// 3.3 Serialize PresentationPart.
 	presXML, err := pres.ToXML()
 	if err != nil {
-		t.Fatalf("PresentationPart.ToXML 失败: %v", err)
+		t.Fatalf("PresentationPart.ToXML failed: %v", err)
 	}
 	if len(presXML) == 0 {
-		t.Fatal("PresentationPart.ToXML 返回空数据")
+		t.Fatal("PresentationPart.ToXML returned empty data")
 	}
 	if !strings.HasPrefix(string(presXML), "<?xml") {
-		t.Error("XML 缺少声明头")
+		t.Error("XML is missing the declaration header")
 	}
 
-	// 3.4 序列化 SlidePart
+	// 3.4 Serialize SlidePart.
 	slideXML, err := slidePart.ToXML()
 	if err != nil {
-		t.Fatalf("SlidePart.ToXML 失败: %v", err)
+		t.Fatalf("SlidePart.ToXML failed: %v", err)
 	}
 	if len(slideXML) == 0 {
-		t.Fatal("SlidePart.ToXML 返回空数据")
+		t.Fatal("SlidePart.ToXML returned empty data")
 	}
 	if !strings.Contains(string(slideXML), "Hello from Go Engine!") {
-		t.Error("Slide XML 不包含预期文本")
+		t.Error("slide XML does not contain expected text")
 	}
 
-	t.Logf("Stage 3: Presentation XML 大小 = %d bytes", len(presXML))
-	t.Logf("Stage 3: Slide XML 大小 = %d bytes", len(slideXML))
-	t.Log("Stage 3: Parts 层创建与序列化能力验证通过")
+	t.Logf("Stage 3: Presentation XML size = %d bytes", len(presXML))
+	t.Logf("Stage 3: Slide XML size = %d bytes", len(slideXML))
+	t.Log("Stage 3: Parts layer creation and serialization passed")
 }
 
 // ============================================================================
-// Stage 4: OPC层【写入与路由】能力 (极其关键)
+// Stage 4: OPC layer — writing and routing (critical)
 // ============================================================================
 
-// TestOPC_WriteAndRoute 阶段4：证明 OPC 层能够正确写入和路由
+// TestOPC_WriteAndRoute proves that the OPC layer can correctly write parts
+// and route relationships.
 func TestOPC_WriteAndRoute(t *testing.T) {
-	// 4.1 创建新包
+	// 4.1 Create a new package.
 	pkg := opc.NewPackage()
 
-	// 4.2 创建 PresentationPart
+	// 4.2 Create PresentationPart.
 	pres := parts.NewPresentationPart()
 	presXML, _ := pres.ToXML()
 	presPart, err := pkg.CreatePart(
@@ -223,10 +228,10 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 		presXML,
 	)
 	if err != nil {
-		t.Fatalf("CreatePart presentation.xml 失败: %v", err)
+		t.Fatalf("CreatePart presentation.xml failed: %v", err)
 	}
 
-	// 4.3 创建 SlidePart
+	// 4.3 Create SlidePart.
 	slidePart4 := parts.NewSlidePart(1)
 	slideBuilder4 := slide.NewSlideBuilder(slidePart4)
 	slideBuilder4.AddTextBox(914400, 457200, 4572000, 457200, "Hello from OPC!")
@@ -237,11 +242,11 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 		slideXML,
 	)
 	if err != nil {
-		t.Fatalf("CreatePart slide1.xml 失败: %v", err)
+		t.Fatalf("CreatePart slide1.xml failed: %v", err)
 	}
 
-	// 4.4 建立关系
-	// 包级别rels: 指向 presentation.xml
+	// 4.4 Establish relationships.
+	// Package-level rel: points to presentation.xml.
 	pkg.AddRelationship(
 		"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
 		"/ppt/presentation.xml",
@@ -255,50 +260,50 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 		false,
 	)
 
-	// slide1.xml -> presentation.xml (布局关系)
+	// slide1.xml -> slideLayout1.xml (layout relationship)
 	slidePart.AddRelationship(
 		"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
 		"../slideLayouts/slideLayout1.xml",
 		false,
 	)
 
-	// 4.5 验证关系路由
-	// 通过关系找到 slide
+	// 4.5 Verify relationship routing.
+	// Resolve the slide via its relationship from the presentation.
 	slideViaRel := pkg.ResolveRelationship(presPart,
 		"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 	if slideViaRel == nil {
-		t.Fatal("通过关系解析 slide 失败")
+		t.Fatal("failed to resolve slide via relationship")
 	}
 	if slideViaRel.PartURI().URI() != "/ppt/slides/slide1.xml" {
-		t.Errorf("关系解析的 URI 不正确: %s", slideViaRel.PartURI().URI())
+		t.Errorf("resolved URI is incorrect: %s", slideViaRel.PartURI().URI())
 	}
 
-	// 4.6 保存到文件
+	// 4.6 Save to file.
 	outputPath := "test_opc_output.pptx"
 	if err := pkg.SaveFile(outputPath); err != nil {
-		t.Fatalf("SaveFile 失败: %v", err)
+		t.Fatalf("SaveFile failed: %v", err)
 	}
 	defer os.Remove(outputPath)
 
-	// 4.7 验证输出文件 ZIP 结构
+	// 4.7 Verify the output ZIP structure.
 	file, _ := os.Open(outputPath)
 	defer file.Close()
 	stat, _ := file.Stat()
 	zipReader, err := zip.NewReader(file, stat.Size())
 	if err != nil {
-		t.Fatalf("ZIP 读取失败: %v", err)
+		t.Fatalf("ZIP read failed: %v", err)
 	}
 
 	outputFiles := make(map[string]bool)
 	for _, f := range zipReader.File {
 		outputFiles[f.Name] = true
-		// 检查没有以 "/" 开头的路径
+		// Verify no leading "/" in paths.
 		if strings.HasPrefix(f.Name, "/") {
-			t.Errorf("ZIP 路径违规: %s", f.Name)
+			t.Errorf("ZIP path violation: %s", f.Name)
 		}
 	}
 
-	// 验证必需的 OPC 文件都存在
+	// Verify all required OPC files are present.
 	requiredFiles := []string{
 		"[Content_Types].xml",
 		"_rels/.rels",
@@ -309,99 +314,100 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 	}
 	for _, name := range requiredFiles {
 		if !outputFiles[name] {
-			t.Errorf("输出文件缺少: %s", name)
+			t.Errorf("output is missing: %s", name)
 		}
 	}
 
-	t.Logf("Stage 4: OPC 写入成功，输出文件大小 = %d bytes", stat.Size())
-	t.Log("Stage 4: OPC 层写入与路由能力验证通过")
+	t.Logf("Stage 4: OPC write succeeded, output size = %d bytes", stat.Size())
+	t.Log("Stage 4: OPC writing and routing passed")
 }
 
 // ============================================================================
-// Stage 5: Parts层【数据更新】能力
+// Stage 5: Parts layer — data update
 // ============================================================================
 
-// TestParts_Update 阶段5：证明 Parts 层能够更新已有数据
+// TestParts_Update proves that the Parts layer can update existing data.
 func TestParts_Update(t *testing.T) {
-	// 5.1 打开 OPC 包
+	// 5.1 Open OPC package.
 	pkg, err := opc.OpenFile(testPPTXPath)
 	if err != nil {
-		t.Fatalf("OPC OpenFile 失败: %v", err)
+		t.Fatalf("opc.OpenFile failed: %v", err)
 	}
 	defer pkg.Close()
 
-	// 5.2 获取并反序列化 SlidePart
+	// 5.2 Get and deserialize SlidePart.
 	slidePart := pkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	if slidePart == nil {
-		t.Fatal("缺少 slide1.xml")
+		t.Fatal("missing slide1.xml")
 	}
 
 	slidePart5 := parts.NewSlidePart(1)
 	if err := slidePart5.FromXML(slidePart.Blob()); err != nil {
-		t.Fatalf("SlidePart.FromXML 失败: %v", err)
+		t.Fatalf("SlidePart.FromXML failed: %v", err)
 	}
 
 	originalShapeCount := slidePart5.ShapeIDCount()
-	t.Logf("Stage 5: 原始形状数量 = %d", originalShapeCount)
+	t.Logf("Stage 5: original shape count = %d", originalShapeCount)
 
-	// 5.3 添加新文本框
+	// 5.3 Add a new text box.
 	slideBuilder5 := slide.NewSlideBuilder(slidePart5)
 	slideBuilder5.AddTextBox(1000000, 1000000, 2000000, 500000, "Updated Text!")
 
 	newShapeCount := slidePart5.ShapeIDCount()
 	if newShapeCount <= originalShapeCount {
-		t.Error("添加形状后数量未增加")
+		t.Error("shape count did not increase after adding a shape")
 	}
-	t.Logf("Stage 5: 更新后形状数量 = %d", newShapeCount)
+	t.Logf("Stage 5: updated shape count = %d", newShapeCount)
 
-	// 5.4 重新序列化
+	// 5.4 Re-serialize.
 	newXML, err := slidePart5.ToXML()
 	if err != nil {
-		t.Fatalf("SlidePart.ToXML 失败: %v", err)
+		t.Fatalf("SlidePart.ToXML failed: %v", err)
 	}
 	if !strings.Contains(string(newXML), "Updated Text!") {
-		t.Error("更新后的 XML 不包含新文本")
+		t.Error("updated XML does not contain the new text")
 	}
 
-	// 5.5 更新 OPC 包中的部件
+	// 5.5 Update the part in the OPC package.
 	newSlidePart := opc.NewPart(
 		opc.NewPackURI("/ppt/slides/slide1.xml"),
 		slidePart.ContentType(),
 		newXML,
 	)
 	if err := pkg.AddPart(newSlidePart); err != nil {
-		// 如果已存在，需要先移除
+		// Part already exists; remove it first, then re-add.
 		pkg.RemovePart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 		pkg.AddPart(newSlidePart)
 	}
 
-	// 5.6 验证更新
+	// 5.6 Verify the update.
 	updatedPart := pkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	if string(updatedPart.Blob()) != string(newXML) {
-		t.Error("部件更新失败")
+		t.Error("part update failed")
 	}
 
-	t.Log("Stage 5: Parts 层数据更新能力验证通过")
+	t.Log("Stage 5: Parts layer data update passed")
 }
 
 // ============================================================================
-// Stage 6: OPC层【安全打包】能力
+// Stage 6: OPC layer — safe repackaging
 // ============================================================================
 
-// TestOPC_SecurePackaging 阶段6：证明 OPC 层能够安全地重新打包
+// TestOPC_SecurePackaging proves that the OPC layer can safely repackage a
+// modified presentation.
 func TestOPC_SecurePackaging(t *testing.T) {
-	// 6.1 打开原始文件
+	// 6.1 Open the original file.
 	originalPkg, err := opc.OpenFile(testPPTXPath)
 	if err != nil {
-		t.Fatalf("OpenFile 失败: %v", err)
+		t.Fatalf("OpenFile failed: %v", err)
 	}
 
-	// 6.2 记录原始部件数量和内容
+	// 6.2 Record original part count and content.
 	originalPartCount := originalPkg.PartCount()
 	originalSlidePart := originalPkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
-	_ = string(originalSlidePart.Blob()) // 原始内容，用于验证
+	_ = string(originalSlidePart.Blob()) // capture for later verification
 
-	// 6.3 修改 SlidePart
+	// 6.3 Replace SlidePart content.
 	slide6 := parts.NewSlidePart(1)
 	slideBuilder6 := slide.NewSlideBuilder(slide6)
 	slideBuilder6.AddTextBox(1000000, 1000000, 2000000, 500000, "Modified Content!")
@@ -415,91 +421,92 @@ func TestOPC_SecurePackaging(t *testing.T) {
 	originalPkg.RemovePart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	originalPkg.AddPart(newSlidePart)
 
-	// 6.4 保存修改后的包
+	// 6.4 Save the modified package.
 	outputPath := "test_secure_output.pptx"
 	if err := originalPkg.SaveFile(outputPath); err != nil {
-		t.Fatalf("SaveFile 失败: %v", err)
+		t.Fatalf("SaveFile failed: %v", err)
 	}
 	originalPkg.Close()
 	defer os.Remove(outputPath)
 
-	// 6.5 重新打开并验证
+	// 6.5 Reopen and verify.
 	reopenedPkg, err := opc.OpenFile(outputPath)
 	if err != nil {
-		t.Fatalf("重新打开失败: %v", err)
+		t.Fatalf("failed to reopen output: %v", err)
 	}
 	defer reopenedPkg.Close()
 
-	// 6.6 验证数据完整性
+	// 6.6 Verify data integrity.
 	reopenedPartCount := reopenedPkg.PartCount()
 	if reopenedPartCount != originalPartCount {
-		t.Errorf("部件数量不匹配: got %d, want %d", reopenedPartCount, originalPartCount)
+		t.Errorf("part count mismatch: got %d, want %d", reopenedPartCount, originalPartCount)
 	}
 
 	reopenedSlidePart := reopenedPkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	if string(reopenedSlidePart.Blob()) != string(newSlideXML) {
-		t.Error("重新打开后内容不匹配")
+		t.Error("content mismatch after reopening")
 	}
 
-	// 6.7 验证 ContentTypes 正确
+	// 6.7 Verify ContentTypes are present.
 	ct := reopenedPkg.ContentTypes()
 	if ct == nil {
-		t.Error("ContentTypes 为空")
+		t.Error("ContentTypes is nil")
 	}
 
-	// 6.8 验证 ZIP 规范性（无前导斜杠）
+	// 6.8 Verify ZIP spec compliance (no leading slashes).
 	file, _ := os.Open(outputPath)
 	defer file.Close()
 	stat, _ := file.Stat()
 	zipReader, _ := zip.NewReader(file, stat.Size())
 	for _, f := range zipReader.File {
 		if strings.HasPrefix(f.Name, "/") {
-			t.Errorf("ZIP 路径违规: %s", f.Name)
+			t.Errorf("ZIP path violation: %s", f.Name)
 		}
 	}
 
-	t.Logf("Stage 6: 安全打包成功，文件大小 = %d bytes", stat.Size())
-	t.Log("Stage 6: OPC 层安全打包能力验证通过")
+	t.Logf("Stage 6: safe repackaging succeeded, file size = %d bytes", stat.Size())
+	t.Log("Stage 6: OPC safe repackaging passed")
 }
 
 // ============================================================================
-// 综合测试：完整流水线
+// Full pipeline integration test
 // ============================================================================
 
-// TestPipeline_FullIntegration 完整流水线测试：解析 -> 反序列化 -> 修改 -> 重新打包
+// TestPipeline_FullIntegration runs the complete pipeline:
+// parse -> deserialize -> modify -> repackage.
 func TestPipeline_FullIntegration(t *testing.T) {
-	t.Log("========== 开始完整流水线测试 ==========")
+	t.Log("========== starting full pipeline test ==========")
 
-	// Stage 1: 解析
-	t.Log("----- Stage 1: OPC 解析与解包 -----")
+	// Stage 1: parse
+	t.Log("----- Stage 1: OPC parse and unpack -----")
 	pkg, err := opc.OpenFile(testPPTXPath)
 	if err != nil {
-		t.Fatalf("Stage 1 失败: %v", err)
+		t.Fatalf("Stage 1 failed: %v", err)
 	}
-	t.Logf("Stage 1 通过: 解包得到 %d 个部件", pkg.PartCount())
+	t.Logf("Stage 1 passed: unpacked %d parts", pkg.PartCount())
 
-	// Stage 2: 反序列化
-	t.Log("----- Stage 2: Parts 反序列化 -----")
+	// Stage 2: deserialize
+	t.Log("----- Stage 2: Parts deserialization -----")
 	presPart := pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))
 	pres := parts.NewPresentationPart()
 	if err := pres.FromXML(presPart.Blob()); err != nil {
-		t.Fatalf("Stage 2 失败: %v", err)
+		t.Fatalf("Stage 2 failed: %v", err)
 	}
-	t.Logf("Stage 2 通过: 反序列化得到 %d 张幻灯片", pres.SlideCount())
+	t.Logf("Stage 2 passed: deserialized %d slides", pres.SlideCount())
 
-	// Stage 3: 创建
-	t.Log("----- Stage 3: Parts 创建与序列化 -----")
+	// Stage 3: create
+	t.Log("----- Stage 3: Parts creation and serialization -----")
 	newSlidePart3 := parts.NewSlidePart(1)
 	newSlidePart3Builder := slide.NewSlideBuilder(newSlidePart3)
 	newSlidePart3Builder.AddTextBox(914400, 457200, 4572000, 457200, "Integration Test!")
 	newSlideXML, err := newSlidePart3.ToXML()
 	if err != nil {
-		t.Fatalf("Stage 3 序列化失败: %v", err)
+		t.Fatalf("Stage 3 serialization failed: %v", err)
 	}
-	t.Logf("Stage 3 通过: 创建新幻灯片 XML (%d bytes)", len(newSlideXML))
+	t.Logf("Stage 3 passed: created new slide XML (%d bytes)", len(newSlideXML))
 
-	// Stage 4: 写入
-	t.Log("----- Stage 4: OPC 写入与路由 -----")
+	// Stage 4: write
+	t.Log("----- Stage 4: OPC write and route -----")
 	newPkg := opc.NewPackage()
 	newPkg.CreatePart(
 		opc.NewPackURI("/ppt/presentation.xml"),
@@ -518,17 +525,17 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	)
 	outputPath := "test_integration_output.pptx"
 	if err := newPkg.SaveFile(outputPath); err != nil {
-		t.Fatalf("Stage 4 失败: %v", err)
+		t.Fatalf("Stage 4 failed: %v", err)
 	}
 	pkg.Close()
 	defer os.Remove(outputPath)
-	t.Logf("Stage 4 通过: 写入 %d bytes", func() int {
+	t.Logf("Stage 4 passed: wrote %d bytes", func() int {
 		info, _ := os.Stat(outputPath)
 		return int(info.Size())
 	}())
 
-	// Stage 5: 更新
-	t.Log("----- Stage 5: Parts 数据更新 -----")
+	// Stage 5: update
+	t.Log("----- Stage 5: Parts data update -----")
 	updatedPkg, _ := opc.OpenFile(outputPath)
 	updatedSlide := parts.NewSlidePart(1)
 	updatedSlideBuilder := slide.NewSlideBuilder(updatedSlide)
@@ -545,32 +552,32 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	updatedPkg.Close()
 	defer os.Remove(updatedPath)
 
-	// 验证更新
+	// Verify update.
 	verifyPkg, _ := opc.OpenFile(updatedPath)
 	verifySlidePart := verifyPkg.GetPart(opc.NewPackURI("/ppt/slides/slide1.xml"))
 	if !strings.Contains(string(verifySlidePart.Blob()), "Updated via Stage 5!") {
-		t.Error("Stage 5 验证失败: 更新内容不存在")
+		t.Error("Stage 5 verification failed: updated content not found")
 	}
 	verifyPkg.Close()
-	t.Log("Stage 5 通过: 数据更新成功")
+	t.Log("Stage 5 passed: data update successful")
 
-	// Stage 6: 安全打包
-	t.Log("----- Stage 6: OPC 安全打包 -----")
+	// Stage 6: safe repackage
+	t.Log("----- Stage 6: OPC safe repackaging -----")
 	finalPkg, _ := opc.OpenFile(updatedPath)
 	finalPath := "test_final_output.pptx"
 	finalPkg.SaveFile(finalPath)
 	finalPkg.Close()
 	defer os.Remove(finalPath)
 
-	// 验证最终文件
+	// Verify final file.
 	finalVerifyPkg, _ := opc.OpenFile(finalPath)
 	finalPartCount := finalPkg.PartCount()
 	finalVerifyPkg.Close()
-	t.Logf("Stage 6 通过: 最终文件包含 %d 个部件", finalPartCount)
+	t.Logf("Stage 6 passed: final file contains %d parts", finalPartCount)
 
-	t.Log("========== 完整流水线测试全部通过 ==========")
+	t.Log("========== full pipeline test passed ==========")
 
-	// 清理所有临时文件
+	// Clean up any remaining temp files.
 	cleanupFiles := []string{
 		"test_opc_output.pptx",
 		"test_secure_output.pptx",

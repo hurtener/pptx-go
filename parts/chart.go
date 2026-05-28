@@ -1,15 +1,17 @@
 package parts
 
 // ============================================================================
-// ChartPart - 图表部件
+// ChartPart - chart part
 // ============================================================================
 //
-// 对应 /ppt/charts/chartN.xml
+// Corresponds to /ppt/charts/chartN.xml
 //
-// 设计策略：模板 + 占位符
-// - 图表 XML 结构极其复杂（几百种元素组合），不适合用 Go Struct 完整映射
-// - 采用字符串模板 + 占位符策略，高层组件通过替换占位符注入数据
-// - 提供常见图表类型的预定义模板
+// Design strategy: string template + placeholders
+// - Chart XML is extremely complex (hundreds of element combinations) and
+//   does not map cleanly to a Go struct hierarchy.
+// - Predefined templates with placeholder tokens are used; callers inject
+//   data by replacing those tokens.
+// - Common chart types each have a predefined template constant.
 //
 // ============================================================================
 
@@ -21,23 +23,23 @@ import (
 	"github.com/hurtener/pptx-go/opc"
 )
 
-// ChartPart 图表部件
+// ChartPart holds a chart part for a presentation slide.
 type ChartPart struct {
 	uri         *opc.PackURI
-	template    string        // XML 模板（含占位符）
-	externalRID string        // 外部数据关系 ID（如嵌入的 Excel）
+	template    string // XML template with placeholder tokens
+	externalRID string // external data relationship ID (e.g. embedded Excel)
 	mu          sync.RWMutex
 }
 
-// NewChartPart 创建新的图表部件
+// NewChartPart creates a new chart part with the given numeric ID.
 func NewChartPart(id int) *ChartPart {
 	return &ChartPart{
 		uri:      opc.NewPackURI(fmt.Sprintf("/ppt/charts/chart%d.xml", id)),
-		template: ChartTemplateBar, // 默认柱状图
+		template: ChartTemplateBar, // default to bar chart
 	}
 }
 
-// NewChartPartWithURI 使用指定 URI 创建图表部件
+// NewChartPartWithURI creates a chart part using the specified URI.
 func NewChartPartWithURI(uri *opc.PackURI) *ChartPart {
 	return &ChartPart{
 		uri:      uri,
@@ -45,7 +47,7 @@ func NewChartPartWithURI(uri *opc.PackURI) *ChartPart {
 	}
 }
 
-// NewChartPartWithType 创建指定类型的图表部件
+// NewChartPartWithType creates a chart part of the specified type.
 func NewChartPartWithType(id int, chartType ChartType) *ChartPart {
 	return &ChartPart{
 		uri:      opc.NewPackURI(fmt.Sprintf("/ppt/charts/chart%d.xml", id)),
@@ -53,46 +55,45 @@ func NewChartPartWithType(id int, chartType ChartType) *ChartPart {
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (c *ChartPart) PartURI() *opc.PackURI {
 	return c.uri
 }
 
 // ============================================================================
-// 模板操作方法
+// Template methods
 // ============================================================================
 
-// SetTemplate 设置图表模板
+// SetTemplate sets the chart XML template.
 func (c *ChartPart) SetTemplate(tmpl string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.template = tmpl
 }
 
-// SetRawXML 设置原始 XML（等同于 SetTemplate，语义更清晰）
+// SetRawXML sets the chart content from raw XML bytes (equivalent to SetTemplate).
 func (c *ChartPart) SetRawXML(xml []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.template = string(xml)
 }
 
-// Template 返回当前模板
+// Template returns the current XML template.
 func (c *ChartPart) Template() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.template
 }
 
-// ReplacePlaceholder 替换单个占位符
-// placeholder: 占位符名称（不含 {{}}）
-// value: 替换值
+// ReplacePlaceholder replaces a single placeholder token in the template.
+// placeholder is the token name without the surrounding {{ }}.
 func (c *ChartPart) ReplacePlaceholder(placeholder, value string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.template = strings.ReplaceAll(c.template, "{{"+placeholder+"}}", value)
 }
 
-// ReplacePlaceholders 批量替换占位符
+// ReplacePlaceholders replaces multiple placeholder tokens in one call.
 func (c *ChartPart) ReplacePlaceholders(replacements map[string]string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -102,24 +103,24 @@ func (c *ChartPart) ReplacePlaceholders(replacements map[string]string) {
 }
 
 // ============================================================================
-// 外部数据引用
+// External data reference
 // ============================================================================
 
-// SetExternalDataRID 设置外部数据关系 ID
+// SetExternalDataRID sets the external data relationship ID.
 func (c *ChartPart) SetExternalDataRID(rid string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.externalRID = rid
 }
 
-// GetExternalDataRID 获取外部数据关系 ID
+// GetExternalDataRID returns the external data relationship ID.
 func (c *ChartPart) GetExternalDataRID() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.externalRID
 }
 
-// HasExternalData 检查是否有外部数据
+// HasExternalData reports whether an external data reference is set.
 func (c *ChartPart) HasExternalData() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -127,18 +128,17 @@ func (c *ChartPart) HasExternalData() bool {
 }
 
 // ============================================================================
-// XML 序列化
+// XML serialization
 // ============================================================================
 
-// ToXML 将图表序列化为 XML
+// ToXML serializes the chart to XML, injecting the external data tag when set.
 func (c *ChartPart) ToXML() ([]byte, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	// 如果有外部数据引用，注入到模板中
+	// inject externalData element before </c:chartSpace> when a reference is set
 	xml := c.template
 	if c.externalRID != "" {
-		// 在 </c:chartSpace> 前插入 externalData
 		externalDataTag := fmt.Sprintf(`<c:externalData xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="%s"/>`, c.externalRID)
 		xml = strings.Replace(xml, "</c:chartSpace>", externalDataTag+"</c:chartSpace>", 1)
 	}
@@ -146,7 +146,7 @@ func (c *ChartPart) ToXML() ([]byte, error) {
 	return []byte(xml), nil
 }
 
-// FromXML 从 XML 加载图表（直接作为模板存储）
+// FromXML loads chart XML, storing it directly as the template.
 func (c *ChartPart) FromXML(data []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -155,22 +155,22 @@ func (c *ChartPart) FromXML(data []byte) error {
 }
 
 // ============================================================================
-// 图表类型枚举
+// Chart type enumeration
 // ============================================================================
 
-// ChartType 图表类型
+// ChartType identifies the chart kind.
 type ChartType int
 
 const (
-	ChartTypeBar ChartType = iota    // 柱状图
-	ChartTypePie                     // 饼图
-	ChartTypeLine                    // 折线图
-	ChartTypeArea                    // 面积图
-	ChartTypeScatter                 // 散点图
-	ChartTypeDoughnut                // 环形图
+	ChartTypeBar      ChartType = iota // bar chart
+	ChartTypePie                       // pie chart
+	ChartTypeLine                      // line chart
+	ChartTypeArea                      // area chart
+	ChartTypeScatter                   // scatter chart
+	ChartTypeDoughnut                  // doughnut chart
 )
 
-// GetChartTemplate 获取图表模板
+// GetChartTemplate returns the XML template for the given chart type.
 func GetChartTemplate(chartType ChartType) string {
 	switch chartType {
 	case ChartTypeBar:
@@ -191,17 +191,17 @@ func GetChartTemplate(chartType ChartType) string {
 }
 
 // ============================================================================
-// 数据结构（用于模板填充的辅助结构）
+// Data structures (helpers for template population)
 // ============================================================================
 
-// ChartSeriesData 图表系列数据
+// ChartSeriesData holds data for a single chart series.
 type ChartSeriesData struct {
-	Name   string   // 系列名称
-	Values []string // 数值列表
+	Name   string   // series name
+	Values []string // data values
 }
 
-// ChartCategoryData 图表分类数据
+// ChartCategoryData holds categories and series for a chart.
 type ChartCategoryData struct {
-	Categories []string       // 分类标签
-	Series     []ChartSeriesData // 系列数据
+	Categories []string          // category labels
+	Series     []ChartSeriesData // series data
 }

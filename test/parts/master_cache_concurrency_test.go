@@ -10,16 +10,16 @@ import (
 )
 
 // ============================================================================
-// MasterCache 并发读取测试
+// MasterCache concurrent-read tests
 // ============================================================================
 
 func TestMasterCache_ConcurrentRead(t *testing.T) {
-	// 从真实文件初始化缓存
+	// Initialise the cache from real files.
 	cache := slide.NewMasterCache()
 	masters, layouts := loadTestMasterData()
 	cache.Init(masters, layouts)
 
-	// 启动并发读取
+	// Launch concurrent readers.
 	const readers = 100
 	const readsPerGoroutine = 50
 	var wg sync.WaitGroup
@@ -30,20 +30,20 @@ func TestMasterCache_ConcurrentRead(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < readsPerGoroutine; j++ {
-				// 读取版式
+				// Read a layout.
 				if layout, ok := cache.GetLayout("layout_1"); ok {
 					_ = layout.Placeholders()
 					_ = layout.PlaceholderByType(parts.PlaceholderTypeTitle)
 					_ = layout.PlaceholderByType(parts.PlaceholderTypeBody)
 				}
 
-				// 读取母版
+				// Read a master.
 				if master, ok := cache.GetMaster("master_1"); ok {
 					_ = master.Placeholders()
 					_ = master.Background()
 				}
 
-				// 读取占位符
+				// Read a placeholder.
 				if ph, ok := cache.GetPlaceholder("layout_1", "title"); ok {
 					_ = ph.X()
 					_ = ph.Y()
@@ -51,13 +51,13 @@ func TestMasterCache_ConcurrentRead(t *testing.T) {
 					_ = ph.Cy()
 				}
 
-				// 读取统计
+				// Read statistics.
 				_ = cache.LayoutCount()
 				_ = cache.MasterCount()
 				_ = cache.LayoutExists("layout_1")
 				_ = cache.MasterExists("master_1")
 
-				// 读取列表
+				// Read lists.
 				_ = cache.ListLayoutIDs()
 				_ = cache.ListMasterIDs()
 			}
@@ -68,7 +68,7 @@ func TestMasterCache_ConcurrentRead(t *testing.T) {
 }
 
 // ============================================================================
-// MasterCache 高并发压力测试
+// MasterCache high-concurrency stress test
 // ============================================================================
 
 func TestMasterCache_HighConcurrency(t *testing.T) {
@@ -76,7 +76,7 @@ func TestMasterCache_HighConcurrency(t *testing.T) {
 	masters, layouts := loadTestMasterData()
 	cache.Init(masters, layouts)
 
-	// 100 个 goroutine，每个执行 100 次读取
+	// 100 goroutines, each performing 100 reads.
 	const totalGoroutines = 100
 	const iterations = 100
 	var wg sync.WaitGroup
@@ -87,7 +87,7 @@ func TestMasterCache_HighConcurrency(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < iterations; j++ {
-				// 并发读取所有数据
+				// Read all data concurrently.
 				layout, _ := cache.GetLayout("layout_1")
 				if layout != nil {
 					_ = layout.PlaceholderCount()
@@ -99,12 +99,15 @@ func TestMasterCache_HighConcurrency(t *testing.T) {
 					_ = master.PlaceholderCount()
 				}
 
-				// 索引查询
-				if _, ok := cache.GetLayoutByName("13_Title Slide"); ok {}
-				if _, ok := cache.GetPlaceholderByID("layout_1", "ph_8"); ok {}
-				if _, ok := cache.GetPlaceholder("layout_1", "title"); ok {}
+				// Index lookups.
+				if _, ok := cache.GetLayoutByName("13_Title Slide"); ok {
+				}
+				if _, ok := cache.GetPlaceholderByID("layout_1", "ph_8"); ok {
+				}
+				if _, ok := cache.GetPlaceholder("layout_1", "title"); ok {
+				}
 
-				// 批量读取
+				// Bulk reads.
 				_ = cache.AllLayouts()
 				_ = cache.AllMasters()
 			}
@@ -115,20 +118,20 @@ func TestMasterCache_HighConcurrency(t *testing.T) {
 }
 
 // ============================================================================
-// MasterCache 辅助函数
+// MasterCache helper functions
 // ============================================================================
 
 func loadTestMasterData() ([]*parts.SlideMasterData, []*parts.SlideLayoutData) {
 	var masters []*parts.SlideMasterData
 	var layouts []*parts.SlideLayoutData
 
-	// 加载母版
+	// Load a master.
 	masterXML, _ := os.ReadFile("../test-data/test/ppt/slideMasters/slideMaster2.xml")
 	if master, err := parts.ParseMaster(masterXML); err == nil {
 		masters = append(masters, master)
 	}
 
-	// 加载版式
+	// Load a layout.
 	layoutXML, _ := os.ReadFile("../test-data/test/ppt/slideLayouts/slideLayout5.xml")
 	if layout, err := parts.ParseLayout(layoutXML); err == nil {
 		layouts = append(layouts, layout)

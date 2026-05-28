@@ -1,5 +1,5 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
-// 作为人类开发者和 AI 调用的绝对入口
+// Package pptx provides a high-level interface for working with PPTX files.
+// It is the primary entry point for both human developers and AI callers.
 package pptx
 
 import (
@@ -14,19 +14,21 @@ import (
 )
 
 // ============================================================================
-// Presentation - 总控门面
+// Presentation - top-level facade
 // ============================================================================
 //
-// 这是人类开发者和 AI 调用的绝对入口。
-// 负责包装底层的 opc.Package，提供高层业务方法。
+// Presentation is the primary entry point for both human developers and AI
+// callers. It wraps the underlying opc.Package and provides high-level
+// business methods.
 //
-// 核心职责：
-// 1. 从模板懒加载并 Clone 出线程安全的副本
-// 2. 为每个实例创建专用的 MediaManager（防止并发图片串线）
-// 3. 自动管理幻灯片 ID 注册和 .rels 路由
-// 4. 提供流式输出能力（支持 HTTP 响应）
+// Core responsibilities:
+//  1. Lazily load and clone a thread-safe copy from a template.
+//  2. Create a dedicated MediaManager per instance (prevents concurrent image
+//     cross-contamination).
+//  3. Automatically manage slide ID registration and .rels routing.
+//  4. Provide streaming output (supports HTTP response writers).
 //
-// 使用示例：
+// Example:
 //
 //	pres := pptx.New()
 //	slide1 := pres.AddSlide()
@@ -35,45 +37,44 @@ import (
 //
 // ============================================================================
 
-// Presentation PPTX 演示文稿总控门面
+// Presentation is the top-level PPTX facade.
 type Presentation struct {
-	// 底层 OPC 包
+	// pkg is the underlying OPC package.
 	pkg *opc.Package
 
-	// 演示文稿部件（presentation.xml）
+	// presentationPart wraps presentation.xml.
 	presentationPart *parts.PresentationPart
 
-	// 幻灯片列表（按顺序）
+	// slides is the ordered list of slides.
 	slides []*Slide
 
-	// 媒体管理器（实例专用，防止并发串线）
+	// mediaManager is instance-specific to prevent concurrent cross-contamination.
 	mediaManager *MediaManager
 
-	// 母版管理器
+	// masterManager manages slide masters.
 	masterManager *MasterManager
 
-	// 母版缓存（从模板加载的母版/布局信息）
+	// masterCache holds master/layout information loaded from a template.
 	masterCache *MasterCache
 
-	// 幻灯片计数器（用于生成 slide1.xml, slide2.xml 等）
+	// slideCounter generates slide file names (slide1.xml, slide2.xml, …).
 	slideCounter int32
 
-	// 图表计数器（用于生成 chart1.xml, chart2.xml 等）
+	// chartCounter generates chart file names (chart1.xml, chart2.xml, …).
 	chartCounter int32
 
-	// 关系 ID 计数器
+	// relCounter generates relationship IDs.
 	relCounter int32
 
-	// 并发安全锁
+	// mu guards concurrent access.
 	mu sync.RWMutex
 }
 
 // ============================================================================
-// 构造函数
+// Constructors
 // ============================================================================
 
-// New 创建空白演示文稿
-// 使用默认模板（16:9 宽屏）
+// New creates a blank presentation using the default template (16:9 widescreen).
 func New() *Presentation {
 	pres := &Presentation{
 		pkg:              opc.NewPackage(),
@@ -85,19 +86,19 @@ func New() *Presentation {
 		relCounter:       0,
 	}
 
-	// 初始化包结构
+	// Initialise the package structure.
 	pres.initPackage()
 
 	return pres
 }
 
-// NewWithTemplate 从模板创建演示文稿
-// name: 模板名称（如 TemplateDefault, TemplateBlank 等）
+// NewWithTemplate creates a presentation from the named template
+// (e.g. TemplateDefault, TemplateBlank).
 func NewWithTemplate(name TemplateType) (*Presentation, error) {
-	// 从模板管理器加载模板
+	// Load the template from the template manager.
 	pkg, err := globalTemplateManager.LoadTemplate(name)
 	if err != nil {
-		return nil, fmt.Errorf("加载模板失败: %w", err)
+		return nil, fmt.Errorf("failed to load template: %w", err)
 	}
 
 	pres := &Presentation{
@@ -109,23 +110,23 @@ func NewWithTemplate(name TemplateType) (*Presentation, error) {
 		relCounter:    0,
 	}
 
-	// 从包中解析 presentation.xml
+	// Parse presentation.xml from the package.
 	if err := pres.loadPresentationPart(); err != nil {
-		return nil, fmt.Errorf("解析演示文稿部件失败: %w", err)
+		return nil, fmt.Errorf("failed to parse presentation part: %w", err)
 	}
 
-	// 获取母版缓存
+	// Retrieve the master cache.
 	pres.masterCache = globalTemplateManager.GetMasterCache()
 
 	return pres, nil
 }
 
-// NewFromBytes 从字节数据创建演示文稿
+// NewFromBytes creates a presentation from raw PPTX bytes.
 func NewFromBytes(data []byte) (*Presentation, error) {
 	reader := bytes.NewReader(data)
 	pkg, err := opc.Open(reader, int64(len(data)))
 	if err != nil {
-		return nil, fmt.Errorf("解析 PPTX 数据失败: %w", err)
+		return nil, fmt.Errorf("failed to parse PPTX data: %w", err)
 	}
 
 	pres := &Presentation{
@@ -138,17 +139,17 @@ func NewFromBytes(data []byte) (*Presentation, error) {
 	}
 
 	if err := pres.loadPresentationPart(); err != nil {
-		return nil, fmt.Errorf("解析演示文稿部件失败: %w", err)
+		return nil, fmt.Errorf("failed to parse presentation part: %w", err)
 	}
 
 	return pres, nil
 }
 
-// NewFromFile 从文件创建演示文稿
+// NewFromFile creates a presentation from a PPTX file path.
 func NewFromFile(path string) (*Presentation, error) {
 	pkg, err := opc.OpenFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("打开 PPTX 文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open PPTX file: %w", err)
 	}
 
 	pres := &Presentation{
@@ -161,104 +162,103 @@ func NewFromFile(path string) (*Presentation, error) {
 	}
 
 	if err := pres.loadPresentationPart(); err != nil {
-		return nil, fmt.Errorf("解析演示文稿部件失败: %w", err)
+		return nil, fmt.Errorf("failed to parse presentation part: %w", err)
 	}
 
 	return pres, nil
 }
 
 // ============================================================================
-// 初始化方法
+// Initialisation
 // ============================================================================
 
-// initPackage 初始化 OPC 包结构
+// initPackage sets up the OPC package structure.
 func (p *Presentation) initPackage() {
-	// 添加 presentation.xml
+	// Add presentation.xml.
 	uri := opc.NewPackURI("/ppt/presentation.xml")
 	blob, _ := p.presentationPart.ToXML()
 	part := opc.NewPart(uri, opc.ContentTypePresentation, blob)
 	_ = p.pkg.AddPart(part)
 
-	// 添加包级别关系（指向 presentation.xml）
+	// Add the package-level relationship pointing to presentation.xml.
 	_, _ = p.pkg.AddRelationship(opc.RelTypeOfficeDocument, "ppt/presentation.xml", false)
 }
 
-// loadPresentationPart 从包中加载 presentation.xml
+// loadPresentationPart parses presentation.xml from the package.
 func (p *Presentation) loadPresentationPart() error {
-	// 通过关系类型获取 presentation 部件
+	// Locate the presentation part via its relationship type.
 	part := p.pkg.GetPartByRelType(opc.RelTypeOfficeDocument)
 	if part == nil {
-		// 如果不存在，创建新的
+		// Not found; create a new empty part.
 		p.presentationPart = parts.NewPresentationPart()
 		return nil
 	}
 
-	// 解析 XML
+	// Parse the XML.
 	p.presentationPart = parts.NewPresentationPart()
 	if err := p.presentationPart.FromXML(part.Blob()); err != nil {
 		return err
 	}
 
-	// 更新幻灯片计数器
+	// Synchronise the slide counter.
 	p.slideCounter = int32(p.presentationPart.SlideCount())
 
 	return nil
 }
 
 // ============================================================================
-// 幻灯片管理 - 核心方法
+// Slide management - core methods
 // ============================================================================
 
-// AddSlide 添加新幻灯片
-// layout: 可选的布局名称（如 "title", "blank", "titleAndContent" 等）
-// 如果不指定布局，使用空白布局
+// AddSlide appends a new slide to the presentation.
+// layout is an optional layout name (e.g. "title", "blank", "titleAndContent").
+// If no layout is specified, a blank layout is used.
 //
-// 内部自动：
-// - 向 presentation.xml 的 <p:sldIdLst> 注册新 ID
-// - 向 .rels 申请路由
-// - 返回高层的 *Slide 对象
+// Internally this method:
+//   - Registers a new ID in presentation.xml's <p:sldIdLst>.
+//   - Allocates a .rels route.
+//   - Returns a high-level *Slide.
 func (p *Presentation) AddSlide(layout ...string) *Slide {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 分配幻灯片编号
+	// Allocate a slide number.
 	slideNum := int(atomic.AddInt32(&p.slideCounter, 1))
 
-	// 创建幻灯片部件
+	// Create the slide part.
 	slidePart := parts.NewSlidePart(slideNum)
 
-	// 确定布局
+	// Resolve layout.
 	layoutRId := ""
 	if len(layout) > 0 && layout[0] != "" {
-		// 查找布局
 		if p.masterCache != nil {
 			if layoutData, ok := p.masterCache.GetLayoutByName(layout[0]); ok {
-				// 创建布局关系
+				// Create the layout relationship.
 				layoutRId = p.allocateRelID()
-				// TODO: 添加布局关系到幻灯片
+				// TODO: add layout relationship to the slide
 				_ = layoutData
 			}
 		}
 	}
 	slidePart.SetLayoutRId(layoutRId)
 
-	// 创建幻灯片 URI
+	// Set the slide URI.
 	slideURI := opc.NewPackURI(fmt.Sprintf("/ppt/slides/slide%d.xml", slideNum))
 	slidePart.SetURI(slideURI)
 
-	// 添加到包
+	// Add the part to the package.
 	slideBlob, _ := slidePart.ToXML()
 	slidePartOPC := opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob)
 	_ = p.pkg.AddPart(slidePartOPC)
 
-	// 添加关系到 presentation.xml
+	// Add the relationship to presentation.xml.
 	slideRelID := p.allocateRelID()
-	_ = slideRelID // 关系 ID 由 PresentationPart 内部管理
+	_ = slideRelID // relationship ID is managed internally by PresentationPart
 
-	// 注册到 PresentationPart（内部会自动分配 slide ID）
+	// Register with PresentationPart (auto-assigns a slide ID).
 	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
 
-	// 创建高层 Slide 对象
+	// Build the high-level Slide object.
 	s := &Slide{
 		presentation: p,
 		part:         slidePart,
@@ -266,7 +266,8 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 		mediaManager: p.mediaManager,
 		index:        len(p.slides),
 	}
-	// 初始化原子计数器（OOXML 规范中 shapeId 从 2 开始，1 预留给根节点）
+	// Initialise the atomic counter (OOXML spec: shapeId starts at 2; 1 is
+	// reserved for the root node).
 	s.shapeIDCounter.Store(1)
 
 	p.slides = append(p.slides, s)
@@ -274,40 +275,40 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	return s
 }
 
-// AddSlideAt 在指定位置插入幻灯片
+// AddSlideAt inserts a new slide at the specified index.
 func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if index < 0 || index > len(p.slides) {
-		return nil, fmt.Errorf("索引 %d 超出范围 [0, %d]", index, len(p.slides))
+		return nil, fmt.Errorf("index %d out of range [0, %d]", index, len(p.slides))
 	}
 
-	// 创建幻灯片
+	// Create the slide.
 	slideNum := int(atomic.AddInt32(&p.slideCounter, 1))
 	slidePart := parts.NewSlidePart(slideNum)
 
-	// 确定布局
+	// Resolve layout.
 	layoutRId := ""
 	if len(layout) > 0 && layout[0] != "" && p.masterCache != nil {
 		if layoutData, ok := p.masterCache.GetLayoutByName(layout[0]); ok {
-			_ = layoutData // TODO: 设置布局关系
+			_ = layoutData // TODO: set layout relationship
 		}
 	}
 	slidePart.SetLayoutRId(layoutRId)
 
-	// 设置 URI
+	// Set URI.
 	slideURI := opc.NewPackURI(fmt.Sprintf("/ppt/slides/slide%d.xml", slideNum))
 	slidePart.SetURI(slideURI)
 
-	// 添加到包
+	// Add to package.
 	slideBlob, _ := slidePart.ToXML()
 	_ = p.pkg.AddPart(opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob))
 
-	// 注册到 PresentationPart
+	// Register with PresentationPart.
 	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
 
-	// 创建高层对象
+	// Build the high-level object.
 	s := &Slide{
 		presentation: p,
 		part:         slidePart,
@@ -315,13 +316,14 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 		mediaManager: p.mediaManager,
 		index:        index,
 	}
-	// 初始化原子计数器（OOXML 规范中 shapeId 从 2 开始，1 预留给根节点）
+	// Initialise the atomic counter (OOXML spec: shapeId starts at 2; 1 is
+	// reserved for the root node).
 	s.shapeIDCounter.Store(1)
 
-	// 插入到指定位置
+	// Insert at the specified position.
 	p.slides = append(p.slides[:index], append([]*Slide{s}, p.slides[index:]...)...)
 
-	// 更新后续幻灯片的索引
+	// Update indexes for subsequent slides.
 	for i := index + 1; i < len(p.slides); i++ {
 		p.slides[i].index = i
 	}
@@ -329,40 +331,40 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	return s, nil
 }
 
-// GetSlide 获取指定索引的幻灯片
+// GetSlide returns the slide at the given index.
 func (p *Presentation) GetSlide(index int) (*Slide, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	if index < 0 || index >= len(p.slides) {
-		return nil, fmt.Errorf("索引 %d 超出范围 [0, %d)", index, len(p.slides))
+		return nil, fmt.Errorf("index %d out of range [0, %d)", index, len(p.slides))
 	}
 
 	return p.slides[index], nil
 }
 
-// RemoveSlide 移除指定索引的幻灯片
+// RemoveSlide removes the slide at the given index.
 func (p *Presentation) RemoveSlide(index int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if index < 0 || index >= len(p.slides) {
-		return fmt.Errorf("索引 %d 超出范围 [0, %d)", index, len(p.slides))
+		return fmt.Errorf("index %d out of range [0, %d)", index, len(p.slides))
 	}
 
-	// 获取要移除的幻灯片
+	// Get the slide to remove.
 	s := p.slides[index]
 
-	// 从包中移除部件
+	// Remove the part from the package.
 	_ = p.pkg.RemovePart(s.part.PartURI())
 
-	// 从 presentation.xml 中移除
+	// Remove from presentation.xml.
 	_ = p.presentationPart.RemoveSlide(index)
 
-	// 从切片中移除
+	// Remove from the slice.
 	p.slides = append(p.slides[:index], p.slides[index+1:]...)
 
-	// 更新后续幻灯片的索引
+	// Update indexes for subsequent slides.
 	for i := index; i < len(p.slides); i++ {
 		p.slides[i].index = i
 	}
@@ -370,14 +372,14 @@ func (p *Presentation) RemoveSlide(index int) error {
 	return nil
 }
 
-// SlideCount 返回幻灯片数量
+// SlideCount returns the number of slides.
 func (p *Presentation) SlideCount() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return len(p.slides)
 }
 
-// Slides 返回所有幻灯片
+// Slides returns a copy of the slide list.
 func (p *Presentation) Slides() []*Slide {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -388,81 +390,80 @@ func (p *Presentation) Slides() []*Slide {
 }
 
 // ============================================================================
-// 保存方法
+// Save methods
 // ============================================================================
 
-// Save 将演示文稿保存到文件
-// 触发底层的序列化和 ZIP 打包
+// Save serialises the presentation and writes it to a file.
 func (p *Presentation) Save(path string) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 同步所有幻灯片到包
+	// Sync all slides to the package.
 	if err := p.syncSlides(); err != nil {
 		return err
 	}
 
-	// 同步 presentation.xml
+	// Sync presentation.xml.
 	if err := p.syncPresentationPart(); err != nil {
 		return err
 	}
 
-	// 保存到文件
+	// Write to file.
 	return p.pkg.SaveFile(path)
 }
 
-// Write 将演示文稿写入 io.Writer
-// 这是为高并发流式输出（如 HTTP 响应）准备的杀手锏
+// Write serialises the presentation and writes it to an io.Writer.
+// This is suitable for high-concurrency streaming output such as HTTP responses.
 func (p *Presentation) Write(w io.Writer) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 同步所有幻灯片到包
+	// Sync all slides to the package.
 	if err := p.syncSlides(); err != nil {
 		return err
 	}
 
-	// 同步 presentation.xml
+	// Sync presentation.xml.
 	if err := p.syncPresentationPart(); err != nil {
 		return err
 	}
 
-	// 写入到 Writer
+	// Write to the writer.
 	return p.pkg.Save(w)
 }
 
-// WriteToBytes 将演示文稿写入字节数组
+// WriteToBytes serialises the presentation and returns it as a byte slice.
 func (p *Presentation) WriteToBytes() ([]byte, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 同步所有幻灯片到包
+	// Sync all slides to the package.
 	if err := p.syncSlides(); err != nil {
 		return nil, err
 	}
 
-	// 同步 presentation.xml
+	// Sync presentation.xml.
 	if err := p.syncPresentationPart(); err != nil {
 		return nil, err
 	}
 
-	// 写入到字节数组
+	// Write to a byte slice.
 	return p.pkg.SaveToBytes()
 }
 
 // ============================================================================
-// 同步方法
+// Sync helpers
 // ============================================================================
 
-// syncSlides 同步所有幻灯片到 OPC 包
+// syncSlides serialises all slides into the OPC package.
 func (p *Presentation) syncSlides() error {
 	for _, s := range p.slides {
 		blob, err := s.part.ToXML()
 		if err != nil {
-			return fmt.Errorf("序列化幻灯片 %d 失败: %w", s.index+1, err)
+			return fmt.Errorf("failed to serialise slide %d: %w", s.index+1, err)
 		}
 
-		// 更新或创建部件
+		// Update or create the part.
 		uri := s.part.PartURI()
 		existingPart := p.pkg.GetPart(uri)
 		if existingPart != nil {
@@ -476,11 +477,11 @@ func (p *Presentation) syncSlides() error {
 	return nil
 }
 
-// syncPresentationPart 同步 presentation.xml 到 OPC 包
+// syncPresentationPart serialises presentation.xml into the OPC package.
 func (p *Presentation) syncPresentationPart() error {
 	blob, err := p.presentationPart.ToXML()
 	if err != nil {
-		return fmt.Errorf("序列化 presentation.xml 失败: %w", err)
+		return fmt.Errorf("failed to serialise presentation.xml: %w", err)
 	}
 
 	uri := opc.NewPackURI("/ppt/presentation.xml")
@@ -496,55 +497,55 @@ func (p *Presentation) syncPresentationPart() error {
 }
 
 // ============================================================================
-// 辅助方法
+// Helpers
 // ============================================================================
 
-// allocateRelID 分配关系 ID
+// allocateRelID allocates a new relationship ID.
 func (p *Presentation) allocateRelID() string {
 	id := atomic.AddInt32(&p.relCounter, 1)
 	return fmt.Sprintf("rId%d", id)
 }
 
-// Package 返回底层 OPC 包（高级用法）
+// Package returns the underlying OPC package (advanced usage).
 func (p *Presentation) Package() *opc.Package {
 	return p.pkg
 }
 
-// PresentationPart 返回演示文稿部件
+// PresentationPart returns the presentation part.
 func (p *Presentation) PresentationPart() *parts.PresentationPart {
 	return p.presentationPart
 }
 
-// MediaManager 返回媒体管理器
+// MediaManager returns the media manager.
 func (p *Presentation) MediaManager() *MediaManager {
 	return p.mediaManager
 }
 
-// MasterCache 返回母版缓存
+// MasterCache returns the master cache.
 func (p *Presentation) MasterCache() *MasterCache {
 	return p.masterCache
 }
 
-// SetSlideSize 设置幻灯片尺寸
+// SetSlideSize sets the slide dimensions (in EMU).
 func (p *Presentation) SetSlideSize(cx, cy int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.presentationPart.SetSlideSize(parts.SlideSize{Cx: cx, Cy: cy})
 }
 
-// SetSlideSizeStandard 设置标准幻灯片尺寸
+// SetSlideSizeStandard sets the slide size to a named standard (e.g. "widescreen").
 func (p *Presentation) SetSlideSizeStandard(name string) {
 	size := parts.NewSlideSizeFromStandard(name)
 	p.SetSlideSize(size.Cx, size.Cy)
 }
 
-// SlideSize 返回当前幻灯片尺寸
+// SlideSize returns the current slide dimensions (in EMU).
 func (p *Presentation) SlideSize() (int, int) {
 	size := p.presentationPart.SlideSize()
 	return size.Cx, size.Cy
 }
 
-// Close 关闭演示文稿，释放资源
+// Close releases all resources held by the presentation.
 func (p *Presentation) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -557,19 +558,18 @@ func (p *Presentation) Close() error {
 }
 
 // ============================================================================
-// 克隆方法
+// Clone
 // ============================================================================
 
-// Clone 克隆演示文稿
-// 返回一个完全独立的副本
+// Clone returns a fully independent deep copy of the presentation.
 func (p *Presentation) Clone() (*Presentation, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 克隆底层包
+	// Clone the underlying package.
 	newPkg := p.pkg.Clone()
 
-	// 创建新演示文稿
+	// Create the new presentation.
 	newPres := &Presentation{
 		pkg:           newPkg,
 		slides:        make([]*Slide, len(p.slides)),
@@ -580,7 +580,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		relCounter:    p.relCounter,
 	}
 
-	// 克隆 presentation part
+	// Clone the presentation part.
 	newPres.presentationPart = parts.NewPresentationPart()
 	presPartData, err := p.presentationPart.ToXML()
 	if err != nil {
@@ -590,7 +590,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		return nil, err
 	}
 
-	// 克隆幻灯片
+	// Clone each slide.
 	for i, s := range p.slides {
 		newSlidePart := parts.NewSlidePartWithURI(s.part.PartURI())
 		slideData, err := s.part.ToXML()

@@ -1,4 +1,4 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
+// Package pptx provides a high-level API for authoring PPTX files.
 package pptx
 
 import (
@@ -9,41 +9,41 @@ import (
 )
 
 // ============================================================================
-// SlideBuilder - 高层幻灯片构建器
+// SlideBuilder — high-level slide construction helper
 // ============================================================================
 //
-// 提供便捷的 API 来构建幻灯片内容，包括：
-// - 添加文本框
-// - 添加自动形状
-// - 添加图片
-// - 添加表格
-// - 管理媒体关系
+// Provides a convenient API for building slide content:
+//   - adding text boxes
+//   - adding auto shapes
+//   - adding images
+//   - adding tables
+//   - managing media relationships
 // ============================================================================
 
-// SlideBuilder 幻灯片构建器
+// SlideBuilder wraps a SlidePart and provides helper methods for building
+// slide content.
 type SlideBuilder struct {
 	slide *parts.SlidePart
 }
 
-// NewSlideBuilder 创建幻灯片构建器
+// NewSlideBuilder creates a SlideBuilder for the given SlidePart.
 func NewSlideBuilder(slide *parts.SlidePart) *SlideBuilder {
 	return &SlideBuilder{
 		slide: slide,
 	}
 }
 
-// Slide 返回底层 SlidePart
+// Slide returns the underlying SlidePart.
 func (b *SlideBuilder) Slide() *parts.SlidePart {
 	return b.slide
 }
 
 // ============================================================================
-// 形状添加方法
+// Shape addition methods
 // ============================================================================
 
-// AddTextBox 添加文本框到幻灯片
-// x, y, cx, cy: 位置和尺寸（EMU 单位）
-// text: 文本内容
+// AddTextBox adds a text box to the slide.
+// x, y, cx, cy are the position and size in EMU; text is the initial content.
 func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
 	sp := &parts.XSp{
 		NonVisual: parts.XNonVisualDrawingShape{
@@ -60,7 +60,7 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
 			},
 		},
 		TextBody: &parts.XTextBody{
-			BodyPr: &parts.XBodyPr{},
+			BodyPr:   &parts.XBodyPr{},
 			LstStyle: &parts.XTextParagraphList{},
 			Paragraphs: []parts.XTextParagraph{
 				{
@@ -76,9 +76,9 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
 	return sp
 }
 
-// AddAutoShape 添加自动形状到幻灯片
-// x, y, cx, cy: 位置和尺寸（EMU 单位）
-// presetID: 预设形状类型 (如 "rectangle", "ellipse", "roundRect" 等)
+// AddAutoShape adds an auto shape to the slide.
+// x, y, cx, cy are the position and size in EMU.
+// presetID is the preset shape type (e.g. "rectangle", "ellipse", "roundRect").
 func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp {
 	sp := &parts.XSp{
 		NonVisual: parts.XNonVisualDrawingShape{
@@ -101,9 +101,9 @@ func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XS
 	return sp
 }
 
-// AddPicture 添加图片到幻灯片
-// x, y, cx, cy: 位置和尺寸（EMU 单位）
-// imageRId: 图片关系 ID
+// AddPicture adds an image to the slide.
+// x, y, cx, cy are the position and size in EMU; imageRId is the image
+// relationship ID.
 func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture {
 	pic := &parts.XPicture{
 		NonVisual: parts.XNonVisualDrawingPic{
@@ -131,20 +131,20 @@ func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPic
 	return pic
 }
 
-// AddTable 添加表格到幻灯片
-// x, y, cx, cy: 位置和尺寸（EMU 单位）
-// rows, cols: 行列数
+// AddTable adds a table to the slide.
+// x, y, cx, cy are the position and size in EMU; rows and cols are the table
+// dimensions.
 func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame {
-	// 计算单元格尺寸
+	// compute per-column width
 	cellW := cx / cols
 
-	// 构建表格网格
+	// build the table grid
 	gridCols := make([]parts.XTableColumn, cols)
 	for i := range gridCols {
 		gridCols[i] = parts.XTableColumn{W: cellW}
 	}
 
-	// 构建行
+	// build the table rows
 	tableRows := make([]parts.XTableRow, rows)
 	for r := range tableRows {
 		cells := make([]parts.XTableCell, cols)
@@ -188,7 +188,7 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFra
 	return gf
 }
 
-// SetTableCellText 设置表格单元格文本
+// SetTableCellText sets the text of the cell at (row, col) in the given table.
 func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, text string) {
 	if gf == nil || gf.Graphic == nil || gf.Graphic.Table == nil {
 		return
@@ -200,62 +200,66 @@ func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, t
 	table.Rows[row].Cells[col].TextBody.Paragraphs[0].TextRuns[0].Text = text
 }
 
-// GetOrAddPicture 添加图片到幻灯片并返回 XPicture
-// 自动处理图片关系 ID
+// GetOrAddPicture adds an image to the slide by URI and returns its XPicture.
+// The image relationship is created automatically.
 func (b *SlideBuilder) GetOrAddPicture(x, y, cx, cy int, imageURI string) *parts.XPicture {
 	rId := b.GetImageRId(imageURI)
 	return b.AddPicture(x, y, cx, cy, rId)
 }
 
 // ============================================================================
-// 关系管理方法
+// Relationship management
 // ============================================================================
 
-// AddImage 添加图片关系并返回 rId
+// AddImage adds an image relationship and returns its relationship ID.
 func (b *SlideBuilder) AddImage(targetURI string) string {
 	return b.slide.AddImageRel(targetURI)
 }
 
-// AddMedia 添加媒体关系并返回 rId
+// AddMedia adds a media relationship and returns its relationship ID.
 func (b *SlideBuilder) AddMedia(targetURI string) string {
 	return b.slide.AddMediaRel(targetURI)
 }
 
-// AddChart 添加图表关系并返回 rId
+// AddChart adds a chart relationship and returns its relationship ID.
 func (b *SlideBuilder) AddChart(targetURI string) string {
 	return b.slide.AddChartRel(targetURI)
 }
 
-// HasImage 判断是否已存在某图片关系
+// HasImage reports whether an image relationship for targetURI already exists.
 func (b *SlideBuilder) HasImage(targetURI string) bool {
 	rels := b.slide.Relationships()
 	target := opc.NewPackURI(targetURI)
 	return rels.GetByTarget(target) != nil
 }
 
-// HasMedia 判断是否已存在某媒体关系
+// HasMedia reports whether a media relationship for targetURI already exists.
 func (b *SlideBuilder) HasMedia(targetURI string) bool {
 	rels := b.slide.Relationships()
 	target := opc.NewPackURI(targetURI)
 	return rels.GetByTarget(target) != nil
 }
 
-// GetImageRId 获取图片 rId，不存在则添加
+// GetImageRId returns the relationship ID for the given image URI, creating the
+// relationship if it does not yet exist.
 func (b *SlideBuilder) GetImageRId(targetURI string) string {
 	return b.slide.AddImageRel(targetURI)
 }
 
-// GetMediaRId 获取媒体 rId，不存在则添加
+// GetMediaRId returns the relationship ID for the given media URI, creating the
+// relationship if it does not yet exist.
 func (b *SlideBuilder) GetMediaRId(targetURI string) string {
 	return b.slide.AddMediaRel(targetURI)
 }
 
-// GetChartRId 获取图表 rId，不存在则添加
+// GetChartRId returns the relationship ID for the given chart URI, creating the
+// relationship if it does not yet exist.
 func (b *SlideBuilder) GetChartRId(targetURI string) string {
 	return b.slide.AddChartRel(targetURI)
 }
 
-// GetRelationshipURI 根据 rId 获取目标 URI
+// GetRelationshipURI returns the target URI for the relationship with the given
+// ID, or an empty string if it does not exist.
 func (b *SlideBuilder) GetRelationshipURI(rId string) string {
 	rels := b.slide.Relationships()
 	rel := rels.Get(rId)

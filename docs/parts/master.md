@@ -1,24 +1,24 @@
-# Master 模块接口文档
+# Master Module — Interface Documentation
 
-> 母版和版式的只读数据结构、解析器和缓存管理
+> Read-only data structures, parsers, and cache management for slide masters and layouts
 
-## 设计原则
+## Design Principles
 
-1. 所有结构体字段均为只读（小写字段通过构造函数初始化，大写字段为不可变值）
-2. 针对高并发读取优化，无需加锁即可安全读取
-3. 数据在解析时一次性构建，之后不再修改
+1. All struct fields are read-only (lowercase fields initialised via constructors; uppercase fields are immutable values).
+2. Optimised for high-concurrency reads — safe to read without locking.
+3. Data is built once at parse time and never modified afterwards.
 
 ---
 
-## 枚举类型
+## Enum Types
 
 ### PlaceholderType
 
-占位符类型枚举，对应 XML: `<p:ph type="...">`
+Placeholder type enum, corresponding to XML: `<p:ph type="...">`
 
-| 常量 | 值 | XML 类型 |
+| Constant | Value | XML Type |
 |------|-----|----------|
-| `PlaceholderTypeNone` | `0` | 未指定 |
+| `PlaceholderTypeNone` | `0` | Unspecified |
 | `PlaceholderTypeTitle` | `1` | `title` |
 | `PlaceholderTypeBody` | `2` | `body` |
 | `PlaceholderTypeCenterTitle` | `3` | `ctrTitle` |
@@ -36,118 +36,118 @@
 | `PlaceholderTypeSlideImage` | `15` | `sldImg` |
 | `PlaceholderTypePicture` | `16` | `pic` |
 
-#### 方法
+#### Methods
 
 ```go
 func (t PlaceholderType) String() string
 ```
-返回占位符类型的字符串表示，如 `"title"`, `"body"` 等。
+Returns the string representation of the placeholder type, e.g. `"title"`, `"body"`, etc.
 
 ### BackgroundType
 
-背景类型枚举，对应 XML: `<p:bg>` 下的不同子元素。
+Background type enum, corresponding to XML: different child elements under `<p:bg>`.
 
-| 常量 | 值 | 说明 |
+| Constant | Value | Description |
 |------|-----|------|
-| `BackgroundTypeNone` | `0` | 无背景 |
-| `BackgroundTypeSolidColor` | `1` | 纯色背景 |
-| `BackgroundTypeGradient` | `2` | 渐变背景 |
-| `BackgroundTypePattern` | `3` | 图案填充 |
-| `BackgroundTypePicture` | `4` | 图片背景 |
-| `BackgroundTypeThemeColor` | `5` | 主题色背景 |
+| `BackgroundTypeNone` | `0` | No background |
+| `BackgroundTypeSolidColor` | `1` | Solid color background |
+| `BackgroundTypeGradient` | `2` | Gradient background |
+| `BackgroundTypePattern` | `3` | Pattern fill |
+| `BackgroundTypePicture` | `4` | Picture background |
+| `BackgroundTypeThemeColor` | `5` | Theme color background |
 
 ### SlideLayoutType
 
-版式类型枚举。
+Layout type enum.
 
-| 常量 | 值 | 说明 |
+| Constant | Value | Description |
 |------|-----|------|
-| `SlideLayoutBlank` | `0` | 空白布局 |
-| `SlideLayoutTitle` | `1` | 标题布局 |
-| `SlideLayoutTitleAndContent` | `2` | 标题和内容布局 |
-| `SlideLayoutTwoContent` | `3` | 两栏内容布局 |
-| `SlideLayoutComparison` | `4` | 比较布局 |
-| `SlideLayoutTitleOnly` | `5` | 仅标题布局 |
-| `SlideLayoutBlankVertical` | `6` | 空白垂直布局 |
-| `SlideLayoutObject` | `7` | 对象布局 |
-| `SlideLayoutPictureAndCaption` | `8` | 图片和标题布局 |
+| `SlideLayoutBlank` | `0` | Blank layout |
+| `SlideLayoutTitle` | `1` | Title layout |
+| `SlideLayoutTitleAndContent` | `2` | Title and content layout |
+| `SlideLayoutTwoContent` | `3` | Two-column content layout |
+| `SlideLayoutComparison` | `4` | Comparison layout |
+| `SlideLayoutTitleOnly` | `5` | Title-only layout |
+| `SlideLayoutBlankVertical` | `6` | Blank vertical layout |
+| `SlideLayoutObject` | `7` | Object layout |
+| `SlideLayoutPictureAndCaption` | `8` | Picture and caption layout |
 
 ---
 
-## 只读数据结构
+## Read-Only Data Structures
 
 ### TextStyle
 
-文本样式，用于定义占位符中文本的默认字体、大小、颜色等。
+Text style, used to define the default font, size, colour, etc. for text in a placeholder.
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `fontName` | `string` | `FontName()` | 字体名称 |
-| `fontSize` | `int32` | `FontSize()` | 字体大小（百分之一磅，100 = 1pt） |
-| `bold` | `bool` | `Bold()` | 是否粗体 |
-| `italic` | `bool` | `Italic()` | 是否斜体 |
-| `underline` | `bool` | `Underline()` | 是否下划线 |
-| `colorRGB` | `string` | `ColorRGB()` | 文本颜色（RGB 十六进制，如 `"FF0000"`） |
+| `fontName` | `string` | `FontName()` | Font name |
+| `fontSize` | `int32` | `FontSize()` | Font size (hundredths of a point; 100 = 1 pt) |
+| `bold` | `bool` | `Bold()` | Bold |
+| `italic` | `bool` | `Italic()` | Italic |
+| `underline` | `bool` | `Underline()` | Underline |
+| `colorRGB` | `string` | `ColorRGB()` | Text color (RGB hex, e.g. `"FF0000"`) |
 
 ### Placeholder
 
-占位符，母版/版式中定义的可填充区域。对应 XML: `<p:sp>` with `<p:nvSpPr><p:nvPr><p:ph ...>`
+Placeholder — a fillable region defined in a master/layout. Corresponds to XML: `<p:sp>` with `<p:nvSpPr><p:nvPr><p:ph ...>`
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `id` | `string` | `ID()` | 占位符唯一标识符 |
-| `placeholderType` | `PlaceholderType` | `Type()` | 占位符类型 |
-| `x` | `int64` | `X()` | X 坐标（EMU 单位） |
-| `y` | `int64` | `Y()` | Y 坐标（EMU 单位） |
-| `cx` | `int64` | `Cx()` | 宽度（EMU 单位） |
-| `cy` | `int64` | `Cy()` | 高度（EMU 单位） |
-| `rotation` | `int32` | `Rotation()` | 旋转角度（1/60000 度） |
-| `defaultStyle` | `*TextStyle` | `DefaultStyle()` | 默认文本样式（可为 nil） |
+| `id` | `string` | `ID()` | Unique placeholder identifier |
+| `placeholderType` | `PlaceholderType` | `Type()` | Placeholder type |
+| `x` | `int64` | `X()` | X coordinate (EMU units) |
+| `y` | `int64` | `Y()` | Y coordinate (EMU units) |
+| `cx` | `int64` | `Cx()` | Width (EMU units) |
+| `cy` | `int64` | `Cy()` | Height (EMU units) |
+| `rotation` | `int32` | `Rotation()` | Rotation angle (1/60000 of a degree) |
+| `defaultStyle` | `*TextStyle` | `DefaultStyle()` | Default text style (may be nil) |
 
-#### 方法
+#### Methods
 
 ```go
 func (p *Placeholder) Bounds() (x, y, cx, cy int64)
 ```
-返回边界矩形 (x, y, cx, cy)。
+Returns the bounding rectangle (x, y, cx, cy).
 
 ### Background
 
-背景定义，对应 XML: `<p:bg>` 或 `<p:cSld><p:bg>`
+Background definition, corresponding to XML: `<p:bg>` or `<p:cSld><p:bg>`
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `backgroundType` | `BackgroundType` | `Type()` | 背景类型 |
-| `solidColorRGB` | `string` | `SolidColorRGB()` | RGB 十六进制颜色值（仅纯色背景有效） |
-| `gradientAngle` | `int32` | `GradientAngle()` | 渐变角度（度，仅渐变背景有效） |
-| `gradientColors` | `[]GradientStop` | `GradientColors()` | 渐变色标列表（仅渐变背景有效） |
-| `pictureRId` | `string` | `PictureRId()` | 图片关系 ID（仅图片背景有效） |
-| `pictureURI` | `string` | `PictureURI()` | 图片内部 URI 路径（仅图片背景有效） |
-| `opacity` | `float32` | `Opacity()` | 不透明度 (0.0 - 1.0) |
+| `backgroundType` | `BackgroundType` | `Type()` | Background type |
+| `solidColorRGB` | `string` | `SolidColorRGB()` | RGB hex color value (solid backgrounds only) |
+| `gradientAngle` | `int32` | `GradientAngle()` | Gradient angle in degrees (gradient backgrounds only) |
+| `gradientColors` | `[]GradientStop` | `GradientColors()` | List of gradient stops (gradient backgrounds only) |
+| `pictureRId` | `string` | `PictureRId()` | Picture relationship ID (picture backgrounds only) |
+| `pictureURI` | `string` | `PictureURI()` | Picture internal URI path (picture backgrounds only) |
+| `opacity` | `float32` | `Opacity()` | Opacity (0.0 – 1.0) |
 
 ### GradientStop
 
-渐变色标，对应 XML: `<a:gs>`
+Gradient stop, corresponding to XML: `<a:gs>`
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `position` | `float32` | `Position()` | 位置 (0.0 - 1.0) |
-| `colorRGB` | `string` | `ColorRGB()` | RGB 十六进制颜色值 |
+| `position` | `float32` | `Position()` | Position (0.0 – 1.0) |
+| `colorRGB` | `string` | `ColorRGB()` | RGB hex color value |
 
 ### SlideLayoutData
 
-版式只读数据，对应 XML: `/ppt/slideLayouts/slideLayoutN.xml`
+Read-only layout data, corresponding to XML: `/ppt/slideLayouts/slideLayoutN.xml`
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `id` | `string` | `ID()` | 版式唯一标识符 |
-| `name` | `string` | `Name()` | 版式名称 |
-| `layoutType` | `SlideLayoutType` | `LayoutType()` | 版式类型 |
-| `background` | `*Background` | `Background()` | 背景（可为 nil） |
-| `masterId` | `string` | `MasterID()` | 所属母版的 ID |
-| `placeholders` | `map[string]*Placeholder` | `Placeholders()` | 占位符集合 |
+| `id` | `string` | `ID()` | Unique layout identifier |
+| `name` | `string` | `Name()` | Layout name |
+| `layoutType` | `SlideLayoutType` | `LayoutType()` | Layout type |
+| `background` | `*Background` | `Background()` | Background (may be nil) |
+| `masterId` | `string` | `MasterID()` | ID of the owning master |
+| `placeholders` | `map[string]*Placeholder` | `Placeholders()` | Placeholder collection |
 
-#### 方法
+#### Methods
 
 ```go
 func (l *SlideLayoutData) PlaceholderByID(id string) *Placeholder
@@ -159,17 +159,17 @@ func (l *SlideLayoutData) BodyPlaceholder() *Placeholder
 
 ### SlideMasterData
 
-母版只读数据，对应 XML: `/ppt/slideMasters/slideMasterN.xml`
+Read-only master data, corresponding to XML: `/ppt/slideMasters/slideMasterN.xml`
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `id` | `string` | `ID()` | 母版唯一标识符 |
-| `name` | `string` | `Name()` | 母版名称 |
-| `background` | `*Background` | `Background()` | 背景（可为 nil） |
-| `placeholders` | `map[string]*Placeholder` | `Placeholders()` | 母版级占位符 |
-| `layouts` | `[]*SlideLayoutData` | `Layouts()` | 包含的版式列表 |
+| `id` | `string` | `ID()` | Unique master identifier |
+| `name` | `string` | `Name()` | Master name |
+| `background` | `*Background` | `Background()` | Background (may be nil) |
+| `placeholders` | `map[string]*Placeholder` | `Placeholders()` | Master-level placeholders |
+| `layouts` | `[]*SlideLayoutData` | `Layouts()` | List of contained layouts |
 
-#### 方法
+#### Methods
 
 ```go
 func (m *SlideMasterData) PlaceholderByID(id string) *Placeholder
@@ -182,22 +182,22 @@ func (m *SlideMasterData) LayoutByID(id string) *SlideLayoutData
 
 ## MasterCache
 
-母版/版式只读缓存。初始化后所有字段只读，支持无锁并发访问。
+Read-only master/layout cache. All fields are read-only after initialisation; lock-free concurrent access is safe.
 
-### 创建
+### Create
 
 ```go
 func NewMasterCache() *MasterCache
 ```
 
-### 初始化
+### Initialise
 
 ```go
 func (c *MasterCache) Init(masters []*SlideMasterData, layouts []*SlideLayoutData)
 func (c *MasterCache) InitFunc(initFn func() ([]*SlideMasterData, []*SlideLayoutData))
 ```
 
-### 读取接口
+### Read Interface
 
 ```go
 func (c *MasterCache) GetMaster(masterID string) (*SlideMasterData, bool)
@@ -209,7 +209,7 @@ func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*Place
 func (c *MasterCache) GetMasterPlaceholder(masterID, phType string) (*Placeholder, bool)
 ```
 
-### 批量读取
+### Bulk Read
 
 ```go
 func (c *MasterCache) AllMasters() map[string]*SlideMasterData
@@ -218,7 +218,7 @@ func (c *MasterCache) MasterCount() int
 func (c *MasterCache) LayoutCount() int
 ```
 
-### 辅助方法
+### Helper Methods
 
 ```go
 func (c *MasterCache) LayoutExists(layoutID string) bool
@@ -228,7 +228,7 @@ func (c *MasterCache) ListMasterIDs() []string
 func (c *MasterCache) ListLayoutNames() []string
 ```
 
-### 全局缓存
+### Global Cache
 
 ```go
 func DefaultCache() *MasterCache
@@ -243,23 +243,23 @@ func GetPlaceholder(layoutID, phType string) (*Placeholder, bool)
 
 ## MasterManager
 
-母版/版式管理器（门面模式），负责从 ZIP 文件加载母版和版式。
+Master/layout manager (facade pattern), responsible for loading masters and layouts from a ZIP file.
 
-### 创建
+### Create
 
 ```go
 func NewMasterManager() *MasterManager
 func NewMasterManagerWithCache(cache *MasterCache) *MasterManager
 ```
 
-### 加载
+### Load
 
 ```go
 func (m *MasterManager) LoadFromZip(zipReader *zip.Reader) error
 func (m *MasterManager) LoadFromZipFile(filePath string) error
 ```
 
-### 访问器
+### Accessors
 
 ```go
 func (m *MasterManager) Cache() *MasterCache
@@ -276,7 +276,7 @@ func (m *MasterManager) ListLayoutIDs() []string
 func (m *MasterManager) ListLayoutNames() []string
 ```
 
-### 全局管理器
+### Global Manager
 
 ```go
 func DefaultManager() *MasterManager
@@ -286,7 +286,7 @@ func InitDefaultManagerFromFile(filePath string) error
 
 ---
 
-## XML 解析器
+## XML Parsers
 
 ### ParseLayout
 
@@ -294,7 +294,7 @@ func InitDefaultManagerFromFile(filePath string) error
 func ParseLayout(xmlData []byte) (*SlideLayoutData, error)
 ```
 
-解析幻灯片版式 XML，返回版式数据。
+Parses slide layout XML and returns layout data.
 
 ### ParseMaster
 
@@ -302,15 +302,15 @@ func ParseLayout(xmlData []byte) (*SlideLayoutData, error)
 func ParseMaster(xmlData []byte) (*SlideMasterData, error)
 ```
 
-解析幻灯片母版 XML，返回母版数据。
+Parses slide master XML and returns master data.
 
 ---
 
-## 单位转换
+## Unit Conversions
 
 ```go
-var EMUToPixels      = utils.EMUToPixels      // EMU -> 像素 (96 DPI)
-var EMUToPoints       = utils.EMUToPoints       // EMU -> 磅
-var EMUToInches       = utils.EMUToInches       // EMU -> 英寸
-var EMUToCentimeters  = utils.EMUToCentimeters  // EMU -> 厘米
+var EMUToPixels      = utils.EMUToPixels      // EMU -> pixels (96 DPI)
+var EMUToPoints       = utils.EMUToPoints       // EMU -> points
+var EMUToInches       = utils.EMUToInches       // EMU -> inches
+var EMUToCentimeters  = utils.EMUToCentimeters  // EMU -> centimetres
 ```

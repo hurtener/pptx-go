@@ -12,17 +12,17 @@ import (
 	"github.com/hurtener/pptx-go/utils"
 )
 
-// NewShapeIDAllocator 创建新的 ID 分配器
-// reservedID: 保留的起始 ID，nextID 将从 reservedID + 1 开始
+// NewShapeIDAllocator creates a new ID allocator.
+// reservedID: the reserved starting ID; nextID begins at reservedID + 1.
 func NewShapeIDAllocator(reservedID uint32) *ShapeIDAllocator {
 	return &ShapeIDAllocator{
 		nextID:     reservedID + 1,
 		reservedID: reservedID,
-		maxID:      0, // 无限制
+		maxID:      0, // no limit
 	}
 }
 
-// NewShapeIDAllocatorWithMax 创建带最大 ID 限制的分配器
+// NewShapeIDAllocatorWithMax creates an allocator with a maximum ID limit.
 func NewShapeIDAllocatorWithMax(reservedID, maxID uint32) *ShapeIDAllocator {
 	return &ShapeIDAllocator{
 		nextID:     reservedID + 1,
@@ -31,20 +31,17 @@ func NewShapeIDAllocatorWithMax(reservedID, maxID uint32) *ShapeIDAllocator {
 	}
 }
 
-// Next 分配下一个 ID
-// 返回新分配的 ID 值
+// Next allocates the next ID and returns it.
 func (a *ShapeIDAllocator) Next() uint32 {
 	if a.maxID > 0 && a.nextID >= a.maxID {
-		return 0 // 超出范围
+		return 0 // out of range
 	}
 	id := a.nextID
 	a.nextID++
 	return id
 }
 
-// NextBatch 批量分配多个 ID
-// count: 需要分配的 ID 数量
-// 返回分配的 ID 数组（不包含 reservedID）
+// NextBatch allocates count IDs in bulk and returns them (does not include reservedID).
 func (a *ShapeIDAllocator) NextBatch(count int) []uint32 {
 	ids := make([]uint32, count)
 	for i := 0; i < count; i++ {
@@ -53,12 +50,12 @@ func (a *ShapeIDAllocator) NextBatch(count int) []uint32 {
 	return ids
 }
 
-// Peek 返回下一个将被分配的 ID（不实际分配）
+// Peek returns the next ID that would be allocated without actually allocating it.
 func (a *ShapeIDAllocator) Peek() uint32 {
 	return a.nextID
 }
 
-// Current 返回当前 ID（最后分配的 ID）
+// Current returns the most recently allocated ID.
 func (a *ShapeIDAllocator) Current() uint32 {
 	if a.nextID > a.reservedID+1 {
 		return a.nextID - 1
@@ -66,31 +63,31 @@ func (a *ShapeIDAllocator) Current() uint32 {
 	return a.reservedID
 }
 
-// Reset 重置分配器，从 reservedID + 1 重新开始
+// Reset resets the allocator to start from reservedID + 1.
 func (a *ShapeIDAllocator) Reset() {
 	a.nextID = a.reservedID + 1
 }
 
-// ResetFrom 从指定 ID 开始重新分配
+// ResetFrom resets the allocator to start from startID.
 func (a *ShapeIDAllocator) ResetFrom(startID uint32) {
 	a.nextID = startID
 }
 
-// SetReserved 设置保留的起始 ID 并重置
+// SetReserved sets the reserved starting ID and resets the allocator.
 func (a *ShapeIDAllocator) SetReserved(reservedID uint32) {
 	a.reservedID = reservedID
 	a.nextID = reservedID + 1
 }
 
-// Remaining 返回剩余可分配的 ID 数量
+// Remaining returns the number of IDs still available for allocation.
 func (a *ShapeIDAllocator) Remaining() uint32 {
 	if a.maxID == 0 {
-		return ^uint32(0) // 最大值
+		return ^uint32(0) // maximum value
 	}
 	return a.maxID - a.nextID + 1
 }
 
-// IsExhausted 检查 ID 是否已耗尽
+// IsExhausted reports whether the allocator has run out of IDs.
 func (a *ShapeIDAllocator) IsExhausted() bool {
 	if a.maxID == 0 {
 		return false
@@ -98,13 +95,13 @@ func (a *ShapeIDAllocator) IsExhausted() bool {
 	return a.nextID > a.maxID
 }
 
-// UsedCount 返回已使用的 ID 数量
+// UsedCount returns the number of IDs that have been allocated.
 func (a *ShapeIDAllocator) UsedCount() uint32 {
 	return a.nextID - a.reservedID - 1
 }
 
 // ============================================================================
-// NewShapeIDAllocatorSync 创建线程安全的 ID 分配器
+// NewShapeIDAllocatorSync creates a thread-safe ID allocator.
 func NewShapeIDAllocatorSync(reservedID uint32) *ShapeIDAllocatorSync {
 	return &ShapeIDAllocatorSync{
 		nextID:     reservedID + 1,
@@ -112,7 +109,7 @@ func NewShapeIDAllocatorSync(reservedID uint32) *ShapeIDAllocatorSync {
 	}
 }
 
-// NewShapeIDAllocatorSyncWithMax 创建带最大 ID 限制的线程安全分配器
+// NewShapeIDAllocatorSyncWithMax creates a thread-safe allocator with a maximum ID limit.
 func NewShapeIDAllocatorSyncWithMax(reservedID, maxID uint32) *ShapeIDAllocatorSync {
 	return &ShapeIDAllocatorSync{
 		nextID:     reservedID + 1,
@@ -121,7 +118,7 @@ func NewShapeIDAllocatorSyncWithMax(reservedID, maxID uint32) *ShapeIDAllocatorS
 	}
 }
 
-// Next 线程安全地分配下一个 ID
+// Next allocates the next ID in a thread-safe manner.
 func (a *ShapeIDAllocatorSync) Next() uint32 {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -134,7 +131,7 @@ func (a *ShapeIDAllocatorSync) Next() uint32 {
 	return id
 }
 
-// NextBatch 线程安全地批量分配多个 ID
+// NextBatch allocates count IDs in bulk in a thread-safe manner.
 func (a *ShapeIDAllocatorSync) NextBatch(count int) []uint32 {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -151,7 +148,7 @@ func (a *ShapeIDAllocatorSync) NextBatch(count int) []uint32 {
 	return ids
 }
 
-// TryNext 尝试分配 ID，失败时返回 false
+// TryNext tries to allocate an ID; returns false if no IDs are available.
 func (a *ShapeIDAllocatorSync) TryNext() (uint32, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -164,21 +161,21 @@ func (a *ShapeIDAllocatorSync) TryNext() (uint32, bool) {
 	return id, true
 }
 
-// Peek 线程安全地返回下一个将被分配的 ID
+// Peek returns the next ID that would be allocated, without allocating it, in a thread-safe manner.
 func (a *ShapeIDAllocatorSync) Peek() uint32 {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.nextID
 }
 
-// Reset 线程安全地重置分配器
+// Reset resets the allocator in a thread-safe manner.
 func (a *ShapeIDAllocatorSync) Reset() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.nextID = a.reservedID + 1
 }
 
-// ResetFrom 线程安全地从指定 ID 开始重置
+// ResetFrom resets the allocator to start from startID in a thread-safe manner.
 func (a *ShapeIDAllocatorSync) ResetFrom(startID uint32) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -186,11 +183,11 @@ func (a *ShapeIDAllocatorSync) ResetFrom(startID uint32) {
 }
 
 // ============================================================================
-// SlidePart ID 管理方法
+// SlidePart ID management methods
 // ============================================================================
 
-// Allocator 返回当前的 Shape ID 分配器（用于自定义管理）
-// 注意：单个 Slide 由单 goroutine 负责生成，非并发安全
+// Allocator returns the current shape ID allocator for custom management.
+// Note: a single Slide is generated by a single goroutine and is not concurrent-safe.
 func (s *SlidePart) Allocator() *ShapeIDAllocator {
 	return &ShapeIDAllocator{
 		nextID:     s.nextShapeID,
@@ -198,20 +195,19 @@ func (s *SlidePart) Allocator() *ShapeIDAllocator {
 	}
 }
 
-// NextShapeID 返回下一个可用的 Shape ID（不递增）
+// NextShapeID returns the next available shape ID without incrementing the counter.
 func (s *SlidePart) NextShapeID() uint32 {
 	return s.nextShapeID
 }
 
-// AllocateShapeID 分配一个新的 shape ID
-// 返回新分配的 ID 值
+// AllocateShapeID allocates a new shape ID and returns it.
 func (s *SlidePart) AllocateShapeID() uint32 {
 	id := s.nextShapeID
 	s.nextShapeID++
 	return id
 }
 
-// AllocateShapeIDBatch 批量分配多个 shape ID
+// AllocateShapeIDBatch allocates count shape IDs in bulk.
 func (s *SlidePart) AllocateShapeIDBatch(count int) []uint32 {
 	ids := make([]uint32, count)
 	for i := 0; i < count; i++ {
@@ -221,20 +217,19 @@ func (s *SlidePart) AllocateShapeIDBatch(count int) []uint32 {
 	return ids
 }
 
-// AllocateShapeIDWithOffset 分配一个带偏移量的 shape ID
-// offset: 在当前基础上增加的偏移量
+// AllocateShapeIDWithOffset allocates a shape ID offset by the given amount above the current position.
 func (s *SlidePart) AllocateShapeIDWithOffset(offset uint32) uint32 {
 	id := s.nextShapeID + offset
 	s.nextShapeID = id + 1
 	return id
 }
 
-// PeekNextShapeID 查看下一个可用的 Shape ID（不递增）
+// PeekNextShapeID returns the next available shape ID without incrementing the counter.
 func (s *SlidePart) PeekNextShapeID() uint32 {
 	return s.nextShapeID
 }
 
-// CurrentShapeID 返回当前最后分配的 Shape ID
+// CurrentShapeID returns the most recently allocated shape ID.
 func (s *SlidePart) CurrentShapeID() uint32 {
 	if s.nextShapeID > 2 {
 		return s.nextShapeID - 1
@@ -242,12 +237,12 @@ func (s *SlidePart) CurrentShapeID() uint32 {
 	return 1
 }
 
-// ResetShapeID 重置 Shape ID 分配器
+// ResetShapeID resets the shape ID allocator.
 func (s *SlidePart) ResetShapeID() {
 	s.nextShapeID = 2
 }
 
-// SetShapeIDStart 设置 Shape ID 的起始值
+// SetShapeIDStart sets the starting value for shape ID allocation.
 func (s *SlidePart) SetShapeIDStart(startID uint32) {
 	if startID < 2 {
 		startID = 2
@@ -255,23 +250,23 @@ func (s *SlidePart) SetShapeIDStart(startID uint32) {
 	s.nextShapeID = startID
 }
 
-// ShapeIDCount 返回已分配的 Shape ID 数量
+// ShapeIDCount returns the number of shape IDs that have been allocated.
 func (s *SlidePart) ShapeIDCount() uint32 {
 	return s.nextShapeID - 2
 }
 
-// NewSlidePart 创建新的幻灯片部件
+// NewSlidePart creates a new slide part.
 func NewSlidePart(id int) *SlidePart {
 	uri := opc.NewPackURI(fmt.Sprintf("/ppt/slides/slide%d.xml", id))
 	return &SlidePart{
 		uri:         uri,
 		spTree:      NewXSpTree(),
-		nextShapeID: 2, // 1 已被 spTree 自身使用
+		nextShapeID: 2, // 1 is already used by the spTree itself
 		rels:        opc.NewRelationships(uri),
 	}
 }
 
-// NewSlidePartWithURI 使用指定 URI 创建幻灯片部件
+// NewSlidePartWithURI creates a slide part with the specified URI.
 func NewSlidePartWithURI(uri *opc.PackURI) *SlidePart {
 	return &SlidePart{
 		uri:         uri,
@@ -281,68 +276,68 @@ func NewSlidePartWithURI(uri *opc.PackURI) *SlidePart {
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (s *SlidePart) PartURI() *opc.PackURI {
 	return s.uri
 }
 
-// SetURI 设置部件 URI
+// SetURI sets the part URI.
 func (s *SlidePart) SetURI(uri *opc.PackURI) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.uri = uri
 }
 
-// LayoutRId 返回关联的布局 rId
+// LayoutRId returns the associated layout relationship ID.
 func (s *SlidePart) LayoutRId() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.layoutRId
 }
 
-// SetLayoutRId 设置关联的布局 rId
+// SetLayoutRId sets the associated layout relationship ID.
 func (s *SlidePart) SetLayoutRId(rId string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.layoutRId = rId
 }
 
-// MasterRId 返回关联的母版 rId
+// MasterRId returns the associated master relationship ID.
 func (s *SlidePart) MasterRId() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.masterRId
 }
 
-// SetMasterRId 设置关联的母版 rId
+// SetMasterRId sets the associated master relationship ID.
 func (s *SlidePart) SetMasterRId(rId string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.masterRId = rId
 }
 
-// Relationships 返回幻灯片关系管理器（使用 opc.Relationships）
+// Relationships returns the slide relationship manager (using opc.Relationships).
 func (s *SlidePart) Relationships() *opc.Relationships {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.rels
 }
 
-// SpTree 返回形状树（用于高层构建器操作）
+// SpTree returns the shape tree for use by upper-layer builder operations.
 func (s *SlidePart) SpTree() *XSpTree {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.spTree
 }
 
-// AppendShapeChild 向形状树添加子元素（用于高层构建器操作）
+// AppendShapeChild appends a child element to the shape tree for upper-layer builder operations.
 func (s *SlidePart) AppendShapeChild(child any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.spTree.Children = append(s.spTree.Children, child)
 }
 
-// NewXSpTree 创建新的形状树
+// NewXSpTree creates a new shape tree.
 func NewXSpTree() *XSpTree {
 	return &XSpTree{
 		NonVisual: nvGrpSpPr{
@@ -355,8 +350,7 @@ func NewXSpTree() *XSpTree {
 	}
 }
 
-// ToXML 将 SlidePart 序列化为 XML
-// 使用 XMLWriterPool 统一序列化底座
+// ToXML serializes the SlidePart to XML using the shared XMLWriterPool.
 func (s *SlidePart) ToXML() ([]byte, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -373,7 +367,7 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 		},
 	}
 
-	// 使用 XMLWriterPool 统一序列化
+	// Serialize using the shared XMLWriterPool.
 	xw := globalXMLWriterPool.Get()
 	defer globalXMLWriterPool.Put(xw)
 
@@ -387,9 +381,9 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 	return xw.Bytes(), nil
 }
 
-// FromXML 从 XML 反序列化为 SlidePart
+// FromXML deserializes a SlidePart from XML.
 func (s *SlidePart) FromXML(data []byte) error {
-	// 去除命名空间前缀以兼容 Go 的 xml.Unmarshal
+	// Strip namespace prefixes for compatibility with Go's xml.Unmarshal.
 	cleanData, err := StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
@@ -410,62 +404,61 @@ func (s *SlidePart) FromXML(data []byte) error {
 	return nil
 }
 
-// NewSlideLayoutPart 创建新的幻灯片布局部件
+// NewSlideLayoutPart creates a new slide layout part.
 func NewSlideLayoutPart(id int) *SlideLayoutPart {
 	return &SlideLayoutPart{
-		uri:       opc.NewPackURI(fmt.Sprintf("/ppt/slideLayouts/slideLayout%d.xml", id)),
-		spTree:    NewXSpTree(),
+		uri:        opc.NewPackURI(fmt.Sprintf("/ppt/slideLayouts/slideLayout%d.xml", id)),
+		spTree:     NewXSpTree(),
 		layoutType: SlideLayoutBlank,
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (s *SlideLayoutPart) PartURI() *opc.PackURI {
 	return s.uri
 }
 
-// LayoutType 返回布局类型
+// LayoutType returns the layout type.
 func (s *SlideLayoutPart) LayoutType() SlideLayoutType {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.layoutType
 }
 
-// SetLayoutType 设置布局类型
+// SetLayoutType sets the layout type.
 func (s *SlideLayoutPart) SetLayoutType(t SlideLayoutType) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.layoutType = t
 }
 
-// MasterRId 返回关联的母版 rId
+// MasterRId returns the associated master relationship ID.
 func (s *SlideLayoutPart) MasterRId() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.masterRId
 }
 
-// SetMasterRId 设置关联的母版 rId
+// SetMasterRId sets the associated master relationship ID.
 func (s *SlideLayoutPart) SetMasterRId(rId string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.masterRId = rId
 }
 
-// AddImageRel 添加图片关系（带去重）
-// 返回分配的 rId
+// AddImageRel adds an image relationship (with deduplication) and returns the assigned rId.
 func (s *SlidePart) AddImageRel(targetURI string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	target := opc.NewPackURI(targetURI)
 
-	// 去重检查：如果已存在相同目标的关系，复用其 rId
+	// Deduplication check: reuse the existing rId if a relationship with the same target already exists.
 	if existing := s.rels.GetByTarget(target); existing != nil {
 		return existing.RID()
 	}
 
-	// 创建新关系
+	// Create a new relationship.
 	rel, err := s.rels.AddNew(RelTypeImage, targetURI, false)
 	if err != nil {
 		return ""
@@ -473,15 +466,14 @@ func (s *SlidePart) AddImageRel(targetURI string) string {
 	return rel.RID()
 }
 
-// AddMediaRel 添加媒体关系（带去重）
-// 返回分配的 rId
+// AddMediaRel adds a media relationship (with deduplication) and returns the assigned rId.
 func (s *SlidePart) AddMediaRel(targetURI string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	target := opc.NewPackURI(targetURI)
 
-	// 去重检查
+	// Deduplication check.
 	if existing := s.rels.GetByTarget(target); existing != nil {
 		return existing.RID()
 	}
@@ -493,15 +485,14 @@ func (s *SlidePart) AddMediaRel(targetURI string) string {
 	return rel.RID()
 }
 
-// AddChartRel 添加图表关系（带去重）
-// 返回分配的 rId
+// AddChartRel adds a chart relationship (with deduplication) and returns the assigned rId.
 func (s *SlidePart) AddChartRel(targetURI string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	target := opc.NewPackURI(targetURI)
 
-	// 去重检查
+	// Deduplication check.
 	if existing := s.rels.GetByTarget(target); existing != nil {
 		return existing.RID()
 	}
@@ -513,15 +504,14 @@ func (s *SlidePart) AddChartRel(targetURI string) string {
 	return rel.RID()
 }
 
-// AddTableRel 添加表格关系（带去重）
-// 返回分配的 rId
+// AddTableRel adds a table relationship (with deduplication) and returns the assigned rId.
 func (s *SlidePart) AddTableRel(targetURI string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	target := opc.NewPackURI(targetURI)
 
-	// 去重检查
+	// Deduplication check.
 	if existing := s.rels.GetByTarget(target); existing != nil {
 		return existing.RID()
 	}
@@ -533,7 +523,7 @@ func (s *SlidePart) AddTableRel(targetURI string) string {
 	return rel.RID()
 }
 
-// NewXMLWriter 创建新的 XMLWriter
+// NewXMLWriter creates a new XMLWriter.
 func NewXMLWriter(w io.Writer) *XMLWriter {
 	return &XMLWriter{
 		w:          w,
@@ -546,7 +536,7 @@ func NewXMLWriter(w io.Writer) *XMLWriter {
 	}
 }
 
-// NewXMLWriterWithIndent 创建带缩进的 XMLWriter
+// NewXMLWriterWithIndent creates an XMLWriter with the given indent string.
 func NewXMLWriterWithIndent(w io.Writer, indentStr string) *XMLWriter {
 	return &XMLWriter{
 		w:          w,
@@ -559,7 +549,7 @@ func NewXMLWriterWithIndent(w io.Writer, indentStr string) *XMLWriter {
 	}
 }
 
-// NewXMLWriterBuffered 创建使用缓冲区的 XMLWriter
+// NewXMLWriterBuffered creates a buffered XMLWriter with the given initial capacity.
 func NewXMLWriterBuffered(cap int) *XMLWriter {
 	return &XMLWriter{
 		w:          nil,
@@ -572,22 +562,22 @@ func NewXMLWriterBuffered(cap int) *XMLWriter {
 	}
 }
 
-// SetAutoFlush 设置是否自动刷新到 writer
+// SetAutoFlush enables or disables automatic flushing to the underlying writer.
 func (xw *XMLWriter) SetAutoFlush(enable bool) {
 	xw.autoFlush = enable
 }
 
-// SetIndent 设置缩进字符串
+// SetIndent sets the indent string.
 func (xw *XMLWriter) SetIndent(indentStr string) {
 	xw.indentStr = indentStr
 }
 
-// SetUseIndent 设置是否使用缩进
+// SetUseIndent enables or disables indentation.
 func (xw *XMLWriter) SetUseIndent(use bool) {
 	xw.useIndent = use
 }
 
-// writeRaw 直接写入字节
+// writeRaw writes bytes directly to the buffer.
 func (xw *XMLWriter) writeRaw(data []byte) error {
 	xw.buf = append(xw.buf, data...)
 	if xw.autoFlush && xw.w != nil {
@@ -598,7 +588,7 @@ func (xw *XMLWriter) writeRaw(data []byte) error {
 	return nil
 }
 
-// writeIndent 写入缩进
+// writeIndent writes the current indentation.
 func (xw *XMLWriter) writeIndent() error {
 	if xw.useIndent {
 		for i := 0; i < xw.indent; i++ {
@@ -610,17 +600,17 @@ func (xw *XMLWriter) writeIndent() error {
 	return nil
 }
 
-// Declaration 写入 XML 声明
+// Declaration writes the XML declaration.
 func (xw *XMLWriter) Declaration() error {
 	return xw.writeRaw([]byte(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`))
 }
 
-// DeclarationWithEncoding 写入带编码的 XML 声明
+// DeclarationWithEncoding writes an XML declaration with the specified encoding.
 func (xw *XMLWriter) DeclarationWithEncoding(encoding string) error {
 	return xw.writeRaw([]byte(`<?xml version="1.0" encoding="` + encoding + `" standalone="yes"?>`))
 }
 
-// StartElement 写入起始元素标签
+// StartElement writes an opening element tag.
 func (xw *XMLWriter) StartElement(prefix, localName string) error {
 	if prefix != "" {
 		return xw.writeRaw([]byte("<" + prefix + ":" + localName + ">"))
@@ -628,7 +618,7 @@ func (xw *XMLWriter) StartElement(prefix, localName string) error {
 	return xw.writeRaw([]byte("<" + localName + ">"))
 }
 
-// StartElementNS 写入带命名空间的起始元素
+// StartElementNS writes an opening element tag with a namespace declaration.
 func (xw *XMLWriter) StartElementNS(prefix, localName, ns string) error {
 	xw.nsPrefixes[ns] = prefix
 	if prefix != "" {
@@ -637,7 +627,7 @@ func (xw *XMLWriter) StartElementNS(prefix, localName, ns string) error {
 	return xw.writeRaw([]byte("<" + localName + " xmlns=\"" + ns + "\">"))
 }
 
-// StartElementWithAttrs 写入带属性的起始元素
+// StartElementWithAttrs writes an opening element tag with attributes.
 func (xw *XMLWriter) StartElementWithAttrs(prefix, localName string, attrs ...string) error {
 	tag := "<"
 	if prefix != "" {
@@ -654,7 +644,7 @@ func (xw *XMLWriter) StartElementWithAttrs(prefix, localName string, attrs ...st
 	return xw.writeRaw([]byte(tag))
 }
 
-// StartElementNSWithAttrs 写入带命名空间和属性的起始元素
+// StartElementNSWithAttrs writes an opening element tag with a namespace declaration and attributes.
 func (xw *XMLWriter) StartElementNSWithAttrs(prefix, localName, ns string, attrs ...string) error {
 	xw.nsPrefixes[ns] = prefix
 	tag := "<"
@@ -672,7 +662,7 @@ func (xw *XMLWriter) StartElementNSWithAttrs(prefix, localName, ns string, attrs
 	return xw.writeRaw([]byte(tag))
 }
 
-// StartElementRaw 写入起始元素（不转义属性值）
+// StartElementRaw writes an opening element tag without escaping attribute values.
 func (xw *XMLWriter) StartElementRaw(prefix, localName string, attrs ...string) error {
 	tag := "<"
 	if prefix != "" {
@@ -689,7 +679,7 @@ func (xw *XMLWriter) StartElementRaw(prefix, localName string, attrs ...string) 
 	return xw.writeRaw([]byte(tag))
 }
 
-// EndElement 写入结束元素标签
+// EndElement writes a closing element tag.
 func (xw *XMLWriter) EndElement(prefix, localName string) error {
 	if prefix != "" {
 		return xw.writeRaw([]byte("</" + prefix + ":" + localName + ">"))
@@ -697,7 +687,7 @@ func (xw *XMLWriter) EndElement(prefix, localName string) error {
 	return xw.writeRaw([]byte("</" + localName + ">"))
 }
 
-// EmptyElement 写入空元素标签
+// EmptyElement writes a self-closing element tag.
 func (xw *XMLWriter) EmptyElement(prefix, localName string) error {
 	if prefix != "" {
 		return xw.writeRaw([]byte("<" + prefix + ":" + localName + "/>"))
@@ -705,7 +695,7 @@ func (xw *XMLWriter) EmptyElement(prefix, localName string) error {
 	return xw.writeRaw([]byte("<" + localName + "/>"))
 }
 
-// EmptyElementWithAttrs 写入带属性的空元素
+// EmptyElementWithAttrs writes a self-closing element tag with attributes.
 func (xw *XMLWriter) EmptyElementWithAttrs(prefix, localName string, attrs ...string) error {
 	tag := "<"
 	if prefix != "" {
@@ -722,22 +712,22 @@ func (xw *XMLWriter) EmptyElementWithAttrs(prefix, localName string, attrs ...st
 	return xw.writeRaw([]byte(tag))
 }
 
-// Text 写入文本内容
+// Text writes escaped text content.
 func (xw *XMLWriter) Text(content string) error {
 	return xw.writeRaw([]byte(xw.escapeText(content)))
 }
 
-// TextRaw 写入原始文本（不转义）
+// TextRaw writes raw text without escaping.
 func (xw *XMLWriter) TextRaw(content string) error {
 	return xw.writeRaw([]byte(content))
 }
 
-// CharData 写入字符数据
+// CharData writes escaped character data.
 func (xw *XMLWriter) CharData(data []byte) error {
 	return xw.writeRaw([]byte(xw.escapeText(string(data))))
 }
 
-// Comment 写入注释
+// Comment writes an XML comment.
 func (xw *XMLWriter) Comment(content string) error {
 	if err := xw.writeRaw([]byte("<!--")); err != nil {
 		return err
@@ -748,7 +738,7 @@ func (xw *XMLWriter) Comment(content string) error {
 	return xw.writeRaw([]byte("-->"))
 }
 
-// CData 写入 CDATA 节
+// CData writes a CDATA section.
 func (xw *XMLWriter) CData(content string) error {
 	if err := xw.writeRaw([]byte("<![CDATA[")); err != nil {
 		return err
@@ -759,7 +749,7 @@ func (xw *XMLWriter) CData(content string) error {
 	return xw.writeRaw([]byte("]]>"))
 }
 
-// ProcessingInstruction 写入处理指令
+// ProcessingInstruction writes a processing instruction.
 func (xw *XMLWriter) ProcessingInstruction(target, data string) error {
 	if data != "" {
 		return xw.writeRaw([]byte("<?" + target + " " + data + "?>"))
@@ -767,36 +757,36 @@ func (xw *XMLWriter) ProcessingInstruction(target, data string) error {
 	return xw.writeRaw([]byte("<?" + target + "?>"))
 }
 
-// Indent 增加缩进级别
+// Indent increases the indentation level.
 func (xw *XMLWriter) Indent() {
 	xw.indent++
 }
 
-// Dedent 减少缩进级别
+// Dedent decreases the indentation level.
 func (xw *XMLWriter) Dedent() {
 	if xw.indent > 0 {
 		xw.indent--
 	}
 }
 
-// WithIndent 临时增加缩进，执行后恢复
+// WithIndent temporarily increases the indentation level, then restores it after fn returns.
 func (xw *XMLWriter) WithIndent(fn func()) {
 	xw.Indent()
 	fn()
 	xw.Dedent()
 }
 
-// Newline 写入换行符
+// Newline writes a newline character.
 func (xw *XMLWriter) Newline() error {
 	return xw.writeRaw([]byte{'\n'})
 }
 
-// Raw 写入原始内容
+// Raw writes raw content directly to the buffer.
 func (xw *XMLWriter) Raw(content string) error {
 	return xw.writeRaw([]byte(content))
 }
 
-// Flush 将缓冲区内容刷新到 writer
+// Flush writes the buffered content to the underlying writer.
 func (xw *XMLWriter) Flush() error {
 	if xw.w == nil {
 		return fmt.Errorf("XMLWriter: writer is nil, no io.Writer configured")
@@ -806,22 +796,22 @@ func (xw *XMLWriter) Flush() error {
 	return err
 }
 
-// Bytes 返回缓冲区内容的副本（并发安全）
-// 注意：必须返回副本，因为 XMLWriter 会被池化复用
-// 如果返回引用，当 writer 被放回池并重新使用时会导致数据竞争
+// Bytes returns a copy of the buffer contents.
+// A copy is required because the XMLWriter is pooled and reused; returning a
+// slice reference would cause a data race when the writer is returned to the pool.
 func (xw *XMLWriter) Bytes() []byte {
-	// 创建副本以避免竞态条件
+	// Create a copy to avoid race conditions.
 	result := make([]byte, len(xw.buf))
 	copy(result, xw.buf)
 	return result
 }
 
-// String 返回缓冲区内容的字符串形式
+// String returns the buffer contents as a string.
 func (xw *XMLWriter) String() string {
 	return string(xw.buf)
 }
 
-// Reset 重置 writer
+// Reset resets the writer and sets the underlying io.Writer.
 func (xw *XMLWriter) Reset(w io.Writer) {
 	xw.w = w
 	xw.buf = xw.buf[:0]
@@ -829,24 +819,24 @@ func (xw *XMLWriter) Reset(w io.Writer) {
 	xw.nsPrefixes = make(map[string]string)
 }
 
-// ResetBuffer 重置缓冲区
+// ResetBuffer clears the internal buffer.
 func (xw *XMLWriter) ResetBuffer() {
 	xw.buf = xw.buf[:0]
 }
 
-// Size 返回缓冲区当前大小
+// Size returns the current size of the buffer.
 func (xw *XMLWriter) Size() int {
 	return len(xw.buf)
 }
 
-// Capacity 返回缓冲区容量
+// Capacity returns the current capacity of the buffer.
 func (xw *XMLWriter) Capacity() int {
 	return cap(xw.buf)
 }
 
-// escapeText 转义 XML 文本内容
+// escapeText escapes XML text content.
 func (xw *XMLWriter) escapeText(s string) string {
-	// 预检查是否需要转义
+	// Quick check: if no special characters, return as-is.
 	if !strings.ContainsAny(s, "<>&\"'") {
 		return s
 	}
@@ -872,9 +862,9 @@ func (xw *XMLWriter) escapeText(s string) string {
 	return sb.String()
 }
 
-// escapeAttr 转义 XML 属性值
+// escapeAttr escapes XML attribute values.
 func (xw *XMLWriter) escapeAttr(s string) string {
-	// 预检查是否需要转义
+	// Quick check: if no special characters, return as-is.
 	if !strings.ContainsAny(s, "<>&\"'") {
 		return s
 	}
@@ -900,27 +890,27 @@ func (xw *XMLWriter) escapeAttr(s string) string {
 	return sb.String()
 }
 
-// WriteInt 写入整数值
+// WriteInt writes an integer value.
 func (xw *XMLWriter) WriteInt(val int) error {
 	return xw.writeRaw([]byte(strconv.Itoa(val)))
 }
 
-// WriteInt64 写入 64 位整数值
+// WriteInt64 writes a 64-bit integer value.
 func (xw *XMLWriter) WriteInt64(val int64) error {
 	return xw.writeRaw([]byte(strconv.FormatInt(val, 10)))
 }
 
-// WriteUint64 写入无符号 64 位整数值
+// WriteUint64 writes an unsigned 64-bit integer value.
 func (xw *XMLWriter) WriteUint64(val uint64) error {
 	return xw.writeRaw([]byte(strconv.FormatUint(val, 10)))
 }
 
-// WriteFloat64 写入浮点数值
+// WriteFloat64 writes a float64 value with the given precision.
 func (xw *XMLWriter) WriteFloat64(val float64, prec int) error {
 	return xw.writeRaw([]byte(strconv.FormatFloat(val, 'f', prec, 64)))
 }
 
-// WriteBool 写入布尔值
+// WriteBool writes a boolean value as "1" or "0".
 func (xw *XMLWriter) WriteBool(val bool) error {
 	if val {
 		return xw.writeRaw([]byte("1"))
@@ -928,7 +918,7 @@ func (xw *XMLWriter) WriteBool(val bool) error {
 	return xw.writeRaw([]byte("0"))
 }
 
-// WriteBoolStr 写入布尔值字符串（true/false）
+// WriteBoolStr writes a boolean value as "true" or "false".
 func (xw *XMLWriter) WriteBoolStr(val bool) error {
 	if val {
 		return xw.writeRaw([]byte("true"))
@@ -936,52 +926,52 @@ func (xw *XMLWriter) WriteBoolStr(val bool) error {
 	return xw.writeRaw([]byte("false"))
 }
 
-// WriteEMUs 写入 EMU 单位值（用于 PowerPoint 尺寸）
+// WriteEMUs writes an EMU (English Metric Unit) value used for PowerPoint dimensions.
 func (xw *XMLWriter) WriteEMUs(val int64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(val)))
 }
 
-// WriteEMUsWithUnit 写入带单位的 EMU 值
+// WriteEMUsWithUnit writes an EMU value.
 func (xw *XMLWriter) WriteEMUsWithUnit(val int64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(val)))
 }
 
-// WriteEMUsF 写入浮点 EMU 值（基于常用单位转换）
+// WriteEMUsF writes a float64 value converted to EMU.
 func (xw *XMLWriter) WriteEMUsF(val float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(int64(val))))
 }
 
-// WriteInchesAsEMU 将英寸转换为 EMU 并写入
+// WriteInchesAsEMU converts inches to EMU and writes the value.
 func (xw *XMLWriter) WriteInchesAsEMU(inches float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(utils.InchesToEMU(inches))))
 }
 
-// WriteCentimetersAsEMU 将厘米转换为 EMU 并写入
+// WriteCentimetersAsEMU converts centimeters to EMU and writes the value.
 func (xw *XMLWriter) WriteCentimetersAsEMU(cm float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(utils.CentimetersToEMU(cm))))
 }
 
-// WriteMillimetersAsEMU 将毫米转换为 EMU 并写入
+// WriteMillimetersAsEMU converts millimeters to EMU and writes the value.
 func (xw *XMLWriter) WriteMillimetersAsEMU(mm float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(utils.MillimetersToEMU(mm))))
 }
 
-// WritePointsAsEMU 将磅转换为 EMU 并写入
+// WritePointsAsEMU converts points to EMU and writes the value.
 func (xw *XMLWriter) WritePointsAsEMU(points float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(utils.PointsToEMU(points))))
 }
 
-// WritePixelsAsEMU 将像素转换为 EMU 并写入
+// WritePixelsAsEMU converts pixels to EMU and writes the value.
 func (xw *XMLWriter) WritePixelsAsEMU(pixels float64) error {
 	return xw.writeRaw([]byte(utils.WriteEMUAttr(utils.PixelsToEMU(pixels))))
 }
 
-// WritePercentage 写入百分比值
+// WritePercentage writes a percentage value.
 func (xw *XMLWriter) WritePercentage(val int) error {
 	return xw.writeRaw([]byte(strconv.Itoa(val)))
 }
 
-// NewXMLWriterPool 创建新的 XMLWriterPool
+// NewXMLWriterPool creates a new XMLWriterPool.
 func NewXMLWriterPool() *XMLWriterPool {
 	return &XMLWriterPool{
 		pool: sync.Pool{
@@ -999,10 +989,10 @@ func NewXMLWriterPool() *XMLWriterPool {
 	}
 }
 
-// globalXMLWriterPool 全局 XMLWriter 池，用于统一序列化底座
+// globalXMLWriterPool is the global XMLWriter pool used as the shared serialization base.
 var globalXMLWriterPool = NewXMLWriterPool()
 
-// Get 获取或创建一个 XMLWriter
+// Get retrieves or creates an XMLWriter from the pool.
 func (p *XMLWriterPool) Get() *XMLWriter {
 	xw := p.pool.Get().(*XMLWriter)
 	xw.buf = xw.buf[:0]
@@ -1011,7 +1001,7 @@ func (p *XMLWriterPool) Get() *XMLWriter {
 	return xw
 }
 
-// Put 回收 XMLWriter 到池中
+// Put returns an XMLWriter to the pool.
 func (p *XMLWriterPool) Put(xw *XMLWriter) {
 	xw.w = nil
 	xw.buf = xw.buf[:0]
@@ -1020,25 +1010,25 @@ func (p *XMLWriterPool) Put(xw *XMLWriter) {
 	p.pool.Put(xw)
 }
 
-// GetWithWriter 获取配置了 writer 的 XMLWriter
+// GetWithWriter retrieves an XMLWriter from the pool and configures it with the given writer.
 func (p *XMLWriterPool) GetWithWriter(w io.Writer) *XMLWriter {
 	xw := p.Get()
 	xw.w = w
 	return xw
 }
 
-// GetBuffered 获取使用缓冲区的 XMLWriter
+// GetBuffered retrieves a buffered XMLWriter from the pool.
 func (p *XMLWriterPool) GetBuffered() *XMLWriter {
 	return p.Get()
 }
 
 // ============================================================================
-// XML 结构 WriteXML 方法
+// WriteXML methods for XML structs
 // ============================================================================
 
-// WriteXML 将 XSlide 序列化为 XML
+// WriteXML serializes XSlide to XML.
 func (xs *XSlide) WriteXML(xw *XMLWriter) error {
-	// 写入 p:sld 起始标签及命名空间
+	// Write p:sld opening tag with namespace declarations.
 	if err := xw.StartElementWithAttrs("p", "sld",
 		"xmlns:a", "http://schemas.openxmlformats.org/drawingml/2006/main",
 		"xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
@@ -1047,7 +1037,7 @@ func (xs *XSlide) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入颜色映射覆盖
+	// Write color map override.
 	if err := xw.StartElement("p", "clrMapOvr"); err != nil {
 		return err
 	}
@@ -1058,7 +1048,7 @@ func (xs *XSlide) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入形状树
+	// Write shape tree.
 	if xs.CSld != nil && xs.CSld.SpTree != nil {
 		if err := xs.CSld.SpTree.WriteXML(xw); err != nil {
 			return err
@@ -1068,13 +1058,13 @@ func (xs *XSlide) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "sld")
 }
 
-// WriteXML 将 XSpTree 序列化为 XML
+// WriteXML serializes XSpTree to XML.
 func (xst *XSpTree) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "spTree"); err != nil {
 		return err
 	}
 
-	// 写入非视觉组属性
+	// Write non-visual group shape properties.
 	if err := xw.StartElement("p", "nvGrpSpPr"); err != nil {
 		return err
 	}
@@ -1111,14 +1101,14 @@ func (xst *XSpTree) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入组形状属性
+	// Write group shape properties.
 	if xst.GroupShapeProperties != nil && xst.GroupShapeProperties.Xfrm != nil {
 		if err := xst.GroupShapeProperties.Xfrm.WriteXML(xw); err != nil {
 			return err
 		}
 	}
 
-	// 写入子元素
+	// Write children.
 	for _, child := range xst.Children {
 		switch v := child.(type) {
 		case *XSp:
@@ -1139,27 +1129,27 @@ func (xst *XSpTree) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "spTree")
 }
 
-// WriteXML 将 XTransform2D 序列化为 XML
+// WriteXML serializes XTransform2D to XML.
 func (xt *XTransform2D) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "xfrm"); err != nil {
 		return err
 	}
 
-	// 写入偏移量
+	// Write offset.
 	if xt.Offset != nil {
 		if err := xw.EmptyElementWithAttrs("a", "off", "x", strconv.Itoa(xt.Offset.X), "y", strconv.Itoa(xt.Offset.Y)); err != nil {
 			return err
 		}
 	}
 
-	// 写入扩展尺寸
+	// Write extent.
 	if xt.Extent != nil {
 		if err := xw.EmptyElementWithAttrs("a", "ext", "cx", strconv.Itoa(xt.Extent.Cx), "cy", strconv.Itoa(xt.Extent.Cy)); err != nil {
 			return err
 		}
 	}
 
-	// 写入旋转角度
+	// Write rotation angle.
 	if xt.Rotation != 0 {
 		if err := xw.Raw(" rot=\"" + strconv.Itoa(xt.Rotation) + "\""); err != nil {
 			return err
@@ -1169,20 +1159,20 @@ func (xt *XTransform2D) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("a", "xfrm")
 }
 
-// WriteXML 将 XShapeProperties 序列化为 XML
+// WriteXML serializes XShapeProperties to XML.
 func (xsp *XShapeProperties) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "spPr"); err != nil {
 		return err
 	}
 
-	// 写入变换
+	// Write transform.
 	if xsp.Transform2D != nil {
 		if err := xsp.Transform2D.WriteXML(xw); err != nil {
 			return err
 		}
 	}
 
-	// 写入填充
+	// Write fill.
 	if xsp.PresetFill != nil {
 		if err := xw.StartElement("a", "solidFill"); err != nil {
 			return err
@@ -1201,7 +1191,7 @@ func (xsp *XShapeProperties) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入线条
+	// Write line.
 	if xsp.Line != nil {
 		if err := xw.StartElement("a", "ln"); err != nil {
 			return err
@@ -1232,13 +1222,13 @@ func (xsp *XShapeProperties) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "spPr")
 }
 
-// WriteXML 将 XSp 序列化为 XML
+// WriteXML serializes XSp to XML.
 func (xs *XSp) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "sp"); err != nil {
 		return err
 	}
 
-	// 写入非视觉属性
+	// Write non-visual properties.
 	if err := xw.StartElement("p", "nvSpPr"); err != nil {
 		return err
 	}
@@ -1269,14 +1259,14 @@ func (xs *XSp) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入形状属性
+	// Write shape properties.
 	if xs.ShapeProperties != nil {
 		if err := xs.ShapeProperties.WriteXML(xw); err != nil {
 			return err
 		}
 	}
 
-	// 写入文本内容
+	// Write text body.
 	if xs.TextBody != nil {
 		if err := xs.TextBody.WriteXML(xw); err != nil {
 			return err
@@ -1286,13 +1276,13 @@ func (xs *XSp) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "sp")
 }
 
-// WriteXML 将 XTextBody 序列化为 XML
+// WriteXML serializes XTextBody to XML.
 func (xtb *XTextBody) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "txBody"); err != nil {
 		return err
 	}
 
-	// 写入 body 属性
+	// Write body properties.
 	if err := xw.StartElement("a", "bodyPr"); err != nil {
 		return err
 	}
@@ -1322,14 +1312,14 @@ func (xtb *XTextBody) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入列表样式
+	// Write list style.
 	if xtb.LstStyle != nil {
 		if err := xw.EmptyElement("a", "lstStyle"); err != nil {
 			return err
 		}
 	}
 
-	// 写入段落
+	// Write paragraphs.
 	for _, para := range xtb.Paragraphs {
 		if err := para.WriteXML(xw); err != nil {
 			return err
@@ -1339,13 +1329,13 @@ func (xtb *XTextBody) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "txBody")
 }
 
-// WriteXML 将 XTextParagraph 序列化为 XML
+// WriteXML serializes XTextParagraph to XML.
 func (xtp *XTextParagraph) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "p"); err != nil {
 		return err
 	}
 
-	// 写入段落属性
+	// Write paragraph properties.
 	if xtp.Level != 0 {
 		if err := xw.Raw(" lvl=\"" + strconv.Itoa(xtp.Level) + "\""); err != nil {
 			return err
@@ -1362,7 +1352,7 @@ func (xtp *XTextParagraph) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入文本片段
+	// Write text runs.
 	for _, run := range xtp.TextRuns {
 		if err := run.WriteXML(xw); err != nil {
 			return err
@@ -1372,13 +1362,13 @@ func (xtp *XTextParagraph) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("a", "p")
 }
 
-// WriteXML 将 XTextRun 序列化为 XML
+// WriteXML serializes XTextRun to XML.
 func (xtr *XTextRun) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "r"); err != nil {
 		return err
 	}
 
-	// 写入文本属性
+	// Write text properties.
 	if xtr.TextProperties != nil {
 		if err := xw.StartElement("a", "rPr"); err != nil {
 			return err
@@ -1428,7 +1418,7 @@ func (xtr *XTextRun) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入文本内容
+	// Write text content.
 	if err := xw.StartElement("a", "t"); err != nil {
 		return err
 	}
@@ -1442,13 +1432,13 @@ func (xtr *XTextRun) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("a", "r")
 }
 
-// WriteXML 将 XPicture 序列化为 XML
+// WriteXML serializes XPicture to XML.
 func (xp *XPicture) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "pic"); err != nil {
 		return err
 	}
 
-	// 写入非视觉属性
+	// Write non-visual properties.
 	if err := xw.StartElement("p", "nvPicPr"); err != nil {
 		return err
 	}
@@ -1479,14 +1469,14 @@ func (xp *XPicture) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入图片填充
+	// Write blip fill.
 	if xp.BlipFill != nil {
 		if err := xp.BlipFill.WriteXML(xw); err != nil {
 			return err
 		}
 	}
 
-	// 写入形状属性
+	// Write shape properties.
 	if xp.ShapeProperties != nil {
 		if err := xp.ShapeProperties.WriteXML(xw); err != nil {
 			return err
@@ -1496,13 +1486,13 @@ func (xp *XPicture) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "pic")
 }
 
-// WriteXML 将 XBlipFillProperties 序列化为 XML
+// WriteXML serializes XBlipFillProperties to XML.
 func (xbfp *XBlipFillProperties) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "blipFill"); err != nil {
 		return err
 	}
 
-	// 写入 blip
+	// Write blip.
 	if xbfp.Blip != nil {
 		if err := xw.StartElement("a", "blip"); err != nil {
 			return err
@@ -1517,7 +1507,7 @@ func (xbfp *XBlipFillProperties) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入拉伸填充
+	// Write stretch fill.
 	if xbfp.Stretch != nil {
 		if err := xw.StartElement("a", "stretch"); err != nil {
 			return err
@@ -1533,13 +1523,13 @@ func (xbfp *XBlipFillProperties) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "blipFill")
 }
 
-// WriteXML 将 XGraphicFrame 序列化为 XML
+// WriteXML serializes XGraphicFrame to XML.
 func (xgf *XGraphicFrame) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("p", "graphicFrame"); err != nil {
 		return err
 	}
 
-	// 写入非视觉属性
+	// Write non-visual properties.
 	if err := xw.StartElement("p", "nvGraphicFramePr"); err != nil {
 		return err
 	}
@@ -1570,14 +1560,14 @@ func (xgf *XGraphicFrame) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入变换
+	// Write transform.
 	if xgf.Transform2D != nil {
 		if err := xgf.Transform2D.WriteXML(xw); err != nil {
 			return err
 		}
 	}
 
-	// 写入图形
+	// Write graphic.
 	if xgf.Graphic != nil && xgf.Graphic.Table != nil {
 		if err := xw.StartElement("a", "graphic"); err != nil {
 			return err
@@ -1593,7 +1583,7 @@ func (xgf *XGraphicFrame) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("p", "graphicFrame")
 }
 
-// WriteXML 将 XTable 序列化为 XML
+// WriteXML serializes XTable to XML.
 func (xt *XTable) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "graphicData"); err != nil {
 		return err
@@ -1606,7 +1596,7 @@ func (xt *XTable) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入表格网格
+	// Write table grid.
 	if err := xw.StartElement("a", "tblGrid"); err != nil {
 		return err
 	}
@@ -1619,7 +1609,7 @@ func (xt *XTable) WriteXML(xw *XMLWriter) error {
 		return err
 	}
 
-	// 写入行
+	// Write rows.
 	for _, row := range xt.Rows {
 		if err := row.WriteXML(xw); err != nil {
 			return err
@@ -1636,7 +1626,7 @@ func (xt *XTable) WriteXML(xw *XMLWriter) error {
 	return nil
 }
 
-// WriteXML 将 XTableRow 序列化为 XML
+// WriteXML serializes XTableRow to XML.
 func (xtr *XTableRow) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "tr"); err != nil {
 		return err
@@ -1647,7 +1637,7 @@ func (xtr *XTableRow) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入单元格
+	// Write cells.
 	for _, cell := range xtr.Cells {
 		if err := cell.WriteXML(xw); err != nil {
 			return err
@@ -1657,7 +1647,7 @@ func (xtr *XTableRow) WriteXML(xw *XMLWriter) error {
 	return xw.EndElement("a", "tr")
 }
 
-// WriteXML 将 XTableCell 序列化为 XML
+// WriteXML serializes XTableCell to XML.
 func (xtc *XTableCell) WriteXML(xw *XMLWriter) error {
 	if err := xw.StartElement("a", "tc"); err != nil {
 		return err
@@ -1679,7 +1669,7 @@ func (xtc *XTableCell) WriteXML(xw *XMLWriter) error {
 		}
 	}
 
-	// 写入文本内容
+	// Write text body.
 	if xtc.TextBody != nil {
 		if err := xtc.TextBody.WriteXML(xw); err != nil {
 			return err
@@ -1688,4 +1678,3 @@ func (xtc *XTableCell) WriteXML(xw *XMLWriter) error {
 
 	return xw.EndElement("a", "tc")
 }
-

@@ -6,230 +6,230 @@ import (
 	"sync"
 )
 
-// CoreProperties 表示包的核心属性（Dublin Core 元数据）
+// CoreProperties represents the core properties (Dublin Core metadata) of a package.
 type CoreProperties struct {
-	title          string // 标题
-	creator        string // 创建者
-	subject        string // 主题
-	description    string // 描述
-	keywords       string // 关键词
-	created        string // 创建时间
-	modified       string // 修改时间
-	lastModifiedBy string // 最后修改者
-	revision       string // 版本号
-	category       string // 类别
-	contentType    string // 内容类型
-	language       string // 语言
+	title          string // Title
+	creator        string // Creator
+	subject        string // Subject
+	description    string // Description
+	keywords       string // Keywords
+	created        string // Created timestamp
+	modified       string // Modified timestamp
+	lastModifiedBy string // Last modified by
+	revision       string // Revision number
+	category       string // Category
+	contentType    string // Content type
+	language       string // Language
 	mu             sync.RWMutex
 }
 
-// --- Getter 方法 ---
+// --- Getters ---
 
-// Title 返回标题
+// Title returns the title.
 func (cp *CoreProperties) Title() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.title
 }
 
-// Creator 返回创建者
+// Creator returns the creator.
 func (cp *CoreProperties) Creator() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.creator
 }
 
-// Subject 返回主题
+// Subject returns the subject.
 func (cp *CoreProperties) Subject() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.subject
 }
 
-// Description 返回描述
+// Description returns the description.
 func (cp *CoreProperties) Description() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.description
 }
 
-// Keywords 返回关键词
+// Keywords returns the keywords.
 func (cp *CoreProperties) Keywords() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.keywords
 }
 
-// Created 返回创建时间
+// Created returns the created timestamp.
 func (cp *CoreProperties) Created() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.created
 }
 
-// Modified 返回修改时间
+// Modified returns the modified timestamp.
 func (cp *CoreProperties) Modified() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.modified
 }
 
-// LastModifiedBy 返回最后修改者
+// LastModifiedBy returns the name of the last modifier.
 func (cp *CoreProperties) LastModifiedBy() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.lastModifiedBy
 }
 
-// Revision 返回版本号
+// Revision returns the revision number.
 func (cp *CoreProperties) Revision() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.revision
 }
 
-// Category 返回类别
+// Category returns the category.
 func (cp *CoreProperties) Category() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.category
 }
 
-// ContentType 返回内容类型
+// ContentType returns the content type.
 func (cp *CoreProperties) ContentType() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.contentType
 }
 
-// Language 返回语言
+// Language returns the language.
 func (cp *CoreProperties) Language() string {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	return cp.language
 }
 
-// --- Setter 方法 ---
+// --- Setters ---
 
-// SetTitle 设置标题
+// SetTitle sets the title.
 func (cp *CoreProperties) SetTitle(title string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.title = title
 }
 
-// SetCreator 设置创建者
+// SetCreator sets the creator.
 func (cp *CoreProperties) SetCreator(creator string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.creator = creator
 }
 
-// SetSubject 设置主题
+// SetSubject sets the subject.
 func (cp *CoreProperties) SetSubject(subject string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.subject = subject
 }
 
-// SetDescription 设置描述
+// SetDescription sets the description.
 func (cp *CoreProperties) SetDescription(description string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.description = description
 }
 
-// SetKeywords 设置关键词
+// SetKeywords sets the keywords.
 func (cp *CoreProperties) SetKeywords(keywords string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.keywords = keywords
 }
 
-// SetCreated 设置创建时间
+// SetCreated sets the created timestamp.
 func (cp *CoreProperties) SetCreated(created string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.created = created
 }
 
-// SetModified 设置修改时间
+// SetModified sets the modified timestamp.
 func (cp *CoreProperties) SetModified(modified string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.modified = modified
 }
 
-// SetLastModifiedBy 设置最后修改者
+// SetLastModifiedBy sets the name of the last modifier.
 func (cp *CoreProperties) SetLastModifiedBy(lastModifiedBy string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.lastModifiedBy = lastModifiedBy
 }
 
-// SetRevision 设置版本号
+// SetRevision sets the revision number.
 func (cp *CoreProperties) SetRevision(revision string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.revision = revision
 }
 
-// SetCategory 设置类别
+// SetCategory sets the category.
 func (cp *CoreProperties) SetCategory(category string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.category = category
 }
 
-// SetContentType 设置内容类型
+// SetContentType sets the content type.
 func (cp *CoreProperties) SetContentType(contentType string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.contentType = contentType
 }
 
-// SetLanguage 设置语言
+// SetLanguage sets the language.
 func (cp *CoreProperties) SetLanguage(language string) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	cp.language = language
 }
 
-// ===== XML 序列化 =====
+// ===== XML serialisation =====
 
-// XCoreProperties XML 序列化的核心属性
+// XCoreProperties is the XML representation of core properties.
 type XCoreProperties struct {
-	XMLName        xml.Name    `xml:"coreProperties"`
-	XmlnsDc        string      `xml:"xmlns:dc,attr"`
-	XmlnsDcterms   string      `xml:"xmlns:dcterms,attr"`
-	XmlnsDcmitype  string      `xml:"xmlns:dcmitype,attr"`
-	XmlnsXsi       string      `xml:"xmlns:xsi,attr"`
-	XmlnsCore      string      `xml:"xmlns,attr"`
-	Title          string      `xml:"dc:title"`
-	Creator        string      `xml:"dc:creator"`
-	Subject        string      `xml:"dc:subject"`
-	Description    string      `xml:"dc:description"`
-	Keywords       *XKeywords  `xml:"cp:keywords"`
-	Created        *XDate      `xml:"dcterms:created"`
-	Modified       *XDate      `xml:"dcterms:modified"`
-	LastModifiedBy string      `xml:"cp:lastModifiedBy"`
-	Revision       string      `xml:"cp:revision"`
-	Category       string      `xml:"cp:category"`
-	ContentType    string      `xml:"cp:contentType"`
+	XMLName        xml.Name   `xml:"coreProperties"`
+	XmlnsDc        string     `xml:"xmlns:dc,attr"`
+	XmlnsDcterms   string     `xml:"xmlns:dcterms,attr"`
+	XmlnsDcmitype  string     `xml:"xmlns:dcmitype,attr"`
+	XmlnsXsi       string     `xml:"xmlns:xsi,attr"`
+	XmlnsCore      string     `xml:"xmlns,attr"`
+	Title          string     `xml:"dc:title"`
+	Creator        string     `xml:"dc:creator"`
+	Subject        string     `xml:"dc:subject"`
+	Description    string     `xml:"dc:description"`
+	Keywords       *XKeywords `xml:"cp:keywords"`
+	Created        *XDate     `xml:"dcterms:created"`
+	Modified       *XDate     `xml:"dcterms:modified"`
+	LastModifiedBy string     `xml:"cp:lastModifiedBy"`
+	Revision       string     `xml:"cp:revision"`
+	Category       string     `xml:"cp:category"`
+	ContentType    string     `xml:"cp:contentType"`
 }
 
-// XKeywords 关键词元素
+// XKeywords is the XML representation of the keywords element.
 type XKeywords struct {
 	Value string `xml:",chardata"`
 }
 
-// XDate 日期元素
+// XDate is the XML representation of a date element.
 type XDate struct {
 	Type  string `xml:"xsi:type,attr"`
 	Value string `xml:",chardata"`
 }
 
-// FromXML 从 XML 解析核心属性
+// FromXML parses core properties from XML data.
 func (cp *CoreProperties) FromXML(data []byte) error {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
@@ -260,7 +260,7 @@ func (cp *CoreProperties) FromXML(data []byte) error {
 	return nil
 }
 
-// ToXML 将核心属性序列化为 XML
+// ToXML serialises the core properties to XML.
 func (cp *CoreProperties) ToXML() ([]byte, error) {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()

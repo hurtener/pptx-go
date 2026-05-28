@@ -1,8 +1,8 @@
-# Slide - 幻灯片
+# Slide - Slides
 
-`Slide` 是高层幻灯片对象，提供添加文本、图片、表格、形状等元素的方法。
+`Slide` is the high-level slide object, providing methods for adding text, images, tables, shapes, and other elements.
 
-## 类型定义
+## Type Definition
 
 ```go
 type Slide struct {
@@ -10,11 +10,11 @@ type Slide struct {
 }
 ```
 
-## 基础信息
+## Basic Information
 
 ### Index
 
-返回幻灯片索引（从 0 开始）。
+Returns the slide index (zero-based).
 
 ```go
 func (s *Slide) Index() int
@@ -22,7 +22,7 @@ func (s *Slide) Index() int
 
 ### Layout
 
-返回当前布局名称。
+Returns the current layout name.
 
 ```go
 func (s *Slide) Layout() string
@@ -30,21 +30,21 @@ func (s *Slide) Layout() string
 
 ### SetLayout
 
-设置幻灯片布局。
+Sets the slide layout.
 
 ```go
 func (s *Slide) SetLayout(layoutName string) bool
 ```
 
-**参数:**
-- `layoutName`: 布局名称（如 "blank", "title", "titleAndContent" 等）
+**Parameters:**
+- `layoutName`: layout name (e.g. "blank", "title", "titleAndContent")
 
-**返回:**
-- 是否设置成功
+**Returns:**
+- Whether the layout was set successfully
 
 ### SlideSize
 
-返回幻灯片尺寸（px 单位）。
+Returns the slide size (in px).
 
 ```go
 func (s *Slide) SlideSize() (cx, cy int)
@@ -52,7 +52,7 @@ func (s *Slide) SlideSize() (cx, cy int)
 
 ### SlideSizeEMU
 
-返回幻灯片尺寸（EMU 单位，高级用法）。
+Returns the slide size in EMU (advanced usage).
 
 ```go
 func (s *Slide) SlideSizeEMU() (cx, cy int)
@@ -60,7 +60,7 @@ func (s *Slide) SlideSizeEMU() (cx, cy int)
 
 ### Part
 
-返回底层 SlidePart。
+Returns the underlying SlidePart.
 
 ```go
 func (s *Slide) Part() *parts.SlidePart
@@ -68,51 +68,51 @@ func (s *Slide) Part() *parts.SlidePart
 
 ### PartURI
 
-返回部件 URI。
+Returns the part URI.
 
 ```go
 func (s *Slide) PartURI() *opc.PackURI
 ```
 
-## 文本操作
+## Text Operations
 
 ### AddTextBox
 
-添加文本框。
+Adds a text box.
 
 ```go
 func (s *Slide) AddTextBox(x, y, cx, cy int, text string) *parts.XSp
 ```
 
-**参数:**
-- `x, y`: 位置（px 单位）
-- `cx, cy`: 尺寸（px 单位）
-- `text`: 文本内容
+**Parameters:**
+- `x, y`: position (in px)
+- `cx, cy`: size (in px)
+- `text`: text content
 
-**返回:**
-- 形状对象 `*parts.XSp`
+**Returns:**
+- The shape object `*parts.XSp`
 
-**示例:**
+**Example:**
 
 ```go
-// 添加标题
-title := slide.AddTextBox(100, 50, 600, 60, "演示文稿标题")
+// Add a title
+title := slide.AddTextBox(100, 50, 600, 60, "Presentation Title")
 
-// 添加正文
-body := slide.AddTextBox(100, 150, 600, 400, "这是正文内容...")
+// Add body text
+body := slide.AddTextBox(100, 150, 600, 400, "Body content here...")
 ```
 
-## 形状操作
+## Shape Operations
 
 ### AddRectangle
 
-添加矩形。
+Adds a rectangle.
 
 ```go
 func (s *Slide) AddRectangle(x, y, cx, cy int) *parts.XSp
 ```
 
-**示例:**
+**Example:**
 
 ```go
 rect := slide.AddRectangle(100, 100, 200, 150)
@@ -120,13 +120,13 @@ rect := slide.AddRectangle(100, 100, 200, 150)
 
 ### AddEllipse
 
-添加椭圆。
+Adds an ellipse.
 
 ```go
 func (s *Slide) AddEllipse(x, y, cx, cy int) *parts.XSp
 ```
 
-**示例:**
+**Example:**
 
 ```go
 ellipse := slide.AddEllipse(100, 100, 200, 150)
@@ -134,13 +134,13 @@ ellipse := slide.AddEllipse(100, 100, 200, 150)
 
 ### AddRoundRect
 
-添加圆角矩形。
+Adds a rounded rectangle.
 
 ```go
 func (s *Slide) AddRoundRect(x, y, cx, cy int) *parts.XSp
 ```
 
-**示例:**
+**Example:**
 
 ```go
 roundRect := slide.AddRoundRect(100, 100, 200, 150)
@@ -148,60 +148,60 @@ roundRect := slide.AddRoundRect(100, 100, 200, 150)
 
 ### AddAutoShape
 
-添加自动形状。
+Adds an auto shape.
 
 ```go
 func (s *Slide) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp
 ```
 
-**参数:**
-- `presetID`: 预设形状类型（如 "rectangle", "ellipse", "roundRect"）
+**Parameters:**
+- `presetID`: preset shape type (e.g. "rectangle", "ellipse", "roundRect")
 
-**示例:**
+**Example:**
 
 ```go
-// 添加矩形
+// Add a rectangle
 shape1 := slide.AddAutoShape(100, 100, 200, 150, "rectangle")
 
-// 添加椭圆
+// Add an ellipse
 shape2 := slide.AddAutoShape(100, 100, 200, 150, "ellipse")
 
-// 添加圆角矩形
+// Add a rounded rectangle
 shape3 := slide.AddAutoShape(100, 100, 200, 150, "roundRect")
 ```
 
-## 图片操作
+## Image Operations
 
 ### AddPicture
 
-添加图片。
+Adds a picture.
 
 ```go
 func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture
 ```
 
-**参数:**
-- `x, y`: 位置（px 单位）
-- `cx, cy`: 尺寸（px 单位）
-- `imageRId`: 图片关系 ID
+**Parameters:**
+- `x, y`: position (in px)
+- `cx, cy`: size (in px)
+- `imageRId`: image relationship ID
 
-**示例:**
+**Example:**
 
 ```go
-// 需要先获取 rId
+// Obtain the rId first
 rId := slide.AddImageRel("media/image1.png")
 pic := slide.AddPicture(100, 100, 400, 300, rId)
 ```
 
 ### AddPictureFromBytes
 
-从字节数据添加图片，自动处理媒体资源的添加和关系 ID 分配。
+Adds a picture from byte data, automatically handling media asset addition and relationship ID assignment.
 
 ```go
 func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []byte) (*parts.XPicture, error)
 ```
 
-**示例:**
+**Example:**
 
 ```go
 data, _ := os.ReadFile("logo.png")
@@ -213,13 +213,13 @@ if err != nil {
 
 ### AddPictureFromFile
 
-从文件添加图片。
+Adds a picture from a file.
 
 ```go
 func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*parts.XPicture, error)
 ```
 
-**示例:**
+**Example:**
 
 ```go
 pic, err := slide.AddPictureFromFile(100, 100, 400, 300, "photo.png")
@@ -228,67 +228,67 @@ if err != nil {
 }
 ```
 
-## 表格操作
+## Table Operations
 
 ### AddTable
 
-添加表格。
+Adds a table.
 
 ```go
 func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame
 ```
 
-**参数:**
-- `x, y`: 位置（px 单位）
-- `cx, cy`: 尺寸（px 单位）
-- `rows, cols`: 行列数
+**Parameters:**
+- `x, y`: position (in px)
+- `cx, cy`: size (in px)
+- `rows, cols`: number of rows and columns
 
-**返回:**
-- 图形框架对象 `*parts.XGraphicFrame`
+**Returns:**
+- The graphic frame object `*parts.XGraphicFrame`
 
-**示例:**
+**Example:**
 
 ```go
-// 添加 3 行 4 列的表格
+// Add a table with 3 rows and 4 columns
 table := slide.AddTable(100, 100, 600, 400, 3, 4)
 
-// 设置单元格内容
-slide.SetTableCellText(table, 0, 0, "姓名")
-slide.SetTableCellText(table, 0, 1, "年龄")
-slide.SetTableCellText(table, 1, 0, "张三")
+// Set cell content
+slide.SetTableCellText(table, 0, 0, "Name")
+slide.SetTableCellText(table, 0, 1, "Age")
+slide.SetTableCellText(table, 1, 0, "Alice")
 slide.SetTableCellText(table, 1, 1, "25")
 ```
 
 ### SetTableCellText
 
-设置表格单元格文本。
+Sets the text in a table cell.
 
 ```go
 func (s *Slide) SetTableCellText(gf *parts.XGraphicFrame, row, col int, text string)
 ```
 
-**参数:**
-- `gf`: 图形框架对象
-- `row, col`: 行列索引（从 0 开始）
-- `text`: 文本内容
+**Parameters:**
+- `gf`: the graphic frame object
+- `row, col`: row and column indexes (zero-based)
+- `text`: text content
 
-## 组件操作
+## Component Operations
 
 ### AddComponent
 
-添加组件到幻灯片。
+Adds a component to the slide.
 
 ```go
 func (s *Slide) AddComponent(c Component) error
 ```
 
-**参数:**
-- `c`: 实现 `Component` 接口的组件
+**Parameters:**
+- `c`: a component that implements the `Component` interface
 
-**示例:**
+**Example:**
 
 ```go
-// 添加自定义组件
+// Add a custom component
 err := slide.AddComponent(&MyCustomComponent{
     Text: "Hello",
     X:    100,
@@ -301,24 +301,24 @@ if err != nil {
 
 ### AddComponents
 
-批量添加组件。
+Adds multiple components at once.
 
 ```go
 func (s *Slide) AddComponents(components ...Component) error
 ```
 
-**示例:**
+**Example:**
 
 ```go
 err := slide.AddComponents(
-    &TitleComponent{Text: "标题"},
-    &BodyComponent{Text: "正文"},
+    &TitleComponent{Text: "Title"},
+    &BodyComponent{Text: "Body"},
 )
 ```
 
 ### NewContext
 
-创建幻灯片上下文（用于手动组件渲染）。
+Creates a slide context (for manual component rendering).
 
 ```go
 func (s *Slide) NewContext() *SlideContext
@@ -326,28 +326,28 @@ func (s *Slide) NewContext() *SlideContext
 
 ### Builder
 
-返回幻灯片构建器。
+Returns the slide builder.
 
 ```go
 func (s *Slide) Builder() *SlideBuilder
 ```
 
-## 关系管理
+## Relationship Management
 
 ### AddImageRel
 
-添加图片关系。
+Adds an image relationship.
 
 ```go
 func (s *Slide) AddImageRel(targetURI string) string
 ```
 
-**返回:**
-- 关系 ID (rId)
+**Returns:**
+- Relationship ID (rId)
 
 ### AddMediaRel
 
-添加媒体关系。
+Adds a media relationship.
 
 ```go
 func (s *Slide) AddMediaRel(targetURI string) string
@@ -355,7 +355,7 @@ func (s *Slide) AddMediaRel(targetURI string) string
 
 ### AddChartRel
 
-添加图表关系。
+Adds a chart relationship.
 
 ```go
 func (s *Slide) AddChartRel(targetURI string) string
@@ -363,7 +363,7 @@ func (s *Slide) AddChartRel(targetURI string) string
 
 ### GetImageRId
 
-获取图片 rId，不存在则添加。
+Returns the rId for an image relationship, adding it if it does not exist.
 
 ```go
 func (s *Slide) GetImageRId(targetURI string) string
@@ -371,46 +371,46 @@ func (s *Slide) GetImageRId(targetURI string) string
 
 ### HasImage
 
-判断是否已存在某图片关系。
+Checks whether an image relationship already exists.
 
 ```go
 func (s *Slide) HasImage(targetURI string) bool
 ```
 
-## 边界检查
+## Boundary Checking
 
 ### CheckBoundary
 
-检查元素边界。
+Checks the boundary of an element.
 
 ```go
 func (s *Slide) CheckBoundary(x, y, cx, cy int) BoundaryCheckResult
 ```
 
-**参数:**
-- `x, y`: 元素左上角坐标 (px)
-- `cx, cy`: 元素宽度和高度 (px)
+**Parameters:**
+- `x, y`: top-left coordinates of the element (px)
+- `cx, cy`: width and height of the element (px)
 
-**返回:**
-- 边界检查结果，包含越界信息和可见性状态
+**Returns:**
+- A boundary check result containing overflow information and visibility state
 
-**示例:**
+**Example:**
 
 ```go
 result := slide.CheckBoundary(100, 100, 200, 150)
 switch result.Status {
 case pptx.BoundaryStatusInside:
-    fmt.Println("完全在边界内")
+    fmt.Println("Fully within the boundary")
 case pptx.BoundaryStatusPartial:
-    fmt.Println("部分越界")
+    fmt.Println("Partially outside the boundary")
 case pptx.BoundaryStatusOutside:
-    fmt.Println("完全越界")
+    fmt.Println("Completely outside the boundary")
 }
 ```
 
 ### IsInsideBoundary
 
-检查元素是否完全在边界内。
+Checks whether an element is completely within the boundary.
 
 ```go
 func (s *Slide) IsInsideBoundary(x, y, cx, cy int) bool
@@ -418,7 +418,7 @@ func (s *Slide) IsInsideBoundary(x, y, cx, cy int) bool
 
 ### IsVisible
 
-检查元素是否有部分可见。
+Checks whether any part of an element is visible.
 
 ```go
 func (s *Slide) IsVisible(x, y, cx, cy int) bool
@@ -426,38 +426,38 @@ func (s *Slide) IsVisible(x, y, cx, cy int) bool
 
 ### Viewport
 
-返回幻灯片视口。
+Returns the slide viewport.
 
 ```go
 func (s *Slide) Viewport() *SlideViewport
 ```
 
-## 颜色处理
+## Color Handling
 
 ### ResolveColor
 
-解析颜色（支持名称、十六进制、RGB、主题色）。
+Resolves a color (supports names, hex, RGB, and theme colors).
 
 ```go
 func (s *Slide) ResolveColor(color string) Color
 ```
 
-**示例:**
+**Example:**
 
 ```go
-// 解析十六进制颜色
+// Resolve a hex color
 c1 := slide.ResolveColor("#FF0000")
 
-// 解析主题色
+// Resolve a theme color
 c2 := slide.ResolveColor("accent1")
 
-// 解析 RGB
+// Resolve an RGB color
 c3 := slide.ResolveColor("rgb(255, 0, 0)")
 ```
 
 ### ValidateColor
 
-验证颜色。
+Validates a color.
 
 ```go
 func (s *Slide) ValidateColor(color string) ColorValidationResult
@@ -465,11 +465,11 @@ func (s *Slide) ValidateColor(color string) ColorValidationResult
 
 ---
 
-# SlideBuilder - 幻灯片构建器
+# SlideBuilder - Slide Builder
 
-`SlideBuilder` 提供幻灯片构建功能，主要用于底层操作。
+`SlideBuilder` provides slide building capabilities, primarily for low-level operations.
 
-## 类型定义
+## Type Definition
 
 ```go
 type SlideBuilder struct {
@@ -477,63 +477,63 @@ type SlideBuilder struct {
 }
 ```
 
-## 构造函数
+## Constructor
 
 ### NewSlideBuilder
 
-创建幻灯片构建器。
+Creates a slide builder.
 
 ```go
 func NewSlideBuilder(slide *parts.SlidePart) *SlideBuilder
 ```
 
-## 形状操作
+## Shape Operations
 
 ### AddAutoShape
 
-添加自动形状到幻灯片。
+Adds an auto shape to the slide.
 
 ```go
 func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp
 ```
 
-**注意:** 使用 EMU 单位
+**Note:** Uses EMU units.
 
 ### AddTextBox
 
-添加文本框到幻灯片。
+Adds a text box to the slide.
 
 ```go
 func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *parts.XSp
 ```
 
-**注意:** 使用 EMU 单位
+**Note:** Uses EMU units.
 
 ### AddPicture
 
-添加图片到幻灯片。
+Adds a picture to the slide.
 
 ```go
 func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture
 ```
 
-**注意:** 使用 EMU 单位
+**Note:** Uses EMU units.
 
 ### AddTable
 
-添加表格到幻灯片。
+Adds a table to the slide.
 
 ```go
 func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame
 ```
 
-**注意:** 使用 EMU 单位
+**Note:** Uses EMU units.
 
-## 关系管理
+## Relationship Management
 
 ### AddImage
 
-添加图片关系并返回 rId。
+Adds an image relationship and returns the rId.
 
 ```go
 func (b *SlideBuilder) AddImage(targetURI string) string
@@ -541,7 +541,7 @@ func (b *SlideBuilder) AddImage(targetURI string) string
 
 ### AddMedia
 
-添加媒体关系并返回 rId。
+Adds a media relationship and returns the rId.
 
 ```go
 func (b *SlideBuilder) AddMedia(targetURI string) string
@@ -549,7 +549,7 @@ func (b *SlideBuilder) AddMedia(targetURI string) string
 
 ### AddChart
 
-添加图表关系并返回 rId。
+Adds a chart relationship and returns the rId.
 
 ```go
 func (b *SlideBuilder) AddChart(targetURI string) string
@@ -557,7 +557,7 @@ func (b *SlideBuilder) AddChart(targetURI string) string
 
 ### GetImageRId
 
-获取图片 rId，不存在则添加。
+Returns the rId for an image relationship, adding it if it does not exist.
 
 ```go
 func (b *SlideBuilder) GetImageRId(targetURI string) string
@@ -565,7 +565,7 @@ func (b *SlideBuilder) GetImageRId(targetURI string) string
 
 ### GetChartRId
 
-获取图表 rId，不存在则添加。
+Returns the rId for a chart relationship, adding it if it does not exist.
 
 ```go
 func (b *SlideBuilder) GetChartRId(targetURI string) string
@@ -573,7 +573,7 @@ func (b *SlideBuilder) GetChartRId(targetURI string) string
 
 ### GetMediaRId
 
-获取媒体 rId，不存在则添加。
+Returns the rId for a media relationship, adding it if it does not exist.
 
 ```go
 func (b *SlideBuilder) GetMediaRId(targetURI string) string
@@ -581,7 +581,7 @@ func (b *SlideBuilder) GetMediaRId(targetURI string) string
 
 ### HasImage
 
-判断是否已存在某图片关系。
+Checks whether an image relationship already exists.
 
 ```go
 func (b *SlideBuilder) HasImage(targetURI string) bool
@@ -589,7 +589,7 @@ func (b *SlideBuilder) HasImage(targetURI string) bool
 
 ### HasMedia
 
-判断是否已存在某媒体关系。
+Checks whether a media relationship already exists.
 
 ```go
 func (b *SlideBuilder) HasMedia(targetURI string) bool
@@ -597,17 +597,17 @@ func (b *SlideBuilder) HasMedia(targetURI string) bool
 
 ### GetRelationshipURI
 
-根据 rId 获取目标 URI。
+Returns the target URI for a given rId.
 
 ```go
 func (b *SlideBuilder) GetRelationshipURI(rId string) string
 ```
 
-## 辅助方法
+## Helper Methods
 
 ### GetOrAddPicture
 
-添加图片到幻灯片并返回 XPicture，自动处理图片关系 ID。
+Adds a picture to the slide and returns an XPicture, automatically handling the image relationship ID.
 
 ```go
 func (b *SlideBuilder) GetOrAddPicture(x, y, cx, cy int, imageURI string) *parts.XPicture
@@ -615,7 +615,7 @@ func (b *SlideBuilder) GetOrAddPicture(x, y, cx, cy int, imageURI string) *parts
 
 ### SetTableCellText
 
-设置表格单元格文本。
+Sets the text in a table cell.
 
 ```go
 func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, text string)
@@ -623,7 +623,7 @@ func (b *SlideBuilder) SetTableCellText(gf *parts.XGraphicFrame, row, col int, t
 
 ### Slide
 
-返回底层 SlidePart。
+Returns the underlying SlidePart.
 
 ```go
 func (b *SlideBuilder) Slide() *parts.SlidePart
@@ -631,11 +631,11 @@ func (b *SlideBuilder) Slide() *parts.SlidePart
 
 ---
 
-# SlideContext - 幻灯片渲染上下文
+# SlideContext - Slide Rendering Context
 
-`SlideContext` 提供组件渲染所需的资源和能力。
+`SlideContext` provides the resources and capabilities needed for component rendering.
 
-## 类型定义
+## Type Definition
 
 ```go
 type SlideContext struct {
@@ -643,21 +643,21 @@ type SlideContext struct {
 }
 ```
 
-## 构造函数
+## Constructor
 
 ### NewSlideContext
 
-创建幻灯片上下文。
+Creates a slide context.
 
 ```go
 func NewSlideContext(s *Slide) *SlideContext
 ```
 
-## 形状 ID 管理
+## Shape ID Management
 
 ### NextShapeID
 
-分配下一个形状 ID，返回绝对不冲突的形状 ID（线程安全）。
+Allocates the next shape ID, guaranteed to be conflict-free (thread-safe).
 
 ```go
 func (ctx *SlideContext) NextShapeID() uint32
@@ -665,7 +665,7 @@ func (ctx *SlideContext) NextShapeID() uint32
 
 ### CurrentShapeID
 
-返回当前形状 ID（最后分配的）。
+Returns the current shape ID (the most recently allocated one).
 
 ```go
 func (ctx *SlideContext) CurrentShapeID() uint32
@@ -673,7 +673,7 @@ func (ctx *SlideContext) CurrentShapeID() uint32
 
 ### AllocateShapeIDBatch
 
-批量分配形状 ID。
+Allocates a batch of shape IDs.
 
 ```go
 func (ctx *SlideContext) AllocateShapeIDBatch(count int) []uint32
@@ -681,58 +681,58 @@ func (ctx *SlideContext) AllocateShapeIDBatch(count int) []uint32
 
 ### IsShapeIDAllocated
 
-检查形状 ID 是否已分配。
+Checks whether a shape ID has already been allocated.
 
 ```go
 func (ctx *SlideContext) IsShapeIDAllocated(id uint32) bool
 ```
 
-## 形状追加
+## Shape Appending
 
 ### AppendShape
 
-将形状追加到幻灯片。
+Appends a shape to the slide.
 
 ```go
 func (ctx *SlideContext) AppendShape(shape interface{})
 ```
 
-**参数:**
-- `shape`: 形状结构体（`*parts.XSp`, `*parts.XPicture`, `*parts.XGraphicFrame` 等）
+**Parameters:**
+- `shape`: a shape struct (`*parts.XSp`, `*parts.XPicture`, `*parts.XGraphicFrame`, etc.)
 
-**示例:**
+**Example:**
 
 ```go
 sp := &parts.XSp{
-    // ... 设置形状属性
+    // ... set shape properties
 }
 ctx.AppendShape(sp)
 ```
 
 ### AppendShapes
 
-批量追加形状。
+Appends multiple shapes at once.
 
 ```go
 func (ctx *SlideContext) AppendShapes(shapes ...interface{})
 ```
 
-## 媒体添加
+## Adding Media
 
 ### AddMedia
 
-添加媒体资源（图片、音频、视频）。
+Adds a media asset (image, audio, or video).
 
 ```go
 func (ctx *SlideContext) AddMedia(data []byte, fileName string) (string, error)
 ```
 
-**返回:**
-- 关系 ID 和错误
+**Returns:**
+- The relationship ID and an error
 
 ### AddImage
 
-添加图片资源（AddMedia 的别名）。
+Adds an image asset (alias for AddMedia).
 
 ```go
 func (ctx *SlideContext) AddImage(data []byte, fileName string) (string, error)
@@ -740,7 +740,7 @@ func (ctx *SlideContext) AddImage(data []byte, fileName string) (string, error)
 
 ### AddAudio
 
-添加音频资源。
+Adds an audio asset.
 
 ```go
 func (ctx *SlideContext) AddAudio(data []byte, fileName string) (string, error)
@@ -748,7 +748,7 @@ func (ctx *SlideContext) AddAudio(data []byte, fileName string) (string, error)
 
 ### AddVideo
 
-添加视频资源。
+Adds a video asset.
 
 ```go
 func (ctx *SlideContext) AddVideo(data []byte, fileName string) (string, error)
@@ -756,42 +756,42 @@ func (ctx *SlideContext) AddVideo(data []byte, fileName string) (string, error)
 
 ### AddMediaWithMIME
 
-添加媒体资源（指定 MIME 类型）。
+Adds a media asset with an explicit MIME type.
 
 ```go
 func (ctx *SlideContext) AddMediaWithMIME(data []byte, fileName, mimeType string) (string, error)
 ```
 
-## 图表添加
+## Adding Charts
 
 ### AddChart
 
-添加图表（使用模板）。
+Adds a chart using a template.
 
 ```go
 func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]interface{}) (string, error)
 ```
 
-**参数:**
-- `chartType`: 图表类型
-- `data`: 图表数据
+**Parameters:**
+- `chartType`: chart type
+- `data`: chart data
 
-**返回:**
-- 关系 ID 和错误
+**Returns:**
+- The relationship ID and an error
 
 ### AddChartXML
 
-添加图表 XML。
+Adds a chart from raw XML.
 
 ```go
 func (ctx *SlideContext) AddChartXML(chartXML []byte) (string, error)
 ```
 
-## 关系管理
+## Relationship Management
 
 ### AddImageRel
 
-添加图片关系。
+Adds an image relationship.
 
 ```go
 func (ctx *SlideContext) AddImageRel(targetURI string) string
@@ -799,7 +799,7 @@ func (ctx *SlideContext) AddImageRel(targetURI string) string
 
 ### AddMediaRel
 
-添加媒体关系。
+Adds a media relationship.
 
 ```go
 func (ctx *SlideContext) AddMediaRel(targetURI string) string
@@ -807,7 +807,7 @@ func (ctx *SlideContext) AddMediaRel(targetURI string) string
 
 ### AddChartRel
 
-添加图表关系。
+Adds a chart relationship.
 
 ```go
 func (ctx *SlideContext) AddChartRel(targetURI string) string
@@ -815,17 +815,17 @@ func (ctx *SlideContext) AddChartRel(targetURI string) string
 
 ### HasRelationship
 
-检查关系是否存在。
+Checks whether a relationship exists.
 
 ```go
 func (ctx *SlideContext) HasRelationship(rID string) bool
 ```
 
-## 单位转换
+## Unit Conversion
 
 ### PxToEMU
 
-将像素转换为 EMU（基于 96 DPI）。
+Converts pixels to EMU (based on 96 DPI).
 
 ```go
 func (ctx *SlideContext) PxToEMU(px int) int
@@ -833,17 +833,17 @@ func (ctx *SlideContext) PxToEMU(px int) int
 
 ### EMUToPx
 
-将 EMU 转换为像素（基于 96 DPI）。
+Converts EMU to pixels (based on 96 DPI).
 
 ```go
 func (ctx *SlideContext) EMUToPx(emu int) int
 ```
 
-## 其他方法
+## Other Methods
 
 ### SlideIndex
 
-返回幻灯片索引。
+Returns the slide index.
 
 ```go
 func (ctx *SlideContext) SlideIndex() int
@@ -851,7 +851,7 @@ func (ctx *SlideContext) SlideIndex() int
 
 ### SlideSize
 
-返回幻灯片尺寸 (cx, cy in EMU)。
+Returns the slide size (cx, cy in EMU).
 
 ```go
 func (ctx *SlideContext) SlideSize() (cx, cy int)
@@ -859,7 +859,7 @@ func (ctx *SlideContext) SlideSize() (cx, cy int)
 
 ### SlidePart
 
-返回底层 SlidePart（高级用法）。
+Returns the underlying SlidePart (advanced usage).
 
 ```go
 func (ctx *SlideContext) SlidePart() *parts.SlidePart
@@ -867,7 +867,7 @@ func (ctx *SlideContext) SlidePart() *parts.SlidePart
 
 ### Presentation
 
-返回所属演示文稿（高级用法）。
+Returns the parent presentation (advanced usage).
 
 ```go
 func (ctx *SlideContext) Presentation() *Presentation
@@ -875,7 +875,7 @@ func (ctx *SlideContext) Presentation() *Presentation
 
 ### RenderComponents
 
-批量渲染组件。
+Renders multiple components at once.
 
 ```go
 func (ctx *SlideContext) RenderComponents(components ...Component) error

@@ -9,17 +9,17 @@ import (
 	"github.com/hurtener/pptx-go/opc"
 )
 
-// TestResourcePool_Basic 测试资源池基本功能
+// TestResourcePool_Basic tests basic resource pool functionality.
 func TestResourcePool_Basic(t *testing.T) {
 	pool := opc.GetGlobalPool()
 	if pool == nil {
 		t.Fatal("GetGlobalPool returned nil")
 	}
 
-	// 清理之前的测试数据
+	// clear data from previous tests
 	pool.ReleaseAll()
 
-	// 测试 GetOrLoad
+	// test GetOrLoad
 	callCount := 0
 	data, err := pool.GetOrLoad("/ppt/media/image1.png", opc.ContentTypePNG, func() ([]byte, error) {
 		callCount++
@@ -35,7 +35,7 @@ func TestResourcePool_Basic(t *testing.T) {
 		t.Errorf("data length should be 3, got %d", len(data))
 	}
 
-	// 再次获取（应该使用缓存）
+	// get again (should use cache)
 	callCount = 0
 	data2, err := pool.GetOrLoad("/ppt/media/image1.png", opc.ContentTypePNG, func() ([]byte, error) {
 		callCount++
@@ -48,17 +48,17 @@ func TestResourcePool_Basic(t *testing.T) {
 		t.Error("loader should not be called again (should use cache)")
 	}
 
-	// 验证数据相同（zero-copy）
+	// verify data is identical (zero-copy)
 	if len(data2) != len(data) {
 		t.Error("data2 length should match data")
 	}
 	for i := range data {
 		if data[i] != data2[i] {
-		t.Errorf("data2[%d] should equal data[%d]", i, i)
+			t.Errorf("data2[%d] should equal data[%d]", i, i)
 		}
 	}
 
-	// 测试 Release（需要释放两次，因为调用了两次 GetOrLoad）
+	// test Release (must release twice because GetOrLoad was called twice)
 	pool.Release("/ppt/media/image1.png")
 	pool.Release("/ppt/media/image1.png")
 	stats := pool.Stats()
@@ -66,24 +66,24 @@ func TestResourcePool_Basic(t *testing.T) {
 		t.Errorf("media count should be 0 after release, got %d", stats["media"])
 	}
 
-	// 清理
+	// cleanup
 	pool.ReleaseAll()
 
-		t.Log("Resource pool basic test passed")
+	t.Log("Resource pool basic test passed")
 }
 
-// TestResourcePool_ContentTypeCategories 测试不同内容类型的分类
+// TestResourcePool_ContentTypeCategories tests content type classification.
 func TestResourcePool_ContentTypeCategories(t *testing.T) {
-	// 测试不可变内容类型判断
+	// test immutable content type detection
 	testCases := []struct {
 		contentType string
-		expected   bool
+		expected    bool
 	}{
 		{opc.ContentTypePNG, true},
 		{opc.ContentTypeJPEG, true},
 		{opc.ContentTypeTheme, true},
 		{opc.ContentTypeSlideMaster, true},
-		{opc.ContentTypeSlide, false}, // slide 是可变的
+		{opc.ContentTypeSlide, false}, // slide is mutable
 		{opc.ContentTypePresentation, false},
 	}
 
@@ -97,40 +97,40 @@ func TestResourcePool_ContentTypeCategories(t *testing.T) {
 	t.Log("Content type categorization test passed")
 }
 
-// TestPart_CloneShared 测试 Part 的 zero-copy 克隆
+// TestPart_CloneShared tests zero-copy cloning of Part.
 func TestPart_CloneShared(t *testing.T) {
-	// 创建原始数据
+	// create original data
 	originalData := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
 	uri := opc.NewPackURI("/ppt/media/image1.png")
 
-	// 创建原始 Part
+	// create original Part
 	original := opc.NewPart(uri, opc.ContentTypePNG, originalData)
 
-	// 使用 CloneShared 进行 zero-copy 克隆
+	// zero-copy clone via CloneShared
 	cloned := original.CloneShared()
 
-	// 验证克隆不为 nil
+	// verify clone is not nil
 	if cloned == nil {
 		t.Fatal("CloneShared returned nil")
 	}
 
-	// 验证是不可变的
+	// verify it is immutable
 	if !cloned.IsImmutable() {
 		t.Error("cloned part should be immutable")
 	}
 
-	// 验证 URI 相同（共享指针）
+	// verify URI is shared (same pointer)
 	if cloned.PartURI() != original.PartURI() {
 		t.Error("URI should be shared")
 	}
 
-	// 验证 Blob 返回相同的数据
+	// verify Blob returns the same data
 	blob := cloned.Blob()
 	if len(blob) != len(originalData) {
 		t.Errorf("blob length mismatch: got %d, want %d", len(blob), len(originalData))
 	}
 
-	// 验证内容相同
+	// verify contents match
 	for i := range originalData {
 		if blob[i] != originalData[i] {
 			t.Errorf("blob content mismatch at index %d", i)
@@ -140,33 +140,33 @@ func TestPart_CloneShared(t *testing.T) {
 	t.Log("Part CloneShared test passed")
 }
 
-// TestPart_Clone_DeepCopy 测试 Part 的深拷贝
+// TestPart_Clone_DeepCopy tests deep copying of Part.
 func TestPart_Clone_DeepCopy(t *testing.T) {
-	// 创建原始数据
+	// create original data
 	originalData := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
 	uri := opc.NewPackURI("/ppt/slides/slide1.xml")
 
-	// 创建原始 Part
+	// create original Part
 	original := opc.NewPart(uri, opc.ContentTypeSlide, originalData)
 
-	// 使用 Clone 进行深拷贝
+	// deep copy via Clone
 	cloned := original.Clone()
 
-	// 验证克隆不为 nil
+	// verify clone is not nil
 	if cloned == nil {
 		t.Fatal("Clone returned nil")
 	}
 
-	// 验证不是不可变的
+	// verify it is not immutable
 	if cloned.IsImmutable() {
 		t.Error("cloned part should not be immutable")
 	}
 
-	// 验证 Blob 是深拷贝的
+	// verify Blob is a deep copy
 	originalBlob := original.Blob()
 	clonedBlob := cloned.Blob()
 
-	// 修改克隆的数据不应影响原始数据
+	// modifying the clone should not affect the original
 	if len(clonedBlob) > 0 {
 		clonedBlob[0] = 0xFF
 		if originalBlob[0] == 0xFF {
@@ -177,30 +177,30 @@ func TestPart_Clone_DeepCopy(t *testing.T) {
 	t.Log("Part Clone deep copy test passed")
 }
 
-// TestPackage_Clone_SmartCloning 测试 Package 的智能克隆
+// TestPackage_Clone_SmartCloning tests smart cloning behavior of Package.
 func TestPackage_Clone_SmartCloning(t *testing.T) {
-	// 创建一个包含不同类型部件的 Package
+	// create a Package with parts of different types
 	pkg := opc.NewPackage()
 
-	// 添加一个图片部件（应该使用 zero-copy）
+	// add an image part (should use zero-copy)
 	imageData := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
 	imageURI := opc.NewPackURI("/ppt/media/image1.png")
 	pkg.CreatePart(imageURI, opc.ContentTypePNG, imageData)
 
-	// 添加一个幻灯片部件（应该使用深拷贝）
+	// add a slide part (should use deep copy)
 	slideData := []byte("<slide>test</slide>")
 	slideURI := opc.NewPackURI("/ppt/slides/slide1.xml")
 	pkg.CreatePart(slideURI, opc.ContentTypeSlide, slideData)
 
-	// 克隆 Package
+	// clone the Package
 	clonedPkg := pkg.Clone()
 
-	// 验证克隆不为 nil
+	// verify clone is not nil
 	if clonedPkg == nil {
 		t.Fatal("Clone returned nil")
 	}
 
-	// 验证图片部件使用了 zero-copy
+	// verify image part used zero-copy
 	originalImagePart := pkg.GetPart(imageURI)
 	clonedImagePart := clonedPkg.GetPart(imageURI)
 
@@ -208,12 +208,12 @@ func TestPackage_Clone_SmartCloning(t *testing.T) {
 		t.Fatal("image parts should exist")
 	}
 
-	// 图片应该是不可变的（使用了 zero-copy）
+	// image should be immutable (zero-copy was used)
 	if !clonedImagePart.IsImmutable() {
 		t.Error("cloned image part should be immutable (zero-copy)")
 	}
 
-	// 幻灯片应该是可变的（使用了深拷贝）
+	// slide should be mutable (deep copy was used)
 	clonedSlidePart := clonedPkg.GetPart(slideURI)
 	if clonedSlidePart == nil {
 		t.Fatal("cloned slide part should exist")
@@ -225,52 +225,52 @@ func TestPackage_Clone_SmartCloning(t *testing.T) {
 	t.Log("Package Clone smart cloning test passed")
 }
 
-// TestZipEntry_Timestamp 测试 ZIP 条目的时间戳是否正确设置
-// 验证：
-// 1. 时间戳不为零值（解决 Windows 资源管理器 MS-DOS 时间 bug）
-// 2. 时间戳是当前时间（允许几秒误差）
-// 3. 时间戳可以正确转换为北京时间（UTC+8）
+// TestZipEntry_Timestamp verifies ZIP entry timestamps are set correctly.
+// Checks:
+// 1. Timestamps are not zero (works around Windows Explorer MS-DOS time bug).
+// 2. Timestamps are close to the current time (within a few seconds).
+// 3. Timestamps can be correctly converted to Beijing time (UTC+8).
 func TestZipEntry_Timestamp(t *testing.T) {
-	// 记录创建前的时间（北京时间）
+	// record time before creation (in Beijing timezone)
 	beijingLoc, _ := time.LoadLocation("Asia/Shanghai")
 	beforeCreate := time.Now().In(beijingLoc)
 
-	// 创建一个简单的 Package
+	// create a simple Package
 	pkg := opc.NewPackage()
 
-	// 添加一个部件
+	// add a part
 	slideURI := opc.NewPackURI("/ppt/slides/slide1.xml")
 	pkg.CreatePart(slideURI, opc.ContentTypeSlide, []byte("<slide/>"))
 
-	// 添加关系
+	// add relationship
 	pkg.AddRelationship(opc.RelTypeOfficeDocument, "/ppt/presentation.xml", false)
 
-	// 保存到字节数组
+	// save to bytes
 	data, err := pkg.SaveToBytes()
 	if err != nil {
 		t.Fatalf("SaveToBytes failed: %v", err)
 	}
 
-	// 记录创建后的时间
+	// record time after creation
 	afterCreate := time.Now().In(beijingLoc)
 
-	// 读取 ZIP 文件并检查时间戳
+	// read the ZIP and check timestamps
 	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		t.Fatalf("Failed to read ZIP: %v", err)
 	}
 
-	// 检查每个文件的时间戳
+	// check each file's timestamp
 	for _, file := range reader.File {
 		modTime := file.Modified
 
-		// 1. 时间戳不应为零值
+		// 1. timestamp must not be zero
 		if modTime.IsZero() {
 			t.Errorf("File %s has zero modification time", file.Name)
 			continue
 		}
 
-		// 2. 时间戳应在 beforeCreate 和 afterCreate 之间（允许 1 秒误差）
+		// 2. timestamp must be between beforeCreate and afterCreate (allow 1s tolerance)
 		modTimeUTC := modTime.UTC()
 		beforeUTC := beforeCreate.UTC()
 		afterUTC := afterCreate.UTC()
@@ -284,12 +284,12 @@ func TestZipEntry_Timestamp(t *testing.T) {
 				file.Name, modTimeUTC, afterUTC)
 		}
 
-		// 3. 转换为北京时间并验证
+		// 3. convert to Beijing time and verify
 		modTimeBeijing := modTime.In(beijingLoc)
 
-		// 验证北京时间与 UTC 时间差为 8 小时（或根据夏令时调整）
+		// verify Beijing offset is 8 hours from UTC (or adjusted for DST)
 		_, beijingOffset := modTimeBeijing.Zone()
-		expectedOffset := 8 * 60 * 60 // 8 小时（秒）
+		expectedOffset := 8 * 60 * 60 // 8 hours in seconds
 		if beijingOffset != expectedOffset {
 			t.Logf("Warning: Beijing offset is %d seconds, expected %d (may vary by DST)",
 				beijingOffset, expectedOffset)
@@ -304,12 +304,12 @@ func TestZipEntry_Timestamp(t *testing.T) {
 	t.Log("ZIP entry timestamp test passed")
 }
 
-// TestZipEntry_TimestampNotZero 专门测试时间戳不为零
-// 这是解决 Windows 资源管理器 MS-DOS 时间解析 bug 的关键测试
+// TestZipEntry_TimestampNotZero specifically tests that timestamps are never zero.
+// This is the key test for the Windows Explorer MS-DOS time parsing bug fix.
 func TestZipEntry_TimestampNotZero(t *testing.T) {
 	pkg := opc.NewPackage()
 
-	// 添加多个不同类型的部件
+	// add several parts of different types
 	testParts := []struct {
 		uri         string
 		contentType string
@@ -325,13 +325,13 @@ func TestZipEntry_TimestampNotZero(t *testing.T) {
 		pkg.CreatePart(uri, tp.contentType, tp.data)
 	}
 
-	// 保存
+	// save
 	data, err := pkg.SaveToBytes()
 	if err != nil {
 		t.Fatalf("SaveToBytes failed: %v", err)
 	}
 
-	// 读取并验证
+	// read and verify
 	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		t.Fatalf("Failed to read ZIP: %v", err)

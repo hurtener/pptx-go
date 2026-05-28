@@ -7,17 +7,19 @@ import (
 	"io"
 )
 
-// XMLDeclaration OPC 包中所有 XML 文件的标准声明头
+// XMLDeclaration is the standard XML declaration header used in all OPC package files.
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
 
-// StripNamespacePrefixes 处理 XML 数据，去除命名空间前缀使其兼容 Go 的 xml.Unmarshal
-// Go 的 xml.Unmarshal 无法处理带前缀的 XML 命名空间（如 <p:presentation>）
-// 此函数将 <p:xxx> 转换为 <xxx>，同时将带前缀的属性转换为无冒号形式（如 r:id -> rid）
+// StripNamespacePrefixes pre-processes XML data by removing namespace prefixes so
+// that Go's xml.Unmarshal can handle it. Go's decoder cannot handle prefixed
+// elements such as <p:presentation>; this function converts <p:xxx> to <xxx>
+// and transforms prefixed attributes to their prefix-concatenated form
+// (e.g. r:id becomes rid).
 func StripNamespacePrefixes(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	decoder := xml.NewDecoder(bytes.NewReader(data))
 
-	// 命名空间 URI -> 前缀 的映射（全局，跨所有元素）
+	// global namespace URI -> prefix map (accumulated across all elements)
 	nsToPrefix := make(map[string]string)
 
 	for {
@@ -31,34 +33,34 @@ func StripNamespacePrefixes(data []byte) ([]byte, error) {
 
 		switch v := token.(type) {
 		case xml.StartElement:
-			// 首先收集 xmlns 声明，建立 URI -> 前缀映射
+			// collect xmlns declarations to build the URI -> prefix map
 			for _, attr := range v.Attr {
 				if attr.Name.Space == "xmlns" {
 					// xmlns:p="..." -> prefix="p", URI=attr.Value
 					nsToPrefix[attr.Value] = attr.Name.Local
 				} else if attr.Name.Local == "xmlns" {
-					// xmlns="..." -> 默认命名空间，前缀为空
+					// xmlns="..." -> default namespace, empty prefix
 					nsToPrefix[attr.Value] = ""
 				}
 			}
 
-			// 去除元素名前缀（如 p:presentation -> presentation）
+			// strip the element name prefix (e.g. p:presentation -> presentation)
 			buf.WriteString("<")
 			buf.WriteString(v.Name.Local)
 
-			// 处理属性 - 将 r:id 转换为 rid（去掉冒号），去除 xmlns 声明
+			// process attributes: convert r:id to rid (drop the colon), drop xmlns declarations
 			for _, attr := range v.Attr {
-				// 跳过 xmlns 声明
+				// skip xmlns declarations
 				if attr.Name.Space == "xmlns" || attr.Name.Local == "xmlns" {
 					continue
 				}
 				buf.WriteString(" ")
 
-				// 如果属性有命名空间，查找对应的前缀并拼接（去掉冒号）
+				// if the attribute has a namespace, look up its prefix and prepend it (no colon)
 				if attr.Name.Space != "" {
 					if prefix, ok := nsToPrefix[attr.Name.Space]; ok && prefix != "" {
 						buf.WriteString(prefix)
-						// 注意：不写冒号，直接拼接，如 r:id -> rid
+						// intentionally no colon: r:id -> rid
 					}
 				}
 				buf.WriteString(attr.Name.Local)
@@ -78,7 +80,7 @@ func StripNamespacePrefixes(data []byte) ([]byte, error) {
 			buf.Write(v)
 			buf.WriteString("-->")
 		case xml.ProcInst:
-			// 跳过 XML 声明
+			// skip the XML declaration
 			if v.Target == "xml" {
 				continue
 			}

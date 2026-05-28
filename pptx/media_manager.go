@@ -1,4 +1,4 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
+// Package pptx provides a high-level interface for working with PPTX files.
 package pptx
 
 import (
@@ -14,100 +14,102 @@ import (
 )
 
 // ============================================================================
-// MediaManager - 媒体资源管理器（并发安全缓存 + 跨幻灯片去重）
+// MediaManager - media resource manager (concurrency-safe cache + cross-slide dedup)
 // ============================================================================
 //
-// 设计原则：
-// 1. 一次写入，到处读取 - 初始化后主要操作是读取
-// 2. 读取优化 - 使用 sync.Map，读操作无需阻塞
-// 3. 多重索引 - 按 rID、fileName、target、hash 都能快速查找
-// 4. 内容去重 - 基于内容 Hash 自动去重，相同媒体只存储一份
-// 5. 跨幻灯片引用 - 同一媒体可被多个幻灯片引用，每页有独立 rId
+// Design principles:
+//  1. Write once, read everywhere - after initialization the dominant operation is reads.
+//  2. Read-optimised - uses sync.Map; reads do not block.
+//  3. Multi-index - fast lookup by rID, fileName, target, or content hash.
+//  4. Content deduplication - automatic dedup based on content hash; identical
+//     media is stored only once.
+//  5. Cross-slide references - the same media can be referenced by multiple
+//     slides, each with its own independent rId.
 //
-// 使用场景：
-// - AI 在 10 页幻灯片里都插入了同一个公司 Logo
-// - Hash 判定后，ZIP 包里只存一份 image1.png
-// - 但每页幻灯片获得独立的 rId（如 rId5, rId12, rId23...）
-// - 极大减小生成文件的体积！
+// Typical use case:
+//   - The same company logo is inserted on 10 slides.
+//   - After hash-based dedup, the ZIP archive contains a single image1.png.
+//   - Each slide still receives its own rId (e.g. rId5, rId12, rId23 …).
+//   - This greatly reduces the size of the generated file.
+//
 // ============================================================================
 
-// MediaManager 媒体资源管理器
-// 维护 PPTX 中所有媒体资源的并发安全缓存
+// MediaManager maintains a concurrency-safe cache of all media resources in a
+// PPTX file.
 type MediaManager struct {
-	// 主存储：rID -> *MediaResource
+	// Primary store: rID -> *MediaResource
 	byRID sync.Map
 
-	// 辅助索引：fileName -> rID（用于按文件名查找）
+	// Secondary index: fileName -> rID (lookup by file name)
 	byName sync.Map
 
-	// 辅助索引：target -> rID（用于按路径查找）
+	// Secondary index: target -> rID (lookup by path)
 	byTarget sync.Map
 
-	// 辅助索引：contentHash -> rID（用于按内容去重）
+	// Secondary index: contentHash -> rID (content deduplication)
 	byHash sync.Map
 
-	// 计数器
+	// Total resource count.
 	count int64
 
-	// 自增 ID 计数器（用于生成 rId1, rId2...）
+	// Auto-increment ID counter for generating rId1, rId2, …
 	nextID int64
 
-	// 媒体文件计数器（用于生成 image1.png, image2.png...）
+	// Media file counter for generating image1.png, image2.png, …
 	mediaFileID int64
 
-	// 初始化标记（用于确保一次性加载）
+	// Initialization guard (ensures one-time load).
 	once sync.Once
 
-	// 写入锁（仅用于批量操作时的互斥）
+	// Write mutex (used only for batch operations requiring mutual exclusion).
 	writeMu sync.Mutex
 
 	// ============================================================================
-	// 跨幻灯片引用支持
+	// Cross-slide reference support
 	// ============================================================================
 
-	// 幻灯片级关系映射：slideIndex -> {localRID -> globalRID}
-	// 每个幻灯片有自己的 rId 命名空间
+	// Per-slide relationship map: slideIndex -> *SlideMediaIndex.
+	// Each slide has its own rId namespace.
 	slideRelations sync.Map // map[int]*SlideMediaIndex
 
-	// 全局媒体存储：hash -> *MediaResource
-	// 存储去重后的媒体资源
+	// Global media store: hash -> *MediaResource.
+	// Holds deduplicated media resources.
 	globalMedia sync.Map
 }
 
-// SlideMediaIndex 幻灯片媒体索引
-// 管理单个幻灯片的媒体引用
+// SlideMediaIndex manages the media references for a single slide.
 type SlideMediaIndex struct {
-	// 幻灯片索引
+	// slideIndex is the zero-based slide index.
 	slideIndex int
 
-	// 本地 rID -> 全局资源 Hash
+	// localToHash maps a local rID to the global content hash.
 	localToHash sync.Map
 
-	// 全局 Hash -> 本地 rID（反向索引）
+	// hashToLocal maps a global content hash to a local rID (reverse index).
 	hashToLocal sync.Map
 
-	// 本地 rID 计数器
+	// nextLocalID is the per-slide rID counter.
 	nextLocalID int64
 }
 
-// NewSlideMediaIndex 创建幻灯片媒体索引
+// NewSlideMediaIndex creates a new SlideMediaIndex for the given slide.
 func NewSlideMediaIndex(slideIndex int) *SlideMediaIndex {
 	return &SlideMediaIndex{
 		slideIndex: slideIndex,
 	}
 }
 
-// NewMediaManager 创建新的媒体资源管理器
+// NewMediaManager creates a new media resource manager.
 func NewMediaManager() *MediaManager {
 	return &MediaManager{}
 }
 
 // ============================================================================
-// 写入方法
+// Write methods
 // ============================================================================
 
-// AddMedia 添加媒体资源到缓存
-// 返回资源的 rID，如果已存在则返回现有 rID
+// AddMedia adds a media resource to the cache.
+// Returns the resource rID; if the resource already exists the existing rID is returned.
 func (m *MediaManager) AddMedia(resource *parts.MediaResource) string {
 	if resource == nil {
 		return ""
@@ -118,12 +120,12 @@ func (m *MediaManager) AddMedia(resource *parts.MediaResource) string {
 		return ""
 	}
 
-	// 检查是否已存在
+	// Store only if not already present.
 	if _, loaded := m.byRID.LoadOrStore(rID, resource); loaded {
-		return rID // 已存在，直接返回
+		return rID // already exists
 	}
 
-	// 建立辅助索引
+	// Maintain secondary indexes.
 	if resource.FileName() != "" {
 		m.byName.Store(resource.FileName(), rID)
 	}
@@ -131,13 +133,13 @@ func (m *MediaManager) AddMedia(resource *parts.MediaResource) string {
 		m.byTarget.Store(resource.Target(), rID)
 	}
 
-	// 增加计数（原子操作）
+	// Increment count (atomic).
 	atomic.AddInt64(&m.count, 1)
 
 	return rID
 }
 
-// AddMediaWithBytes 从字节数据添加媒体资源
+// AddMediaWithBytes creates a media resource from raw bytes and adds it to the cache.
 func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target string, data []byte) *parts.MediaResource {
 	resource := parts.NewMediaResourceFromBytes(fileName, contentType, target, data)
 	resource.SetRID(rID)
@@ -145,7 +147,7 @@ func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target stri
 	return resource
 }
 
-// AddMediaWithReader 从 Reader 添加媒体资源
+// AddMediaWithReader creates a media resource from an io.Reader and adds it to the cache.
 func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target string, reader io.Reader, size int64) *parts.MediaResource {
 	resource := parts.NewMediaResourceFromReader(fileName, contentType, target, reader, size)
 	resource.SetRID(rID)
@@ -153,54 +155,54 @@ func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target str
 	return resource
 }
 
-// AddMediaAuto 自动推断 MIME 类型并生成自增 rID
-// 如果相同内容已存在（基于 Hash），则返回已有资源（去重）
-// 返回生成的 rID 和创建的 MediaResource
+// AddMediaAuto infers the MIME type and generates an auto-incremented rID.
+// If identical content already exists (based on hash), the existing resource is
+// returned (deduplication). Returns the generated rID and the MediaResource.
 func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *parts.MediaResource) {
-	// 计算内容 Hash
+	// Compute content hash.
 	contentHash := computeHash(data)
 
-	// 去重检查：如果相同内容已存在，直接返回已有资源
+	// Deduplication check: return existing resource if content already stored.
 	if existing := m.GetMediaByHash(contentHash); existing != nil {
 		return existing.RID(), existing
 	}
 
-	// 生成自增 rID
+	// Generate auto-incremented rID.
 	id := atomic.AddInt64(&m.nextID, 1)
 	rID := formatRID(id)
 
-	// 推断 MIME 类型
+	// Infer MIME type.
 	contentType := inferContentType(fileName)
 
-	// 生成 target 路径
+	// Build target path.
 	target := "ppt/media/" + fileName
 
-	// 创建资源
+	// Create and register the resource.
 	resource := parts.NewMediaResourceFromBytes(fileName, contentType, target, data)
 	resource.SetRID(rID)
 	resource.SetHash(contentHash)
 
-	// 添加到缓存
+	// Add to cache.
 	m.AddMedia(resource)
 
-	// 建立 Hash 索引
+	// Maintain hash index.
 	m.byHash.Store(contentHash, rID)
 
 	return rID, resource
 }
 
-// computeHash 计算数据的 MD5 Hash
+// computeHash computes the MD5 hash of data as a hex string.
 func computeHash(data []byte) string {
 	hash := md5.Sum(data)
 	return hex.EncodeToString(hash[:])
 }
 
-// formatRID 格式化 rID（如 rId1, rId2）
+// formatRID formats a numeric ID as an rId string (e.g. rId1, rId2).
 func formatRID(id int64) string {
 	return "rId" + strconv.FormatInt(id, 10)
 }
 
-// inferContentType 根据文件扩展名推断 MIME 类型
+// inferContentType infers the MIME type from the file extension.
 func inferContentType(fileName string) string {
 	ext := filepath.Ext(fileName)
 	switch ext {
@@ -239,13 +241,14 @@ func inferContentType(fileName string) string {
 	}
 }
 
-// RemoveMedia 移除媒体资源
+// RemoveMedia removes a media resource from the cache.
+// Returns true if the resource was found and removed.
 func (m *MediaManager) RemoveMedia(rID string) bool {
 	if rID == "" {
 		return false
 	}
 
-	// 先获取资源以便清理索引
+	// Load the resource first so we can clean up the secondary indexes.
 	val, ok := m.byRID.Load(rID)
 	if !ok {
 		return false
@@ -253,7 +256,7 @@ func (m *MediaManager) RemoveMedia(rID string) bool {
 
 	resource := val.(*parts.MediaResource)
 
-	// 清理辅助索引
+	// Remove secondary indexes.
 	if resource.FileName() != "" {
 		m.byName.Delete(resource.FileName())
 	}
@@ -261,16 +264,16 @@ func (m *MediaManager) RemoveMedia(rID string) bool {
 		m.byTarget.Delete(resource.Target())
 	}
 
-	// 删除主存储
+	// Remove from primary store.
 	m.byRID.Delete(rID)
 
-	// 减少计数（原子操作）
+	// Decrement count (atomic).
 	atomic.AddInt64(&m.count, -1)
 
 	return true
 }
 
-// Clear 清空所有媒体资源
+// Clear removes all media resources from the cache.
 func (m *MediaManager) Clear() {
 	m.writeMu.Lock()
 	defer m.writeMu.Unlock()
@@ -283,10 +286,10 @@ func (m *MediaManager) Clear() {
 }
 
 // ============================================================================
-// 读取方法（并发安全，无锁读取）
+// Read methods (concurrency-safe, lock-free)
 // ============================================================================
 
-// GetMedia 根据 rID 获取媒体资源
+// GetMedia returns the media resource for the given rID.
 func (m *MediaManager) GetMedia(rID string) *parts.MediaResource {
 	if rID == "" {
 		return nil
@@ -299,7 +302,7 @@ func (m *MediaManager) GetMedia(rID string) *parts.MediaResource {
 	return val.(*parts.MediaResource)
 }
 
-// GetMediaByFileName 根据文件名获取媒体资源
+// GetMediaByFileName returns the media resource for the given file name.
 func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource {
 	if fileName == "" {
 		return nil
@@ -313,7 +316,7 @@ func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource 
 	return m.GetMedia(ridVal.(string))
 }
 
-// GetMediaByTarget 根据目标路径获取媒体资源
+// GetMediaByTarget returns the media resource for the given target path.
 func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource {
 	if target == "" {
 		return nil
@@ -327,7 +330,7 @@ func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource {
 	return m.GetMedia(ridVal.(string))
 }
 
-// GetMediaByHash 根据内容 Hash 获取媒体资源（用于去重）
+// GetMediaByHash returns the media resource for the given content hash (for deduplication).
 func (m *MediaManager) GetMediaByHash(hash string) *parts.MediaResource {
 	if hash == "" {
 		return nil
@@ -341,23 +344,23 @@ func (m *MediaManager) GetMediaByHash(hash string) *parts.MediaResource {
 	return m.GetMedia(ridVal.(string))
 }
 
-// HasMedia 检查媒体资源是否存在
+// HasMedia reports whether a media resource with the given rID exists.
 func (m *MediaManager) HasMedia(rID string) bool {
 	_, ok := m.byRID.Load(rID)
 	return ok
 }
 
-// HasMediaByFileName 检查文件名是否存在
+// HasMediaByFileName reports whether a resource with the given file name exists.
 func (m *MediaManager) HasMediaByFileName(fileName string) bool {
 	_, ok := m.byName.Load(fileName)
 	return ok
 }
 
 // ============================================================================
-// 批量读取方法
+// Bulk read methods
 // ============================================================================
 
-// AllMedia 返回所有媒体资源（返回新切片，线程安全）
+// AllMedia returns all media resources as a new slice (thread-safe).
 func (m *MediaManager) AllMedia() []*parts.MediaResource {
 	result := make([]*parts.MediaResource, 0, m.Count())
 	m.byRID.Range(func(key, value interface{}) bool {
@@ -367,7 +370,7 @@ func (m *MediaManager) AllMedia() []*parts.MediaResource {
 	return result
 }
 
-// AllMediaByType 返回指定类型的所有媒体资源
+// AllMediaByType returns all media resources of the specified type.
 func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaResource {
 	result := make([]*parts.MediaResource, 0)
 	m.byRID.Range(func(key, value interface{}) bool {
@@ -380,31 +383,31 @@ func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaR
 	return result
 }
 
-// AllImages 返回所有图片资源
+// AllImages returns all image resources.
 func (m *MediaManager) AllImages() []*parts.MediaResource {
 	return m.AllMediaByType(parts.MediaTypeImage)
 }
 
-// AllAudio 返回所有音频资源
+// AllAudio returns all audio resources.
 func (m *MediaManager) AllAudio() []*parts.MediaResource {
 	return m.AllMediaByType(parts.MediaTypeAudio)
 }
 
-// AllVideo 返回所有视频资源
+// AllVideo returns all video resources.
 func (m *MediaManager) AllVideo() []*parts.MediaResource {
 	return m.AllMediaByType(parts.MediaTypeVideo)
 }
 
 // ============================================================================
-// 统计方法
+// Statistics
 // ============================================================================
 
-// Count 返回媒体资源总数
+// Count returns the total number of media resources.
 func (m *MediaManager) Count() int64 {
 	return atomic.LoadInt64(&m.count)
 }
 
-// CountByType 返回指定类型的媒体资源数量
+// CountByType returns the number of media resources of the specified type.
 func (m *MediaManager) CountByType(mediaType parts.MediaType) int64 {
 	var count int64
 	m.byRID.Range(func(key, value interface{}) bool {
@@ -416,26 +419,26 @@ func (m *MediaManager) CountByType(mediaType parts.MediaType) int64 {
 	return count
 }
 
-// CountImages 返回图片数量
+// CountImages returns the number of image resources.
 func (m *MediaManager) CountImages() int64 {
 	return m.CountByType(parts.MediaTypeImage)
 }
 
-// CountAudio 返回音频数量
+// CountAudio returns the number of audio resources.
 func (m *MediaManager) CountAudio() int64 {
 	return m.CountByType(parts.MediaTypeAudio)
 }
 
-// CountVideo 返回视频数量
+// CountVideo returns the number of video resources.
 func (m *MediaManager) CountVideo() int64 {
 	return m.CountByType(parts.MediaTypeVideo)
 }
 
 // ============================================================================
-// 列表方法
+// List methods
 // ============================================================================
 
-// ListRIDs 返回所有 rID
+// ListRIDs returns all rIDs.
 func (m *MediaManager) ListRIDs() []string {
 	result := make([]string, 0, m.Count())
 	m.byRID.Range(func(key, value interface{}) bool {
@@ -445,7 +448,7 @@ func (m *MediaManager) ListRIDs() []string {
 	return result
 }
 
-// ListFileNames 返回所有文件名
+// ListFileNames returns all file names.
 func (m *MediaManager) ListFileNames() []string {
 	result := make([]string, 0, m.Count())
 	m.byName.Range(func(key, value interface{}) bool {
@@ -455,7 +458,7 @@ func (m *MediaManager) ListFileNames() []string {
 	return result
 }
 
-// ListTargets 返回所有目标路径
+// ListTargets returns all target paths.
 func (m *MediaManager) ListTargets() []string {
 	result := make([]string, 0, m.Count())
 	m.byTarget.Range(func(key, value any) bool {
@@ -466,88 +469,93 @@ func (m *MediaManager) ListTargets() []string {
 }
 
 // ============================================================================
-// 跨幻灯片媒体引用方法
+// Cross-slide media reference methods
 // ============================================================================
 //
-// 核心功能：支持同一媒体被多个幻灯片引用，每页有独立的 rId
+// Core feature: the same media can be referenced by multiple slides, each with
+// its own independent rId.
 //
-// 使用场景：
-// - AI 在 10 页幻灯片里都插入了同一个公司 Logo
-// - Hash 判定后，ZIP 包里只存一份 image1.png
-// - 但每页幻灯片获得独立的 rId（如 rId5, rId12, rId23...）
+// Typical use case:
+//   - The same company logo is inserted on 10 slides.
+//   - After hash-based dedup, the ZIP archive contains a single image1.png.
+//   - Each slide still receives its own rId (e.g. rId5, rId12, rId23 …).
+//
 // ============================================================================
 
-// AddMediaForSlide 为指定幻灯片添加媒体（支持跨幻灯片去重）
-// 返回该幻灯片的本地 rId 和全局媒体资源
+// AddMediaForSlide adds media for a specific slide with cross-slide deduplication.
+// Returns the slide-local rId and the global media resource.
 //
-// 使用示例：
+// Example:
 //
-//	// 第 1 页插入 Logo
+//	// Insert logo on slide 0
 //	rId1, _ := mediaManager.AddMediaForSlide(0, logoData, "logo.png")
-//	// 返回: rId1="rId1", 全局存储 image1.png
+//	// Returns: rId1="rId1", global storage: image1.png
 //
-//	// 第 2 页插入同一个 Logo
+//	// Insert the same logo on slide 1
 //	rId2, _ := mediaManager.AddMediaForSlide(1, logoData, "logo.png")
-//	// 返回: rId2="rId1"（该幻灯片的本地 rId）, 复用 image1.png
+//	// Returns: rId2="rId1" (local rId for that slide), reuses image1.png
 //
-//	// 最终 ZIP 包中只有一份 image1.png，但两张幻灯片都有各自的 rId 引用
+//	// The final ZIP contains a single image1.png; both slides reference it
+//	// via their own local rIds.
 func (m *MediaManager) AddMediaForSlide(slideIndex int, data []byte, fileName string) (string, *parts.MediaResource) {
-	// 1. 计算内容 Hash
+	// 1. Compute content hash.
 	contentHash := computeHash(data)
 
-	// 2. 检查全局媒体是否已存在
+	// 2. Get or create the global media resource.
 	globalResource, _ := m.getOrCreateGlobalMedia(contentHash, data, fileName)
 
-	// 3. 获取或创建幻灯片媒体索引
+	// 3. Get or create the per-slide media index.
 	slideIndexer := m.getOrCreateSlideIndex(slideIndex)
 
-	// 4. 为该幻灯片生成本地 rId（如果尚未引用此媒体）
+	// 4. Get or create the slide-local rId for this media.
 	localRID, _ := slideIndexer.getOrCreateLocalRID(contentHash, globalResource)
 
 	return localRID, globalResource
 }
 
-// getOrCreateGlobalMedia 获取或创建全局媒体资源
+// getOrCreateGlobalMedia returns the existing global media resource for the given
+// hash, or creates a new one.
 func (m *MediaManager) getOrCreateGlobalMedia(contentHash string, data []byte, fileName string) (*parts.MediaResource, bool) {
-	// 检查是否已存在
+	// Fast path: already exists.
 	if val, ok := m.globalMedia.Load(contentHash); ok {
 		return val.(*parts.MediaResource), true
 	}
 
-	// 创建新的全局媒体资源
+	// Slow path: create under lock.
 	m.writeMu.Lock()
 	defer m.writeMu.Unlock()
 
-	// 双重检查
+	// Double-checked locking.
 	if val, ok := m.globalMedia.Load(contentHash); ok {
 		return val.(*parts.MediaResource), true
 	}
 
-	// 生成媒体文件名（image1.png, image2.png...）
+	// Generate a media file name (image1.png, image2.png, …).
 	mediaFileID := atomic.AddInt64(&m.mediaFileID, 1)
 	ext := filepath.Ext(fileName)
 	mediaFileName := "image" + strconv.FormatInt(mediaFileID, 10) + ext
 
-	// 推断 MIME 类型
+	// Infer MIME type.
 	contentType := inferContentType(mediaFileName)
 
-	// 生成目标路径
+	// Build target path.
 	target := "ppt/media/" + mediaFileName
 
-	// 创建资源
+	// Create the resource.
 	resource := parts.NewMediaResourceFromBytes(mediaFileName, contentType, target, data)
 	resource.SetHash(contentHash)
 
-	// 存储到全局媒体池
+	// Store in the global media pool.
 	m.globalMedia.Store(contentHash, resource)
 
-	// 同时更新传统索引（兼容旧代码）
+	// Update the legacy index for backward compatibility.
 	m.byHash.Store(contentHash, contentHash)
 
 	return resource, false
 }
 
-// getOrCreateSlideIndex 获取或创建幻灯片媒体索引
+// getOrCreateSlideIndex returns the existing media index for the given slide, or
+// creates a new one.
 func (m *MediaManager) getOrCreateSlideIndex(slideIndex int) *SlideMediaIndex {
 	if val, ok := m.slideRelations.Load(slideIndex); ok {
 		return val.(*SlideMediaIndex)
@@ -556,7 +564,7 @@ func (m *MediaManager) getOrCreateSlideIndex(slideIndex int) *SlideMediaIndex {
 	m.writeMu.Lock()
 	defer m.writeMu.Unlock()
 
-	// 双重检查
+	// Double-checked locking.
 	if val, ok := m.slideRelations.Load(slideIndex); ok {
 		return val.(*SlideMediaIndex)
 	}
@@ -566,7 +574,7 @@ func (m *MediaManager) getOrCreateSlideIndex(slideIndex int) *SlideMediaIndex {
 	return indexer
 }
 
-// GetSlideMediaIndex 获取幻灯片媒体索引
+// GetSlideMediaIndex returns the media index for the given slide, or nil if none exists.
 func (m *MediaManager) GetSlideMediaIndex(slideIndex int) *SlideMediaIndex {
 	if val, ok := m.slideRelations.Load(slideIndex); ok {
 		return val.(*SlideMediaIndex)
@@ -574,7 +582,7 @@ func (m *MediaManager) GetSlideMediaIndex(slideIndex int) *SlideMediaIndex {
 	return nil
 }
 
-// GetGlobalMediaByHash 根据 Hash 获取全局媒体资源
+// GetGlobalMediaByHash returns the global media resource for the given hash.
 func (m *MediaManager) GetGlobalMediaByHash(hash string) *parts.MediaResource {
 	if val, ok := m.globalMedia.Load(hash); ok {
 		return val.(*parts.MediaResource)
@@ -582,7 +590,7 @@ func (m *MediaManager) GetGlobalMediaByHash(hash string) *parts.MediaResource {
 	return nil
 }
 
-// AllGlobalMedia 返回所有全局媒体资源（去重后的）
+// AllGlobalMedia returns all deduplicated global media resources.
 func (m *MediaManager) AllGlobalMedia() []*parts.MediaResource {
 	result := make([]*parts.MediaResource, 0)
 	m.globalMedia.Range(func(key, value any) bool {
@@ -592,7 +600,7 @@ func (m *MediaManager) AllGlobalMedia() []*parts.MediaResource {
 	return result
 }
 
-// GlobalMediaCount 返回全局媒体资源数量（去重后）
+// GlobalMediaCount returns the number of deduplicated global media resources.
 func (m *MediaManager) GlobalMediaCount() int64 {
 	var count int64
 	m.globalMedia.Range(func(key, value any) bool {
@@ -602,7 +610,7 @@ func (m *MediaManager) GlobalMediaCount() int64 {
 	return count
 }
 
-// SlideCount 返回引用媒体的幻灯片数量
+// SlideCount returns the number of slides that reference at least one media resource.
 func (m *MediaManager) SlideCount() int64 {
 	var count int64
 	m.slideRelations.Range(func(key, value any) bool {
@@ -613,31 +621,32 @@ func (m *MediaManager) SlideCount() int64 {
 }
 
 // ============================================================================
-// SlideMediaIndex 方法
+// SlideMediaIndex methods
 // ============================================================================
 
-// getOrCreateLocalRID 获取或创建本地 rId
+// getOrCreateLocalRID returns the existing slide-local rId for the given hash,
+// or generates a new one.
 func (smi *SlideMediaIndex) getOrCreateLocalRID(contentHash string, resource *parts.MediaResource) (string, bool) {
-	// 检查该幻灯片是否已引用此媒体
+	// Check whether this slide already references the media.
 	if val, ok := smi.hashToLocal.Load(contentHash); ok {
 		return val.(string), true
 	}
 
-	// 生成本地 rId
+	// Generate a new local rId.
 	id := atomic.AddInt64(&smi.nextLocalID, 1)
 	localRID := "rId" + strconv.FormatInt(id, 10)
 
-	// 建立映射
+	// Establish the bidirectional mapping.
 	smi.hashToLocal.Store(contentHash, localRID)
 	smi.localToHash.Store(localRID, contentHash)
 
-	// 设置资源的 rId（这是该幻灯片的本地 rId）
+	// Assign the slide-local rId to the resource.
 	resource.SetRID(localRID)
 
 	return localRID, false
 }
 
-// GetLocalRIDByHash 根据 Hash 获取本地 rId
+// GetLocalRIDByHash returns the slide-local rId for the given content hash.
 func (smi *SlideMediaIndex) GetLocalRIDByHash(hash string) string {
 	if val, ok := smi.hashToLocal.Load(hash); ok {
 		return val.(string)
@@ -645,7 +654,7 @@ func (smi *SlideMediaIndex) GetLocalRIDByHash(hash string) string {
 	return ""
 }
 
-// GetHashByLocalRID 根据本地 rId 获取 Hash
+// GetHashByLocalRID returns the content hash for the given slide-local rId.
 func (smi *SlideMediaIndex) GetHashByLocalRID(localRID string) string {
 	if val, ok := smi.localToHash.Load(localRID); ok {
 		return val.(string)
@@ -653,7 +662,7 @@ func (smi *SlideMediaIndex) GetHashByLocalRID(localRID string) string {
 	return ""
 }
 
-// AllLocalRIDs 返回所有本地 rId
+// AllLocalRIDs returns all slide-local rIDs.
 func (smi *SlideMediaIndex) AllLocalRIDs() []string {
 	result := make([]string, 0)
 	smi.hashToLocal.Range(func(key, value any) bool {
@@ -663,7 +672,7 @@ func (smi *SlideMediaIndex) AllLocalRIDs() []string {
 	return result
 }
 
-// LocalRefCount 返回本地引用数量
+// LocalRefCount returns the number of media references for this slide.
 func (smi *SlideMediaIndex) LocalRefCount() int64 {
 	var count int64
 	smi.hashToLocal.Range(func(key, value any) bool {
@@ -674,53 +683,53 @@ func (smi *SlideMediaIndex) LocalRefCount() int64 {
 }
 
 // ============================================================================
-// 统计与诊断方法
+// Statistics and diagnostics
 // ============================================================================
 
-// DeduplicationStats 去重统计信息
+// DeduplicationStats holds deduplication statistics.
 type DeduplicationStats struct {
-	// 全局媒体数量（实际存储）
+	// GlobalMediaCount is the number of unique media resources actually stored.
 	GlobalMediaCount int64
 
-	// 总引用次数（所有幻灯片的引用总和）
+	// TotalReferences is the total number of references across all slides.
 	TotalReferences int64
 
-	// 幻灯片数量
+	// SlideCount is the number of slides that reference media.
 	SlideCount int64
 
-	// 节省的存储空间（字节）
+	// SavedBytes is the estimated number of bytes saved by deduplication.
 	SavedBytes int64
 
-	// 去重率（0.0 - 1.0）
+	// DeduplicationRate is the deduplication ratio (0.0 – 1.0).
 	DeduplicationRate float64
 }
 
-// GetDeduplicationStats 获取去重统计信息
+// GetDeduplicationStats returns deduplication statistics.
 func (m *MediaManager) GetDeduplicationStats() DeduplicationStats {
 	stats := DeduplicationStats{}
 
-	// 统计全局媒体数量
+	// Count global media resources.
 	stats.GlobalMediaCount = m.GlobalMediaCount()
 
-	// 统计幻灯片数量
+	// Count slides.
 	stats.SlideCount = m.SlideCount()
 
-	// 统计总引用次数
+	// Count total references.
 	m.slideRelations.Range(func(key, value any) bool {
 		smi := value.(*SlideMediaIndex)
 		stats.TotalReferences += smi.LocalRefCount()
 		return true
 	})
 
-	// 计算去重率
+	// Compute deduplication rate.
 	if stats.TotalReferences > 0 {
 		stats.DeduplicationRate = 1.0 - float64(stats.GlobalMediaCount)/float64(stats.TotalReferences)
 	}
 
-	// 计算节省的字节数
+	// Compute bytes saved.
 	m.globalMedia.Range(func(key, value any) bool {
 		res := value.(*parts.MediaResource)
-		// 统计该媒体被引用的次数
+		// Count how many slides reference this media resource.
 		refCount := int64(0)
 		m.slideRelations.Range(func(k, v any) bool {
 			smi := v.(*SlideMediaIndex)

@@ -1,4 +1,4 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
+// Package pptx provides a high-level API for authoring PPTX files.
 package pptx
 
 import (
@@ -11,56 +11,57 @@ import (
 )
 
 // ============================================================================
-// SlideContext - 组件渲染上下文
+// SlideContext — component rendering context
 // ============================================================================
 //
-// SlideContext 是派给组件的"特派员"，提供组件调用的"有限特权"后门。
+// SlideContext is the "delegate" passed to a component, giving it limited but
+// privileged access to slide-level resources.
 //
-// 核心职责：
-// 1. 分配绝对不冲突的形状 ID
-// 2. 管理媒体资源（图片、音频、视频）
-// 3. 管理图表 XML 并返回关系 ID
-// 4. 将组件生成的 XML 结构挂载到幻灯片
+// Core responsibilities:
+// 1. Allocate collision-free shape IDs.
+// 2. Manage media resources (images, audio, video).
+// 3. Manage chart XML and return the corresponding relationship ID.
+// 4. Mount the XML structures produced by the component onto the slide.
 //
-// 使用示例：
+// Usage example:
 //
 //	func (c *MyComponent) Render(ctx *SlideContext) error {
-//		// 1. 分配形状 ID
+//		// 1. allocate a shape ID
 //		id := ctx.NextShapeID()
 //
-//		// 2. 添加图片并获取 rId
+//		// 2. add an image and obtain its relationship ID
 //		rId, err := ctx.AddMedia(imageBytes, "image.png")
 //		if err != nil {
 //			return err
 //		}
 //
-//		// 3. 构建形状 XML
+//		// 3. build the shape XML
 //		sp := &parts.XSp{...}
 //
-//		// 4. 挂载到幻灯片
+//		// 4. mount it onto the slide
 //		ctx.AppendShape(sp)
 //		return nil
 //	}
 //
 // ============================================================================
 
-// SlideContext 幻灯片渲染上下文
-// 提供组件渲染所需的资源和能力
+// SlideContext carries the resources and capabilities a component needs to
+// render itself onto a slide.
 type SlideContext struct {
-	// 关联的幻灯片
+	// the slide this context belongs to
 	slide *Slide
 
-	// 形状 ID 缓存（已分配的 ID）
+	// shape IDs allocated via this context
 	allocatedIDs map[uint32]bool
 
-	// 关系 ID 缓存
+	// relationship IDs allocated via this context
 	allocatedRIDs map[string]bool
 
-	// 并发安全
+	// concurrency guard
 	mu sync.RWMutex
 }
 
-// NewSlideContext 创建幻灯片上下文
+// NewSlideContext creates a SlideContext for the given slide.
 func NewSlideContext(s *Slide) *SlideContext {
 	return &SlideContext{
 		slide:         s,
@@ -70,23 +71,22 @@ func NewSlideContext(s *Slide) *SlideContext {
 }
 
 // ============================================================================
-// 形状 ID 管理
+// Shape ID management
 // ============================================================================
 
-// NextShapeID 分配下一个形状 ID
-// 返回绝对不冲突的形状 ID（线程安全，使用原子操作）
+// NextShapeID allocates and returns the next collision-free shape ID.
+// Safe for concurrent use; uses an atomic increment.
 func (ctx *SlideContext) NextShapeID() uint32 {
-	// 使用原子操作分配 ID，保证并发安全
-	// Add(1) 会以原子操作的方式将值 +1，并返回相加后的新值
+	// Add(1) atomically increments the counter and returns the new value.
 	return ctx.slide.shapeIDCounter.Add(1)
 }
 
-// CurrentShapeID 返回当前形状 ID（最后分配的）
+// CurrentShapeID returns the most recently allocated shape ID.
 func (ctx *SlideContext) CurrentShapeID() uint32 {
 	return ctx.slide.shapeIDCounter.Load()
 }
 
-// AllocateShapeIDBatch 批量分配形状 ID
+// AllocateShapeIDBatch allocates a batch of shape IDs at once.
 func (ctx *SlideContext) AllocateShapeIDBatch(count int) []uint32 {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -98,7 +98,8 @@ func (ctx *SlideContext) AllocateShapeIDBatch(count int) []uint32 {
 	return ids
 }
 
-// IsShapeIDAllocated 检查形状 ID 是否已分配
+// IsShapeIDAllocated reports whether the given shape ID has been allocated
+// through this context.
 func (ctx *SlideContext) IsShapeIDAllocated(id uint32) bool {
 	ctx.mu.RLock()
 	defer ctx.mu.RUnlock()
@@ -106,98 +107,95 @@ func (ctx *SlideContext) IsShapeIDAllocated(id uint32) bool {
 }
 
 // ============================================================================
-// 媒体资源管理
+// Media resource management
 // ============================================================================
 
-// AddMedia 添加媒体资源（图片、音频、视频）
-// data: 媒体数据
-// fileName: 文件名（用于推断 MIME 类型）
-// 返回: 关系 ID 和错误
+// AddMedia adds a media resource (image, audio, or video) to the slide.
+// data is the raw bytes and fileName is used to infer the MIME type.
+// Returns the relationship ID and any error.
 func (ctx *SlideContext) AddMedia(data []byte, fileName string) (string, error) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 
-	// 使用 MediaManager 添加媒体
+	// add the media via MediaManager
 	_, resource := ctx.slide.mediaManager.AddMediaAuto(fileName, data)
 	if resource == nil {
-		return "", fmt.Errorf("添加媒体资源失败")
+		return "", fmt.Errorf("failed to add media resource")
 	}
 
-	// 获取目标 URI
+	// obtain the target URI
 	targetURI := resource.Target()
 
-	// 添加关系到幻灯片
+	// register the relationship on the slide
 	slideRID := ctx.slide.part.AddImageRel(targetURI)
 	ctx.allocatedRIDs[slideRID] = true
 
 	return slideRID, nil
 }
 
-// AddMediaWithMIME 添加媒体资源（指定 MIME 类型）
+// AddMediaWithMIME adds a media resource with an explicit MIME type.
 func (ctx *SlideContext) AddMediaWithMIME(data []byte, fileName, mimeType string) (string, error) {
-	// 暂时使用 AddMedia，后续可以扩展支持指定 MIME 类型
+	// currently delegates to AddMedia; can be extended to honour mimeType
 	return ctx.AddMedia(data, fileName)
 }
 
-// AddImage 添加图片资源（AddMedia 的别名，语义更清晰）
+// AddImage adds an image resource. It is an alias for AddMedia with clearer
+// semantics.
 func (ctx *SlideContext) AddImage(data []byte, fileName string) (string, error) {
 	return ctx.AddMedia(data, fileName)
 }
 
-// AddVideo 添加视频资源
+// AddVideo adds a video resource.
 func (ctx *SlideContext) AddVideo(data []byte, fileName string) (string, error) {
 	return ctx.AddMedia(data, fileName)
 }
 
-// AddAudio 添加音频资源
+// AddAudio adds an audio resource.
 func (ctx *SlideContext) AddAudio(data []byte, fileName string) (string, error) {
 	return ctx.AddMedia(data, fileName)
 }
 
 // ============================================================================
-// 图表管理
+// Chart management
 // ============================================================================
 
-// AddChartXML 添加图表 XML
-// chartXML: 图表 XML 数据
-// 返回: 关系 ID 和错误
+// AddChartXML adds a chart part from raw XML bytes.
+// Returns the relationship ID and any error.
 //
-// 这是路线 C 的实现：组件塞入图表 XML，Context 负责写入底层的 ChartPart 并返回 rId
+// This implements the "route C" pattern: the component supplies the chart XML;
+// SlideContext writes a ChartPart into the OPC package and returns the rId.
 func (ctx *SlideContext) AddChartXML(chartXML []byte) (string, error) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 
-	// 获取 Presentation 引用
+	// obtain a reference to the Presentation
 	pres := ctx.slide.presentation
 
-	// 分配图表编号
+	// allocate a chart number
 	chartNum := int(atomic.AddInt32(&pres.chartCounter, 1))
 
-	// 创建图表部件
+	// create the chart part
 	chartPart := parts.NewChartPart(chartNum)
 	chartPart.SetRawXML(chartXML)
 
-	// 添加到 OPC 包
+	// add the part to the OPC package
 	chartURI := chartPart.PartURI()
-	chartBlob := []byte(chartPart.Template()) // 获取 XML 内容
+	chartBlob := []byte(chartPart.Template()) // get the XML content
 	part := opc.NewPart(chartURI, opc.ContentTypeChart, chartBlob)
 	if err := pres.pkg.AddPart(part); err != nil {
-		return "", fmt.Errorf("添加图表部件失败: %w", err)
+		return "", fmt.Errorf("adding chart part: %w", err)
 	}
 
-	// 添加关系到幻灯片
+	// register the relationship on the slide
 	chartRelID := ctx.slide.part.AddChartRel(chartURI.RelPathFrom(ctx.slide.part.PartURI()))
 	ctx.allocatedRIDs[chartRelID] = true
 
 	return chartRelID, nil
 }
 
-// AddChart 添加图表（使用模板）
-// chartType: 图表类型
-// data: 图表数据
-// 返回: 关系 ID 和错误
+// AddChart adds a chart part using a template and the provided data map.
+// Returns the relationship ID and any error.
 func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]interface{}) (string, error) {
-	// 创建图表部件
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
 
@@ -206,20 +204,20 @@ func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]int
 
 	chartPart := parts.NewChartPartWithType(chartNum, chartType)
 
-	// 替换占位符
+	// substitute placeholders
 	for key, value := range data {
 		chartPart.ReplacePlaceholder(key, fmt.Sprint(value))
 	}
 
-	// 添加到 OPC 包
+	// add the part to the OPC package
 	chartURI := chartPart.PartURI()
 	chartBlob := []byte(chartPart.Template())
 	part := opc.NewPart(chartURI, opc.ContentTypeChart, chartBlob)
 	if err := pres.pkg.AddPart(part); err != nil {
-		return "", fmt.Errorf("添加图表部件失败: %w", err)
+		return "", fmt.Errorf("adding chart part: %w", err)
 	}
 
-	// 添加关系
+	// register the relationship
 	chartRelID := ctx.slide.part.AddChartRel(chartURI.RelPathFrom(ctx.slide.part.PartURI()))
 	ctx.allocatedRIDs[chartRelID] = true
 
@@ -227,11 +225,11 @@ func (ctx *SlideContext) AddChart(chartType parts.ChartType, data map[string]int
 }
 
 // ============================================================================
-// 形状挂载
+// Shape mounting
 // ============================================================================
 
-// AppendShape 将形状追加到幻灯片
-// shape: 形状结构体（*parts.XSp, *parts.XPicture, *parts.XGraphicFrame 等）
+// AppendShape appends a shape to the slide.
+// shape may be *parts.XSp, *parts.XPicture, *parts.XGraphicFrame, etc.
 func (ctx *SlideContext) AppendShape(shape interface{}) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -239,7 +237,7 @@ func (ctx *SlideContext) AppendShape(shape interface{}) {
 	ctx.slide.part.AppendShapeChild(shape)
 }
 
-// AppendShapes 批量追加形状
+// AppendShapes appends multiple shapes to the slide in one call.
 func (ctx *SlideContext) AppendShapes(shapes ...interface{}) {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -250,10 +248,10 @@ func (ctx *SlideContext) AppendShapes(shapes ...interface{}) {
 }
 
 // ============================================================================
-// 关系管理
+// Relationship management
 // ============================================================================
 
-// AddImageRel 添加图片关系
+// AddImageRel adds an image relationship and returns its relationship ID.
 func (ctx *SlideContext) AddImageRel(targetURI string) string {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -263,7 +261,7 @@ func (ctx *SlideContext) AddImageRel(targetURI string) string {
 	return rID
 }
 
-// AddMediaRel 添加媒体关系
+// AddMediaRel adds a media relationship and returns its relationship ID.
 func (ctx *SlideContext) AddMediaRel(targetURI string) string {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -273,7 +271,7 @@ func (ctx *SlideContext) AddMediaRel(targetURI string) string {
 	return rID
 }
 
-// AddChartRel 添加图表关系
+// AddChartRel adds a chart relationship and returns its relationship ID.
 func (ctx *SlideContext) AddChartRel(targetURI string) string {
 	ctx.mu.Lock()
 	defer ctx.mu.Unlock()
@@ -283,7 +281,8 @@ func (ctx *SlideContext) AddChartRel(targetURI string) string {
 	return rID
 }
 
-// HasRelationship 检查关系是否存在
+// HasRelationship reports whether the given relationship ID was allocated
+// through this context.
 func (ctx *SlideContext) HasRelationship(rID string) bool {
 	ctx.mu.RLock()
 	defer ctx.mu.RUnlock()
@@ -291,48 +290,48 @@ func (ctx *SlideContext) HasRelationship(rID string) bool {
 }
 
 // ============================================================================
-// 幻灯片信息访问
+// Slide information accessors
 // ============================================================================
 
-// SlideIndex 返回幻灯片索引
+// SlideIndex returns the zero-based index of the slide.
 func (ctx *SlideContext) SlideIndex() int {
 	return ctx.slide.Index()
 }
 
-// SlideSize 返回幻灯片尺寸 (cx, cy in EMU)
+// SlideSize returns the slide dimensions in EMU (cx, cy).
 func (ctx *SlideContext) SlideSize() (cx, cy int) {
 	return ctx.slide.presentation.SlideSize()
 }
 
-// SlidePart 返回底层 SlidePart（高级用法）
+// SlidePart returns the underlying SlidePart (advanced use).
 func (ctx *SlideContext) SlidePart() *parts.SlidePart {
 	return ctx.slide.part
 }
 
-// Presentation 返回所属演示文稿（高级用法）
+// Presentation returns the owning Presentation (advanced use).
 func (ctx *SlideContext) Presentation() *Presentation {
 	return ctx.slide.presentation
 }
 
 // ============================================================================
-// 单位转换方法 - 默认单位: px
+// Unit conversion helpers — default unit: px
 // ============================================================================
 
-// PxToEMU 将像素转换为 EMU（基于 96 DPI）
+// PxToEMU converts pixels to EMU at 96 DPI.
 func (ctx *SlideContext) PxToEMU(px int) int {
 	return PxToEMU(px)
 }
 
-// EMUToPx 将 EMU 转换为像素（基于 96 DPI）
+// EMUToPx converts EMU to pixels at 96 DPI.
 func (ctx *SlideContext) EMUToPx(emu int) int {
 	return EMUToPx(emu)
 }
 
 // ============================================================================
-// 批量操作
+// Batch operations
 // ============================================================================
 
-// RenderComponents 批量渲染组件
+// RenderComponents renders each component in order, stopping on the first error.
 func (ctx *SlideContext) RenderComponents(components ...Component) error {
 	for i, c := range components {
 		if err := c.Render(ctx); err != nil {

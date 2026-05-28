@@ -10,19 +10,19 @@ import (
 	"sync"
 )
 
-// StreamPackage 流式 OPC 包 - 支持懒加载和流式写入
+// StreamPackage is a streaming OPC package that supports lazy loading and streaming writes.
 type StreamPackage struct {
 	parts          map[string]*StreamPart // URI -> StreamPart
-	partOrder      []string               // 保持插入顺序
+	partOrder      []string               // Preserves insertion order.
 	relationships  *Relationships
 	contentTypes   *ContentTypes
 	coreProperties *CoreProperties
 	zipReader      *zip.Reader
-	zipFile        *os.File // 保持文件打开以便懒加载
+	zipFile        *os.File // Kept open to support lazy loading.
 	mu             sync.RWMutex
 }
 
-// NewStreamPackage 创建新的流式包
+// NewStreamPackage creates a new, empty streaming package.
 func NewStreamPackage() *StreamPackage {
 	return &StreamPackage{
 		parts:         make(map[string]*StreamPart),
@@ -32,8 +32,8 @@ func NewStreamPackage() *StreamPackage {
 	}
 }
 
-// OpenStream 流式打开 OPC 包
-// 文件句柄会保持打开状态以支持懒加载
+// OpenStream opens an OPC package from a file path using streaming (lazy loading).
+// The file handle remains open to support on-demand part loading.
 func OpenStream(path string) (*StreamPackage, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -61,7 +61,7 @@ func OpenStream(path string) (*StreamPackage, error) {
 		zipFile:       file,
 	}
 
-	// 只加载元数据，不加载实际内容
+	// Load only metadata; do not read part content yet.
 	if err := pkg.loadContentTypes(); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("failed to load content types: %w", err)
@@ -80,8 +80,8 @@ func OpenStream(path string) (*StreamPackage, error) {
 	return pkg, nil
 }
 
-// OpenStreamFromReader 从 io.ReaderAt 流式打开
-// 注意：调用者负责保持 ReaderAt 的有效性
+// OpenStreamFromReader opens an OPC package from an io.ReaderAt using streaming.
+// Note: the caller is responsible for keeping the ReaderAt valid for the lifetime of the package.
 func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
@@ -111,10 +111,10 @@ func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
 	return pkg, nil
 }
 
-// loadContentTypes 加载内容类型（必须立即加载）
+// loadContentTypes loads content types (must be done eagerly).
 func (p *StreamPackage) loadContentTypes() error {
 	for _, f := range p.zipReader.File {
-		// 规范化路径
+		// Normalise path.
 		normalizedName := NormalizeZipPath(f.Name)
 		if normalizedName == PathContentTypes {
 			rc, err := f.Open()
@@ -132,13 +132,13 @@ func (p *StreamPackage) loadContentTypes() error {
 	return fmt.Errorf("[Content_Types].xml not found")
 }
 
-// loadPartMetadata 只加载部件元数据，不加载内容
+// loadPartMetadata loads only part metadata, deferring content loading.
 func (p *StreamPackage) loadPartMetadata() error {
 	for _, f := range p.zipReader.File {
-		// 规范化路径
+		// Normalise path.
 		normalizedName := NormalizeZipPath(f.Name)
 
-		// 跳过特殊文件
+		// Skip special files.
 		if normalizedName == PathContentTypes {
 			continue
 		}
@@ -152,7 +152,7 @@ func (p *StreamPackage) loadPartMetadata() error {
 		uri := NewPackURI("/" + normalizedName)
 		contentType := p.contentTypes.GetContentType(uri)
 
-		// 创建流式部件，使用 ZipFileSource 实现懒加载
+		// Create a streaming part backed by a ZipFileSource for lazy loading.
 		part := NewStreamPart(uri, contentType, NewZipFileSource(f))
 
 		p.parts[uri.URI()] = part
@@ -162,10 +162,10 @@ func (p *StreamPackage) loadPartMetadata() error {
 	return nil
 }
 
-// loadRelationships 加载所有关系
+// loadRelationships loads all relationship files.
 func (p *StreamPackage) loadRelationships() error {
 	for _, f := range p.zipReader.File {
-		// 规范化路径
+		// Normalise path.
 		normalizedName := NormalizeZipPath(f.Name)
 
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {
@@ -203,21 +203,21 @@ func (p *StreamPackage) loadRelationships() error {
 	return nil
 }
 
-// ===== 部件访问 =====
+// ===== Part access =====
 
-// GetPart 获取部件（内容按需加载）
+// GetPart returns the part with the given URI (content is loaded on demand).
 func (p *StreamPackage) GetPart(uri *PackURI) *StreamPart {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.parts[uri.URI()]
 }
 
-// GetPartByStr 根据字符串 URI 获取部件
+// GetPartByStr returns the part with the given string URI.
 func (p *StreamPackage) GetPartByStr(uri string) *StreamPart {
 	return p.GetPart(NewPackURI(uri))
 }
 
-// ContainsPart 检查部件是否存在
+// ContainsPart reports whether a part with the given URI exists.
 func (p *StreamPackage) ContainsPart(uri *PackURI) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -225,7 +225,7 @@ func (p *StreamPackage) ContainsPart(uri *PackURI) bool {
 	return exists
 }
 
-// AllParts 返回所有部件
+// AllParts returns all parts in insertion order.
 func (p *StreamPackage) AllParts() []*StreamPart {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -237,14 +237,14 @@ func (p *StreamPackage) AllParts() []*StreamPart {
 	return result
 }
 
-// PartCount 返回部件数量
+// PartCount returns the number of parts.
 func (p *StreamPackage) PartCount() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return len(p.parts)
 }
 
-// PartURIs 返回所有部件 URI
+// PartURIs returns all part URIs in insertion order.
 func (p *StreamPackage) PartURIs() []*PackURI {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -256,7 +256,7 @@ func (p *StreamPackage) PartURIs() []*PackURI {
 	return result
 }
 
-// GetPartsByType 根据内容类型获取部件
+// GetPartsByType returns all parts with the given content type.
 func (p *StreamPackage) GetPartsByType(contentType string) []*StreamPart {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -270,9 +270,9 @@ func (p *StreamPackage) GetPartsByType(contentType string) []*StreamPart {
 	return result
 }
 
-// ===== 部件管理 =====
+// ===== Part management =====
 
-// AddPart 添加流式部件
+// AddPart adds a streaming part to the package.
 func (p *StreamPackage) AddPart(part *StreamPart) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -287,7 +287,7 @@ func (p *StreamPackage) AddPart(part *StreamPart) error {
 	return nil
 }
 
-// CreateStreamPart 创建并添加流式部件
+// CreateStreamPart creates and adds a streaming part.
 func (p *StreamPackage) CreateStreamPart(uri *PackURI, contentType string, source PartSource) (*StreamPart, error) {
 	part := NewStreamPart(uri, contentType, source)
 	if err := p.AddPart(part); err != nil {
@@ -296,17 +296,17 @@ func (p *StreamPackage) CreateStreamPart(uri *PackURI, contentType string, sourc
 	return part, nil
 }
 
-// CreatePartFromBytes 从字节创建部件（立即加载到内存）
+// CreatePartFromBytes creates a part from a byte slice, loading it immediately into memory.
 func (p *StreamPackage) CreatePartFromBytes(uri *PackURI, contentType string, data []byte) (*StreamPart, error) {
 	part := NewStreamPart(uri, contentType, NewBytesSource(data))
-	part.SetBlob(data) // 立即加载到内存
+	part.SetBlob(data) // Load into memory immediately.
 	if err := p.AddPart(part); err != nil {
 		return nil, err
 	}
 	return part, nil
 }
 
-// RemovePart 移除部件
+// RemovePart removes a part from the package.
 func (p *StreamPackage) RemovePart(uri *PackURI) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -318,7 +318,7 @@ func (p *StreamPackage) RemovePart(uri *PackURI) error {
 
 	delete(p.parts, key)
 
-	// 从 order 中移除
+	// Remove from the order slice.
 	for i, u := range p.partOrder {
 		if u == key {
 			p.partOrder = append(p.partOrder[:i], p.partOrder[i+1:]...)
@@ -329,19 +329,19 @@ func (p *StreamPackage) RemovePart(uri *PackURI) error {
 	return nil
 }
 
-// ===== 关系管理 =====
+// ===== Relationship management =====
 
-// Relationships 返回包级别关系
+// Relationships returns the package-level relationships.
 func (p *StreamPackage) Relationships() *Relationships {
 	return p.relationships
 }
 
-// AddRelationship 添加包级别关系
+// AddRelationship adds a package-level relationship.
 func (p *StreamPackage) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error) {
 	return p.relationships.AddNew(relType, targetURI, isExternal)
 }
 
-// GetPartByRelType 通过关系类型获取目标部件
+// GetPartByRelType returns the target part of the first relationship of the given type.
 func (p *StreamPackage) GetPartByRelType(relType string) *StreamPart {
 	rels := p.relationships.GetByType(relType)
 	if len(rels) == 0 {
@@ -350,28 +350,28 @@ func (p *StreamPackage) GetPartByRelType(relType string) *StreamPart {
 	return p.parts[rels[0].TargetURI().URI()]
 }
 
-// ===== 流式保存 =====
+// ===== Streaming save =====
 
-// StreamSave 流式保存到 io.Writer
+// StreamSave writes the package as a ZIP archive to w using streaming.
 func (p *StreamPackage) StreamSave(w io.Writer) error {
 	sw := NewStreamingZipWriter(w)
 
-	// 1. 写入 [Content_Types].xml（流式）
+	// 1. Write [Content_Types].xml (streaming).
 	if err := p.streamWriteContentTypes(sw); err != nil {
 		return fmt.Errorf("failed to write content types: %w", err)
 	}
 
-	// 2. 写入包级别关系（流式）
+	// 2. Write package-level relationships (streaming).
 	if err := p.streamWritePackageRelationships(sw); err != nil {
 		return fmt.Errorf("failed to write package relationships: %w", err)
 	}
 
-	// 3. 流式写入所有部件
+	// 3. Stream all parts.
 	if err := p.streamWriteParts(sw); err != nil {
 		return fmt.Errorf("failed to write parts: %w", err)
 	}
 
-	// 4. 写入核心属性（如果有）
+	// 4. Write core properties if present.
 	if p.coreProperties != nil {
 		if err := p.streamWriteCoreProperties(sw); err != nil {
 			return fmt.Errorf("failed to write core properties: %w", err)
@@ -381,7 +381,7 @@ func (p *StreamPackage) StreamSave(w io.Writer) error {
 	return sw.Close()
 }
 
-// StreamSaveFile 流式保存到文件
+// StreamSaveFile writes the package to a file using streaming.
 func (p *StreamPackage) StreamSaveFile(path string) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -415,12 +415,12 @@ func (p *StreamPackage) streamWriteParts(sw *StreamingZipWriter) error {
 	for _, uri := range p.partOrder {
 		part := p.parts[uri]
 
-		// 流式写入部件内容
+		// Stream the part content.
 		if err := sw.WriteStreamPart(part); err != nil {
 			return err
 		}
 
-		// 流式写入关系（如果有）
+		// Stream the relationships if any.
 		if part.HasRelationships() {
 			relPath := p.relFilePath(part.PartURI())
 			streamer := NewRelationshipsStreamer(part.Relationships())
@@ -468,33 +468,33 @@ func (p *StreamPackage) updateContentTypes() {
 	}
 }
 
-// ===== 其他方法 =====
+// ===== Other methods =====
 
-// ContentTypes 返回内容类型定义
+// ContentTypes returns the content type definitions.
 func (p *StreamPackage) ContentTypes() *ContentTypes {
 	return p.contentTypes
 }
 
-// CoreProperties 返回核心属性
+// CoreProperties returns the core properties.
 func (p *StreamPackage) CoreProperties() *CoreProperties {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.coreProperties
 }
 
-// SetCoreProperties 设置核心属性
+// SetCoreProperties sets the core properties.
 func (p *StreamPackage) SetCoreProperties(props *CoreProperties) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.coreProperties = props
 }
 
-// Close 关闭包，释放资源
+// Close closes the package and releases its resources.
 func (p *StreamPackage) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 关闭底层文件
+	// Close the underlying file.
 	if p.zipFile != nil {
 		err := p.zipFile.Close()
 		p.zipFile = nil
@@ -504,16 +504,16 @@ func (p *StreamPackage) Close() error {
 	return nil
 }
 
-// ===== 懒加载迭代器 =====
+// ===== Lazy-loading iterator =====
 
-// PartIterator 部件迭代器
+// PartIterator iterates over the parts of a StreamPackage.
 type PartIterator struct {
 	pkg    *StreamPackage
 	index  int
 	filter func(*StreamPart) bool
 }
 
-// NewPartIterator 创建部件迭代器
+// NewPartIterator creates a part iterator for the package.
 func (p *StreamPackage) NewPartIterator() *PartIterator {
 	return &PartIterator{
 		pkg:    p,
@@ -522,7 +522,7 @@ func (p *StreamPackage) NewPartIterator() *PartIterator {
 	}
 }
 
-// FilterByType 按内容类型过滤
+// FilterByType restricts the iterator to parts with the given content type.
 func (it *PartIterator) FilterByType(contentType string) *PartIterator {
 	it.filter = func(part *StreamPart) bool {
 		return part.ContentType() == contentType
@@ -530,7 +530,7 @@ func (it *PartIterator) FilterByType(contentType string) *PartIterator {
 	return it
 }
 
-// Next 移动到下一个部件
+// Next advances to the next matching part and reports whether one was found.
 func (it *PartIterator) Next() bool {
 	it.pkg.mu.RLock()
 	defer it.pkg.mu.RUnlock()
@@ -546,7 +546,7 @@ func (it *PartIterator) Next() bool {
 	return false
 }
 
-// Part 返回当前部件
+// Part returns the current part.
 func (it *PartIterator) Part() *StreamPart {
 	if it.index <= 0 || it.index > len(it.pkg.partOrder) {
 		return nil
@@ -555,7 +555,7 @@ func (it *PartIterator) Part() *StreamPart {
 	return it.pkg.parts[uri]
 }
 
-// Open 打开当前部件的内容流
+// Open opens the content stream of the current part.
 func (it *PartIterator) Open() (io.ReadCloser, error) {
 	part := it.Part()
 	if part == nil {
@@ -564,26 +564,26 @@ func (it *PartIterator) Open() (io.ReadCloser, error) {
 	return part.Open()
 }
 
-// ===== 并发流式保存 =====
+// ===== Concurrent streaming save =====
 
-// ConcurrentStreamSave 使用 goroutine 收集器并发保存
-// workerCount: 并发工作 goroutine 数量
-// bufferSize: channel 缓冲区大小
+// ConcurrentStreamSave saves the package concurrently using a goroutine collector.
+// workerCount controls the number of concurrent worker goroutines.
+// bufferSize controls the channel buffer size.
 func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSize int) error {
-	// 创建并发收集器
+	// Create the concurrent collector.
 	collector := NewConcurrentZipCollector(w, bufferSize)
 	collector.Start()
 
-	// 创建等待组
+	// Create wait group for workers.
 	var wg sync.WaitGroup
 	errChan := make(chan error, workerCount+1)
 
-	// 生产者：提交所有部件到 channel
+	// Producer: submit all parts to the channel.
 	go func() {
 		p.mu.RLock()
 		defer p.mu.RUnlock()
 
-		// 1. 写入 ContentTypes
+		// 1. Write ContentTypes.
 		p.updateContentTypes()
 		ctData, err := p.contentTypes.ToXML()
 		if err != nil {
@@ -598,7 +598,7 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 			return
 		}
 
-		// 2. 写入包级别关系
+		// 2. Write package-level relationships.
 		if p.relationships.Count() > 0 {
 			relData, err := p.relationships.ToXML()
 			if err != nil {
@@ -615,10 +615,10 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 			}
 		}
 
-		// 3. 并发提交部件（使用 worker 池）
+		// 3. Submit parts concurrently using a worker pool.
 		partChan := make(chan *StreamPart, workerCount*2)
 
-		// 启动 worker goroutines 读取部件数据
+		// Start worker goroutines to read part data.
 		for i := 0; i < workerCount; i++ {
 			wg.Add(1)
 			go func() {
@@ -630,7 +630,7 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 						return
 					}
 
-					// 提交部件数据
+					// Submit the part data.
 					if err := collector.Submit(&PartData{
 						URI:         part.PartURI().URI(),
 						Path:        part.PartURI().MemberName(),
@@ -641,7 +641,7 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 						return
 					}
 
-					// 提交关系数据（如果有）
+					// Submit relationship data if present.
 					if part.HasRelationships() {
 						relData, err := part.RelationshipsBlob()
 						if err != nil {
@@ -661,16 +661,16 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 			}()
 		}
 
-		// 分发部件到 worker
+		// Distribute parts to workers.
 		for _, uri := range p.partOrder {
 			partChan <- p.parts[uri]
 		}
 		close(partChan)
 
-		// 等待所有 worker 完成
+		// Wait for all workers to finish.
 		wg.Wait()
 
-		// 4. 写入核心属性（如果有）
+		// 4. Write core properties if present.
 		if p.coreProperties != nil {
 			cpData, err := p.coreProperties.ToXML()
 			if err != nil {
@@ -686,13 +686,13 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 			}
 		}
 
-		// 关闭收集器
+		// Signal that all data has been submitted.
 		if err := collector.Close(); err != nil {
 			errChan <- err
 		}
 	}()
 
-	// 等待完成或错误
+	// Wait for completion or error.
 	select {
 	case err := <-errChan:
 		return err
@@ -701,7 +701,7 @@ func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSiz
 	}
 }
 
-// ConcurrentStreamSaveFile 使用并发方式保存到文件
+// ConcurrentStreamSaveFile saves the package to a file using concurrent streaming.
 func (p *StreamPackage) ConcurrentStreamSaveFile(path string, workerCount, bufferSize int) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -712,28 +712,28 @@ func (p *StreamPackage) ConcurrentStreamSaveFile(path string, workerCount, buffe
 	return p.ConcurrentStreamSave(file, workerCount, bufferSize)
 }
 
-// ===== 资源去重功能 =====
+// ===== Resource deduplication =====
 
-// RegisterMediaWithDedup 注册媒体资源并进行去重
-// 返回：isNew 表示是否为新资源，existingURI 表示已存在资源的 URI
+// RegisterMediaWithDedup registers a media resource and deduplicates it.
+// Returns isNew (true if this is the first registration) and existingURI (the canonical URI).
 func (p *StreamPackage) RegisterMediaWithDedup(uri string, data []byte) (isNew bool, existingURI string) {
 	pool := GetGlobalResourcePool()
 	return pool.Register(uri, data)
 }
 
-// AddMediaPartWithDedup 添加媒体部件并进行去重
-// 如果资源已存在，返回已存在部件的 URI 而不创建新部件
+// AddMediaPartWithDedup adds a media part with deduplication.
+// If the resource already exists, returns the existing part's URI without creating a new part.
 func (p *StreamPackage) AddMediaPartWithDedup(uri *PackURI, contentType string, data []byte) (actualURI *PackURI, isNew bool, err error) {
-	// 检查资源是否已存在
+	// Check whether the resource already exists.
 	pool := GetGlobalResourcePool()
 	isNew, existingURI := pool.Register(uri.URI(), data)
 
 	if !isNew {
-		// 资源已存在，返回已存在的 URI
+		// Resource already registered — return the existing URI.
 		return NewPackURI(existingURI), false, nil
 	}
 
-	// 创建新部件
+	// Create a new part.
 	part, err := p.CreatePartFromBytes(uri, contentType, data)
 	if err != nil {
 		pool.Release(ComputeHash(data))
@@ -743,12 +743,12 @@ func (p *StreamPackage) AddMediaPartWithDedup(uri *PackURI, contentType string, 
 	return part.PartURI(), true, nil
 }
 
-// GetMediaDedupStats 获取媒体资源去重统计
+// GetMediaDedupStats returns deduplication statistics for media resources.
 func (p *StreamPackage) GetMediaDedupStats() (count int, totalSize int64) {
 	return GetGlobalResourcePool().Stats()
 }
 
-// ClearMediaDedupPool 清空媒体资源去重池
+// ClearMediaDedupPool clears the media resource deduplication pool.
 func (p *StreamPackage) ClearMediaDedupPool() {
 	GetGlobalResourcePool().Clear()
 }

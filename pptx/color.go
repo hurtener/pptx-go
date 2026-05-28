@@ -1,4 +1,4 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
+// Package pptx provides a high-level interface for working with PPTX files.
 package pptx
 
 import (
@@ -9,66 +9,66 @@ import (
 )
 
 // ============================================================================
-// 颜色系统 - 颜色映射与验证
+// Color system - color mapping and validation
 // ============================================================================
 //
-// OOXML 颜色规范：
-// 1. 输出格式必须为 6 位十六进制，无 # 前缀（如 "FF0000"）
-// 2. 透明度使用独立标签 <a:alpha val="50000"/>，范围 0-100000
-// 3. 统一输入格式：#RRGGBBAA（8位，最后两位为 alpha）
-//    - #FF0000FF = 100% 不透明红色
-//    - #FF000000 = 0% 完全透明红色
+// OOXML color specification:
+//  1. Output format must be 6-digit hex without a # prefix (e.g. "FF0000").
+//  2. Opacity uses a separate tag: <a:alpha val="50000"/>; range 0-100000.
+//  3. Unified input format: #RRGGBBAA (8 digits; last two digits are alpha).
+//     - #FF0000FF = 100% opaque red
+//     - #FF000000 = 0% fully transparent red
 //
-// PowerPoint 支持两种颜色表示方式：
-// 1. RGB 颜色 (srgbClr) - 直接指定，如 "FF0000" 表示红色
-// 2. 主题颜色 (schemeClr) - 引用主题中的颜色，如 "accent1"
+// PowerPoint supports two color representations:
+//  1. RGB color (srgbClr) - specified directly, e.g. "FF0000" for red.
+//  2. Theme color (schemeClr) - references a theme color, e.g. "accent1".
 //
 // ============================================================================
 
-// Alpha 常量（OOXML 范围：0-100000）
+// Alpha constants (OOXML range: 0-100000).
 const (
-	// AlphaOpaque 完全不透明
+	// AlphaOpaque is fully opaque.
 	AlphaOpaque = 100000
-	// AlphaTransparent 完全透明
+	// AlphaTransparent is fully transparent.
 	AlphaTransparent = 0
-	// AlphaDefault 默认透明度（100%）
+	// AlphaDefault is the default opacity (100%).
 	AlphaDefault = 100000
 )
 
-// ColorType 颜色类型
+// ColorType identifies the kind of color value.
 type ColorType int
 
 const (
-	// ColorTypeRGB RGB 颜色
+	// ColorTypeRGB is a direct RGB color.
 	ColorTypeRGB ColorType = iota
-	// ColorTypeScheme 主题颜色
+	// ColorTypeScheme is a theme (scheme) color.
 	ColorTypeScheme
-	// ColorTypeInvalid 无效颜色
+	// ColorTypeInvalid represents an invalid or unparseable color.
 	ColorTypeInvalid
 )
 
-// Color 颜色结构体
+// Color holds a parsed color value.
 type Color struct {
-	// Type 颜色类型
+	// Type is the color kind.
 	Type ColorType
-	// RGB 十六进制值 (6位，如 "FF0000"，无 # 前缀)
+	// RGB is the 6-digit hex value (e.g. "FF0000", no # prefix).
 	RGB string
-	// Scheme 主题颜色名称 (如 "accent1")
+	// Scheme is the theme color name (e.g. "accent1").
 	Scheme string
-	// Alpha 透明度 (0-100000，OOXML 标准)
-	// 100000 = 100% 不透明，0 = 完全透明
+	// Alpha is the opacity in OOXML units (0-100000).
+	// 100000 = fully opaque, 0 = fully transparent.
 	Alpha int
-	// IsValid 是否有效
+	// IsValid reports whether the color was successfully parsed.
 	IsValid bool
 }
 
 // ============================================================================
-// 预设颜色常量
+// Preset color constants
 // ============================================================================
 
-// 预设颜色常量（6位十六进制，无 # 前缀）
+// Preset colors (6-digit hex, no # prefix).
 var (
-	// 基础颜色
+	// Basic colors.
 	ColorBlack   = RGBColor("000000")
 	ColorWhite   = RGBColor("FFFFFF")
 	ColorRed     = RGBColor("FF0000")
@@ -78,10 +78,10 @@ var (
 	ColorCyan    = RGBColor("00FFFF")
 	ColorMagenta = RGBColor("FF00FF")
 
-	// 透明色
+	// Transparent color.
 	ColorTransparent = Color{Type: ColorTypeRGB, RGB: "000000", Alpha: AlphaTransparent, IsValid: true}
 
-	// 常用 UI 颜色
+	// Common UI colors.
 	ColorGray      = RGBColor("808080")
 	ColorLightGray = RGBColor("C0C0C0")
 	ColorDarkGray  = RGBColor("404040")
@@ -100,36 +100,36 @@ var (
 )
 
 // ============================================================================
-// 主题颜色常量
+// Theme color constants
 // ============================================================================
 
-// 主题颜色名称常量
+// Theme color name constants.
 const (
-	// 背景色
-	SchemeBg1 = "bg1" // 背景色 1 (通常是白色或浅色)
-	SchemeBg2 = "bg2" // 背景色 2
-	SchemeFg1 = "fg1" // 前景色/文本色 1 (通常是黑色或深色)
-	SchemeFg2 = "fg2" // 前景色/文本色 2
+	// Background colors.
+	SchemeBg1 = "bg1" // background color 1 (typically white or light)
+	SchemeBg2 = "bg2" // background color 2
+	SchemeFg1 = "fg1" // foreground/text color 1 (typically black or dark)
+	SchemeFg2 = "fg2" // foreground/text color 2
 
-	// 强调色
-	SchemeAccent1 = "accent1" // 强调色 1
-	SchemeAccent2 = "accent2" // 强调色 2
-	SchemeAccent3 = "accent3" // 强调色 3
-	SchemeAccent4 = "accent4" // 强调色 4
-	SchemeAccent5 = "accent5" // 强调色 5
-	SchemeAccent6 = "accent6" // 强调色 6
+	// Accent colors.
+	SchemeAccent1 = "accent1" // accent color 1
+	SchemeAccent2 = "accent2" // accent color 2
+	SchemeAccent3 = "accent3" // accent color 3
+	SchemeAccent4 = "accent4" // accent color 4
+	SchemeAccent5 = "accent5" // accent color 5
+	SchemeAccent6 = "accent6" // accent color 6
 
-	// 超链接色
-	SchemeHlink    = "hlink"    // 超链接颜色
-	SchemeFolHlink = "folHlink" // 已访问超链接颜色
+	// Hyperlink colors.
+	SchemeHlink    = "hlink"    // hyperlink color
+	SchemeFolHlink = "folHlink" // followed hyperlink color
 
-	// 特殊色
-	SchemePhClr = "phClr" // 幻灯片标题颜色
-	SchemeTx1   = "tx1"   // 文本色 1
-	SchemeTx2   = "tx2"   // 文本色 2
+	// Special colors.
+	SchemePhClr = "phClr" // slide title color (placeholder color)
+	SchemeTx1   = "tx1"   // text color 1
+	SchemeTx2   = "tx2"   // text color 2
 )
 
-// 主题颜色列表
+// SchemeColors is the list of all valid theme color names.
 var SchemeColors = []string{
 	SchemeBg1, SchemeBg2, SchemeFg1, SchemeFg2,
 	SchemeAccent1, SchemeAccent2, SchemeAccent3, SchemeAccent4, SchemeAccent5, SchemeAccent6,
@@ -138,35 +138,34 @@ var SchemeColors = []string{
 }
 
 // ============================================================================
-// 颜色解析函数
+// Color parsing
 // ============================================================================
 
-// hexColorRegex 十六进制颜色正则（支持 6 位和 8 位）
+// hexColorRegex matches 6- or 8-digit hex colors (with or without #).
 var hexColorRegex = regexp.MustCompile(`^#?([0-9A-Fa-f]{6})([0-9A-Fa-f]{2})?$`)
 
-// hexColor3Regex 3位十六进制颜色正则
+// hexColor3Regex matches 3-digit hex colors (with or without #).
 var hexColor3Regex = regexp.MustCompile(`^#?([0-9A-Fa-f]{3})$`)
 
-// rgbColorRegex RGB 颜色正则
+// rgbColorRegex matches rgb(r, g, b) notation.
 var rgbColorRegex = regexp.MustCompile(`^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$`)
 
-// rgbaColorRegex RGBA 颜色正则
+// rgbaColorRegex matches rgba(r, g, b, a) notation.
 var rgbaColorRegex = regexp.MustCompile(`^rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$`)
 
-// ParseColor 解析颜色字符串
-// 支持格式：
-// - "#FF0000" 或 "FF0000" (6位十六进制)
-// - "#FF0000FF" (8位十六进制，最后两位为 alpha)
-// - "rgb(255, 0, 0)" (RGB)
-// - "rgba(255, 0, 0, 0.5)" (RGBA，alpha 0-1)
-// - "accent1", "bg1" 等主题颜色名称
+// ParseColor parses a color string. Supported formats:
+//   - "#FF0000" or "FF0000" (6-digit hex)
+//   - "#FF0000FF" (8-digit hex; last two digits are alpha)
+//   - "rgb(255, 0, 0)" (RGB)
+//   - "rgba(255, 0, 0, 0.5)" (RGBA; alpha 0-1)
+//   - "accent1", "bg1", etc. (theme color names)
 func ParseColor(s string) Color {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return Color{Type: ColorTypeInvalid, IsValid: false}
 	}
 
-	// 尝试解析 8 位十六进制颜色（#RRGGBBAA）
+	// Try 8-digit hex (#RRGGBBAA).
 	if matches := hexColorRegex.FindStringSubmatch(s); matches != nil {
 		hex := strings.ToUpper(matches[1])
 		alpha := AlphaDefault
@@ -181,7 +180,7 @@ func ParseColor(s string) Color {
 		}
 	}
 
-	// 尝试解析 3 位十六进制颜色
+	// Try 3-digit hex.
 	if matches := hexColor3Regex.FindStringSubmatch(s); matches != nil {
 		hex3 := matches[1]
 		hex := strings.ToUpper(string(hex3[0]) + string(hex3[0]) + string(hex3[1]) + string(hex3[1]) + string(hex3[2]) + string(hex3[2]))
@@ -193,7 +192,7 @@ func ParseColor(s string) Color {
 		}
 	}
 
-	// 尝试解析 RGBA 颜色
+	// Try rgba(…).
 	if matches := rgbaColorRegex.FindStringSubmatch(s); matches != nil {
 		r, _ := strconv.Atoi(matches[1])
 		g, _ := strconv.Atoi(matches[2])
@@ -203,7 +202,7 @@ func ParseColor(s string) Color {
 		return ColorFromRGBA(r, g, b, alpha)
 	}
 
-	// 尝试解析 RGB 颜色
+	// Try rgb(…).
 	if matches := rgbColorRegex.FindStringSubmatch(s); matches != nil {
 		r, _ := strconv.Atoi(matches[1])
 		g, _ := strconv.Atoi(matches[2])
@@ -211,7 +210,7 @@ func ParseColor(s string) Color {
 		return ColorFromRGB(r, g, b)
 	}
 
-	// 尝试解析主题颜色
+	// Try theme color name.
 	if IsSchemeColor(s) {
 		return SchemeColor(s)
 	}
@@ -219,14 +218,14 @@ func ParseColor(s string) Color {
 	return Color{Type: ColorTypeInvalid, IsValid: false}
 }
 
-// hexToAlpha 将 2 位十六进制转换为 OOXML alpha 值 (0-100000)
+// hexToAlpha converts a 2-digit hex string to an OOXML alpha value (0-100000).
 func hexToAlpha(hex string) int {
 	val, _ := strconv.ParseInt(hex, 16, 64)
-	// 0x00 -> 0 (透明), 0xFF -> 100000 (不透明)
+	// 0x00 -> 0 (transparent), 0xFF -> 100000 (opaque)
 	return int(float64(val) / 255.0 * float64(AlphaOpaque))
 }
 
-// alphaToHex 将 OOXML alpha 值转换为 2 位十六进制
+// alphaToHex converts an OOXML alpha value to a 2-digit uppercase hex string.
 func alphaToHex(alpha int) string {
 	if alpha < 0 {
 		alpha = 0
@@ -239,15 +238,15 @@ func alphaToHex(alpha int) string {
 }
 
 // ============================================================================
-// 颜色创建函数
+// Color constructors
 // ============================================================================
 
-// RGBColor 创建 RGB 颜色（无 alpha）
+// RGBColor creates an opaque RGB color from a 6-digit hex string.
 func RGBColor(hex string) Color {
 	hex = strings.ToUpper(strings.TrimSpace(hex))
 	hex = strings.TrimPrefix(hex, "#")
 
-	// 验证十六进制格式
+	// Validate hex format.
 	if len(hex) != 6 {
 		return Color{Type: ColorTypeInvalid, IsValid: false}
 	}
@@ -263,9 +262,8 @@ func RGBColor(hex string) Color {
 	}
 }
 
-// RGBAColor 创建带 alpha 的 RGB 颜色
-// hex: 6位十六进制 RGB
-// alpha: 0-100000 (OOXML 标准)
+// RGBAColor creates an RGB color with the given opacity.
+// hex is a 6-digit hex string; alpha is in OOXML units (0-100000).
 func RGBAColor(hex string, alpha int) Color {
 	c := RGBColor(hex)
 	if !c.IsValid {
@@ -281,7 +279,7 @@ func RGBAColor(hex string, alpha int) Color {
 	return c
 }
 
-// ColorFromRGB 从 RGB 值创建颜色
+// ColorFromRGB creates an opaque color from integer R, G, B components (0-255).
 func ColorFromRGB(r, g, b int) Color {
 	if r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255 {
 		return Color{Type: ColorTypeInvalid, IsValid: false}
@@ -290,9 +288,8 @@ func ColorFromRGB(r, g, b int) Color {
 	return RGBColor(hex)
 }
 
-// ColorFromRGBA 从 RGBA 值创建颜色
-// r, g, b: 0-255
-// alpha: 0-100000 (OOXML 标准)
+// ColorFromRGBA creates a color from integer R, G, B components (0-255) and an
+// OOXML alpha value (0-100000).
 func ColorFromRGBA(r, g, b, alpha int) Color {
 	c := ColorFromRGB(r, g, b)
 	if !c.IsValid {
@@ -308,7 +305,7 @@ func ColorFromRGBA(r, g, b, alpha int) Color {
 	return c
 }
 
-// SchemeColor 创建主题颜色
+// SchemeColor creates a theme color from a scheme color name.
 func SchemeColor(name string) Color {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if !IsSchemeColor(name) {
@@ -322,7 +319,7 @@ func SchemeColor(name string) Color {
 	}
 }
 
-// IsSchemeColor 检查是否为有效的主题颜色名称
+// IsSchemeColor reports whether name is a valid theme color name.
 func IsSchemeColor(name string) bool {
 	name = strings.ToLower(strings.TrimSpace(name))
 	for _, scheme := range SchemeColors {
@@ -334,11 +331,11 @@ func IsSchemeColor(name string) bool {
 }
 
 // ============================================================================
-// 颜色输出函数 - 符合 OOXML 规范
+// Color output - OOXML-compliant
 // ============================================================================
 
-// ToRGB 转换为 RGB 十六进制字符串（6位，无 # 前缀）
-// 符合 OOXML 规范：<a:srgbClr val="FF0000"/>
+// ToRGB returns the 6-digit uppercase hex string (no # prefix).
+// Suitable for use in <a:srgbClr val="FF0000"/>.
 func (c Color) ToRGB() string {
 	if c.Type == ColorTypeRGB {
 		return c.RGB
@@ -346,7 +343,7 @@ func (c Color) ToRGB() string {
 	return ""
 }
 
-// ToHex 转换为带 # 前缀的 6 位十六进制字符串（用于显示）
+// ToHex returns the color as a #-prefixed 6-digit hex string (for display).
 func (c Color) ToHex() string {
 	if c.Type == ColorTypeRGB {
 		return "#" + c.RGB
@@ -354,7 +351,7 @@ func (c Color) ToHex() string {
 	return ""
 }
 
-// ToHexA 转换为带 # 前缀的 8 位十六进制字符串（包含 alpha）
+// ToHexA returns the color as a #-prefixed 8-digit hex string including alpha.
 func (c Color) ToHexA() string {
 	if c.Type == ColorTypeRGB {
 		return "#" + c.RGB + alphaToHex(c.Alpha)
@@ -362,7 +359,7 @@ func (c Color) ToHexA() string {
 	return ""
 }
 
-// ToScheme 转换为主题颜色名称
+// ToScheme returns the theme color name.
 func (c Color) ToScheme() string {
 	if c.Type == ColorTypeScheme {
 		return c.Scheme
@@ -370,18 +367,18 @@ func (c Color) ToScheme() string {
 	return ""
 }
 
-// AlphaValue 返回 OOXML 格式的 alpha 值 (0-100000)
-// 用于 <a:alpha val="50000"/>
+// AlphaValue returns the opacity in OOXML units (0-100000).
+// Suitable for use in <a:alpha val="50000"/>.
 func (c Color) AlphaValue() int {
 	return c.Alpha
 }
 
-// AlphaPercent 返回百分比形式的 alpha (0-100)
+// AlphaPercent returns the opacity as a percentage (0-100).
 func (c Color) AlphaPercent() float64 {
 	return float64(c.Alpha) / float64(AlphaOpaque) * 100
 }
 
-// String 返回颜色的字符串表示
+// String returns a human-readable representation of the color.
 func (c Color) String() string {
 	switch c.Type {
 	case ColorTypeRGB:
@@ -396,7 +393,8 @@ func (c Color) String() string {
 	}
 }
 
-// RGBComponents 返回 RGB 分量 (r, g, b)
+// RGBComponents returns the individual R, G, B components (0-255) and whether
+// they are available.
 func (c Color) RGBComponents() (r, g, b int, ok bool) {
 	if c.Type != ColorTypeRGB || len(c.RGB) != 6 {
 		return 0, 0, 0, false
@@ -407,8 +405,7 @@ func (c Color) RGBComponents() (r, g, b int, ok bool) {
 	return int(ri), int(gi), int(bi), true
 }
 
-// WithAlpha 设置透明度并返回新颜色
-// alpha: 0-100000 (OOXML 标准)
+// WithAlpha returns a copy of the color with the given OOXML alpha value (0-100000).
 func (c Color) WithAlpha(alpha int) Color {
 	if alpha < 0 {
 		alpha = 0
@@ -420,8 +417,7 @@ func (c Color) WithAlpha(alpha int) Color {
 	return c
 }
 
-// WithAlphaPercent 设置透明度（百分比）并返回新颜色
-// percent: 0-100
+// WithAlphaPercent returns a copy of the color with the given opacity percentage (0-100).
 func (c Color) WithAlphaPercent(percent float64) Color {
 	if percent < 0 {
 		percent = 0
@@ -434,22 +430,22 @@ func (c Color) WithAlphaPercent(percent float64) Color {
 }
 
 // ============================================================================
-// 颜色验证函数
+// Color validation
 // ============================================================================
 
-// ColorValidationResult 颜色验证结果
+// ColorValidationResult holds the result of a color validation check.
 type ColorValidationResult struct {
-	// IsValid 是否有效
+	// IsValid reports whether the color is valid.
 	IsValid bool
-	// Color 解析后的颜色
+	// Color is the parsed color.
 	Color Color
-	// Original 原始输入
+	// Original is the original input string.
 	Original string
-	// Message 验证消息
+	// Message is a human-readable validation message.
 	Message string
 }
 
-// ValidateColor 验证颜色
+// ValidateColor validates a color string and returns the result.
 func ValidateColor(s string) ColorValidationResult {
 	color := ParseColor(s)
 	return ColorValidationResult{
@@ -460,43 +456,41 @@ func ValidateColor(s string) ColorValidationResult {
 	}
 }
 
-// validateMessage 生成验证消息
+// validateMessage returns a human-readable description of the color's validity.
 func (c Color) validateMessage() string {
 	if c.IsValid {
 		switch c.Type {
 		case ColorTypeRGB:
 			if c.Alpha != AlphaDefault {
-				return fmt.Sprintf("有效的 RGB 颜色: #%s (alpha: %d/100000)", c.RGB, c.Alpha)
+				return fmt.Sprintf("valid RGB color: #%s (alpha: %d/100000)", c.RGB, c.Alpha)
 			}
-			return fmt.Sprintf("有效的 RGB 颜色: #%s", c.RGB)
+			return fmt.Sprintf("valid RGB color: #%s", c.RGB)
 		case ColorTypeScheme:
-			return fmt.Sprintf("有效的主题颜色: %s", c.Scheme)
+			return fmt.Sprintf("valid theme color: %s", c.Scheme)
 		}
 	}
-	return "无效的颜色格式"
+	return "invalid color format"
 }
 
 // ============================================================================
-// 颜色映射表
+// Color map
 // ============================================================================
 
-// ColorMap 颜色映射表
-// 用于将颜色名称映射到实际颜色值
+// ColorMap maps color names to Color values.
 type ColorMap struct {
 	colors map[string]Color
 }
 
-// NewColorMap 创建颜色映射表
+// NewColorMap creates an empty ColorMap.
 func NewColorMap() *ColorMap {
 	return &ColorMap{
 		colors: make(map[string]Color),
 	}
 }
 
-// DefaultColorMap 默认颜色映射表
+// DefaultColorMap returns a ColorMap pre-populated with common color names.
 func DefaultColorMap() *ColorMap {
 	cm := NewColorMap()
-	// 添加常用颜色
 	cm.Set("black", ColorBlack)
 	cm.Set("white", ColorWhite)
 	cm.Set("red", ColorRed)
@@ -527,28 +521,28 @@ func DefaultColorMap() *ColorMap {
 	return cm
 }
 
-// Set 设置颜色映射
+// Set adds or updates a color name mapping.
 func (cm *ColorMap) Set(name string, color Color) {
 	cm.colors[strings.ToLower(name)] = color
 }
 
-// Get 获取颜色映射
+// Get looks up a color by name.
 func (cm *ColorMap) Get(name string) (Color, bool) {
 	color, ok := cm.colors[strings.ToLower(name)]
 	return color, ok
 }
 
-// Resolve 解析颜色（支持名称、十六进制、RGB、主题色）
+// Resolve resolves a color string by first checking the map, then parsing it.
 func (cm *ColorMap) Resolve(s string) Color {
-	// 先尝试从映射表查找
+	// Try the map first.
 	if color, ok := cm.Get(s); ok {
 		return color
 	}
-	// 再尝试解析
+	// Fall back to parsing.
 	return ParseColor(s)
 }
 
-// All 返回所有颜色映射
+// All returns a copy of all name-to-color mappings.
 func (cm *ColorMap) All() map[string]Color {
 	result := make(map[string]Color, len(cm.colors))
 	for k, v := range cm.colors {

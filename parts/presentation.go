@@ -9,92 +9,92 @@ import (
 	"github.com/hurtener/pptx-go/opc"
 )
 
-// SlideIDStart 是 Slide ID 的起始值
+// SlideIDStart is the starting value for slide IDs.
 const SlideIDStart = 256
 
-// SlideSize 幻灯片尺寸
+// SlideSize holds the slide dimensions.
 type SlideSize struct {
-	Cx int // 宽度，单位 EMU (English Metric Units)
-	Cy int // 高度，单位 EMU
+	Cx int // width in EMU (English Metric Units)
+	Cy int // height in EMU
 }
 
-// StandardSlideSizes 标准幻灯片尺寸
+// StandardSlideSizes contains the standard slide size presets.
 var StandardSlideSizes = struct {
-	// 16:9 宽屏 (12192000 x 6858000 EMU)
+	// 16:9 widescreen (12192000 x 6858000 EMU)
 	Wide16x9 SlideSize
-	// 4:3 标准 (9144000 x 6858000 EMU)
+	// 4:3 standard (9144000 x 6858000 EMU)
 	Standard4x3 SlideSize
 }{
 	Wide16x9:    SlideSize{Cx: 12192000, Cy: 6858000},
 	Standard4x3: SlideSize{Cx: 9144000, Cy: 6858000},
 }
 
-// PresentationPart 对应 /ppt/presentation.xml
-// 是整个 PPTX 逻辑上的根节点
+// PresentationPart corresponds to /ppt/presentation.xml.
+// It is the logical root of the entire PPTX.
 type PresentationPart struct {
 	uri *opc.PackURI
 
-	// 幻灯片管理
-	slideIDs      []uint32 // 分配过的 slide ID 列表
-	slideIDNext   uint32   // 下一个可分配的 slide ID（原子操作）
-	slideCount    int32    // 当前幻灯片数量（原子操作）
+	// Slide management
+	slideIDs    []uint32 // allocated slide ID list
+	slideIDNext uint32   // next available slide ID (atomic)
+	slideCount  int32    // current slide count (atomic)
 
-	// 母版和布局管理
-	slideMasterIDs []string // 母版 rId 列表
-	slideLayoutIDs []string // 布局 rId 列表（与 slide 一一对应）
+	// Master and layout management
+	slideMasterIDs []string // master rId list
+	slideLayoutIDs []string // layout rId list (one-to-one with slides)
 
-	// 全局属性
-	slideSize     SlideSize // 幻灯片尺寸
-	notesMasterID string    // 备注母版 rId
-	themeID       string     // 主题 rId
+	// Global properties
+	slideSize     SlideSize // slide dimensions
+	notesMasterID string    // notes master rId
+	themeID       string    // theme rId
 
 	mu sync.RWMutex
 }
 
-// NewPresentationPart 创建新的演示文稿部件
+// NewPresentationPart creates a new presentation part.
 func NewPresentationPart() *PresentationPart {
 	return &PresentationPart{
-		uri:          opc.NewPackURI("/ppt/presentation.xml"),
-		slideIDs:     make([]uint32, 0),
+		uri:            opc.NewPackURI("/ppt/presentation.xml"),
+		slideIDs:       make([]uint32, 0),
 		slideMasterIDs: make([]string, 0),
 		slideLayoutIDs: make([]string, 0),
-		slideSize:    StandardSlideSizes.Wide16x9,
-		slideIDNext:  SlideIDStart,
+		slideSize:      StandardSlideSizes.Wide16x9,
+		slideIDNext:    SlideIDStart,
 	}
 }
 
-// NewPresentationPartWithSize 创建演示文稿并设置尺寸
+// NewPresentationPartWithSize creates a presentation part with the given slide size.
 func NewPresentationPartWithSize(size SlideSize) *PresentationPart {
 	p := NewPresentationPart()
 	p.slideSize = size
 	return p
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (p *PresentationPart) PartURI() *opc.PackURI {
 	return p.uri
 }
 
-// SlideSize 返回幻灯片尺寸
+// SlideSize returns the slide dimensions.
 func (p *PresentationPart) SlideSize() SlideSize {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.slideSize
 }
 
-// SetSlideSize 设置幻灯片尺寸
+// SetSlideSize sets the slide dimensions.
 func (p *PresentationPart) SetSlideSize(size SlideSize) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.slideSize = size
 }
 
-// SlideCount 返回幻灯片数量
+// SlideCount returns the number of slides.
 func (p *PresentationPart) SlideCount() int32 {
 	return atomic.LoadInt32(&p.slideCount)
 }
 
-// SlideIDAt 返回指定索引的 slide ID
+// SlideIDAt returns the slide ID at the given index.
 func (p *PresentationPart) SlideIDAt(index int) (uint32, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -105,7 +105,7 @@ func (p *PresentationPart) SlideIDAt(index int) (uint32, error) {
 	return p.slideIDs[index], nil
 }
 
-// SlideIDs 返回所有 slide ID
+// SlideIDs returns all slide IDs.
 func (p *PresentationPart) SlideIDs() []uint32 {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -115,7 +115,7 @@ func (p *PresentationPart) SlideIDs() []uint32 {
 	return ids
 }
 
-// SlideMasterIDs 返回所有母版 rId
+// SlideMasterIDs returns all master relationship IDs.
 func (p *PresentationPart) SlideMasterIDs() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -125,29 +125,28 @@ func (p *PresentationPart) SlideMasterIDs() []string {
 	return ids
 }
 
-// AddSlideMaster 添加母版
-// 返回分配的 rId
+// AddSlideMaster adds a master by its relationship ID.
 func (p *PresentationPart) AddSlideMaster(rId string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.slideMasterIDs = append(p.slideMasterIDs, rId)
 }
 
-// allocateSlideID 原子分配一个新的 slide ID
+// allocateSlideID atomically allocates a new slide ID.
 func (p *PresentationPart) allocateSlideID() uint32 {
 	return atomic.AddUint32(&p.slideIDNext, 1)
 }
 
-// AddSlide 添加幻灯片
-// layout 是关联的布局 rId，slidePart 是实际的幻灯片部件
+// AddSlide adds a slide.
+// layoutRId is the relationship ID of the associated layout; slidePart is the actual slide part.
 func (p *PresentationPart) AddSlide(layoutRId string, slidePart *SlidePart) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 分配 slide ID
+	// Allocate a slide ID.
 	slideID := p.allocateSlideID()
 
-	// 更新内部状态
+	// Update internal state.
 	p.slideIDs = append(p.slideIDs, slideID)
 	p.slideLayoutIDs = append(p.slideLayoutIDs, layoutRId)
 	atomic.AddInt32(&p.slideCount, 1)
@@ -155,7 +154,7 @@ func (p *PresentationPart) AddSlide(layoutRId string, slidePart *SlidePart) erro
 	return nil
 }
 
-// RemoveSlide 移除幻灯片（按索引）
+// RemoveSlide removes the slide at the given index.
 func (p *PresentationPart) RemoveSlide(index int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -164,7 +163,7 @@ func (p *PresentationPart) RemoveSlide(index int) error {
 		return fmt.Errorf("slide index out of range: %d", index)
 	}
 
-	// 从切片中移除
+	// Remove from slices.
 	p.slideIDs = append(p.slideIDs[:index], p.slideIDs[index+1:]...)
 	p.slideLayoutIDs = append(p.slideLayoutIDs[:index], p.slideLayoutIDs[index+1:]...)
 	atomic.AddInt32(&p.slideCount, -1)
@@ -172,78 +171,78 @@ func (p *PresentationPart) RemoveSlide(index int) error {
 	return nil
 }
 
-// XPresentation 对应 presentation.xml 的完整 XML 结构
-// 注意：XML 标签使用不带前缀的名称，因为解析前会去除命名空间前缀
+// XPresentation is the complete XML structure for presentation.xml.
+// Note: XML tags use unprefixed names because namespace prefixes are stripped before parsing.
 type XPresentation struct {
 	XMLName xml.Name `xml:"presentation"`
 
-	// 兼容设置
+	// Compatibility settings
 	Compatibility *XCompatibility `xml:"compatSpt,omitempty"`
 
-	// 幻灯片尺寸（必须）
+	// Slide size (required)
 	SldSz *XSldSz `xml:"sldSz"`
 
-	// 备注尺寸
+	// Notes size
 	NotesSz *XSldSz `xml:"notesSz,omitempty"`
 
-	// 幻灯片 ID 列表（必须）
+	// Slide ID list (required)
 	SldIdLst *XSldIdLst `xml:"sldIdLst"`
 
-	// 母版 ID 列表
+	// Master ID list
 	SldMasterIdLst *XSldMasterIdLst `xml:"sldMasterIdLst,omitempty"`
 
-	// 备注母版 ID 列表
+	// Notes master ID list
 	NotesMasterIdLst *XSldMasterIdLst `xml:"notesMasterIdLst,omitempty"`
 
-	// 打印设置
+	// Print settings
 	PrintSettings *XPrintSettings `xml:"printSettings,omitempty"`
 }
 
-// XCompatibility 兼容设置
+// XCompatibility holds compatibility settings.
 type XCompatibility struct {
 	CompatMode string `xml:"compatMode,attr,omitempty"`
 }
 
-// XSldSz 幻灯片尺寸
+// XSldSz holds slide dimensions.
 type XSldSz struct {
 	Cx int `xml:"cx,attr"`
 	Cy int `xml:"cy,attr"`
 }
 
-// XSldIdLst 幻灯片 ID 列表
+// XSldIdLst holds the slide ID list.
 type XSldIdLst struct {
 	SldIds []XSldId `xml:"sldId"`
 }
 
-// XSldId 单个幻灯片 ID
+// XSldId holds a single slide ID entry.
 type XSldId struct {
 	Id  uint32 `xml:"id,attr"`
 	RId string `xml:"rid,attr"`
 }
 
-// XSldMasterIdLst 母版 ID 列表
+// XSldMasterIdLst holds the master ID list.
 type XSldMasterIdLst struct {
 	SldMasterIds []XSldMasterId `xml:"sldMasterId"`
 }
 
-// XSldMasterId 单个母版 ID
+// XSldMasterId holds a single master ID entry.
 type XSldMasterId struct {
 	Id  uint32 `xml:"id,attr"`
 	RId string `xml:"rid,attr"`
 }
 
-// XPrintSettings 打印设置
+// XPrintSettings holds print settings.
 type XPrintSettings struct {
 	OutputOptions *XOutputOptions `xml:"outputOptions,omitempty"`
 }
 
-// XOutputOptions 输出选项
+// XOutputOptions holds output options.
 type XOutputOptions struct {
 	UsePrintFml     *bool `xml:"usePrintFml,attr,omitempty"`
 	CloneLinkedObjs *bool `xml:"cloneLinkedObjs,attr,omitempty"`
 }
 
-// ToXML 将 PresentationPart 序列化为 XML
+// ToXML serializes the PresentationPart to XML.
 func (p *PresentationPart) ToXML() ([]byte, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -255,7 +254,7 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 		},
 	}
 
-	// 构建幻灯片列表
+	// Build slide ID list.
 	if len(p.slideIDs) > 0 {
 		xp.SldIdLst = &XSldIdLst{
 			SldIds: make([]XSldId, len(p.slideIDs)),
@@ -268,12 +267,12 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 		}
 	}
 
-	// 构建母版列表
+	// Build master ID list.
 	if len(p.slideMasterIDs) > 0 {
 		xp.SldMasterIdLst = &XSldMasterIdLst{
 			SldMasterIds: make([]XSldMasterId, len(p.slideMasterIDs)),
 		}
-		// 母版 ID 从 1 开始
+		// Master IDs start at 1.
 		for i, rId := range p.slideMasterIDs {
 			xp.SldMasterIdLst.SldMasterIds[i] = XSldMasterId{
 				Id:  uint32(i + 1),
@@ -289,9 +288,9 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从 XML 反序列化为 PresentationPart
+// FromXML deserializes a PresentationPart from XML.
 func (p *PresentationPart) FromXML(data []byte) error {
-	// 去除命名空间前缀以兼容 Go 的 xml.Unmarshal
+	// Strip namespace prefixes for compatibility with Go's xml.Unmarshal.
 	cleanData, err := StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
@@ -305,7 +304,7 @@ func (p *PresentationPart) FromXML(data []byte) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 解析幻灯片尺寸
+	// Parse slide dimensions.
 	if xp.SldSz != nil {
 		p.slideSize = SlideSize{
 			Cx: xp.SldSz.Cx,
@@ -313,7 +312,7 @@ func (p *PresentationPart) FromXML(data []byte) error {
 		}
 	}
 
-	// 解析幻灯片列表
+	// Parse slide list.
 	p.slideIDs = make([]uint32, 0)
 	p.slideLayoutIDs = make([]string, 0)
 	if xp.SldIdLst != nil {
@@ -323,7 +322,7 @@ func (p *PresentationPart) FromXML(data []byte) error {
 		}
 	}
 
-	// 更新 slide ID 计数器
+	// Update slide ID counter.
 	if len(p.slideIDs) > 0 {
 		maxID := p.slideIDs[0]
 		for _, id := range p.slideIDs {
@@ -334,7 +333,7 @@ func (p *PresentationPart) FromXML(data []byte) error {
 		p.slideIDNext = maxID + 1
 	}
 
-	// 解析母版列表
+	// Parse master list.
 	p.slideMasterIDs = make([]string, 0)
 	if xp.SldMasterIdLst != nil {
 		for _, masterId := range xp.SldMasterIdLst.SldMasterIds {
@@ -342,15 +341,15 @@ func (p *PresentationPart) FromXML(data []byte) error {
 		}
 	}
 
-	// 更新幻灯片计数
+	// Update slide count.
 	p.slideCount = int32(len(p.slideIDs))
 
 	return nil
 }
 
-// Presentation 辅助函数
+// Presentation helper functions
 
-// NewSlideSizeFromStandard 根据标准尺寸名称创建 SlideSize
+// NewSlideSizeFromStandard creates a SlideSize from a standard size name.
 func NewSlideSizeFromStandard(name string) SlideSize {
 	switch name {
 	case "16:9", "wide", "widescreen":
@@ -362,32 +361,32 @@ func NewSlideSizeFromStandard(name string) SlideSize {
 	}
 }
 
-// EMUFromPoints 将磅值转换为 EMU
+// EMUFromPoints converts points to EMU.
 func EMUFromPoints(points float64) int {
 	return int(points * 12700)
 }
 
-// PointsFromEMU 将 EMU 转换为磅值
+// PointsFromEMU converts EMU to points.
 func PointsFromEMU(emu int) float64 {
 	return float64(emu) / 12700.0
 }
 
-// EMUFromInches 将英寸转换为 EMU
+// EMUFromInches converts inches to EMU.
 func EMUFromInches(inches float64) int {
 	return int(inches * 914400)
 }
 
-// InchesFromEMU 将 EMU 转换为英寸
+// InchesFromEMU converts EMU to inches.
 func InchesFromEMU(emu int) float64 {
 	return float64(emu) / 914400.0
 }
 
-// EMUFromMM 将毫米转换为 EMU
+// EMUFromMM converts millimeters to EMU.
 func EMUFromMM(mm float64) int {
 	return int(mm * 36000)
 }
 
-// MMFromEMU 将 EMU 转换为毫米
+// MMFromEMU converts EMU to millimeters.
 func MMFromEMU(emu int) float64 {
 	return float64(emu) / 36000.0
 }

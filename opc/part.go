@@ -7,44 +7,44 @@ import (
 	"sync"
 )
 
-// Part 表示包中的一个部件
+// Part represents a single part within a package.
 type Part struct {
-	uri          *PackURI
-	contentType  string
-	blob         []byte         // 独占的数据副本（可修改）
-	sharedBlob   []byte         // 共享的只读数据（zero-copy）
+	uri           *PackURI
+	contentType   string
+	blob          []byte // Exclusively owned data copy (mutable).
+	sharedBlob    []byte // Shared read-only data (zero-copy).
 	relationships *Relationships
-	dirty        bool           // 是否被修改过
-	immutable    bool           // 标记是否为不可变资源（使用 sharedBlob）
-	mu           sync.RWMutex
+	dirty         bool // Whether the part has been modified.
+	immutable     bool // Whether the part is an immutable resource (uses sharedBlob).
+	mu            sync.RWMutex
 }
 
-// NewPart 创建一个新的部件
+// NewPart creates a new part.
 func NewPart(uri *PackURI, contentType string, blob []byte) *Part {
 	return &Part{
-		uri:          uri,
-		contentType:  contentType,
-		blob:         blob,
+		uri:           uri,
+		contentType:   contentType,
+		blob:          blob,
 		relationships: NewRelationships(uri),
-		dirty:        true,
-		immutable:    false,
+		dirty:         true,
+		immutable:     false,
 	}
 }
 
-// NewSharedPart 创建一个共享数据的部件（zero-copy，用于不可变资源）
-// 调用者必须保证 sharedBlob 在 Part 生命周期内不会被修改
+// NewSharedPart creates a part that shares its data (zero-copy, for immutable resources).
+// The caller must guarantee that sharedBlob will not be modified for the lifetime of the Part.
 func NewSharedPart(uri *PackURI, contentType string, sharedBlob []byte) *Part {
 	return &Part{
-		uri:          uri,
-		contentType:  contentType,
-		sharedBlob:   sharedBlob,
+		uri:           uri,
+		contentType:   contentType,
+		sharedBlob:    sharedBlob,
 		relationships: NewRelationships(uri),
-		dirty:        false,
-		immutable:    true,
+		dirty:         false,
+		immutable:     true,
 	}
 }
 
-// NewPartFromReader 从Reader创建部件
+// NewPartFromReader creates a part by reading all content from r.
 func NewPartFromReader(uri *PackURI, contentType string, r io.Reader) (*Part, error) {
 	blob, err := io.ReadAll(r)
 	if err != nil {
@@ -53,17 +53,17 @@ func NewPartFromReader(uri *PackURI, contentType string, r io.Reader) (*Part, er
 	return NewPart(uri, contentType, blob), nil
 }
 
-// PartURI 返回部件URI
+// PartURI returns the part URI.
 func (p *Part) PartURI() *PackURI {
 	return p.uri
 }
 
-// ContentType 返回内容类型
+// ContentType returns the content type.
 func (p *Part) ContentType() string {
 	return p.contentType
 }
 
-// SetContentType 设置内容类型
+// SetContentType sets the content type.
 func (p *Part) SetContentType(ct string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -71,8 +71,8 @@ func (p *Part) SetContentType(ct string) {
 	p.dirty = true
 }
 
-// Blob 返回原始内容
-// 对于不可变资源返回共享的只读切片，否则返回独立副本
+// Blob returns the raw content.
+// For immutable resources it returns the shared read-only slice; otherwise it returns the owned copy.
 func (p *Part) Blob() []byte {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -82,17 +82,17 @@ func (p *Part) Blob() []byte {
 	return p.blob
 }
 
-// SetBlob 设置内容（触发写时复制，解除共享）
+// SetBlob sets the content, triggering a copy-on-write by releasing the shared reference.
 func (p *Part) SetBlob(blob []byte) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.sharedBlob = nil  // 解除共享引用
-	p.immutable = false // 标记为可变
+	p.sharedBlob = nil  // Release shared reference.
+	p.immutable = false // Mark as mutable.
 	p.blob = blob
 	p.dirty = true
 }
 
-// SetBlobFromReader 从Reader设置内容
+// SetBlobFromReader sets the content from a Reader.
 func (p *Part) SetBlobFromReader(r io.Reader) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -106,26 +106,26 @@ func (p *Part) SetBlobFromReader(r io.Reader) error {
 	return nil
 }
 
-// Reader 返回内容的Reader
+// Reader returns an io.Reader over the part content.
 func (p *Part) Reader() io.Reader {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return NewBytesReader(p.blob)
 }
 
-// Size 返回内容大小
+// Size returns the content size in bytes.
 func (p *Part) Size() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return len(p.blob)
 }
 
-// Relationships 返回关系集合
+// Relationships returns the relationship collection for this part.
 func (p *Part) Relationships() *Relationships {
 	return p.relationships
 }
 
-// AddRelationship 添加一个关系
+// AddRelationship adds a relationship to this part.
 func (p *Part) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error) {
 	rel, err := p.relationships.AddNew(relType, targetURI, isExternal)
 	if err != nil {
@@ -135,7 +135,7 @@ func (p *Part) AddRelationship(relType, targetURI string, isExternal bool) (*Rel
 	return rel, nil
 }
 
-// RemoveRelationship 删除一个关系
+// RemoveRelationship removes a relationship from this part.
 func (p *Part) RemoveRelationship(rID string) error {
 	err := p.relationships.Remove(rID)
 	if err != nil {
@@ -145,7 +145,8 @@ func (p *Part) RemoveRelationship(rID string) error {
 	return nil
 }
 
-// GetRelatedPart 通过关系获取目标部件（需要Package上下文）
+// GetRelatedPart returns the target URI of the relationship with the given rID.
+// A Package context is required to resolve the URI to an actual Part.
 func (p *Part) GetRelatedPart(rID string) *PackURI {
 	rel := p.relationships.Get(rID)
 	if rel == nil {
@@ -154,26 +155,26 @@ func (p *Part) GetRelatedPart(rID string) *PackURI {
 	return rel.TargetURI()
 }
 
-// IsDirty 返回是否被修改
+// IsDirty reports whether the part has been modified.
 func (p *Part) IsDirty() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.dirty
 }
 
-// SetDirty 设置修改标记
+// SetDirty sets the dirty flag.
 func (p *Part) SetDirty(dirty bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.dirty = dirty
 }
 
-// LoadRelationships 从XML加载关系
+// LoadRelationships loads relationships from XML data.
 func (p *Part) LoadRelationships(data []byte) error {
 	return p.relationships.FromXML(data)
 }
 
-// RelationshipsBlob 返回关系的XML内容
+// RelationshipsBlob returns the serialised XML of the relationships.
 func (p *Part) RelationshipsBlob() ([]byte, error) {
 	if p.relationships.Count() == 0 {
 		return nil, nil
@@ -181,17 +182,17 @@ func (p *Part) RelationshipsBlob() ([]byte, error) {
 	return p.relationships.ToXML()
 }
 
-// HasRelationships 检查是否有关系
+// HasRelationships reports whether the part has any relationships.
 func (p *Part) HasRelationships() bool {
 	return p.relationships.Count() > 0
 }
 
-// RelationshipsURI 返回关系文件的URI
+// RelationshipsURI returns the URI of the relationships file for this part.
 func (p *Part) RelationshipsURI() *PackURI {
 	return p.uri.RelationshipsURI()
 }
 
-// Clone 克隆部件（深拷贝，用于可变内容）
+// Clone returns a deep copy of the part (suitable for mutable content).
 func (p *Part) Clone() *Part {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -201,28 +202,28 @@ func (p *Part) Clone() *Part {
 		blobCopy = make([]byte, len(p.blob))
 		copy(blobCopy, p.blob)
 	} else if p.sharedBlob != nil {
-		// 如果原来是共享的，深拷贝会创建独立副本
+		// If the original was shared, a deep copy produces an independent slice.
 		blobCopy = make([]byte, len(p.sharedBlob))
 		copy(blobCopy, p.sharedBlob)
 	}
 
 	return &Part{
-		uri:          p.uri.Clone(),
-		contentType:  p.contentType,
-		blob:         blobCopy,
+		uri:           p.uri.Clone(),
+		contentType:   p.contentType,
+		blob:          blobCopy,
 		relationships: p.relationships.Clone(),
-		dirty:        p.dirty,
-		immutable:    false, // 克隆后变为可变
+		dirty:         p.dirty,
+		immutable:     false, // Clone becomes mutable.
 	}
 }
 
-// CloneShared 克隆部件（zero-copy，用于不可变资源）
-// 调用此方法的前提是 Part 的内容永远不会被修改
+// CloneShared returns a zero-copy clone of the part (for immutable resources).
+// The caller must ensure the part's content will never be modified.
 func (p *Part) CloneShared() *Part {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 确定要共享的数据源
+	// Determine the data source to share.
 	var sharedData []byte
 	if p.sharedBlob != nil {
 		sharedData = p.sharedBlob
@@ -231,30 +232,30 @@ func (p *Part) CloneShared() *Part {
 	}
 
 	return &Part{
-		uri:          p.uri,              // PackURI 不可变，直接共享
-		contentType:  p.contentType,
-		sharedBlob:   sharedData,         // zero-copy！
-		relationships: p.relationships,    // 关系集合共享（不可变资源通常无关系）
-		dirty:        false,
-		immutable:    true,
+		uri:           p.uri, // PackURI is immutable — safe to share.
+		contentType:   p.contentType,
+		sharedBlob:    sharedData,      // zero-copy!
+		relationships: p.relationships, // Shared (immutable resources typically have no relationships).
+		dirty:         false,
+		immutable:     true,
 	}
 }
 
-// IsImmutable 返回是否为不可变资源
+// IsImmutable reports whether the part is an immutable resource.
 func (p *Part) IsImmutable() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.immutable
 }
 
-// SetImmutable 设置为不可变资源
+// SetImmutable marks the part as an immutable resource.
 func (p *Part) SetImmutable(immutable bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.immutable = immutable
 }
 
-// UnmarshalBlob 从 blob 解析 XML 内容到 v
+// UnmarshalBlob unmarshals the part's blob as XML into v.
 func (p *Part) UnmarshalBlob(v interface{}) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -262,7 +263,7 @@ func (p *Part) UnmarshalBlob(v interface{}) error {
 	return xml.Unmarshal(p.blob, v)
 }
 
-// MarshalToBlob 将 v 序列化为 XML 并存储到 blob
+// MarshalToBlob marshals v as XML and stores the result in the blob.
 func (p *Part) MarshalToBlob(v interface{}) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -276,18 +277,18 @@ func (p *Part) MarshalToBlob(v interface{}) error {
 	return nil
 }
 
-// BytesReader 简单的bytes reader实现
+// BytesReader is a simple io.Reader implementation over a byte slice.
 type BytesReader struct {
 	data []byte
 	pos  int
 }
 
-// NewBytesReader 创建新的BytesReader
+// NewBytesReader creates a new BytesReader.
 func NewBytesReader(data []byte) *BytesReader {
 	return &BytesReader{data: data}
 }
 
-// Read 实现io.Reader接口
+// Read implements io.Reader.
 func (r *BytesReader) Read(p []byte) (n int, err error) {
 	if r.pos >= len(r.data) {
 		return 0, io.EOF
@@ -297,14 +298,14 @@ func (r *BytesReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// PartCollection 部件集合
+// PartCollection is an ordered collection of parts.
 type PartCollection struct {
 	parts map[string]*Part
-	order []string // 保持插入顺序
+	order []string // Preserves insertion order.
 	mu    sync.RWMutex
 }
 
-// NewPartCollection 创建新的部件集合
+// NewPartCollection creates a new, empty PartCollection.
 func NewPartCollection() *PartCollection {
 	return &PartCollection{
 		parts: make(map[string]*Part),
@@ -312,7 +313,7 @@ func NewPartCollection() *PartCollection {
 	}
 }
 
-// Add 添加部件
+// Add adds a part to the collection.
 func (c *PartCollection) Add(part *Part) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -327,19 +328,19 @@ func (c *PartCollection) Add(part *Part) error {
 	return nil
 }
 
-// Get 根据URI获取部件
+// Get returns the part with the given URI.
 func (c *PartCollection) Get(uri *PackURI) *Part {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.parts[uri.URI()]
 }
 
-// GetByStr 根据字符串URI获取部件
+// GetByStr returns the part with the given string URI.
 func (c *PartCollection) GetByStr(uri string) *Part {
 	return c.Get(NewPackURI(uri))
 }
 
-// Remove 删除部件
+// Remove removes the part with the given URI.
 func (c *PartCollection) Remove(uri *PackURI) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -351,7 +352,7 @@ func (c *PartCollection) Remove(uri *PackURI) error {
 
 	delete(c.parts, key)
 
-	// 从order中移除
+	// Remove from the order slice.
 	for i, u := range c.order {
 		if u == key {
 			c.order = append(c.order[:i], c.order[i+1:]...)
@@ -361,7 +362,7 @@ func (c *PartCollection) Remove(uri *PackURI) error {
 	return nil
 }
 
-// Contains 检查是否包含指定部件
+// Contains reports whether a part with the given URI exists.
 func (c *PartCollection) Contains(uri *PackURI) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -369,7 +370,7 @@ func (c *PartCollection) Contains(uri *PackURI) bool {
 	return exists
 }
 
-// All 返回所有部件（按插入顺序）
+// All returns all parts in insertion order.
 func (c *PartCollection) All() []*Part {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -381,14 +382,14 @@ func (c *PartCollection) All() []*Part {
 	return result
 }
 
-// Count 返回部件数量
+// Count returns the number of parts.
 func (c *PartCollection) Count() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.parts)
 }
 
-// URIs 返回所有部件URI
+// URIs returns all part URIs in insertion order.
 func (c *PartCollection) URIs() []*PackURI {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -400,7 +401,7 @@ func (c *PartCollection) URIs() []*PackURI {
 	return result
 }
 
-// GetByType 根据内容类型获取部件
+// GetByType returns all parts with the given content type.
 func (c *PartCollection) GetByType(contentType string) []*Part {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -414,7 +415,7 @@ func (c *PartCollection) GetByType(contentType string) []*Part {
 	return result
 }
 
-// Clear 清空集合
+// Clear removes all parts from the collection.
 func (c *PartCollection) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -422,7 +423,7 @@ func (c *PartCollection) Clear() {
 	c.order = make([]string, 0)
 }
 
-// DirtyParts 返回所有被修改的部件
+// DirtyParts returns all modified parts.
 func (c *PartCollection) DirtyParts() []*Part {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -436,16 +437,16 @@ func (c *PartCollection) DirtyParts() []*Part {
 	return result
 }
 
-// PartFactory 部件工厂接口
+// PartFactory is the interface for creating parts.
 type PartFactory interface {
-	// CreatePart 创建部件
+	// CreatePart creates a part.
 	CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error)
 }
 
-// DefaultPartFactory 默认部件工厂
+// DefaultPartFactory is the default part factory.
 type DefaultPartFactory struct{}
 
-// CreatePart 实现PartFactory接口
+// CreatePart implements PartFactory.
 func (f *DefaultPartFactory) CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error) {
 	return NewPart(uri, contentType, blob), nil
 }

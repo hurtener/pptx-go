@@ -1,28 +1,29 @@
 package parts
 
 // ============================================================================
-// Chart XML 模板 - 对应 /ppt/charts/chartN.xml
+// Chart XML templates - correspond to /ppt/charts/chartN.xml
 // ============================================================================
 //
-// 设计策略：字符串模板 + 占位符
-// - 图表 XML 结构极其复杂，不适合用 Go Struct 完整映射
-// - 采用预定义模板 + 占位符策略，高层组件通过替换占位符注入数据
+// Design strategy: string templates + placeholder tokens
+// - Chart XML is too complex to map fully to Go structs.
+// - Predefined templates with placeholder tokens are used; callers inject
+//   data by replacing those tokens.
 //
-// 常用占位符：
-//   {{CHART_TITLE}}     - 图表标题
-//   {{CATEGORIES}}      - 分类数据（XML 片段）
-//   {{SERIES_NAME}}     - 系列名称
-//   {{SERIES_VALUES}}   - 系列数值（XML 片段）
-//   {{SER_COUNT}}       - 系列数量
-//   {{CAT_COUNT}}       - 分类数量
+// Common placeholders:
+//   {{CHART_TITLE}}     - chart title
+//   {{CATEGORIES}}      - category data (XML fragment)
+//   {{SERIES_NAME}}     - series name
+//   {{SERIES_VALUES}}   - series values (XML fragment)
+//   {{SER_COUNT}}       - series count
+//   {{CAT_COUNT}}       - category count
 //
 // ============================================================================
 
 // ============================================================================
-// 柱状图模板
+// Bar chart template
 // ============================================================================
 
-// ChartTemplateBar 柱状图模板
+// ChartTemplateBar is the XML template for a bar (column) chart.
 const ChartTemplateBar = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -83,10 +84,10 @@ const ChartTemplateBar = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?
 </c:chartSpace>`
 
 // ============================================================================
-// 饼图模板
+// Pie chart template
 // ============================================================================
 
-// ChartTemplatePie 饼图模板
+// ChartTemplatePie is the XML template for a pie chart.
 const ChartTemplatePie = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -130,10 +131,10 @@ const ChartTemplatePie = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?
 </c:chartSpace>`
 
 // ============================================================================
-// 折线图模板
+// Line chart template
 // ============================================================================
 
-// ChartTemplateLine 折线图模板
+// ChartTemplateLine is the XML template for a line chart.
 const ChartTemplateLine = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -195,10 +196,10 @@ const ChartTemplateLine = `<?xml version="1.0" encoding="UTF-8" standalone="yes"
 </c:chartSpace>`
 
 // ============================================================================
-// 面积图模板
+// Area chart template
 // ============================================================================
 
-// ChartTemplateArea 面积图模板
+// ChartTemplateArea is the XML template for an area chart.
 const ChartTemplateArea = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -258,10 +259,10 @@ const ChartTemplateArea = `<?xml version="1.0" encoding="UTF-8" standalone="yes"
 </c:chartSpace>`
 
 // ============================================================================
-// 散点图模板
+// Scatter chart template
 // ============================================================================
 
-// ChartTemplateScatter 散点图模板
+// ChartTemplateScatter is the XML template for a scatter chart.
 const ChartTemplateScatter = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -323,10 +324,10 @@ const ChartTemplateScatter = `<?xml version="1.0" encoding="UTF-8" standalone="y
 </c:chartSpace>`
 
 // ============================================================================
-// 环形图模板
+// Doughnut chart template
 // ============================================================================
 
-// ChartTemplateDoughnut 环形图模板
+// ChartTemplateDoughnut is the XML template for a doughnut chart.
 const ChartTemplateDoughnut = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -371,16 +372,16 @@ const ChartTemplateDoughnut = `<?xml version="1.0" encoding="UTF-8" standalone="
 </c:chartSpace>`
 
 // ============================================================================
-// 占位符常量
+// Placeholder token constants
 // ============================================================================
 
 const (
-	PlaceholderChartTitle      = "{{CHART_TITLE}}"
-	PlaceholderCategories     = "{{CATEGORIES}}"
-	PlaceholderSeriesName     = "{{SERIES_NAME}}"
-	PlaceholderSeriesValues   = "{{SERIES_VALUES}}"
-	PlaceholderCatCount       = "{{CAT_COUNT}}"
-	PlaceholderCatCountPlus1  = "{{CAT_COUNT_PLUS_1}}"
-	PlaceholderXValues        = "{{X_VALUES}}"
-	PlaceholderYValues        = "{{Y_VALUES}}"
+	PlaceholderChartTitle    = "{{CHART_TITLE}}"
+	PlaceholderCategories    = "{{CATEGORIES}}"
+	PlaceholderSeriesName    = "{{SERIES_NAME}}"
+	PlaceholderSeriesValues  = "{{SERIES_VALUES}}"
+	PlaceholderCatCount      = "{{CAT_COUNT}}"
+	PlaceholderCatCountPlus1 = "{{CAT_COUNT_PLUS_1}}"
+	PlaceholderXValues       = "{{X_VALUES}}"
+	PlaceholderYValues       = "{{Y_VALUES}}"
 )

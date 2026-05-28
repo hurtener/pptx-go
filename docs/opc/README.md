@@ -1,21 +1,21 @@
-# OPC 包文档
+# OPC Package Documentation
 
-> **[功能审查报告](./REVIEW.md)** - 查看 OPC 层的完整功能审查结果
+> **[Feature Review Report](./REVIEW.md)** - View the complete feature review results for the OPC layer
 
 ---
 
 package opc // import "github.com/hurtener/pptx-go/opc"
 
-Package opc 提供 OOXML Open Packaging Convention (OPC) 的 Go 实现 用于处理 PPTX 等 Office
-Open XML 文件格式
+Package opc provides a Go implementation of the OOXML Open Packaging Convention (OPC)
+for working with Office Open XML file formats such as PPTX.
 
 CONSTANTS
 
 const (
-	// OPC 关系类型
+	// OPC relationship type
 	ContentTypeRelationships = "application/vnd.openxmlformats-package.relationships+xml"
 
-	// PPTX 核心内容类型
+	// PPTX core content types
 	ContentTypePresentation   = "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
 	ContentTypeSlide          = "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
 	ContentTypeSlideLayout    = "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
@@ -25,21 +25,21 @@ const (
 	ContentTypeNotesMaster    = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"
 	ContentTypePresentationML = "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
 
-	// 主题和样式
+	// Themes and styles
 	ContentTypeTheme         = "application/vnd.openxmlformats-officedocument.theme+xml"
 	ContentTypeThemeOverride = "application/vnd.openxmlformats-officedocument.themeOverride+xml"
 	ContentTypeStyles        = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
 
-	// 核心属性
+	// Core properties
 	ContentTypeCoreProperties = "application/vnd.openxmlformats-package.core-properties+xml"
 
-	// 扩展属性
+	// Extended properties
 	ContentTypeExtendedProperties = "application/vnd.openxmlformats-officedocument.extended-properties+xml"
 
-	// 自定义属性
+	// Custom properties
 	ContentTypeCustomProperties = "application/vnd.openxmlformats-officedocument.custom-properties+xml"
 
-	// 图片内容类型
+	// Image content types
 	ContentTypePNG  = "image/png"
 	ContentTypeJPEG = "image/jpeg"
 	ContentTypeGIF  = "image/gif"
@@ -49,37 +49,37 @@ const (
 	ContentTypeEMF  = "image/x-emf"
 	ContentTypeSVG  = "image/svg+xml"
 
-	// 音频内容类型
+	// Audio content types
 	ContentTypeWAV  = "audio/wav"
 	ContentTypeMP3  = "audio/mpeg"
 	ContentTypeMIDI = "audio/midi"
 
-	// 视频内容类型
+	// Video content types
 	ContentTypeMP4 = "video/mp4"
 	ContentTypeAVI = "video/x-msvideo"
 	ContentTypeWMV = "video/x-ms-wmv"
 
-	// 其他
+	// Other
 	ContentTypeXML  = "application/xml"
 	ContentTypeFont = "application/x-font"
 
-	// 默认内容类型映射（基于扩展名）
+	// Default content type mapping (extension-based)
 	ContentTypeDefault = "application/octet-stream"
 )
-    内容类型常量 (Content Types)
+    Content type constants (Content Types)
 
 const (
-	// OPC 核心关系
+	// OPC core relationships
 	RelTypeCoreProperties = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
 
-	// Office 文档关系
+	// Office document relationships
 	RelTypeOfficeDocument = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
 
-	// 扩展属性
+	// Extended properties
 	RelTypeExtendedProperties = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
 	RelTypeCustomProperties   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties"
 
-	// 幻灯片关系
+	// Slide relationships
 	RelTypeSlide         = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
 	RelTypeSlideLayout   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout"
 	RelTypeSlideMaster   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster"
@@ -87,46 +87,46 @@ const (
 	RelTypeNotesMaster   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"
 	RelTypeHandoutMaster = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster"
 
-	// 主题关系
+	// Theme relationships
 	RelTypeTheme         = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
 	RelTypeThemeOverride = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride"
 
-	// 媒体关系
+	// Media relationships
 	RelTypeImage = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
 	RelTypeAudio = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio"
 	RelTypeVideo = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video"
 	RelTypeMedia = "http://schemas.microsoft.com/office/2007/relationships/media"
 
-	// 超链接
+	// Hyperlinks
 	RelTypeHyperlink = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
 
-	// 字体
+	// Fonts
 	RelTypeFont = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font"
 
-	// OLE 对象
+	// OLE objects
 	RelTypeOLEObject = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject"
 
-	// 缩略图
+	// Thumbnails
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 
-	// 样式
+	// Styles
 	RelTypeStyles = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
 )
-    关系类型常量 (Relationship Types)
+    Relationship type constants (Relationship Types)
 
 const (
 	NamespaceOPCPackage      = "http://schemas.openxmlformats.org/package/2006/content-types"
 	NamespaceRelationships   = "http://schemas.openxmlformats.org/package/2006/relationships"
 	NamespaceRelationshipsNs = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 )
-    OPC 命名空间
+    OPC namespaces
 
 const (
 	PathContentTypes = "[Content_Types].xml"
 	PathRelsDir      = "_rels"
 	PathRelsFile     = ".rels"
 )
-    OPC 默认路径
+    OPC default paths
 
 
 VARIABLES
@@ -149,7 +149,7 @@ var ContentTypeToExtension = map[string]string{
 	ContentTypeRelationships: ".rels",
 	ContentTypeXML:           ".xml",
 }
-    内容类型到扩展名的反向映射
+    Reverse mapping from content type to file extension
 
 var DefaultContentTypes = map[string]string{
 	".xml":   ContentTypeXML,
@@ -174,37 +174,40 @@ var DefaultContentTypes = map[string]string{
 	".font":  ContentTypeFont,
 	".odttf": ContentTypeFont,
 }
-    默认内容类型映射（扩展名 -> 内容类型）
+    Default content type mapping (extension -> content type)
 
 
 FUNCTIONS
 
 func ComputeHash(data []byte) string
-    ComputeHash 计算数据的 SHA256 哈希
+    ComputeHash computes the SHA256 hash of data
 
 func GetContentTypeByExtension(ext string) string
-    GetContentTypeByExtension 根据文件扩展名获取内容类型
+    GetContentTypeByExtension returns the content type for a file extension
 
 func GetExtensionByContentType(contentType string) string
-    GetExtensionByContentType 根据内容类型获取文件扩展名
+    GetExtensionByContentType returns the file extension for a content type
 
 func IsImageContentType(contentType string) bool
-    IsImageContentType 判断是否为图片内容类型
+    IsImageContentType reports whether the content type is an image type
 
 func IsImmutableContentType(contentType string) bool
-    IsImmutableContentType 判断内容类型是否为不可变资源 不可变资源可以使用 zero-copy 共享，无需深拷贝
+    IsImmutableContentType reports whether the content type represents an
+    immutable resource. Immutable resources may be shared via zero-copy without
+    deep copying.
 
 func IsLargeBinaryContentType(contentType string) bool
-    IsLargeBinaryContentType 判断是否为大块二进制内容 用于判断是否值得使用 zero-copy 优化
+    IsLargeBinaryContentType reports whether the content type represents a large
+    binary blob. Used to determine whether zero-copy optimisation is worthwhile.
 
 func IsMediaContentType(contentType string) bool
-    IsMediaContentType 判断是否为音视频内容类型
+    IsMediaContentType reports whether the content type is an audio or video type
 
 func IsValidPackURI(uri string) bool
-    IsValidPackURI 检查 URI 是否有效
+    IsValidPackURI reports whether the URI is a valid pack URI
 
 func NormalizeURI(uri string) string
-    NormalizeURI 规范化 URI
+    NormalizeURI normalises a URI
 
 
 TYPES
@@ -212,966 +215,1013 @@ TYPES
 type BytesReader struct {
 	// Has unexported fields.
 }
-    BytesReader 简单的bytes reader实现
+    BytesReader is a simple bytes reader implementation
 
 func NewBytesReader(data []byte) *BytesReader
-    NewBytesReader 创建新的BytesReader
+    NewBytesReader creates a new BytesReader
 
 func (r *BytesReader) Read(p []byte) (n int, err error)
-    Read 实现io.Reader接口
+    Read implements io.Reader
 
 type BytesSource struct {
 	// Has unexported fields.
 }
-    BytesSource 内存中的字节数据源
+    BytesSource is an in-memory byte data source
 
 func NewBytesSource(data []byte) *BytesSource
-    NewBytesSource 从字节数组创建数据源
+    NewBytesSource creates a data source from a byte slice
 
 func (s *BytesSource) Open() (io.ReadCloser, error)
-    Open 返回 bytes.Reader
+    Open returns a bytes.Reader
 
 func (s *BytesSource) Size() int64
-    Size 返回数据大小
+    Size returns the data size
 
 type ConcurrentZipCollector struct {
 	// Has unexported fields.
 }
-    ConcurrentZipCollector 并发 ZIP 收集器 使用 goroutine 从 channel 收集部件数据并写入 ZIP
+    ConcurrentZipCollector is a concurrent ZIP collector. It uses a goroutine
+    to collect part data from a channel and write it to a ZIP archive.
 
 func NewConcurrentZipCollector(w io.Writer, bufferSize int) *ConcurrentZipCollector
-    NewConcurrentZipCollector 创建并发 ZIP 收集器
+    NewConcurrentZipCollector creates a concurrent ZIP collector
 
 func (c *ConcurrentZipCollector) Close() error
-    Close 关闭收集器，等待所有数据写入完成
+    Close closes the collector and waits for all data to be written
 
 func (c *ConcurrentZipCollector) DataChannel() PartDataChannel
-    DataChannel 返回数据通道（用于外部生产者）
+    DataChannel returns the data channel (for external producers)
 
 func (c *ConcurrentZipCollector) Start()
-    Start 启动收集器 goroutine
+    Start launches the collector goroutine
 
 func (c *ConcurrentZipCollector) Submit(data *PartData) error
-    Submit 提交部件数据到收集器
+    Submit submits part data to the collector
 
 func (c *ConcurrentZipCollector) SubmitBytes(path string, data []byte) error
-    SubmitBytes 提交字节数据
+    SubmitBytes submits byte data
 
 func (c *ConcurrentZipCollector) Wait() error
-    Wait 等待收集器完成
+    Wait waits for the collector to finish
 
 type ContentTypes struct {
 	// Has unexported fields.
 }
-    ContentTypes 表示 [Content_Types].xml 的内容 定义包中所有部件的内容类型
+    ContentTypes represents the content of [Content_Types].xml.
+    It defines the content type for every part in the package.
 
 func NewContentTypes() *ContentTypes
-    NewContentTypes 创建新的内容类型定义
+    NewContentTypes creates a new content type definition
 
 func (ct *ContentTypes) AddDefault(extension, contentType string)
-    AddDefault 添加默认内容类型映射
+    AddDefault adds a default content type mapping
 
 func (ct *ContentTypes) AddOverride(uri *PackURI, contentType string)
-    AddOverride 添加特定 URI 的内容类型覆盖
+    AddOverride adds a content type override for a specific URI
 
 func (ct *ContentTypes) Defaults() map[string]string
-    Defaults 返回所有默认内容类型映射
+    Defaults returns all default content type mappings
 
 func (ct *ContentTypes) FromXML(data []byte) error
-    FromXML 从 XML 解析内容类型
+    FromXML parses content types from XML
 
 func (ct *ContentTypes) GetContentType(uri *PackURI) string
-    GetContentType 获取指定 URI 的内容类型 优先查找 overrides，然后查找 defaults
+    GetContentType returns the content type for the given URI.
+    Overrides are checked first, then defaults.
 
 func (ct *ContentTypes) GetDefault(extension string) string
-    GetDefault 获取扩展名对应的默认内容类型
+    GetDefault returns the default content type for a file extension
 
 func (ct *ContentTypes) GetOverride(uri *PackURI) string
-    GetOverride 获取 URI 对应的内容类型覆盖
+    GetOverride returns the content type override for a URI
 
 func (ct *ContentTypes) Overrides() map[string]string
-    Overrides 返回所有内容类型覆盖
+    Overrides returns all content type overrides
 
 func (ct *ContentTypes) RemoveOverride(uri *PackURI)
-    RemoveOverride 移除内容类型覆盖
+    RemoveOverride removes a content type override
 
 func (ct *ContentTypes) ToXML() ([]byte, error)
-    ToXML 将内容类型序列化为 XML
+    ToXML serialises the content types to XML
 
 type ContentTypesStreamer struct {
 	// Has unexported fields.
 }
-    ContentTypesStreamer ContentTypes 流式写入器
+    ContentTypesStreamer is a streaming writer for ContentTypes
 
 func NewContentTypesStreamer(ct *ContentTypes) *ContentTypesStreamer
-    NewContentTypesStreamer 创建 ContentTypes 流式写入器
+    NewContentTypesStreamer creates a ContentTypes streaming writer
 
 func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error
-    StreamWriteTo 实现 StreamWriter 接口
+    StreamWriteTo implements StreamWriter
 
 type CoreProperties struct {
 	// Has unexported fields.
 }
-    CoreProperties 表示包的核心属性（Dublin Core 元数据）
+    CoreProperties represents the core properties of a package (Dublin Core metadata)
 
 func (cp *CoreProperties) Category() string
-    Category 返回类别
+    Category returns the category
 
 func (cp *CoreProperties) ContentType() string
-    ContentType 返回内容类型
+    ContentType returns the content type
 
 func (cp *CoreProperties) Created() string
-    Created 返回创建时间
+    Created returns the creation timestamp
 
 func (cp *CoreProperties) Creator() string
-    Creator 返回创建者
+    Creator returns the creator
 
 func (cp *CoreProperties) Description() string
-    Description 返回描述
+    Description returns the description
 
 func (cp *CoreProperties) FromXML(data []byte) error
-    FromXML 从 XML 解析核心属性
+    FromXML parses core properties from XML
 
 func (cp *CoreProperties) Keywords() string
-    Keywords 返回关键词
+    Keywords returns the keywords
 
 func (cp *CoreProperties) Language() string
-    Language 返回语言
+    Language returns the language
 
 func (cp *CoreProperties) LastModifiedBy() string
-    LastModifiedBy 返回最后修改者
+    LastModifiedBy returns the last-modified-by user
 
 func (cp *CoreProperties) Modified() string
-    Modified 返回修改时间
+    Modified returns the last-modified timestamp
 
 func (cp *CoreProperties) Revision() string
-    Revision 返回版本号
+    Revision returns the revision number
 
 func (cp *CoreProperties) SetCategory(category string)
-    SetCategory 设置类别
+    SetCategory sets the category
 
 func (cp *CoreProperties) SetContentType(contentType string)
-    SetContentType 设置内容类型
+    SetContentType sets the content type
 
 func (cp *CoreProperties) SetCreated(created string)
-    SetCreated 设置创建时间
+    SetCreated sets the creation timestamp
 
 func (cp *CoreProperties) SetCreator(creator string)
-    SetCreator 设置创建者
+    SetCreator sets the creator
 
 func (cp *CoreProperties) SetDescription(description string)
-    SetDescription 设置描述
+    SetDescription sets the description
 
 func (cp *CoreProperties) SetKeywords(keywords string)
-    SetKeywords 设置关键词
+    SetKeywords sets the keywords
 
 func (cp *CoreProperties) SetLanguage(language string)
-    SetLanguage 设置语言
+    SetLanguage sets the language
 
 func (cp *CoreProperties) SetLastModifiedBy(lastModifiedBy string)
-    SetLastModifiedBy 设置最后修改者
+    SetLastModifiedBy sets the last-modified-by user
 
 func (cp *CoreProperties) SetModified(modified string)
-    SetModified 设置修改时间
+    SetModified sets the last-modified timestamp
 
 func (cp *CoreProperties) SetRevision(revision string)
-    SetRevision 设置版本号
+    SetRevision sets the revision number
 
 func (cp *CoreProperties) SetSubject(subject string)
-    SetSubject 设置主题
+    SetSubject sets the subject
 
 func (cp *CoreProperties) SetTitle(title string)
-    SetTitle 设置标题
+    SetTitle sets the title
 
 func (cp *CoreProperties) Subject() string
-    Subject 返回主题
+    Subject returns the subject
 
 func (cp *CoreProperties) Title() string
-    Title 返回标题
+    Title returns the title
 
 func (cp *CoreProperties) ToXML() ([]byte, error)
-    ToXML 将核心属性序列化为 XML
+    ToXML serialises the core properties to XML
 
 type DefaultPartFactory struct{}
-    DefaultPartFactory 默认部件工厂
+    DefaultPartFactory is the default part factory
 
 func (f *DefaultPartFactory) CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error)
-    CreatePart 实现PartFactory接口
+    CreatePart implements PartFactory
 
 type PackURI struct {
 	// Has unexported fields.
 }
-    PackURI 表示包内的URI（如 /ppt/slides/slide1.xml） 遵循 OPC 规范中的 URI 规则
+    PackURI represents a URI within the package (e.g. /ppt/slides/slide1.xml).
+    It follows the URI rules defined in the OPC specification.
 
 func ContentTypesURI() *PackURI
-    ContentTypesURI 返回 [Content_Types].xml 的 URI
+    ContentTypesURI returns the URI for [Content_Types].xml
 
 func NewPackURI(uri string) *PackURI
-    NewPackURI 创建一个新的 PackURI
+    NewPackURI creates a new PackURI
 
 func PackageRelsURI() *PackURI
-    PackageRelsURI 返回包级别关系文件的 URI
+    PackageRelsURI returns the URI of the package-level relationships file
 
 func RootURI() *PackURI
-    RootURI 返回包根目录 URI
+    RootURI returns the package root URI
 
 func (p *PackURI) BaseName() string
-    BaseName 返回 URI 的基本名称（不含扩展名） 例如: /ppt/slides/slide1.xml -> slide1
+    BaseName returns the base name of the URI (without extension).
+    Example: /ppt/slides/slide1.xml -> slide1
 
 func (p *PackURI) Clone() *PackURI
-    Clone 创建 PackURI 的副本
+    Clone creates a copy of the PackURI
 
 func (p *PackURI) DirName() string
-    DirName 返回父目录路径 例如: /ppt/slides/slide1.xml -> /ppt/slides
+    DirName returns the parent directory path.
+    Example: /ppt/slides/slide1.xml -> /ppt/slides
 
 func (p *PackURI) DirSegments() []string
-    DirSegments 返回目录段的切片（不含文件名）
+    DirSegments returns a slice of directory segments (excluding the file name)
 
 func (p *PackURI) Equals(other *PackURI) bool
-    Equals 比较两个 PackURI 是否相等
+    Equals reports whether two PackURIs are equal
 
 func (p *PackURI) EqualsStr(uri string) bool
-    EqualsStr 比较与字符串 URI 是否相等
+    EqualsStr reports whether the PackURI equals a string URI
 
 func (p *PackURI) Extension() string
-    Extension 返回文件扩展名 例如: /ppt/slides/slide1.xml -> .xml
+    Extension returns the file extension.
+    Example: /ppt/slides/slide1.xml -> .xml
 
 func (p *PackURI) FileName() string
-    FileName 返回文件名（含扩展名） 例如: /ppt/slides/slide1.xml -> slide1.xml
+    FileName returns the file name including extension.
+    Example: /ppt/slides/slide1.xml -> slide1.xml
 
 func (p *PackURI) IsAbsolute() bool
-    IsAbsolute 检查是否为绝对路径
+    IsAbsolute reports whether the URI is an absolute path
 
 func (p *PackURI) IsPackageRels() bool
-    IsPackageRels 检查是否为包级别关系文件
+    IsPackageRels reports whether this is the package-level relationships file
 
 func (p *PackURI) IsRelationshipsPart() bool
-    IsRelationshipsPart 检查是否为关系部件
+    IsRelationshipsPart reports whether this is a relationships part
 
 func (p *PackURI) Join(relativePath string) *PackURI
-    Join 连接相对路径并返回新的 PackURI
+    Join resolves a relative path against this URI and returns a new PackURI
 
 func (p PackURI) MarshalText() ([]byte, error)
-    MarshalText 实现 encoding.TextMarshaler 接口
+    MarshalText implements encoding.TextMarshaler
 
 func (p *PackURI) MemberName() string
-    MemberName 返回相对于包根目录的成员名称（用于 ZIP） 去掉开头的 /
+    MemberName returns the member name relative to the package root (used for
+    ZIP entries). Strips the leading /.
 
 func (p *PackURI) RelPath() string
-    RelPath 返回相对路径（用于关系目标）
+    RelPath returns the relative path (used as a relationship target)
 
 func (p *PackURI) RelPathFrom(other *PackURI) string
-    RelPathFrom 计算从另一个 URI 到此 URI 的相对路径
+    RelPathFrom computes the relative path from another URI to this URI
 
 func (p *PackURI) RelationshipsURI() *PackURI
-    RelationshipsURI 返回此部件对应的关系文件 URI 例如: /ppt/slides/slide1.xml ->
-    /ppt/slides/_rels/slide1.xml.rels
+    RelationshipsURI returns the URI of the relationships file for this part.
+    Example: /ppt/slides/slide1.xml -> /ppt/slides/_rels/slide1.xml.rels
 
 func (p *PackURI) Segments() []string
-    Segments 返回 URI 的各个段
+    Segments returns the individual segments of the URI
 
 func (p *PackURI) SourceURI() *PackURI
-    SourceURI 从关系文件路径获取源部件 URI 例如: /ppt/slides/_rels/slide1.xml.rels ->
-    /ppt/slides/slide1.xml
+    SourceURI derives the source part URI from a relationships file path.
+    Example: /ppt/slides/_rels/slide1.xml.rels -> /ppt/slides/slide1.xml
 
 func (p *PackURI) String() string
-    String 返回 URI 字符串表示
+    String returns the string representation of the URI
 
 func (p *PackURI) URI() string
-    URI 返回原始 URI 字符串
+    URI returns the raw URI string
 
 func (p *PackURI) UnmarshalText(data []byte) error
-    UnmarshalText 实现 encoding.TextUnmarshaler 接口
+    UnmarshalText implements encoding.TextUnmarshaler
 
 type Package struct {
 	// Has unexported fields.
 }
-    Package 表示一个 OPC 包（如 PPTX 文件）
+    Package represents an OPC package (e.g. a PPTX file)
 
 func NewPackage() *Package
-    NewPackage 创建一个新的空 OPC 包
+    NewPackage creates a new empty OPC package
 
 func Open(r io.ReaderAt, size int64) (*Package, error)
-    Open 从 ZIP 流打开一个 OPC 包
+    Open opens an OPC package from a ZIP stream
 
 func OpenFile(path string) (*Package, error)
-    OpenFile 从文件路径打开一个 OPC 包
+    OpenFile opens an OPC package from a file path
 
 func (p *Package) AddPart(part *Part) error
-    AddPart 添加部件到包
+    AddPart adds a part to the package
 
 func (p *Package) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error)
-    AddRelationship 添加包级别关系
+    AddRelationship adds a package-level relationship
 
 func (p *Package) AllParts() []*Part
-    AllParts 返回所有部件
+    AllParts returns all parts
 
 func (p *Package) Clone() *Package
-    Clone 克隆整个包（智能拷贝：静态资源 zero-copy，动态资源深拷贝） 对于不可变内容类型（图片、媒体、主题、母版等）使用 CloneShared 对于可变内容类型（幻灯片、演示文稿等）使用深拷贝
+    Clone clones the entire package (smart copy: immutable resources use
+    zero-copy, mutable resources use deep copy). Uses CloneShared for
+    immutable content types (images, media, themes, masters, etc.) and deep
+    copy for mutable content types (slides, presentation, etc.).
 
 func (p *Package) CloneDeep() *Package
-    CloneDeep 克隆整个包（完全深拷贝，不使用 zero-copy） 用于需要完全独立副本的场景
+    CloneDeep clones the entire package using a full deep copy (no zero-copy).
+    Use when a completely independent copy is required.
 
 func (p *Package) Close() error
-    Close 关闭包，释放资源
+    Close closes the package and releases resources
 
 func (p *Package) ContainsPart(uri *PackURI) bool
-    ContainsPart 检查部件是否存在
+    ContainsPart reports whether the part exists
 
 func (p *Package) ContentTypes() *ContentTypes
-    ContentTypes 返回内容类型定义
+    ContentTypes returns the content type definitions
 
 func (p *Package) CoreProperties() *CoreProperties
-    CoreProperties 返回核心属性
+    CoreProperties returns the core properties
 
 func (p *Package) CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error)
-    CreatePart 创建并添加新部件
+    CreatePart creates and adds a new part
 
 func (p *Package) CreatePartFromReader(uri *PackURI, contentType string, r io.Reader) (*Part, error)
-    CreatePartFromReader 从 Reader 创建并添加部件
+    CreatePartFromReader creates and adds a part from a Reader
 
 func (p *Package) CreatePartFromXML(uri *PackURI, contentType string, v interface{}) (*Part, error)
-    CreatePartFromXML 从 XML 结构创建并添加部件
+    CreatePartFromXML creates and adds a part from an XML struct
 
 func (p *Package) DirtyParts() []*Part
-    DirtyParts 返回所有被修改的部件
+    DirtyParts returns all modified parts
 
 func (p *Package) GetPart(uri *PackURI) *Part
-    GetPart 根据 URI 获取部件
+    GetPart returns the part for the given URI
 
 func (p *Package) GetPartByRelType(relType string) *Part
-    GetPartByRelType 通过关系类型获取目标部件
+    GetPartByRelType returns the target part for a relationship type
 
 func (p *Package) GetPartByStr(uri string) *Part
-    GetPartByStr 根据字符串 URI 获取部件
+    GetPartByStr returns the part for a string URI
 
 func (p *Package) GetPartsByType(contentType string) []*Part
-    GetPartsByType 根据内容类型获取所有部件
+    GetPartsByType returns all parts with the given content type
 
 func (p *Package) GetRelationship(rID string) *Relationship
-    GetRelationship 根据 rID 获取包级别关系
+    GetRelationship returns the package-level relationship for a given rID
 
 func (p *Package) GetRelationshipsByType(relType string) []*Relationship
-    GetRelationshipsByType 根据类型获取包级别关系
+    GetRelationshipsByType returns all package-level relationships for a type
 
 func (p *Package) PartCount() int
-    PartCount 返回部件数量
+    PartCount returns the number of parts
 
 func (p *Package) PartURIs() []*PackURI
-    PartURIs 返回所有部件 URI
+    PartURIs returns all part URIs
 
 func (p *Package) Parts() *PartCollection
-    Parts 返回部件集合
+    Parts returns the part collection
 
 func (p *Package) Relationships() *Relationships
-    Relationships 返回包级别关系
+    Relationships returns the package-level relationships
 
 func (p *Package) RemovePart(uri *PackURI) error
-    RemovePart 从包中移除部件
+    RemovePart removes a part from the package
 
 func (p *Package) ResolveRelationship(source *Part, relType string) *Part
-    ResolveRelationship 解析部件间关系获取目标部件
+    ResolveRelationship resolves a relationship between parts and returns the
+    target part
 
 func (p *Package) Save(w io.Writer) error
-    Save 将包保存为 ZIP 格式写入到 w
+    Save writes the package as a ZIP archive to w
 
 func (p *Package) SaveFile(path string) error
-    SaveFile 将包保存到文件
+    SaveFile saves the package to a file
 
 func (p *Package) SaveToBytes() ([]byte, error)
-    SaveToBytes 将包保存到字节数组
+    SaveToBytes saves the package to a byte slice
 
 func (p *Package) SetCoreProperties(props *CoreProperties)
-    SetCoreProperties 设置核心属性
+    SetCoreProperties sets the core properties
 
 type Part struct {
 	// Has unexported fields.
 }
-    Part 表示包中的一个部件 支持两种数据模式：独占模式（blob）和共享模式（sharedBlob） 共享模式用于不可变资源的 zero-copy 优化
+    Part represents a part within the package. It supports two data modes:
+    exclusive mode (blob) and shared mode (sharedBlob). Shared mode is used
+    for zero-copy optimisation of immutable resources.
 
 func NewPart(uri *PackURI, contentType string, blob []byte) *Part
-    NewPart 创建一个新的部件（独占数据模式）
+    NewPart creates a new part (exclusive data mode)
 
 func NewPartFromReader(uri *PackURI, contentType string, r io.Reader) (*Part, error)
-    NewPartFromReader 从Reader创建部件
+    NewPartFromReader creates a part from a Reader
 
 func NewSharedPart(uri *PackURI, contentType string, sharedBlob []byte) *Part
-    NewSharedPart 创建一个共享数据的部件（zero-copy，用于不可变资源） 调用者必须保证 sharedBlob 在 Part 生命周期内不会被修改
+    NewSharedPart creates a part with shared data (zero-copy, for immutable
+    resources). The caller must ensure sharedBlob is not modified for the
+    lifetime of the Part.
 
 func (p *Part) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error)
-    AddRelationship 添加一个关系
+    AddRelationship adds a relationship
 
 func (p *Part) Blob() []byte
-    Blob 返回原始内容 对于不可变资源返回共享的只读切片，否则返回独立副本
+    Blob returns the raw content. For immutable resources this returns a shared
+    read-only slice; otherwise it returns an independent copy.
 
 func (p *Part) Clone() *Part
-    Clone 克隆部件（深拷贝，用于可变内容） 如果原来是共享的，会创建独立副本
+    Clone clones the part (deep copy, for mutable content). If the original was
+    shared, an independent copy is created.
 
 func (p *Part) CloneShared() *Part
-    CloneShared 克隆部件（zero-copy，用于不可变资源） 调用此方法的前提是 Part 的内容永远不会被修改
+    CloneShared clones the part (zero-copy, for immutable resources). The
+    caller is responsible for ensuring the Part's content will never be modified.
 
 func (p *Part) ContentType() string
-    ContentType 返回内容类型
+    ContentType returns the content type
 
 func (p *Part) GetRelatedPart(rID string) *PackURI
-    GetRelatedPart 通过关系获取目标部件（需要Package上下文）
+    GetRelatedPart returns the target part URI via relationship (requires
+    Package context)
 
 func (p *Part) HasRelationships() bool
-    HasRelationships 检查是否有关系
+    HasRelationships reports whether the part has relationships
 
 func (p *Part) IsDirty() bool
-    IsDirty 返回是否被修改
+    IsDirty reports whether the part has been modified
 
 func (p *Part) IsImmutable() bool
-    IsImmutable 返回是否为不可变资源
+    IsImmutable reports whether this is an immutable resource
 
 func (p *Part) LoadRelationships(data []byte) error
-    LoadRelationships 从XML加载关系
+    LoadRelationships loads relationships from XML
 
 func (p *Part) MarshalToBlob(v interface{}) error
-    MarshalToBlob 将 v 序列化为 XML 并存储到 blob
+    MarshalToBlob serialises v to XML and stores it in the blob
 
 func (p *Part) PartURI() *PackURI
-    PartURI 返回部件URI
+    PartURI returns the part URI
 
 func (p *Part) Reader() io.Reader
-    Reader 返回内容的Reader
+    Reader returns a Reader over the content
 
 func (p *Part) Relationships() *Relationships
-    Relationships 返回关系集合
+    Relationships returns the relationships collection
 
 func (p *Part) RelationshipsBlob() ([]byte, error)
-    RelationshipsBlob 返回关系的XML内容
+    RelationshipsBlob returns the XML content of the relationships
 
 func (p *Part) RelationshipsURI() *PackURI
-    RelationshipsURI 返回关系文件的URI
+    RelationshipsURI returns the URI of the relationships file
 
 func (p *Part) RemoveRelationship(rID string) error
-    RemoveRelationship 删除一个关系
+    RemoveRelationship removes a relationship
 
 func (p *Part) SetBlob(blob []byte)
-    SetBlob 设置内容
+    SetBlob sets the content
 
 func (p *Part) SetBlobFromReader(r io.Reader) error
-    SetBlobFromReader 从Reader设置内容
+    SetBlobFromReader sets the content from a Reader
 
 func (p *Part) SetContentType(ct string)
-    SetContentType 设置内容类型
+    SetContentType sets the content type
 
 func (p *Part) SetDirty(dirty bool)
-    SetDirty 设置修改标记
+    SetDirty sets the dirty flag
 
 func (p *Part) SetImmutable(immutable bool)
-    SetImmutable 设置为不可变资源
+    SetImmutable marks the part as an immutable resource
 
 func (p *Part) Size() int
-    Size 返回内容大小
+    Size returns the content size
 
 func (p *Part) UnmarshalBlob(v interface{}) error
-    UnmarshalBlob 从 blob 解析 XML 内容到 v
+    UnmarshalBlob parses the XML content of the blob into v
 
 type PartCollection struct {
 	// Has unexported fields.
 }
-    PartCollection 部件集合
+    PartCollection is a collection of parts
 
 func NewPartCollection() *PartCollection
-    NewPartCollection 创建新的部件集合
+    NewPartCollection creates a new part collection
 
 func (c *PartCollection) Add(part *Part) error
-    Add 添加部件
+    Add adds a part
 
 func (c *PartCollection) All() []*Part
-    All 返回所有部件（按插入顺序）
+    All returns all parts in insertion order
 
 func (c *PartCollection) Clear()
-    Clear 清空集合
+    Clear clears the collection
 
 func (c *PartCollection) Contains(uri *PackURI) bool
-    Contains 检查是否包含指定部件
+    Contains reports whether the collection contains the specified part
 
 func (c *PartCollection) Count() int
-    Count 返回部件数量
+    Count returns the number of parts
 
 func (c *PartCollection) DirtyParts() []*Part
-    DirtyParts 返回所有被修改的部件
+    DirtyParts returns all modified parts
 
 func (c *PartCollection) Get(uri *PackURI) *Part
-    Get 根据URI获取部件
+    Get returns the part for a URI
 
 func (c *PartCollection) GetByStr(uri string) *Part
-    GetByStr 根据字符串URI获取部件
+    GetByStr returns the part for a string URI
 
 func (c *PartCollection) GetByType(contentType string) []*Part
-    GetByType 根据内容类型获取部件
+    GetByType returns parts by content type
 
 func (c *PartCollection) Remove(uri *PackURI) error
-    Remove 删除部件
+    Remove removes a part
 
 func (c *PartCollection) URIs() []*PackURI
-    URIs 返回所有部件URI
+    URIs returns all part URIs
 
 type PartData struct {
-	URI         string     // 部件 URI
-	Path        string     // ZIP 内路径
-	ContentType string     // 内容类型
-	Data        []byte     // 数据内容
-	Source      PartSource // 数据源（用于懒加载）
-	Error       error      // 写入错误（如果有）
+	URI         string     // Part URI
+	Path        string     // Path within the ZIP archive
+	ContentType string     // Content type
+	Data        []byte     // Data content
+	Source      PartSource // Data source (for lazy loading)
+	Error       error      // Write error (if any)
 }
-    PartData 部件数据 - 用于 channel 传递
+    PartData is part data used for channel transmission
 
 type PartDataChannel chan *PartData
-    PartDataChannel 部件数据通道类型
+    PartDataChannel is a channel type for part data
 
 func NewPartDataChannel(bufferSize int) PartDataChannel
-    NewPartDataChannel 创建部件数据通道
+    NewPartDataChannel creates a part data channel
 
 type PartFactory interface {
-	// CreatePart 创建部件
+	// CreatePart creates a part
 	CreatePart(uri *PackURI, contentType string, blob []byte) (*Part, error)
 }
-    PartFactory 部件工厂接口
+    PartFactory is the part factory interface
 
 type PartIterator struct {
 	// Has unexported fields.
 }
-    PartIterator 部件迭代器
+    PartIterator is a part iterator
 
 func (it *PartIterator) FilterByType(contentType string) *PartIterator
-    FilterByType 按内容类型过滤
+    FilterByType filters by content type
 
 func (it *PartIterator) Next() bool
-    Next 移动到下一个部件
+    Next advances to the next part
 
 func (it *PartIterator) Open() (io.ReadCloser, error)
-    Open 打开当前部件的内容流
+    Open opens the content stream of the current part
 
 func (it *PartIterator) Part() *StreamPart
-    Part 返回当前部件
+    Part returns the current part
 
 type PartSource interface {
 	Open() (io.ReadCloser, error)
 	Size() int64
 }
-    PartSource 部件数据源接口
+    PartSource is the part data source interface
 
 type ReaderSource struct {
 	// Has unexported fields.
 }
-    ReaderSource io.Reader 数据源
+    ReaderSource is an io.Reader data source
 
 func NewReaderSource(r io.Reader, size int64) *ReaderSource
-    NewReaderSource 从 io.Reader 创建数据源
+    NewReaderSource creates a data source from an io.Reader
 
 func (s *ReaderSource) Open() (io.ReadCloser, error)
-    Open 返回 reader
+    Open returns the reader
 
 func (s *ReaderSource) Size() int64
-    Size 返回数据大小
+    Size returns the data size
 
 type RelTypeCollection struct {
 	// Has unexported fields.
 }
-    RelTypeCollection 关系类型集合（用于按类型分组查找）
+    RelTypeCollection is a collection of relationships grouped by type
 
 func NewRelTypeCollection() *RelTypeCollection
-    NewRelTypeCollection 创建新的关系类型集合
+    NewRelTypeCollection creates a new relationship type collection
 
 func (c *RelTypeCollection) Add(rel *Relationship)
-    Add 添加关系到类型集合
+    Add adds a relationship to the type collection
 
 func (c *RelTypeCollection) GetByType(relType string) []*Relationship
-    GetByType 按类型获取关系
+    GetByType returns relationships by type
 
 func (c *RelTypeCollection) Types() []string
-    Types 返回所有关系类型
+    Types returns all relationship types
 
 type Relatable interface {
-	// PartURI 返回部件的URI
+	// PartURI returns the URI of the part
 	PartURI() *PackURI
-	// Relationships 返回部件的关系集合
+	// Relationships returns the relationships collection of the part
 	Relationships() *Relationships
-	// AddRelationship 添加一个关系
+	// AddRelationship adds a relationship
 	AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error)
 }
-    Relatable 可关联部件的接口
+    Relatable is the interface for parts that can hold relationships
 
 type Relationship struct {
 	// Has unexported fields.
 }
-    Relationship 表示两个部件之间的关系
+    Relationship represents a relationship between two parts
 
 func NewRelationship(rID, relType, targetURI string, isExternal bool, source *PackURI) *Relationship
-    NewRelationship 创建一个新的关系
+    NewRelationship creates a new relationship
 
 func (r *Relationship) Equals(other *Relationship) bool
-    Equals 比较两个关系是否相等
+    Equals reports whether two relationships are equal
 
 func (r *Relationship) IsExternal() bool
-    IsExternal 返回是否为外部关系
+    IsExternal reports whether this is an external relationship
 
 func (r *Relationship) RID() string
-    RID 返回关系ID
+    RID returns the relationship ID
 
 func (r *Relationship) SetSource(source *PackURI)
-    SetSource 设置源URI
+    SetSource sets the source URI
 
 func (r *Relationship) SourceURI() *PackURI
-    SourceURI 返回源URI
+    SourceURI returns the source URI
 
 func (r *Relationship) TargetMode() string
-    TargetMode 返回目标模式
+    TargetMode returns the target mode
 
 func (r *Relationship) TargetRef() string
-    TargetRef 返回目标引用（相对或绝对） 如果有源部件，返回从源部件到目标的相对路径
+    TargetRef returns the target reference (relative or absolute). If a source
+    part is set, returns the relative path from the source part to the target.
 
 func (r *Relationship) TargetURI() *PackURI
-    TargetURI 返回目标URI
+    TargetURI returns the target URI
 
 func (r *Relationship) Type() string
-    Type 返回关系类型
+    Type returns the relationship type
 
 type Relationships struct {
 	// Has unexported fields.
 }
-    Relationships 表示关系的集合
+    Relationships represents a collection of relationships
 
 func NewRelationships(sourceURI *PackURI) *Relationships
-    NewRelationships 创建新的关系集合
+    NewRelationships creates a new relationships collection
 
 func ParseRelationshipsFromXML(data []byte, sourceURI *PackURI) (*Relationships, error)
-    ParseRelationshipsFromXML 从XML数据解析关系
+    ParseRelationshipsFromXML parses relationships from XML data
 
 func (rs *Relationships) Add(rel *Relationship) error
-    Add 添加一个关系
+    Add adds a relationship
 
 func (rs *Relationships) AddNew(relType, targetURI string, isExternal bool) (*Relationship, error)
-    AddNew 创建并添加一个新关系（使用原子操作分配 ID）
+    AddNew creates and adds a new relationship (allocates an ID atomically)
 
 func (rs *Relationships) All() []*Relationship
-    All 返回所有关系（按插入顺序）
+    All returns all relationships in insertion order
 
 func (rs *Relationships) Clone() *Relationships
-    Clone 克隆关系集合
+    Clone clones the relationships collection
 
 func (rs *Relationships) Contains(rID string) bool
-    Contains 检查是否包含指定rID的关系
+    Contains reports whether the collection contains a relationship with the
+    given rID
 
 func (rs *Relationships) Count() int
-    Count 返回关系数量
+    Count returns the number of relationships
 
 func (rs *Relationships) FromXML(data []byte) error
-    FromXML 从XML解析关系集合
+    FromXML parses the relationships collection from XML
 
 func (rs *Relationships) Get(rID string) *Relationship
-    Get 根据rID获取关系
+    Get returns the relationship for a given rID
 
 func (rs *Relationships) GetByTarget(targetURI *PackURI) *Relationship
-    GetByTarget 根据目标URI获取关系
+    GetByTarget returns the relationship for a target URI
 
 func (rs *Relationships) GetByType(relType string) []*Relationship
-    GetByType 根据关系类型获取所有关系
+    GetByType returns all relationships for a given type
 
 func (rs *Relationships) InitRIDCounter()
-    InitRIDCounter 初始化 rID 计数器（从现有关系中找到最大值） 在从 XML 加载关系后调用，确保新分配的 ID 不会与现有的冲突
+    InitRIDCounter initialises the rID counter from the maximum value found
+    among existing relationships. Call this after loading relationships from XML
+    to ensure newly allocated IDs do not conflict with existing ones.
 
 func (rs *Relationships) MarshalXML(e *xml.Encoder, start xml.StartElement) error
-    MarshalXML 实现 xml.Marshaler 接口
+    MarshalXML implements xml.Marshaler
 
 func (rs *Relationships) NextRID() string
-    NextRID 返回下一个关系ID（预览，不消耗） 此方法是幂等的，多次调用返回相同的值，直到 AddNew 实际使用
+    NextRID returns the next relationship ID (preview, does not consume). This
+    method is idempotent: multiple calls return the same value until AddNew
+    actually uses it.
 
 func (rs *Relationships) Remove(rID string) error
-    Remove 删除一个关系
+    Remove removes a relationship
 
 func (rs *Relationships) SetSourceURI(sourceURI *PackURI)
-    SetSourceURI 设置源URI
+    SetSourceURI sets the source URI
 
 func (rs *Relationships) SourceURI() *PackURI
-    SourceURI 返回源URI
+    SourceURI returns the source URI
 
 func (rs *Relationships) ToXML() ([]byte, error)
-    ToXML 将关系集合序列化为XML
+    ToXML serialises the relationships collection to XML
 
 func (rs *Relationships) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
-    UnmarshalXML 实现 xml.Unmarshaler 接口
+    UnmarshalXML implements xml.Unmarshaler
 
 type RelationshipsStreamer struct {
 	// Has unexported fields.
 }
-    RelationshipsStreamer 关系流式写入器
+    RelationshipsStreamer is a streaming writer for relationships
 
 func NewRelationshipsStreamer(rels *Relationships) *RelationshipsStreamer
-    NewRelationshipsStreamer 创建关系流式写入器
+    NewRelationshipsStreamer creates a relationships streaming writer
 
 func (rs *RelationshipsStreamer) StreamWriteTo(w io.Writer) error
-    StreamWriteTo 实现 StreamWriter 接口
+    StreamWriteTo implements StreamWriter
 
 type ResourceDedupPool struct {
 	// Has unexported fields.
 }
-    ResourceDedupPool 全局资源去重池 使用 sync.Map 实现并发安全的资源去重
+    ResourceDedupPool is a global resource deduplication pool. It uses sync.Map
+    for concurrency-safe resource deduplication.
 
 func GetGlobalResourcePool() *ResourceDedupPool
-    GetGlobalResourcePool 获取全局资源池（注意：这是去重池，不是共享池）
+    GetGlobalResourcePool returns the global resource pool (note: this is a
+    deduplication pool, not a shared object pool)
 
 func NewResourceDedupPool() *ResourceDedupPool
-    NewResourceDedupPool 创建新的资源去重池
+    NewResourceDedupPool creates a new resource deduplication pool
 
 type ResourcePool struct {
 	// Has unexported fields.
 }
-    ResourcePool 全局资源池，管理可共享的静态资源 使用 zero-copy 策略，多个 Package 可以共享相同的二进制数据 支持引用计数，用于追踪资源使用情况
+    ResourcePool is a global resource pool that manages shareable static
+    resources. It uses a zero-copy strategy so that multiple Packages can share
+    the same binary data. Reference counting is supported for tracking resource
+    usage.
 
 func GetGlobalPool() *ResourcePool
-    GetGlobalPool 获取全局资源池
+    GetGlobalPool returns the global resource pool
 
 func (p *ResourcePool) CreateSharedPart(uri *PackURI, contentType string, loader func() ([]byte, error)) (*Part, error)
-    CreateSharedPart 从资源池创建共享部件 如果资源不在池中，会使用 loader 加载
+    CreateSharedPart creates a shared part from the resource pool. If the
+    resource is not in the pool it is loaded using the loader function.
 
 func (p *ResourcePool) GetOrLoad(uri string, contentType string, loader func() ([]byte, error)) ([]byte, error)
-    GetOrLoad 获取或加载资源（全局唯一实例，zero-copy） loader 函数仅在资源不存在时调用一次
+    GetOrLoad retrieves or loads a resource (globally unique instance,
+    zero-copy). The loader function is called at most once when the resource
+    does not yet exist.
 
 func (p *ResourcePool) Prefetch(resources map[string]func() ([]byte, error)) error
-    Prefetch 预加载资源到池中 用于提前加载已知会使用的资源，避免运行时加载延迟
+    Prefetch pre-loads resources into the pool. Use this to load known resources
+    ahead of time and avoid latency at render time.
 
 func (p *ResourcePool) Release(uri string)
-    Release 释放资源引用（引用计数减一） 当引用计数归零时，资源会被移除
+    Release decrements the reference count for a resource. When the count
+    reaches zero the resource is removed.
 
 func (p *ResourcePool) ReleaseAll()
-    ReleaseAll 释放所有资源（慎用！）
+    ReleaseAll releases all resources (use with caution)
 
 func (p *ResourcePool) Stats() map[string]int
-    Stats 返回资源池统计信息 返回 themes, masters, layouts, media, fonts, total 的计数
+    Stats returns resource pool statistics. Returns counts for themes, masters,
+    layouts, media, fonts, and total.
 
 func (p *ResourceDedupPool) Clear()
-    Clear 清空资源池
+    Clear clears the resource pool
 
 func (p *ResourceDedupPool) Lookup(hash string) (*ResourceEntry, bool)
-    Lookup 查找资源
+    Lookup looks up a resource by hash
 
 func (p *ResourceDedupPool) Register(uri string, data []byte) (isNew bool, existingURI string)
-    Register 注册资源，返回是否为新资源 如果资源已存在，增加引用计数并返回 false
+    Register registers a resource and returns whether it is new. If the
+    resource already exists, its reference count is incremented and false is
+    returned.
 
 func (p *ResourceDedupPool) RegisterWithHash(uri string, hash string, size int64) (isNew bool, existingURI string)
-    RegisterWithHash 使用预计算的哈希注册资源
+    RegisterWithHash registers a resource using a pre-computed hash
 
 func (p *ResourceDedupPool) Release(hash string)
-    Release 释放资源引用
+    Release decrements the reference count for a resource
 
 func (p *ResourceDedupPool) Stats() (count int, totalSize int64)
-    Stats 返回资源池统计信息
+    Stats returns resource pool statistics
 
 type ResourceEntry struct {
-	URI       string // 部件 URI
-	Hash      string // 内容哈希（SHA256）
-	Size      int64  // 原始大小
-	Reference int    // 引用计数
+	URI       string // Part URI
+	Hash      string // Content hash (SHA256)
+	Size      int64  // Original size
+	Reference int    // Reference count
 }
-    ResourceEntry 资源条目
+    ResourceEntry is a resource pool entry
 
 type ResourceHashKey string
-    ResourceHashKey 资源哈希键
+    ResourceHashKey is a resource hash key
 
 type StreamPackage struct {
 	// Has unexported fields.
 }
-    StreamPackage 流式 OPC 包 - 支持懒加载和流式写入
+    StreamPackage is a streaming OPC package with lazy loading and streaming writes
 
 func NewStreamPackage() *StreamPackage
-    NewStreamPackage 创建新的流式包
+    NewStreamPackage creates a new streaming package
 
 func OpenStream(path string) (*StreamPackage, error)
-    OpenStream 流式打开 OPC 包 文件句柄会保持打开状态以支持懒加载
+    OpenStream opens an OPC package in streaming mode. The file handle remains
+    open to support lazy loading.
 
 func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error)
-    OpenStreamFromReader 从 io.ReaderAt 流式打开 注意：调用者负责保持 ReaderAt 的有效性
+    OpenStreamFromReader opens a streaming package from an io.ReaderAt. The
+    caller is responsible for keeping the ReaderAt valid.
 
 func (p *StreamPackage) AddMediaPartWithDedup(uri *PackURI, contentType string, data []byte) (actualURI *PackURI, isNew bool, err error)
-    AddMediaPartWithDedup 添加媒体部件并进行去重 如果资源已存在，返回已存在部件的 URI 而不创建新部件
+    AddMediaPartWithDedup adds a media part with deduplication. If the resource
+    already exists, the URI of the existing part is returned and no new part is
+    created.
 
 func (p *StreamPackage) AddPart(part *StreamPart) error
-    AddPart 添加流式部件
+    AddPart adds a streaming part
 
 func (p *StreamPackage) AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error)
-    AddRelationship 添加包级别关系
+    AddRelationship adds a package-level relationship
 
 func (p *StreamPackage) AllParts() []*StreamPart
-    AllParts 返回所有部件
+    AllParts returns all parts
 
 func (p *StreamPackage) ClearMediaDedupPool()
-    ClearMediaDedupPool 清空媒体资源去重池
+    ClearMediaDedupPool clears the media resource deduplication pool
 
 func (p *StreamPackage) Close() error
-    Close 关闭包，释放资源
+    Close closes the package and releases resources
 
 func (p *StreamPackage) ConcurrentStreamSave(w io.Writer, workerCount, bufferSize int) error
-    ConcurrentStreamSave 使用 goroutine 收集器并发保存 workerCount: 并发工作 goroutine 数量
-    bufferSize: channel 缓冲区大小
+    ConcurrentStreamSave saves the package concurrently using a goroutine
+    collector. workerCount is the number of concurrent worker goroutines;
+    bufferSize is the channel buffer size.
 
 func (p *StreamPackage) ConcurrentStreamSaveFile(path string, workerCount, bufferSize int) error
-    ConcurrentStreamSaveFile 使用并发方式保存到文件
+    ConcurrentStreamSaveFile saves the package to a file using concurrent streaming
 
 func (p *StreamPackage) ContainsPart(uri *PackURI) bool
-    ContainsPart 检查部件是否存在
+    ContainsPart reports whether the part exists
 
 func (p *StreamPackage) ContentTypes() *ContentTypes
-    ContentTypes 返回内容类型定义
+    ContentTypes returns the content type definitions
 
 func (p *StreamPackage) CoreProperties() *CoreProperties
-    CoreProperties 返回核心属性
+    CoreProperties returns the core properties
 
 func (p *StreamPackage) CreatePartFromBytes(uri *PackURI, contentType string, data []byte) (*StreamPart, error)
-    CreatePartFromBytes 从字节创建部件（立即加载到内存）
+    CreatePartFromBytes creates a part from bytes (loaded immediately into memory)
 
 func (p *StreamPackage) CreateStreamPart(uri *PackURI, contentType string, source PartSource) (*StreamPart, error)
-    CreateStreamPart 创建并添加流式部件
+    CreateStreamPart creates and adds a streaming part
 
 func (p *StreamPackage) GetMediaDedupStats() (count int, totalSize int64)
-    GetMediaDedupStats 获取媒体资源去重统计
+    GetMediaDedupStats returns media resource deduplication statistics
 
 func (p *StreamPackage) GetPart(uri *PackURI) *StreamPart
-    GetPart 获取部件（内容按需加载）
+    GetPart returns a part (content is loaded on demand)
 
 func (p *StreamPackage) GetPartByRelType(relType string) *StreamPart
-    GetPartByRelType 通过关系类型获取目标部件
+    GetPartByRelType returns the target part for a relationship type
 
 func (p *StreamPackage) GetPartByStr(uri string) *StreamPart
-    GetPartByStr 根据字符串 URI 获取部件
+    GetPartByStr returns the part for a string URI
 
 func (p *StreamPackage) GetPartsByType(contentType string) []*StreamPart
-    GetPartsByType 根据内容类型获取部件
+    GetPartsByType returns parts by content type
 
 func (p *StreamPackage) NewPartIterator() *PartIterator
-    NewPartIterator 创建部件迭代器
+    NewPartIterator creates a part iterator
 
 func (p *StreamPackage) PartCount() int
-    PartCount 返回部件数量
+    PartCount returns the number of parts
 
 func (p *StreamPackage) PartURIs() []*PackURI
-    PartURIs 返回所有部件 URI
+    PartURIs returns all part URIs
 
 func (p *StreamPackage) RegisterMediaWithDedup(uri string, data []byte) (isNew bool, existingURI string)
-    RegisterMediaWithDedup 注册媒体资源并进行去重 返回：isNew 表示是否为新资源，existingURI 表示已存在资源的
-    URI
+    RegisterMediaWithDedup registers a media resource with deduplication.
+    Returns: isNew indicates whether it is a new resource; existingURI is the
+    URI of the already-existing resource.
 
 func (p *StreamPackage) Relationships() *Relationships
-    Relationships 返回包级别关系
+    Relationships returns the package-level relationships
 
 func (p *StreamPackage) RemovePart(uri *PackURI) error
-    RemovePart 移除部件
+    RemovePart removes a part
 
 func (p *StreamPackage) SetCoreProperties(props *CoreProperties)
-    SetCoreProperties 设置核心属性
+    SetCoreProperties sets the core properties
 
 func (p *StreamPackage) StreamSave(w io.Writer) error
-    StreamSave 流式保存到 io.Writer
+    StreamSave streams the package to an io.Writer
 
 func (p *StreamPackage) StreamSaveFile(path string) error
-    StreamSaveFile 流式保存到文件
+    StreamSaveFile streams the package to a file
 
 type StreamPart struct {
 	// Has unexported fields.
 }
-    StreamPart 流式部件 - 支持懒加载
+    StreamPart is a streaming part with lazy loading support
 
 func NewStreamPart(uri *PackURI, contentType string, source PartSource) *StreamPart
-    NewStreamPart 创建流式部件
+    NewStreamPart creates a streaming part
 
 func (p *StreamPart) Blob() ([]byte, error)
-    Blob 返回内容（如果未加载则先加载）
+    Blob returns the content (loading it first if not already loaded)
 
 func (p *StreamPart) Clone() *StreamPart
-    Clone 克隆部件
+    Clone clones the part
 
 func (p *StreamPart) ContentType() string
-    ContentType 返回内容类型
+    ContentType returns the content type
 
 func (p *StreamPart) HasRelationships() bool
-    HasRelationships 检查是否有关系
+    HasRelationships reports whether the part has relationships
 
 func (p *StreamPart) IsDirty() bool
-    IsDirty 返回是否被修改
+    IsDirty reports whether the part has been modified
 
 func (p *StreamPart) IsLoaded() bool
-    IsLoaded 返回是否已加载到内存
+    IsLoaded reports whether the content has been loaded into memory
 
 func (p *StreamPart) Load() error
-    Load 将内容加载到内存
+    Load loads the content into memory
 
 func (p *StreamPart) LoadRelationships(data []byte) error
-    LoadRelationships 从 XML 加载关系
+    LoadRelationships loads relationships from XML
 
 func (p *StreamPart) Open() (io.ReadCloser, error)
-    Open 打开部件内容流
+    Open opens the part content stream
 
 func (p *StreamPart) PartURI() *PackURI
-    PartURI 返回部件 URI
+    PartURI returns the part URI
 
 func (p *StreamPart) Relationships() *Relationships
-    Relationships 返回关系集合
+    Relationships returns the relationships collection
 
 func (p *StreamPart) RelationshipsBlob() ([]byte, error)
-    RelationshipsBlob 返回关系的 XML 内容
+    RelationshipsBlob returns the XML content of the relationships
 
 func (p *StreamPart) RelationshipsURI() *PackURI
-    RelationshipsURI 返回关系文件的 URI
+    RelationshipsURI returns the URI of the relationships file
 
 func (p *StreamPart) SetBlob(data []byte)
-    SetBlob 设置内容
+    SetBlob sets the content
 
 func (p *StreamPart) SetBlobFromReader(r io.Reader) error
-    SetBlobFromReader 从 Reader 设置内容
+    SetBlobFromReader sets the content from a Reader
 
 func (p *StreamPart) SetContentType(ct string)
-    SetContentType 设置内容类型
+    SetContentType sets the content type
 
 func (p *StreamPart) SetDirty(dirty bool)
-    SetDirty 设置修改标记
+    SetDirty sets the dirty flag
 
 func (p *StreamPart) Size() int64
-    Size 返回内容大小
+    Size returns the content size
 
 func (p *StreamPart) UnmarshalBlob(v any) error
-    UnmarshalBlob 从 blob 解析 XML 内容
+    UnmarshalBlob parses the XML content from the blob
 
 type StreamWriter interface {
 	StreamWriteTo(w io.Writer) error
 }
-    StreamWriter 流式写入器接口
+    StreamWriter is the streaming writer interface
 
 type StreamingZipWriter struct {
 	// Has unexported fields.
 }
-    StreamingZipWriter 流式 ZIP 写入器
+    StreamingZipWriter is a streaming ZIP writer
 
 func NewStreamingZipWriter(w io.Writer) *StreamingZipWriter
-    NewStreamingZipWriter 创建流式 ZIP 写入器
+    NewStreamingZipWriter creates a streaming ZIP writer
 
 func (sw *StreamingZipWriter) Close() error
-    Close 关闭 ZIP 写入器
+    Close closes the ZIP writer
 
 func (sw *StreamingZipWriter) Create(path string) (io.Writer, error)
-    Create 创建 ZIP 条目并返回写入器
+    Create creates a ZIP entry and returns a writer
 
 func (sw *StreamingZipWriter) WriteBytes(path string, data []byte) error
-    WriteBytes 写入字节数据
+    WriteBytes writes byte data
 
 func (sw *StreamingZipWriter) WriteFromReader(path string, reader io.Reader) error
-    WriteFromReader 从 Reader 流式写入 ZIP 条目
+    WriteFromReader streams a ZIP entry from an io.Reader
 
 func (sw *StreamingZipWriter) WriteFromStreamer(path string, streamer StreamWriter) error
-    WriteFromStreamer 从 StreamWriter 流式写入 ZIP 条目
+    WriteFromStreamer streams a ZIP entry from a StreamWriter
 
 func (sw *StreamingZipWriter) WriteFromXMLStreamer(path string, streamer XMLStreamer) error
-    WriteFromXMLStreamer 从 XMLStreamer 流式写入 ZIP 条目
+    WriteFromXMLStreamer streams a ZIP entry from an XMLStreamer
 
 func (sw *StreamingZipWriter) WriteStreamPart(part *StreamPart) error
-    WriteStreamPart 流式写入 StreamPart
+    WriteStreamPart streams a StreamPart into a ZIP entry
 
 func (sw *StreamingZipWriter) WriteXML(path string, data []byte) error
-    WriteXML 写入 XML 数据（自动添加 XML 头）
+    WriteXML writes XML data (adds XML declaration automatically)
 
 type XContentTypes struct {
 	XMLName   xml.Name    `xml:"Types"`
@@ -1179,7 +1229,7 @@ type XContentTypes struct {
 	Defaults  []XDefault  `xml:"Default"`
 	Overrides []XOverride `xml:"Override"`
 }
-    XContentTypes XML 序列化的内容类型根元素
+    XContentTypes is the XML-serialisable root element for content types
 
 type XCoreProperties struct {
 	XMLName        xml.Name   `xml:"coreProperties"`
@@ -1200,35 +1250,35 @@ type XCoreProperties struct {
 	Category       string     `xml:"cp:category"`
 	ContentType    string     `xml:"cp:contentType"`
 }
-    XCoreProperties XML 序列化的核心属性
+    XCoreProperties is the XML-serialisable core properties element
 
 type XDate struct {
 	Type  string `xml:"xsi:type,attr"`
 	Value string `xml:",chardata"`
 }
-    XDate 日期元素
+    XDate is a date element
 
 type XDefault struct {
 	Extension   string `xml:"Extension,attr"`
 	ContentType string `xml:"ContentType,attr"`
 }
-    XDefault XML 序列化的默认内容类型
+    XDefault is the XML-serialisable default content type element
 
 type XKeywords struct {
 	Value string `xml:",chardata"`
 }
-    XKeywords 关键词元素
+    XKeywords is the keywords element
 
 type XMLStreamer interface {
 	StreamXML(enc *xml.Encoder) error
 }
-    XMLStreamer XML 流式写入器接口
+    XMLStreamer is the XML streaming writer interface
 
 type XOverride struct {
 	PartName    string `xml:"PartName,attr"`
 	ContentType string `xml:"ContentType,attr"`
 }
-    XOverride XML 序列化的内容类型覆盖
+    XOverride is the XML-serialisable content type override element
 
 type XRelationship struct {
 	ID         string `xml:"Id,attr"`
@@ -1236,26 +1286,25 @@ type XRelationship struct {
 	Target     string `xml:"Target,attr"`
 	TargetMode string `xml:"TargetMode,attr,omitempty"`
 }
-    XRelationship XML序列化的关系元素
+    XRelationship is the XML-serialisable relationship element
 
 type XRelationships struct {
 	XMLName       xml.Name        `xml:"Relationships"`
 	Xmlns         string          `xml:"xmlns,attr"`
 	Relationships []XRelationship `xml:"Relationship"`
 }
-    XRelationships XML序列化的根元素
+    XRelationships is the XML-serialisable root element for relationships
 
 type ZipFileSource struct {
 	// Has unexported fields.
 }
-    ZipFileSource ZIP 文件中的部件数据源
+    ZipFileSource is a data source for a part within a ZIP file
 
 func NewZipFileSource(f *zip.File) *ZipFileSource
-    NewZipFileSource 从 zip.File 创建数据源
+    NewZipFileSource creates a data source from a zip.File
 
 func (s *ZipFileSource) Open() (io.ReadCloser, error)
-    Open 打开 ZIP 文件条目
+    Open opens the ZIP file entry
 
 func (s *ZipFileSource) Size() int64
-    Size 返回未压缩大小
-
+    Size returns the uncompressed size

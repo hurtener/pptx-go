@@ -7,96 +7,96 @@ import (
 )
 
 // ============================================================================
-// Core Properties 解析测试
+// Core Properties parse tests
 // ============================================================================
 
 func TestParseCoreProps(t *testing.T) {
 	tests := []struct {
-		name           string
-		xmlData        string
-		wantTitle      string
-		wantCreator    string
-		wantSubject    string
-		wantCreated    string
-		wantModified   string
-		wantKeywords   string
-		wantLastModBy  string
-		wantRevision   string
-		wantCategory   string
-		wantError      bool
+		name          string
+		xmlData       string
+		wantTitle     string
+		wantCreator   string
+		wantSubject   string
+		wantCreated   string
+		wantModified  string
+		wantKeywords  string
+		wantLastModBy string
+		wantRevision  string
+		wantCategory  string
+		wantError     bool
 	}{
 		{
-			name: "正常解析-完整核心属性",
+			name: "happy-path-full-core-props",
 			xmlData: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title>演示文稿标题</dc:title>
-  <dc:creator>张三</dc:creator>
-  <dc:subject>测试主题</dc:subject>
-  <dc:description>这是一个测试文档</dc:description>
-  <cp:keywords>测试,示例,PPT</cp:keywords>
-  <cp:lastModifiedBy>李四</cp:lastModifiedBy>
+  <dc:title>Presentation Title</dc:title>
+  <dc:creator>John Doe</dc:creator>
+  <dc:subject>Test Subject</dc:subject>
+  <dc:description>This is a test document</dc:description>
+  <cp:keywords>test,example,PPT</cp:keywords>
+  <cp:lastModifiedBy>Jane Doe</cp:lastModifiedBy>
   <cp:revision>3</cp:revision>
-  <cp:category>演示文稿</cp:category>
+  <cp:category>Presentations</cp:category>
   <dcterms:created xsi:type="dcterms:W3CDTF">2024-01-15T10:30:00Z</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">2024-01-16T14:45:00Z</dcterms:modified>
 </cp:coreProperties>`,
-			wantTitle:     "演示文稿标题",
-			wantCreator:   "张三",
-			wantSubject:   "测试主题",
-			wantKeywords:  "测试,示例,PPT",
-			wantLastModBy: "李四",
+			wantTitle:     "Presentation Title",
+			wantCreator:   "John Doe",
+			wantSubject:   "Test Subject",
+			wantKeywords:  "test,example,PPT",
+			wantLastModBy: "Jane Doe",
 			wantRevision:  "3",
-			wantCategory:  "演示文稿",
+			wantCategory:  "Presentations",
 			wantCreated:   "2024-01-15T10:30:00Z",
 			wantModified:  "2024-01-16T14:45:00Z",
 		},
 		{
-			name: "正常解析-仅基础字段",
+			name: "happy-path-basic-fields-only",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <dc:title>简单标题</dc:title>
-  <dc:creator>作者名</dc:creator>
+  <dc:title>Simple Title</dc:title>
+  <dc:creator>Author Name</dc:creator>
 </cp:coreProperties>`,
-			wantTitle:   "简单标题",
-			wantCreator: "作者名",
+			wantTitle:   "Simple Title",
+			wantCreator: "Author Name",
 		},
 		{
-			name: "正常解析-带版本信息",
+			name: "happy-path-with-revision-info",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title>版本测试</dc:title>
-  <dc:creator>开发团队</dc:creator>
+  <dc:title>Revision Test</dc:title>
+  <dc:creator>Dev Team</dc:creator>
   <cp:revision>15</cp:revision>
   <dcterms:created xsi:type="dcterms:W3CDTF">2024-03-20T08:00:00Z</dcterms:created>
 </cp:coreProperties>`,
-			wantTitle:    "版本测试",
-			wantCreator:  "开发团队",
+			wantTitle:    "Revision Test",
+			wantCreator:  "Dev Team",
 			wantRevision: "15",
 			wantCreated:  "2024-03-20T08:00:00Z",
 		},
 		{
-			name: "边界-空核心属性元素",
+			name: "edge-empty-core-props-element",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"/>`,
 		},
 		{
-			name: "边界-仅命名空间声明",
+			name: "edge-namespace-declarations-only",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
 </cp:coreProperties>`,
 		},
 		{
-			name: "边界-仅时间戳",
+			name: "edge-timestamps-only",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <dcterms:created xsi:type="dcterms:W3CDTF">2024-01-01T00:00:00Z</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">2024-12-31T23:59:59Z</dcterms:modified>
 </cp:coreProperties>`,
 			wantCreated:  "2024-01-01T00:00:00Z",
-			wantModified:  "2024-12-31T23:59:59Z",
+			wantModified: "2024-12-31T23:59:59Z",
 		},
 		{
-			name:      "错误-无效XML",
+			name:      "error-invalid-xml",
 			xmlData:   `<invalid><unclosed>`,
 			wantError: true,
 		},
@@ -108,20 +108,20 @@ func TestParseCoreProps(t *testing.T) {
 
 			if tt.wantError {
 				if err == nil {
-					t.Error("期望返回错误，但解析成功")
+					t.Error("expected an error but parsing succeeded")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if cp == nil {
-				t.Fatal("ParseCoreProps 返回 nil")
+				t.Fatal("ParseCoreProps returned nil")
 			}
 
-			// 验证基础字段
+			// Verify base fields.
 			if cp.Title != tt.wantTitle {
 				t.Errorf("Title = %q, want %q", cp.Title, tt.wantTitle)
 			}
@@ -144,7 +144,7 @@ func TestParseCoreProps(t *testing.T) {
 				t.Errorf("Category = %q, want %q", cp.Category, tt.wantCategory)
 			}
 
-			// 验证时间字段
+			// Verify timestamp fields.
 			if gotCreated := cp.GetCreated(); gotCreated != tt.wantCreated {
 				t.Errorf("Created = %q, want %q", gotCreated, tt.wantCreated)
 			}
@@ -156,59 +156,59 @@ func TestParseCoreProps(t *testing.T) {
 }
 
 // ============================================================================
-// Core Properties 序列化测试
+// Core Properties serialisation tests
 // ============================================================================
 
 func TestCorePropsToXML(t *testing.T) {
-	t.Run("序列化-完整属性", func(t *testing.T) {
+	t.Run("serialise-full-props", func(t *testing.T) {
 		cp := parts.NewXMLCoreProperties()
-		cp.Title = "测试标题"
-		cp.Creator = "测试作者"
-		cp.Subject = "测试主题"
-		cp.Keywords = "关键词1,关键词2"
-		cp.LastModifiedBy = "修改者"
+		cp.Title = "Test Title"
+		cp.Creator = "Test Author"
+		cp.Subject = "Test Subject"
+		cp.Keywords = "keyword1,keyword2"
+		cp.LastModifiedBy = "Modifier"
 		cp.Revision = "2"
 		cp.SetCreated("2024-01-15T10:30:00Z")
 		cp.SetModified("2024-01-16T14:45:00Z")
 
 		data, err := cp.ToXML()
 		if err != nil {
-			t.Fatalf("序列化失败: %v", err)
+			t.Fatalf("serialisation failed: %v", err)
 		}
 
-		// 验证可以重新解析
+		// Verify the output can be re-parsed.
 		parsed, err := parts.ParseCoreProps(data)
 		if err != nil {
-			t.Fatalf("重新解析失败: %v", err)
+			t.Fatalf("re-parse failed: %v", err)
 		}
 
 		if parsed.Title != cp.Title {
-			t.Errorf("Title 不匹配: got %q, want %q", parsed.Title, cp.Title)
+			t.Errorf("Title mismatch: got %q, want %q", parsed.Title, cp.Title)
 		}
 		if parsed.Creator != cp.Creator {
-			t.Errorf("Creator 不匹配: got %q, want %q", parsed.Creator, cp.Creator)
+			t.Errorf("Creator mismatch: got %q, want %q", parsed.Creator, cp.Creator)
 		}
 		if parsed.GetCreated() != cp.GetCreated() {
-			t.Errorf("Created 不匹配: got %q, want %q", parsed.GetCreated(), cp.GetCreated())
+			t.Errorf("Created mismatch: got %q, want %q", parsed.GetCreated(), cp.GetCreated())
 		}
 	})
 
-	t.Run("序列化-空属性", func(t *testing.T) {
+	t.Run("serialise-empty-props", func(t *testing.T) {
 		cp := parts.NewXMLCoreProperties()
 
 		data, err := cp.ToXML()
 		if err != nil {
-			t.Fatalf("序列化失败: %v", err)
+			t.Fatalf("serialisation failed: %v", err)
 		}
 
-		// 验证可以重新解析
+		// Verify the output can be re-parsed.
 		parsed, err := parts.ParseCoreProps(data)
 		if err != nil {
-			t.Fatalf("重新解析失败: %v", err)
+			t.Fatalf("re-parse failed: %v", err)
 		}
 
 		if parsed.Title != "" {
-			t.Errorf("空 Title 应为空字符串, got %q", parsed.Title)
+			t.Errorf("empty Title should be an empty string, got %q", parsed.Title)
 		}
 	})
 }

@@ -1,99 +1,99 @@
-# Color - 颜色系统
+# Color - Color System
 
-颜色系统提供完整的颜色处理方案，支持 RGB、主题色、透明度等。
+The color system provides a complete color handling solution with support for RGB, theme colors, transparency, and more.
 
-## 类型定义
+## Type Definitions
 
 ### Color
 
-颜色结构体。
+Color structure.
 
 ```go
 type Color struct {
-    // Type 颜色类型
+    // Type is the color type
     Type ColorType
-    // RGB 十六进制值 (6位，如 "FF0000"，无 # 前缀)
+    // RGB hex value (6 characters, e.g. "FF0000", no # prefix)
     RGB string
-    // Scheme 主题颜色名称 (如 "accent1")
+    // Scheme is the theme color name (e.g. "accent1")
     Scheme string
-    // Alpha 透明度 (0-100000，OOXML 标准)
-    // 100000 = 100% 不透明，0 = 完全透明
+    // Alpha is the transparency value (0-100000, OOXML standard)
+    // 100000 = 100% opaque, 0 = fully transparent
     Alpha int
-    // IsValid 是否有效
+    // IsValid indicates whether the color is valid
     IsValid bool
 }
 ```
 
 ### ColorType
 
-颜色类型。
+Color type.
 
 ```go
 type ColorType int
 
 const (
-    // ColorTypeRGB RGB 颜色
+    // ColorTypeRGB is an RGB color
     ColorTypeRGB ColorType = iota
-    // ColorTypeScheme 主题颜色
+    // ColorTypeScheme is a theme color
     ColorTypeScheme
-    // ColorTypeInvalid 无效颜色
+    // ColorTypeInvalid is an invalid color
     ColorTypeInvalid
 )
 ```
 
-## 颜色常量
+## Color Constants
 
-### Alpha 常量
+### Alpha Constants
 
-Alpha 常量（OOXML 范围：0-100000）。
+Alpha constants (OOXML range: 0-100000).
 
 ```go
 const (
-    // AlphaOpaque 完全不透明
+    // AlphaOpaque is fully opaque
     AlphaOpaque = 100000
-    // AlphaTransparent 完全透明
+    // AlphaTransparent is fully transparent
     AlphaTransparent = 0
-    // AlphaDefault 默认透明度（100%）
+    // AlphaDefault is the default transparency (100%)
     AlphaDefault = 100000
 )
 ```
 
-### 主题颜色名称
+### Theme Color Names
 
 ```go
 const (
-    // 背景色
-    SchemeBg1 = "bg1" // 背景色 1 (通常是白色或浅色)
-    SchemeBg2 = "bg2" // 背景色 2
-    SchemeFg1 = "fg1" // 前景色/文本色 1 (通常是黑色或深色)
-    SchemeFg2 = "fg2" // 前景色/文本色 2
+    // Background colors
+    SchemeBg1 = "bg1" // Background color 1 (typically white or light)
+    SchemeBg2 = "bg2" // Background color 2
+    SchemeFg1 = "fg1" // Foreground/text color 1 (typically black or dark)
+    SchemeFg2 = "fg2" // Foreground/text color 2
 
-    // 强调色
-    SchemeAccent1 = "accent1" // 强调色 1
-    SchemeAccent2 = "accent2" // 强调色 2
-    SchemeAccent3 = "accent3" // 强调色 3
-    SchemeAccent4 = "accent4" // 强调色 4
-    SchemeAccent5 = "accent5" // 强调色 5
-    SchemeAccent6 = "accent6" // 强调色 6
+    // Accent colors
+    SchemeAccent1 = "accent1" // Accent color 1
+    SchemeAccent2 = "accent2" // Accent color 2
+    SchemeAccent3 = "accent3" // Accent color 3
+    SchemeAccent4 = "accent4" // Accent color 4
+    SchemeAccent5 = "accent5" // Accent color 5
+    SchemeAccent6 = "accent6" // Accent color 6
 
-    // 超链接色
-    SchemeHlink    = "hlink"    // 超链接颜色
-    SchemeFolHlink = "folHlink" // 已访问超链接颜色
+    // Hyperlink colors
+    SchemeHlink    = "hlink"    // Hyperlink color
+    SchemeFolHlink = "folHlink" // Followed hyperlink color
 
-    // 特殊色
-    SchemePhClr = "phClr" // 幻灯片标题颜色
-    SchemeTx1   = "tx1"   // 文本色 1
-    SchemeTx2   = "tx2"   // 文本色 2
+    // Special colors
+    SchemePhClr = "phClr" // Placeholder color
+    SchemeTx1   = "tx1"   // Text color 1
+    SchemeTx2   = "tx2"   // Text color 2
 )
 ```
 
-### 预设颜色常量
+### Preset Color Constants
 
-预设颜色常量（6位十六进制，无 # 前缀）。
+Preset color constants (6-character hex, no # prefix).
 
 ```go
 var (
-    // 基础颜色
+    // Basic colors
     ColorBlack   = RGBColor("000000")
     ColorWhite   = RGBColor("FFFFFF")
     ColorRed     = RGBColor("FF0000")
@@ -103,10 +103,10 @@ var (
     ColorCyan    = RGBColor("00FFFF")
     ColorMagenta = RGBColor("FF00FF")
 
-    // 透明色
+    // Transparent color
     ColorTransparent = Color{Type: ColorTypeRGB, RGB: "000000", Alpha: AlphaTransparent, IsValid: true}
 
-    // 常用 UI 颜色
+    // Common UI colors
     ColorGray      = RGBColor("808080")
     ColorLightGray = RGBColor("C0C0C0")
     ColorDarkGray  = RGBColor("404040")
@@ -125,20 +125,20 @@ var (
 )
 ```
 
-## 构造函数
+## Constructors
 
 ### RGBColor
 
-创建 RGB 颜色（无 alpha）。
+Creates an RGB color (no alpha).
 
 ```go
 func RGBColor(hex string) Color
 ```
 
-**参数:**
-- `hex`: 6位十六进制 RGB（无 # 前缀）
+**Parameters:**
+- `hex`: 6-character hex RGB (no # prefix)
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.RGBColor("FF0000")
@@ -147,51 +147,51 @@ blue := pptx.RGBColor("0000FF")
 
 ### RGBAColor
 
-创建带 alpha 的 RGB 颜色。
+Creates an RGB color with an alpha value.
 
 ```go
 func RGBAColor(hex string, alpha int) Color
 ```
 
-**参数:**
-- `hex`: 6位十六进制 RGB
-- `alpha`: 0-100000 (OOXML 标准)
+**Parameters:**
+- `hex`: 6-character hex RGB
+- `alpha`: 0-100000 (OOXML standard)
 
-**示例:**
+**Example:**
 
 ```go
-// 半透明红色
-semiRed := pptx.RGBAColor("FF0000", 50000) // 50% 透明
+// Semi-transparent red
+semiRed := pptx.RGBAColor("FF0000", 50000) // 50% transparent
 ```
 
 ### SchemeColor
 
-创建主题颜色。
+Creates a theme color.
 
 ```go
 func SchemeColor(name string) Color
 ```
 
-**示例:**
+**Example:**
 
 ```go
-// 使用主题强调色
+// Use a theme accent color
 accent1 := pptx.SchemeColor(pptx.SchemeAccent1)
 bgColor := pptx.SchemeColor(pptx.SchemeBg1)
 ```
 
 ### ColorFromRGB
 
-从 RGB 值创建颜色。
+Creates a color from RGB values.
 
 ```go
 func ColorFromRGB(r, g, b int) Color
 ```
 
-**参数:**
+**Parameters:**
 - `r, g, b`: 0-255
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.ColorFromRGB(255, 0, 0)
@@ -199,41 +199,41 @@ red := pptx.ColorFromRGB(255, 0, 0)
 
 ### ColorFromRGBA
 
-从 RGBA 值创建颜色。
+Creates a color from RGBA values.
 
 ```go
 func ColorFromRGBA(r, g, b, alpha int) Color
 ```
 
-**参数:**
+**Parameters:**
 - `r, g, b`: 0-255
-- `alpha`: 0-100000 (OOXML 标准)
+- `alpha`: 0-100000 (OOXML standard)
 
-**示例:**
+**Example:**
 
 ```go
-semiRed := pptx.ColorFromRGBA(255, 0, 0, 50000) // 50% 透明
+semiRed := pptx.ColorFromRGBA(255, 0, 0, 50000) // 50% transparent
 ```
 
 ### ParseColor
 
-解析颜色字符串，支持多种格式。
+Parses a color string; supports multiple formats.
 
 ```go
 func ParseColor(s string) Color
 ```
 
-**支持的格式:**
-- `#FF0000` 或 `FF0000` (6位十六进制)
-- `#FF0000FF` (8位十六进制，最后两位为 alpha)
+**Supported formats:**
+- `#FF0000` or `FF0000` (6-character hex)
+- `#FF0000FF` (8-character hex, last two characters are alpha)
 - `rgb(255, 0, 0)` (RGB)
-- `rgba(255, 0, 0, 0.5)` (RGBA，alpha 0-1)
-- `accent1`, `bg1` 等主题颜色名称
+- `rgba(255, 0, 0, 0.5)` (RGBA, alpha 0-1)
+- `accent1`, `bg1`, and other theme color names
 
-**示例:**
+**Example:**
 
 ```go
-// 十六进制
+// Hex
 c1 := pptx.ParseColor("#FF0000")
 c2 := pptx.ParseColor("FF0000")
 
@@ -243,51 +243,51 @@ c3 := pptx.ParseColor("rgb(255, 0, 0)")
 // RGBA
 c4 := pptx.ParseColor("rgba(255, 0, 0, 0.5)")
 
-// 主题色
+// Theme color
 c5 := pptx.ParseColor("accent1")
 ```
 
-## Color 方法
+## Color Methods
 
 ### WithAlpha
 
-设置透明度并返回新颜色。
+Sets the alpha value and returns a new color.
 
 ```go
 func (c Color) WithAlpha(alpha int) Color
 ```
 
-**参数:**
-- `alpha`: 0-100000 (OOXML 标准)
+**Parameters:**
+- `alpha`: 0-100000 (OOXML standard)
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.RGBColor("FF0000")
-semiRed := red.WithAlpha(50000) // 50% 透明
+semiRed := red.WithAlpha(50000) // 50% transparent
 ```
 
 ### WithAlphaPercent
 
-设置透明度（百分比）并返回新颜色。
+Sets the alpha value as a percentage and returns a new color.
 
 ```go
 func (c Color) WithAlphaPercent(percent float64) Color
 ```
 
-**参数:**
+**Parameters:**
 - `percent`: 0-100
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.RGBColor("FF0000")
-semiRed := red.WithAlphaPercent(50) // 50% 透明
+semiRed := red.WithAlphaPercent(50) // 50% transparent
 ```
 
 ### AlphaPercent
 
-返回百分比形式的 alpha (0-100)。
+Returns the alpha value as a percentage (0-100).
 
 ```go
 func (c Color) AlphaPercent() float64
@@ -295,42 +295,42 @@ func (c Color) AlphaPercent() float64
 
 ### AlphaValue
 
-返回 OOXML 格式的 alpha 值 (0-100000)。
+Returns the alpha value in OOXML format (0-100000).
 
 ```go
 func (c Color) AlphaValue() int
 ```
 
-**用途:** 用于 `<a:alpha val="50000"/>`
+**Usage:** For `<a:alpha val="50000"/>`
 
 ### ToRGB
 
-转换为 RGB 十六进制字符串（6位，无 # 前缀）。
+Converts to an RGB hex string (6 characters, no # prefix).
 
 ```go
 func (c Color) ToRGB() string
 ```
 
-**用途:** 符合 OOXML 规范：`<a:srgbClr val="FF0000"/>`
+**Usage:** Conforms to the OOXML specification: `<a:srgbClr val="FF0000"/>`
 
 ### ToHex
 
-转换为带 # 前缀的 6 位十六进制字符串（用于显示）。
+Converts to a 6-character hex string with a # prefix (for display).
 
 ```go
 func (c Color) ToHex() string
 ```
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.RGBColor("FF0000")
-fmt.Println(red.ToHex()) // 输出: #FF0000
+fmt.Println(red.ToHex()) // Output: #FF0000
 ```
 
 ### ToHexA
 
-转换为带 # 前缀的 8 位十六进制字符串（包含 alpha）。
+Converts to an 8-character hex string with a # prefix (includes alpha).
 
 ```go
 func (c Color) ToHexA() string
@@ -338,7 +338,7 @@ func (c Color) ToHexA() string
 
 ### ToScheme
 
-转换为主题颜色名称。
+Converts to a theme color name.
 
 ```go
 func (c Color) ToScheme() string
@@ -346,13 +346,13 @@ func (c Color) ToScheme() string
 
 ### RGBComponents
 
-返回 RGB 分量 (r, g, b)。
+Returns the RGB components (r, g, b).
 
 ```go
 func (c Color) RGBComponents() (r, g, b int, ok bool)
 ```
 
-**示例:**
+**Example:**
 
 ```go
 red := pptx.RGBColor("FF0000")
@@ -362,23 +362,23 @@ r, g, b, ok := red.RGBComponents()
 
 ### String
 
-返回颜色的字符串表示。
+Returns a string representation of the color.
 
 ```go
 func (c Color) String() string
 ```
 
-## 辅助函数
+## Helper Functions
 
 ### IsSchemeColor
 
-检查是否为有效的主题颜色名称。
+Checks whether a string is a valid theme color name.
 
 ```go
 func IsSchemeColor(name string) bool
 ```
 
-**示例:**
+**Example:**
 
 ```go
 pptx.IsSchemeColor("accent1") // true
@@ -387,46 +387,46 @@ pptx.IsSchemeColor("FF0000")  // false
 
 ### ValidateColor
 
-验证颜色。
+Validates a color string.
 
 ```go
 func ValidateColor(s string) ColorValidationResult
 ```
 
-**返回:**
-- `ColorValidationResult` 验证结果
+**Returns:**
+- `ColorValidationResult` — the validation result
 
-**示例:**
+**Example:**
 
 ```go
 result := pptx.ValidateColor("#FF0000")
 if result.IsValid {
-    fmt.Println("有效颜色:", result.Color.ToHex())
+    fmt.Println("Valid color:", result.Color.ToHex())
 } else {
-    fmt.Println("无效颜色:", result.Message)
+    fmt.Println("Invalid color:", result.Message)
 }
 ```
 
 ## ColorValidationResult
 
-颜色验证结果。
+Color validation result.
 
 ```go
 type ColorValidationResult struct {
-    // IsValid 是否有效
+    // IsValid indicates whether the color is valid
     IsValid bool
-    // Color 解析后的颜色
+    // Color is the parsed color
     Color Color
-    // Original 原始输入
+    // Original is the original input string
     Original string
-    // Message 验证消息
+    // Message is the validation message
     Message string
 }
 ```
 
-## ColorMap - 颜色映射表
+## ColorMap - Color Mapping Table
 
-颜色映射表用于将颜色名称映射到实际颜色值。
+A color map maps color names to actual color values.
 
 ```go
 type ColorMap struct {
@@ -434,97 +434,97 @@ type ColorMap struct {
 }
 ```
 
-### 构造函数
+### Constructors
 
 ```go
-// NewColorMap 创建颜色映射表
+// NewColorMap creates a new color map
 func NewColorMap() *ColorMap
 
-// DefaultColorMap 默认颜色映射表
+// DefaultColorMap returns the default color map
 func DefaultColorMap() *ColorMap
 ```
 
-### 方法
+### Methods
 
 ```go
-// Set 设置颜色映射
+// Set adds a color mapping
 func (cm *ColorMap) Set(name string, color Color)
 
-// Get 获取颜色映射
+// Get retrieves a color mapping
 func (cm *ColorMap) Get(name string) (Color, bool)
 
-// All 返回所有颜色映射
+// All returns all color mappings
 func (cm *ColorMap) All() map[string]Color
 
-// Resolve 解析颜色（支持名称、十六进制、RGB、主题色）
+// Resolve resolves a color (supports names, hex, RGB, and theme colors)
 func (cm *ColorMap) Resolve(s string) Color
 ```
 
-**示例:**
+**Example:**
 
 ```go
 cm := pptx.NewColorMap()
 
-// 设置自定义颜色
+// Set custom colors
 cm.Set("primary", pptx.RGBColor("007AFF"))
 cm.Set("secondary", pptx.RGBColor("5856D6"))
 
-// 获取颜色
+// Get a color
 if primary, ok := cm.Get("primary"); ok {
-    fmt.Println("主色:", primary.ToHex())
+    fmt.Println("Primary color:", primary.ToHex())
 }
 
-// 解析颜色（支持多种格式）
-c1 := cm.Resolve("primary")      // 自定义名称
-c2 := cm.Resolve("#FF0000")      // 十六进制
-c3 := cm.Resolve("accent1")      // 主题色
+// Resolve a color (supports multiple formats)
+c1 := cm.Resolve("primary")      // custom name
+c2 := cm.Resolve("#FF0000")      // hex
+c3 := cm.Resolve("accent1")      // theme color
 ```
 
-## 使用示例
+## Usage Examples
 
-### 基础颜色使用
+### Basic Color Usage
 
 ```go
-// 创建演示文稿
+// Create a presentation
 pres := pptx.New()
 slide := pres.AddSlide()
 
-// 使用预设颜色
+// Use preset colors
 red := pptx.ColorRed
 blue := pptx.ColorBlue
 green := pptx.ColorGreen
 
-// 使用自定义颜色
+// Use a custom color
 custom := pptx.RGBColor("007AFF")
 ```
 
-### 透明度处理
+### Handling Transparency
 
 ```go
-// 创建半透明颜色
-semiRed := pptx.RGBColor("FF0000").WithAlpha(50000)     // 50% 透明
-semiBlue := pptx.ColorBlue.WithAlphaPercent(30)         // 30% 透明
+// Create semi-transparent colors
+semiRed := pptx.RGBColor("FF0000").WithAlpha(50000)     // 50% transparent
+semiBlue := pptx.ColorBlue.WithAlphaPercent(30)         // 30% transparent
 
-// 完全透明
+// Fully transparent
 transparent := pptx.ColorTransparent
 ```
 
-### 主题颜色
+### Theme Colors
 
 ```go
-// 使用主题颜色
+// Use theme colors
 accent1 := pptx.SchemeColor(pptx.SchemeAccent1)
 accent2 := pptx.SchemeColor(pptx.SchemeAccent2)
 bgColor := pptx.SchemeColor(pptx.SchemeBg1)
 
-// 主题颜色也支持透明度
+// Theme colors also support transparency
 semiAccent1 := accent1.WithAlphaPercent(50)
 ```
 
-### 颜色解析
+### Color Parsing
 
 ```go
-// 从字符串解析颜色
+// Parse colors from strings
 colors := []string{
     "#FF0000",
     "rgb(0, 255, 0)",
@@ -540,10 +540,10 @@ for _, s := range colors {
 }
 ```
 
-### 颜色映射表使用
+### Using the Color Map
 
 ```go
-// 创建品牌颜色映射
+// Create a brand color map
 brandColors := pptx.NewColorMap()
 brandColors.Set("primary", pptx.RGBColor("007AFF"))
 brandColors.Set("secondary", pptx.RGBColor("5856D6"))
@@ -551,24 +551,24 @@ brandColors.Set("success", pptx.RGBColor("34C759"))
 brandColors.Set("warning", pptx.RGBColor("FF9500"))
 brandColors.Set("danger", pptx.RGBColor("FF3B30"))
 
-// 使用品牌颜色
+// Use a brand color
 primary := brandColors.Resolve("primary")
 ```
 
-### 在形状中使用颜色
+### Using Colors in Shapes
 
 ```go
-// 添加带颜色的形状
+// Add a shape with color
 rect := slide.AddRectangle(100, 100, 200, 150)
 
-// 设置填充颜色
+// Set fill color
 rect.SpPr.SolidFill = &parts.XSolidFill{
     SrgbClr: &parts.XSrgbClr{
         Val: pptx.ColorRed.ToRGB(),
     },
 }
 
-// 设置边框颜色
+// Set border color
 rect.SpPr.Ln = &parts.XLn{
     SolidFill: &parts.XSolidFill{
         SrgbClr: &parts.XSrgbClr{
@@ -578,13 +578,13 @@ rect.SpPr.Ln = &parts.XLn{
 }
 ```
 
-### 在文本中使用颜色
+### Using Colors in Text
 
 ```go
-// 添加带颜色的文本
+// Add colored text
 textBox := slide.AddTextBox(100, 100, 400, 50, "Hello World")
 
-// 设置文本颜色
+// Set text color
 textBox.TxBody.P[0].R[0].RPr.SolidFill = &parts.XSolidFill{
     SrgbClr: &parts.XSrgbClr{
         Val: pptx.ColorBlue.ToRGB(),
@@ -592,37 +592,37 @@ textBox.TxBody.P[0].R[0].RPr.SolidFill = &parts.XSolidFill{
 }
 ```
 
-## 单位转换
+## Unit Conversion
 
 ### PxToEMU / EMUToPx
 
-像素与 EMU 的转换。
+Conversion between pixels and EMU.
 
 ```go
-// PxToEMU 将像素转换为 EMU（基于 96 DPI）
+// PxToEMU converts pixels to EMU (based on 96 DPI)
 func PxToEMU(px int) int
 
-// EMUToPx 将 EMU 转换为像素（基于 96 DPI）
+// EMUToPx converts EMU to pixels (based on 96 DPI)
 func EMUToPx(emu int) int
 ```
 
-**示例:**
+**Example:**
 
 ```go
 emu := pptx.PxToEMU(100)  // 914400 / 96 * 100 = 952500
 px := pptx.EMUToPx(952500) // 100
 ```
 
-### EMUsPerPixel 常量
+### EMUsPerPixel Constant
 
-每像素对应的 EMU 数量 (96 DPI)。
+Number of EMUs per pixel (96 DPI).
 
 ```go
 const (
-    // EMUsPerPixel 每像素对应的 EMU 数量 (96 DPI)
-    // 1 英寸 = 914400 EMU
-    // 1 英寸 = 96 像素 (96 DPI)
-    // 因此 1 px = 914400 / 96 = 9525 EMU
+    // EMUsPerPixel is the number of EMUs per pixel (96 DPI)
+    // 1 inch = 914400 EMU
+    // 1 inch = 96 pixels (96 DPI)
+    // Therefore 1 px = 914400 / 96 = 9525 EMU
     EMUsPerPixel = 914400 / 96 // = 9525
 )
 ```

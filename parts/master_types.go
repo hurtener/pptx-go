@@ -1,40 +1,41 @@
 package parts
 
 // ============================================================================
-// PPT 母版和版式核心数据结构
+// Core data structures for PPT slide masters and layouts
 // ============================================================================
 //
-// 设计原则：
-// 1. 所有结构体字段均为只读（小写字段通过构造函数初始化，大写字段为不可变值）
-// 2. 针对高并发读取优化，无需加锁即可安全读取
-// 3. 数据在解析时一次性构建，之后不再修改
+// Design principles:
+// 1. All struct fields are read-only (lowercase fields initialized via constructors,
+//    uppercase fields are immutable values).
+// 2. Optimized for high-concurrency reads; safe to read without locking.
+// 3. Data is built once during parsing and never modified afterward.
 // ============================================================================
 
-// PlaceholderType 占位符类型枚举
-// 对应 XML: <p:ph type="...">
+// PlaceholderType enumerates placeholder types.
+// Corresponds to XML: <p:ph type="...">
 type PlaceholderType int8
 
 const (
-	PlaceholderTypeNone      PlaceholderType = iota // 未指定
-	PlaceholderTypeTitle                            // 标题
-	PlaceholderTypeBody                             // 正文/内容
-	PlaceholderTypeCenterTitle                      // 居中标题
-	PlaceholderTypeSubTitle                         // 副标题
-	PlaceholderTypeDateTime                         // 日期时间
-	PlaceholderTypeSlideNumber                      // 幻灯片编号
-	PlaceholderTypeFooter                           // 页脚
-	PlaceholderTypeHeader                           // 页眉
-	PlaceholderTypeObject                           // 对象
-	PlaceholderTypeChart                            // 图表
-	PlaceholderTypeTable                            // 表格
-	PlaceholderTypeClipArt                          // 剪贴画
-	PlaceholderTypeOrgChart                         // 组织结构图
-	PlaceholderTypeMedia                            // 媒体
-	PlaceholderTypeSlideImage                       // 幻灯片图像
-	PlaceholderTypePicture                          // 图片
+	PlaceholderTypeNone        PlaceholderType = iota // unspecified
+	PlaceholderTypeTitle                              // title
+	PlaceholderTypeBody                               // body/content
+	PlaceholderTypeCenterTitle                        // centered title
+	PlaceholderTypeSubTitle                           // subtitle
+	PlaceholderTypeDateTime                           // date and time
+	PlaceholderTypeSlideNumber                        // slide number
+	PlaceholderTypeFooter                             // footer
+	PlaceholderTypeHeader                             // header
+	PlaceholderTypeObject                             // object
+	PlaceholderTypeChart                              // chart
+	PlaceholderTypeTable                              // table
+	PlaceholderTypeClipArt                            // clip art
+	PlaceholderTypeOrgChart                           // org chart
+	PlaceholderTypeMedia                              // media
+	PlaceholderTypeSlideImage                         // slide image
+	PlaceholderTypePicture                            // picture
 )
 
-// String 返回占位符类型的字符串表示
+// String returns the string representation of the placeholder type.
 func (t PlaceholderType) String() string {
 	switch t {
 	case PlaceholderTypeTitle:
@@ -74,230 +75,235 @@ func (t PlaceholderType) String() string {
 	}
 }
 
-// TextStyle 文本样式（只读）
-// 用于定义占位符中文本的默认字体、大小、颜色等
+// TextStyle holds the default text style for a placeholder (read-only).
+// Defines default font, size, color, etc. for text inside a placeholder.
 type TextStyle struct {
-	fontName  string // 字体名称
-	fontSize  int32  // 字体大小（单位：百分之一磅，100 = 1pt）
-	bold      bool   // 是否粗体
-	italic    bool   // 是否斜体
-	underline bool   // 是否下划线
-	colorRGB  string // 文本颜色（RGB 十六进制，如 "FF0000"）
+	fontName  string // font name
+	fontSize  int32  // font size (hundredths of a point; 100 = 1pt)
+	bold      bool   // bold
+	italic    bool   // italic
+	underline bool   // underline
+	colorRGB  string // text color as RGB hex (e.g. "FF0000")
 }
 
-// Placeholder 占位符 - 母版/版式中定义的可填充区域（只读）
-// 对应 XML: <p:sp> with <p:nvSpPr><p:nvPr><p:ph ...>
+// Placeholder is a fillable region defined in a master or layout (read-only).
+// Corresponds to XML: <p:sp> with <p:nvSpPr><p:nvPr><p:ph ...>
 type Placeholder struct {
-	id              string          // 占位符唯一标识符（XML 中的 idx 或内部生成）
-	placeholderType PlaceholderType // 占位符类型
-	x               int64           // X 坐标（EMU 单位）
-	y               int64           // Y 坐标（EMU 单位）
-	cx              int64           // 宽度（EMU 单位）
-	cy              int64           // 高度（EMU 单位）
-	rotation        int32           // 旋转角度（1/60000 度）
-	defaultStyle    *TextStyle      // 默认文本样式（可为 nil）
+	id              string          // unique placeholder identifier (idx from XML or internally generated)
+	placeholderType PlaceholderType // placeholder type
+	x               int64           // X coordinate (EMU)
+	y               int64           // Y coordinate (EMU)
+	cx              int64           // width (EMU)
+	cy              int64           // height (EMU)
+	rotation        int32           // rotation angle (1/60000 of a degree)
+	defaultStyle    *TextStyle      // default text style (may be nil)
 }
 
 // ============================================================================
-// Background 背景相关结构
+// Background-related structures
 // ============================================================================
 
-// BackgroundType 背景类型枚举
-// 对应 XML: <p:bg> 下的不同子元素
+// BackgroundType enumerates background types.
+// Corresponds to the different child elements under XML: <p:bg>
 type BackgroundType int8
 
 const (
-	BackgroundTypeNone       BackgroundType = iota // 无背景
-	BackgroundTypeSolidColor                      // 纯色背景
-	BackgroundTypeGradient                        // 渐变背景
-	BackgroundTypePattern                         // 图案填充
-	BackgroundTypePicture                         // 图片背景
-	BackgroundTypeThemeColor                      // 主题色背景（如 bg1, tx1）
+	BackgroundTypeNone       BackgroundType = iota // no background
+	BackgroundTypeSolidColor                       // solid color
+	BackgroundTypeGradient                         // gradient
+	BackgroundTypePattern                          // pattern fill
+	BackgroundTypePicture                          // picture background
+	BackgroundTypeThemeColor                       // theme color (e.g. bg1, tx1)
 )
 
-// Background 背景定义（只读）
-// 对应 XML: <p:bg> 或 <p:cSld><p:bg>
-// 设计说明：使用独立字段存储不同类型的值，避免接口带来的动态分配
+// Background holds background definition data (read-only).
+// Corresponds to XML: <p:bg> or <p:cSld><p:bg>
+// Design note: separate fields for each background variant avoid interface allocations.
 type Background struct {
-	backgroundType BackgroundType // 背景类型
+	backgroundType BackgroundType // background type
 
-	// 纯色背景属性（当 backgroundType == BackgroundTypeSolidColor 时有效）
-	solidColorRGB string // RGB 十六进制颜色值，如 "FFFFFF"
+	// Solid color background (valid when backgroundType == BackgroundTypeSolidColor)
+	solidColorRGB string // RGB hex color value, e.g. "FFFFFF"
 
-	// 渐变背景属性（当 backgroundType == BackgroundTypeGradient 时有效）
-	gradientAngle   int32   // 渐变角度（度）
-	gradientColors  []GradientStop // 渐变色标列表
+	// Gradient background (valid when backgroundType == BackgroundTypeGradient)
+	gradientAngle  int32          // gradient angle (degrees)
+	gradientColors []GradientStop // gradient stop list
 
-	// 图片背景属性（当 backgroundType == BackgroundTypePicture 时有效）
-	pictureRId     string // 图片关系 ID（指向媒体资源）
-	pictureURI     string // 图片内部 URI 路径
+	// Picture background (valid when backgroundType == BackgroundTypePicture)
+	pictureRId string // picture relationship ID (pointing to a media resource)
+	pictureURI string // picture internal URI path
 
-	// 通用属性
-	opacity float32 // 不透明度 (0.0 - 1.0)，默认 1.0
+	// Common
+	opacity float32 // opacity (0.0–1.0); default 1.0
 }
 
-// GradientStop 渐变色标（只读）
-// 对应 XML: <a:gs>
+// GradientStop holds a gradient color stop (read-only).
+// Corresponds to XML: <a:gs>
 type GradientStop struct {
-	position float32 // 位置 (0.0 - 1.0)，表示渐变中的百分比位置
-	colorRGB string  // RGB 十六进制颜色值
+	position float32 // position (0.0–1.0) within the gradient
+	colorRGB string  // RGB hex color value
 }
 
 // ============================================================================
-// SlideLayout 版式相关结构（只读数据结构）
+// SlideLayout-related structures (read-only data)
 // ============================================================================
 //
-// 注意：SlideLayoutType 已在 slide_types.go 中定义，此处直接使用
+// Note: SlideLayoutType is defined in slide_types.go and used here directly.
 // ============================================================================
 
-// SlideLayoutData 版式只读数据（用于模板系统）
-// 对应 XML: /ppt/slideLayouts/slideLayoutN.xml
-// 与 SlideLayoutPart 不同，这是纯数据结构，无 XML 读写能力
+// SlideLayoutData holds read-only layout data (used by the template system).
+// Corresponds to XML: /ppt/slideLayouts/slideLayoutN.xml
+// Unlike SlideLayoutPart, this is a pure data structure with no XML read/write capability.
 type SlideLayoutData struct {
-	id           string                  // 版式唯一标识符（内部生成）
-	name         string                  // 版式名称（显示在 PowerPoint 版式选择器中）
-	layoutType   SlideLayoutType         // 版式类型（复用 slide_types.go 中的定义）
-	background   *Background             // 背景（可为 nil，表示使用母版背景）
-	masterId     string                  // 所属母版的 ID
-	placeholders map[string]*Placeholder // 占位符集合，key 为占位符 ID
+	id           string                  // unique layout identifier (internally generated)
+	name         string                  // layout name (shown in the PowerPoint layout picker)
+	layoutType   SlideLayoutType         // layout type (reuses the definition from slide_types.go)
+	background   *Background             // background (nil means inherit from master)
+	masterId     string                  // ID of the owning master
+	placeholders map[string]*Placeholder // placeholder set, keyed by placeholder ID
 }
 
 // ============================================================================
-// SlideMaster 母版相关结构
+// SlideMaster-related structures
 // ============================================================================
 
-// SlideMasterData 母版只读数据（用于模板系统）
-// 对应 XML: /ppt/slideMasters/slideMasterN.xml
-// 母版是幻灯片模板的顶层容器，包含一个或多个版式
+// SlideMasterData holds read-only master data (used by the template system).
+// Corresponds to XML: /ppt/slideMasters/slideMasterN.xml
+// The master is the top-level container for slide templates and owns one or more layouts.
 type SlideMasterData struct {
-	id           string                  // 母版唯一标识符（内部生成）
-	name         string                  // 母版名称
-	background   *Background             // 母版级背景（可为 nil）
-	placeholders map[string]*Placeholder // 母版级占位符（可为 nil），定义全局占位符样式
-	layouts      []*SlideLayoutData      // 包含的版式列表
+	id           string                  // unique master identifier (internally generated)
+	name         string                  // master name
+	background   *Background             // master-level background (may be nil)
+	placeholders map[string]*Placeholder // master-level placeholders (may be nil); defines global placeholder styles
+	layouts      []*SlideLayoutData      // contained layout list
 }
 
 // ============================================================================
-// Placeholder 访问器方法
+// Placeholder accessor methods
 // ============================================================================
 
-// ID 返回占位符唯一标识符
+// ID returns the unique placeholder identifier.
 func (p *Placeholder) ID() string { return p.id }
 
-// Type 返回占位符类型
+// Type returns the placeholder type.
 func (p *Placeholder) Type() PlaceholderType { return p.placeholderType }
 
-// X 返回 X 坐标（EMU 单位）
+// X returns the X coordinate (EMU).
 func (p *Placeholder) X() int64 { return p.x }
 
-// Y 返回 Y 坐标（EMU 单位）
+// Y returns the Y coordinate (EMU).
 func (p *Placeholder) Y() int64 { return p.y }
 
-// Cx 返回宽度（EMU 单位）
+// Cx returns the width (EMU).
 func (p *Placeholder) Cx() int64 { return p.cx }
 
-// Cy 返回高度（EMU 单位）
+// Cy returns the height (EMU).
 func (p *Placeholder) Cy() int64 { return p.cy }
 
-// Rotation 返回旋转角度（1/60000 度）
+// Rotation returns the rotation angle (1/60000 of a degree).
 func (p *Placeholder) Rotation() int32 { return p.rotation }
 
-// DefaultStyle 返回默认文本样式（可能为 nil）
+// DefaultStyle returns the default text style (may be nil).
 func (p *Placeholder) DefaultStyle() *TextStyle { return p.defaultStyle }
 
-// Bounds 返回边界矩形 (x, y, cx, cy)
+// Bounds returns the bounding rectangle (x, y, cx, cy).
 func (p *Placeholder) Bounds() (x, y, cx, cy int64) {
 	return p.x, p.y, p.cx, p.cy
 }
 
 // ============================================================================
-// TextStyle 访问器方法
+// TextStyle accessor methods
 // ============================================================================
 
-// FontName 返回字体名称
+// FontName returns the font name.
 func (s *TextStyle) FontName() string { return s.fontName }
 
-// FontSize 返回字体大小（百分之一磅，100 = 1pt）
+// FontSize returns the font size (hundredths of a point; 100 = 1pt).
 func (s *TextStyle) FontSize() int32 { return s.fontSize }
 
-// Bold 返回是否粗体
+// Bold reports whether the text is bold.
 func (s *TextStyle) Bold() bool { return s.bold }
 
-// Italic 返回是否斜体
+// Italic reports whether the text is italic.
 func (s *TextStyle) Italic() bool { return s.italic }
 
-// Underline 返回是否下划线
+// Underline reports whether the text is underlined.
 func (s *TextStyle) Underline() bool { return s.underline }
 
-// ColorRGB 返回文本颜色（RGB 十六进制）
+// ColorRGB returns the text color as an RGB hex string.
 func (s *TextStyle) ColorRGB() string { return s.colorRGB }
 
 // ============================================================================
-// Background 访问器方法
+// Background accessor methods
 // ============================================================================
 
-// Type 返回背景类型
+// Type returns the background type.
 func (b *Background) Type() BackgroundType { return b.backgroundType }
 
-// SolidColorRGB 返回纯色背景的 RGB 值（仅当 Type == BackgroundTypeSolidColor 时有效）
+// SolidColorRGB returns the RGB value for a solid-color background
+// (only valid when Type == BackgroundTypeSolidColor).
 func (b *Background) SolidColorRGB() string { return b.solidColorRGB }
 
-// GradientAngle 返回渐变角度（仅当 Type == BackgroundTypeGradient 时有效）
+// GradientAngle returns the gradient angle
+// (only valid when Type == BackgroundTypeGradient).
 func (b *Background) GradientAngle() int32 { return b.gradientAngle }
 
-// GradientColors 返回渐变色标列表（仅当 Type == BackgroundTypeGradient 时有效）
+// GradientColors returns the gradient stop list
+// (only valid when Type == BackgroundTypeGradient).
 func (b *Background) GradientColors() []GradientStop { return b.gradientColors }
 
-// PictureRId 返回图片关系 ID（仅当 Type == BackgroundTypePicture 时有效）
+// PictureRId returns the picture relationship ID
+// (only valid when Type == BackgroundTypePicture).
 func (b *Background) PictureRId() string { return b.pictureRId }
 
-// PictureURI 返回图片内部 URI（仅当 Type == BackgroundTypePicture 时有效）
+// PictureURI returns the picture's internal URI
+// (only valid when Type == BackgroundTypePicture).
 func (b *Background) PictureURI() string { return b.pictureURI }
 
-// Opacity 返回不透明度 (0.0 - 1.0)
+// Opacity returns the opacity (0.0–1.0).
 func (b *Background) Opacity() float32 { return b.opacity }
 
 // ============================================================================
-// GradientStop 访问器方法
+// GradientStop accessor methods
 // ============================================================================
 
-// Position 返回色标位置 (0.0 - 1.0)
+// Position returns the stop position (0.0–1.0).
 func (g *GradientStop) Position() float32 { return g.position }
 
-// ColorRGB 返回色标颜色（RGB 十六进制）
+// ColorRGB returns the stop color as an RGB hex string.
 func (g *GradientStop) ColorRGB() string { return g.colorRGB }
 
 // ============================================================================
-// SlideLayoutData 访问器方法
+// SlideLayoutData accessor methods
 // ============================================================================
 
-// ID 返回版式唯一标识符
+// ID returns the unique layout identifier.
 func (l *SlideLayoutData) ID() string { return l.id }
 
-// Name 返回版式名称
+// Name returns the layout name.
 func (l *SlideLayoutData) Name() string { return l.name }
 
-// LayoutType 返回版式类型
+// LayoutType returns the layout type.
 func (l *SlideLayoutData) LayoutType() SlideLayoutType { return l.layoutType }
 
-// Background 返回背景（可能为 nil）
+// Background returns the background (may be nil).
 func (l *SlideLayoutData) Background() *Background { return l.background }
 
-// MasterID 返回所属母版的 ID
+// MasterID returns the ID of the owning master.
 func (l *SlideLayoutData) MasterID() string { return l.masterId }
 
-// Placeholders 返回占位符集合
+// Placeholders returns the placeholder set.
 func (l *SlideLayoutData) Placeholders() map[string]*Placeholder { return l.placeholders }
 
-// PlaceholderByID 根据 ID 获取占位符（可能为 nil）
+// PlaceholderByID returns the placeholder with the given ID (may be nil).
 func (l *SlideLayoutData) PlaceholderByID(id string) *Placeholder {
 	return l.placeholders[id]
 }
 
-// PlaceholderCount 返回占位符数量
+// PlaceholderCount returns the number of placeholders.
 func (l *SlideLayoutData) PlaceholderCount() int { return len(l.placeholders) }
 
-// PlaceholderByType 根据类型获取第一个匹配的占位符
+// PlaceholderByType returns the first placeholder matching the given type.
 func (l *SlideLayoutData) PlaceholderByType(phType PlaceholderType) *Placeholder {
 	for _, ph := range l.placeholders {
 		if ph.placeholderType == phType {
@@ -307,47 +313,47 @@ func (l *SlideLayoutData) PlaceholderByType(phType PlaceholderType) *Placeholder
 	return nil
 }
 
-// TitlePlaceholder 获取标题占位符（便捷方法）
+// TitlePlaceholder returns the title placeholder (convenience method).
 func (l *SlideLayoutData) TitlePlaceholder() *Placeholder {
 	return l.PlaceholderByType(PlaceholderTypeTitle)
 }
 
-// BodyPlaceholder 获取正文占位符（便捷方法）
+// BodyPlaceholder returns the body placeholder (convenience method).
 func (l *SlideLayoutData) BodyPlaceholder() *Placeholder {
 	return l.PlaceholderByType(PlaceholderTypeBody)
 }
 
 // ============================================================================
-// SlideMasterData 访问器方法
+// SlideMasterData accessor methods
 // ============================================================================
 
-// ID 返回母版唯一标识符
+// ID returns the unique master identifier.
 func (m *SlideMasterData) ID() string { return m.id }
 
-// Name 返回母版名称
+// Name returns the master name.
 func (m *SlideMasterData) Name() string { return m.name }
 
-// Background 返回背景（可能为 nil）
+// Background returns the background (may be nil).
 func (m *SlideMasterData) Background() *Background { return m.background }
 
-// Placeholders 返回母版级占位符集合
+// Placeholders returns the master-level placeholder set.
 func (m *SlideMasterData) Placeholders() map[string]*Placeholder { return m.placeholders }
 
-// PlaceholderByID 根据 ID 获取占位符（可能为 nil）
+// PlaceholderByID returns the placeholder with the given ID (may be nil).
 func (m *SlideMasterData) PlaceholderByID(id string) *Placeholder {
 	return m.placeholders[id]
 }
 
-// PlaceholderCount 返回占位符数量
+// PlaceholderCount returns the number of placeholders.
 func (m *SlideMasterData) PlaceholderCount() int { return len(m.placeholders) }
 
-// Layouts 返回版式列表
+// Layouts returns the layout list.
 func (m *SlideMasterData) Layouts() []*SlideLayoutData { return m.layouts }
 
-// LayoutCount 返回版式数量
+// LayoutCount returns the number of layouts.
 func (m *SlideMasterData) LayoutCount() int { return len(m.layouts) }
 
-// LayoutByID 根据 ID 获取版式（可能为 nil）
+// LayoutByID returns the layout with the given ID (may be nil).
 func (m *SlideMasterData) LayoutByID(id string) *SlideLayoutData {
 	for _, layout := range m.layouts {
 		if layout.id == id {

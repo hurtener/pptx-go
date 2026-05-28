@@ -12,7 +12,7 @@ func TestContentTypes_New(t *testing.T) {
 		t.Fatal("NewContentTypes returned nil")
 	}
 
-	// 检查默认内容类型已初始化
+	// check default content types are initialized
 	if ct.GetDefault(".xml") != opc.ContentTypeXML {
 		t.Error("default .xml content type not set")
 	}
@@ -43,20 +43,20 @@ func TestContentTypes_AddOverride(t *testing.T) {
 func TestContentTypes_GetContentType(t *testing.T) {
 	ct := opc.NewContentTypes()
 
-	// 测试默认类型
+	// test default type
 	xmlURI := opc.NewPackURI("/ppt/slides/slide1.xml")
 	if ct.GetContentType(xmlURI) != opc.ContentTypeXML {
 		t.Error("failed to get default content type for .xml")
 	}
 
-	// 测试覆盖类型
+	// test override type
 	pptURI := opc.NewPackURI("/ppt/presentation.xml")
 	ct.AddOverride(pptURI, opc.ContentTypePresentation)
 	if ct.GetContentType(pptURI) != opc.ContentTypePresentation {
 		t.Error("failed to get override content type")
 	}
 
-	// 测试未知扩展名
+	// test unknown extension
 	unknownURI := opc.NewPackURI("/unknown/file.xyz")
 	if ct.GetContentType(unknownURI) != opc.ContentTypeDefault {
 		t.Error("unknown extension should return default content type")
@@ -82,7 +82,7 @@ func TestContentTypes_Defaults(t *testing.T) {
 		t.Error("defaults should not be empty")
 	}
 
-	// 确保返回的是副本
+	// ensure a copy is returned
 	defaults[".test"] = "test"
 	if ct.GetDefault(".test") != "" {
 		t.Error("modifying returned map should not affect original")
@@ -99,7 +99,7 @@ func TestContentTypes_Overrides(t *testing.T) {
 		t.Fatalf("expected 1 override, got %d", len(overrides))
 	}
 
-	// 确保返回的是副本
+	// ensure a copy is returned
 	overrides["/test"] = "test"
 	if ct.GetOverride(opc.NewPackURI("/test")) != "" {
 		t.Error("modifying returned map should not affect original")
@@ -108,24 +108,24 @@ func TestContentTypes_Overrides(t *testing.T) {
 
 func TestContentTypes_XML(t *testing.T) {
 	ct := opc.NewContentTypes()
-	ct.AddDefault("custom", "application/custom") // 扩展名不带点
+	ct.AddDefault("custom", "application/custom") // extension without leading dot
 	uri := opc.NewPackURI("/ppt/presentation.xml")
 	ct.AddOverride(uri, opc.ContentTypePresentation)
 
-	// 序列化
+	// serialize
 	data, err := ct.ToXML()
 	if err != nil {
 		t.Fatalf("ToXML failed: %v", err)
 	}
 
-	// 反序列化
+	// deserialize
 	ct2 := opc.NewContentTypes()
 	err = ct2.FromXML(data)
 	if err != nil {
 		t.Fatalf("FromXML failed: %v", err)
 	}
 
-	// 验证 - FromXML 存储的是不带点的扩展名
+	// verify - FromXML stores extensions without the leading dot
 	if ct2.GetDefault("custom") != "application/custom" {
 		t.Error("custom default not preserved after XML round-trip")
 	}
@@ -148,7 +148,7 @@ func TestContentTypes_FromXML(t *testing.T) {
 		t.Fatalf("FromXML failed: %v", err)
 	}
 
-	// FromXML 存储的是不带点的扩展名
+	// FromXML stores extensions without the leading dot
 	if ct.GetDefault("xml") != opc.ContentTypeXML {
 		t.Error("failed to parse Default element")
 	}

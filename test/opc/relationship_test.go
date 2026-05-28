@@ -58,7 +58,7 @@ func TestRelationship_TargetRef(t *testing.T) {
 		t.Error("TargetRef should not be empty")
 	}
 
-	// 外部关系
+	// external relationship
 	externalRel := opc.NewRelationship("rId2", opc.RelTypeHyperlink, "http://example.com", true, source)
 	extRef := externalRel.TargetRef()
 	if extRef != "http://example.com" {
@@ -108,7 +108,7 @@ func TestRelationships_Add(t *testing.T) {
 		t.Errorf("Count() = %d, want 1", rels.Count())
 	}
 
-	// 添加重复的 rID 应该失败
+	// adding a duplicate rID should fail
 	rel2 := opc.NewRelationship("rId1", opc.RelTypeSlide, "/ppt/slides/slide2.xml", false, source)
 	err = rels.Add(rel2)
 	if err == nil {
@@ -150,7 +150,7 @@ func TestRelationships_Get(t *testing.T) {
 		t.Error("Get returned wrong relationship")
 	}
 
-	// 获取不存在的 rID
+	// get a non-existent rID
 	if rels.Get("rId999") != nil {
 		t.Error("Get for non-existent rID should return nil")
 	}
@@ -189,7 +189,7 @@ func TestRelationships_GetByTarget(t *testing.T) {
 		t.Fatal("GetByTarget returned nil")
 	}
 
-	// 获取不存在的目标
+	// get a non-existent target
 	if rels.GetByTarget(opc.NewPackURI("/ppt/slides/slide999.xml")) != nil {
 		t.Error("GetByTarget for non-existent target should return nil")
 	}
@@ -208,7 +208,7 @@ func TestRelationships_Remove(t *testing.T) {
 		t.Error("relationship should be removed")
 	}
 
-	// 删除不存在的 rID 应该失败
+	// removing a non-existent rID should fail
 	err = rels.Remove("rId999")
 	if err == nil {
 		t.Error("removing non-existent rID should fail")
@@ -244,7 +244,7 @@ func TestRelationships_NextRID(t *testing.T) {
 	source := opc.NewPackURI("/ppt/presentation.xml")
 	rels := opc.NewRelationships(source)
 
-	// 空集合应该返回 rId1
+	// empty set should return rId1
 	if rels.NextRID() != "rId1" {
 		t.Error("first NextRID should be rId1")
 	}
@@ -265,7 +265,7 @@ func TestRelationships_Clone(t *testing.T) {
 		t.Error("clone should have same count")
 	}
 
-	// 修改克隆不应该影响原始
+	// modifying the clone should not affect the original
 	clone.AddNew(opc.RelTypeSlide, "/ppt/slides/slide2.xml", false)
 	if rels.Count() == clone.Count() {
 		t.Error("modifying clone should not affect original")
@@ -277,13 +277,13 @@ func TestRelationships_XML(t *testing.T) {
 	rels := opc.NewRelationships(source)
 	rels.AddNew(opc.RelTypeSlide, "/ppt/slides/slide1.xml", false)
 
-	// 序列化
+	// serialize
 	data, err := rels.ToXML()
 	if err != nil {
 		t.Fatalf("ToXML failed: %v", err)
 	}
 
-	// 反序列化
+	// deserialize
 	rels2 := opc.NewRelationships(source)
 	err = rels2.FromXML(data)
 	if err != nil {
@@ -349,13 +349,13 @@ func TestParseRelationshipsFromXML(t *testing.T) {
 	}
 }
 
-// ===== 并发 ID 分配测试 =====
+// ===== Concurrent ID allocation tests =====
 
 func TestRelationships_ConcurrentIDAllocation(t *testing.T) {
 	source := opc.NewPackURI("/ppt/presentation.xml")
 	rels := opc.NewRelationships(source)
 
-	// 并发添加关系
+	// add relationships concurrently
 	const goroutines = 10
 	const relationsPerGoroutine = 100
 
@@ -380,12 +380,12 @@ func TestRelationships_ConcurrentIDAllocation(t *testing.T) {
 
 	wg.Wait()
 
-	// 验证总关系数
+	// verify total relationship count
 	if rels.Count() != goroutines*relationsPerGoroutine {
 		t.Errorf("Count = %d, want %d", rels.Count(), goroutines*relationsPerGoroutine)
 	}
 
-	// 验证所有 ID 都是唯一的
+	// verify all IDs are unique
 	idSet := make(map[string]bool)
 	for _, ids := range rIDs {
 		for _, id := range ids {
@@ -396,7 +396,7 @@ func TestRelationships_ConcurrentIDAllocation(t *testing.T) {
 		}
 	}
 
-	// 验证 ID 格式正确
+	// verify ID format is correct
 	for id := range idSet {
 		if !strings.HasPrefix(id, "rId") {
 			t.Errorf("invalid rID format: %s", id)
@@ -407,7 +407,7 @@ func TestRelationships_ConcurrentIDAllocation(t *testing.T) {
 func TestRelationships_InitRIDCounter(t *testing.T) {
 	source := opc.NewPackURI("/ppt/presentation.xml")
 
-	// 从 XML 加载包含现有关系的集合
+	// load a set of relationships with existing IDs from XML
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
@@ -421,15 +421,15 @@ func TestRelationships_InitRIDCounter(t *testing.T) {
 		t.Fatalf("FromXML failed: %v", err)
 	}
 
-	// FromXML 会自动初始化计数器为最大值 5
-	// NextRID 预览下一个（Load + 1），不消耗计数器
+	// FromXML automatically initializes the counter to the max value 5.
+	// NextRID previews the next value (load + 1) without consuming the counter.
 	nextRID := rels.NextRID()
 	if nextRID != "rId6" {
 		t.Errorf("NextRID after InitRIDCounter = %s, want rId6", nextRID)
 	}
 
-	// AddNew 分配下一个 ID（使用 Add，返回新值）
-	// 第一个 AddNew 应该得到 rId6
+	// AddNew allocates the next ID (uses Add, returns the new value).
+	// The first AddNew should get rId6.
 	rel, err := rels.AddNew(opc.RelTypeSlide, "/ppt/slides/slide4.xml", false)
 	if err != nil {
 		t.Fatalf("AddNew failed: %v", err)
@@ -438,7 +438,7 @@ func TestRelationships_InitRIDCounter(t *testing.T) {
 		t.Errorf("new relationship RID = %s, want rId6", rel.RID())
 	}
 
-	// 第二个 AddNew 应该得到 rId7
+	// The second AddNew should get rId7.
 	rel2, err := rels.AddNew(opc.RelTypeSlide, "/ppt/slides/slide5.xml", false)
 	if err != nil {
 		t.Fatalf("AddNew failed: %v", err)
@@ -452,87 +452,87 @@ func TestRelationships_ClonePreservesCounter(t *testing.T) {
 	source := opc.NewPackURI("/ppt/presentation.xml")
 	rels := opc.NewRelationships(source)
 
-	// 添加一些关系
+	// add some relationships
 	rels.AddNew(opc.RelTypeSlide, "/ppt/slides/slide1.xml", false)
 	rels.AddNew(opc.RelTypeSlide, "/ppt/slides/slide2.xml", false)
 
-	// 克隆
+	// clone
 	cloned := rels.Clone()
 
-	// 克隆后的 NextRID 应该与原始相同
+	// NextRID of the clone should match the original
 	if rels.NextRID() != cloned.NextRID() {
 		t.Errorf("cloned NextRID = %s, want %s", cloned.NextRID(), rels.NextRID())
 	}
 
-	// 在克隆中添加关系不应该影响原始
+	// adding a relationship to the clone should not affect the original
 	cloned.AddNew(opc.RelTypeSlide, "/ppt/slides/slide3.xml", false)
 	if rels.Count() != 2 {
 		t.Errorf("original count changed after clone modification")
 	}
 }
 
-// TestParseRelationshipsFromFile 测试从真实 .rels 文件解析媒体关系
+// TestParseRelationshipsFromFile tests parsing media relationships from a real .rels file.
 func TestParseRelationshipsFromFile(t *testing.T) {
-	// 读取真实的 .rels 文件
+	// read a real .rels file
 	data, err := os.ReadFile("../test-data/test/ppt/slides/_rels/slide4.xml.rels")
 	if err != nil {
-		t.Fatalf("读取 .rels 文件失败: %v", err)
+		t.Fatalf("failed to read .rels file: %v", err)
 	}
 
-	// 反序列化为 Relationships 结构体
+	// deserialize into a Relationships struct
 	source := opc.NewPackURI("/ppt/slides/slide4.xml")
 	rels, err := opc.ParseRelationshipsFromXML(data, source)
 
-	// 断言解析无 error 且结果不为 nil
+	// assert no error and non-nil result
 	if err != nil {
-		t.Fatalf("ParseRelationshipsFromXML 失败: %v", err)
+		t.Fatalf("ParseRelationshipsFromXML failed: %v", err)
 	}
 	if rels == nil {
-		t.Fatal("ParseRelationshipsFromXML 返回 nil")
+		t.Fatal("ParseRelationshipsFromXML returned nil")
 	}
 
-	// 断言解析出的 Relationship 切片长度大于 0
+	// assert the parsed Relationship slice has at least one element
 	allRels := rels.All()
 	if len(allRels) == 0 {
-		t.Fatal("解析出的 Relationship 切片长度为 0")
+		t.Fatal("parsed Relationship slice is empty")
 	}
-	t.Logf("共解析到 %d 个关系", len(allRels))
+	t.Logf("parsed %d relationships", len(allRels))
 
-	// 遍历切片，找到 Type 包含 image 或 media 的节点
+	// iterate the slice and find nodes whose Type contains "image" or "media"
 	var foundMediaRel bool
 	for _, rel := range allRels {
 		relType := rel.Type()
-		// 检查类型是否包含 image 或 media
+		// check whether the type contains "image" or "media"
 		if strings.Contains(relType, "image") || strings.Contains(relType, "media") {
 			foundMediaRel = true
 
-			// 断言 Id (rId) 非空
+			// assert Id (rId) is non-empty
 			rID := rel.RID()
 			if rID == "" {
-				t.Error("媒体关系的 Id (rId) 为空")
+				t.Error("media relationship Id (rId) is empty")
 			} else {
-				t.Logf("找到媒体关系: Id=%s", rID)
+				t.Logf("found media relationship: Id=%s", rID)
 			}
 
-			// 断言 Target 非空
+			// assert Target is non-empty
 			target := rel.TargetURI()
 			if target == nil || target.URI() == "" {
-				t.Error("媒体关系的 Target 为空")
+				t.Error("media relationship Target is empty")
 			} else {
 				t.Logf("  Target=%s", target.URI())
 			}
 
-			// 断言 Type 非空
+			// assert Type is non-empty
 			if relType == "" {
-				t.Error("媒体关系的 Type 为空")
+				t.Error("media relationship Type is empty")
 			} else {
 				t.Logf("  Type=%s", relType)
 			}
 		}
 	}
 
-	// 确保至少找到一个媒体关系
+	// ensure at least one media relationship was found
 	if !foundMediaRel {
-		t.Error("未找到 Type 包含 image 或 media 的关系")
+		t.Error("no relationship with Type containing 'image' or 'media' was found")
 	}
 }

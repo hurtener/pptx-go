@@ -6,20 +6,20 @@ import (
 	"strings"
 )
 
-// PackURI 表示包内的URI（如 /ppt/slides/slide1.xml）
-// 遵循 OPC 规范中的 URI 规则
+// PackURI represents a URI within a package (e.g. /ppt/slides/slide1.xml).
+// It follows the URI rules defined in the OPC specification.
 type PackURI struct {
 	uri      string
 	segments []string
 }
 
-// NewPackURI 创建一个新的 PackURI
+// NewPackURI creates a new PackURI.
 func NewPackURI(uri string) *PackURI {
-	// 规范化 URI：确保以 / 开头
+	// Normalise: ensure the URI starts with /.
 	if !strings.HasPrefix(uri, "/") {
 		uri = "/" + uri
 	}
-	// 移除重复的斜杠
+	// Collapse duplicate slashes.
 	for strings.Contains(uri, "//") {
 		uri = strings.ReplaceAll(uri, "//", "/")
 	}
@@ -31,7 +31,7 @@ func NewPackURI(uri string) *PackURI {
 	return p
 }
 
-// parseSegments 解析 URI 的各个段
+// parseSegments splits the URI into its path segments.
 func (p *PackURI) parseSegments() []string {
 	trimmed := strings.Trim(p.uri, "/")
 	if trimmed == "" {
@@ -40,77 +40,77 @@ func (p *PackURI) parseSegments() []string {
 	return strings.Split(trimmed, "/")
 }
 
-// URI 返回原始 URI 字符串
+// URI returns the raw URI string.
 func (p *PackURI) URI() string {
 	return p.uri
 }
 
-// String 返回 URI 字符串表示
+// String returns the URI string representation.
 func (p *PackURI) String() string {
 	return p.uri
 }
 
-// BaseName 返回 URI 的基本名称（不含扩展名）
-// 例如: /ppt/slides/slide1.xml -> slide1
+// BaseName returns the base name of the URI without its extension.
+// Example: /ppt/slides/slide1.xml -> slide1
 func (p *PackURI) BaseName() string {
 	filename := p.FileName()
 	ext := path.Ext(filename)
 	return strings.TrimSuffix(filename, ext)
 }
 
-// FileName 返回文件名（含扩展名）
-// 例如: /ppt/slides/slide1.xml -> slide1.xml
+// FileName returns the file name including the extension.
+// Example: /ppt/slides/slide1.xml -> slide1.xml
 func (p *PackURI) FileName() string {
 	return path.Base(p.uri)
 }
 
-// Extension 返回文件扩展名
-// 例如: /ppt/slides/slide1.xml -> .xml
+// Extension returns the file extension.
+// Example: /ppt/slides/slide1.xml -> .xml
 func (p *PackURI) Extension() string {
 	return path.Ext(p.uri)
 }
 
-// DirName 返回父目录路径
-// 例如: /ppt/slides/slide1.xml -> /ppt/slides
+// DirName returns the parent directory path.
+// Example: /ppt/slides/slide1.xml -> /ppt/slides
 func (p *PackURI) DirName() string {
 	return path.Dir(p.uri)
 }
 
-// Segments 返回 URI 的各个段
+// Segments returns the individual path segments of the URI.
 func (p *PackURI) Segments() []string {
 	return p.segments
 }
 
-// MemberName 返回相对于包根目录的成员名称（用于 ZIP）
-// 去掉开头的 /
+// MemberName returns the member name relative to the package root (suitable for use in ZIP archives).
+// The leading / is removed.
 func (p *PackURI) MemberName() string {
 	return strings.TrimPrefix(p.uri, "/")
 }
 
-// RelPath 返回相对路径（用于关系目标）
+// RelPath returns the relative path (used as a relationship target).
 func (p *PackURI) RelPath() string {
 	return p.MemberName()
 }
 
-// Join 连接相对路径并返回新的 PackURI
+// Join resolves a relative path against this URI and returns a new PackURI.
 func (p *PackURI) Join(relativePath string) *PackURI {
-	// 处理绝对路径
+	// Absolute path: use as-is.
 	if strings.HasPrefix(relativePath, "/") {
 		return NewPackURI(relativePath)
 	}
 
-	// 解析相对路径
+	// Resolve relative path.
 	result := p.DirName()
 	parts := strings.Split(relativePath, "/")
 
 	for _, part := range parts {
 		if part == ".." {
-			// 向上一级目录
+			// Go up one directory level.
 			if result != "/" && result != "" {
 				result = path.Dir(result)
 			}
 		} else if part != "." && part != "" {
-			// 添加路径段
+			// Append the path segment.
 			result = path.Join(result, part)
 		}
 	}
@@ -118,12 +118,12 @@ func (p *PackURI) Join(relativePath string) *PackURI {
 	return NewPackURI(result)
 }
 
-// RelPathFrom 计算从另一个 URI 到此 URI 的相对路径
+// RelPathFrom computes the relative path from another URI to this URI.
 func (p *PackURI) RelPathFrom(other *PackURI) string {
 	fromSegs := other.DirSegments()
 	toSegs := p.DirSegments()
 
-	// 找到公共前缀
+	// Find the common prefix length.
 	commonLen := 0
 	minLen := len(fromSegs)
 	if len(toSegs) < minLen {
@@ -138,7 +138,7 @@ func (p *PackURI) RelPathFrom(other *PackURI) string {
 		}
 	}
 
-	// 构建相对路径
+	// Build the relative path.
 	var upLevels []string
 	for i := commonLen; i < len(fromSegs); i++ {
 		upLevels = append(upLevels, "..")
@@ -157,7 +157,7 @@ func (p *PackURI) RelPathFrom(other *PackURI) string {
 	return strings.Join(relativeParts, "/")
 }
 
-// DirSegments 返回目录段的切片（不含文件名）
+// DirSegments returns the directory segments of the URI (excluding the file name).
 func (p *PackURI) DirSegments() []string {
 	dir := p.DirName()
 	if dir == "/" || dir == "." {
@@ -166,13 +166,13 @@ func (p *PackURI) DirSegments() []string {
 	return strings.Split(strings.Trim(dir, "/"), "/")
 }
 
-// IsRelationshipsPart 检查是否为关系部件
+// IsRelationshipsPart reports whether this URI refers to a relationships part.
 func (p *PackURI) IsRelationshipsPart() bool {
 	return strings.HasSuffix(p.FileName(), ".rels")
 }
 
-// RelationshipsURI 返回此部件对应的关系文件 URI
-// 例如: /ppt/slides/slide1.xml -> /ppt/slides/_rels/slide1.xml.rels
+// RelationshipsURI returns the URI of the relationships file for this part.
+// Example: /ppt/slides/slide1.xml -> /ppt/slides/_rels/slide1.xml.rels
 func (p *PackURI) RelationshipsURI() *PackURI {
 	if p.IsRelationshipsPart() {
 		return p
@@ -181,36 +181,35 @@ func (p *PackURI) RelationshipsURI() *PackURI {
 	dir := p.DirName()
 	filename := p.FileName()
 
-	// 构建关系文件路径
+	// Build the relationships file path.
 	relPath := path.Join(dir, PathRelsDir, filename+".rels")
 	return NewPackURI(relPath)
 }
 
-// SourceURI 从关系文件路径获取源部件 URI
-// 例如: /ppt/slides/_rels/slide1.xml.rels -> /ppt/slides/slide1.xml
+// SourceURI returns the source part URI from a relationships file path.
+// Example: /ppt/slides/_rels/slide1.xml.rels -> /ppt/slides/slide1.xml
 func (p *PackURI) SourceURI() *PackURI {
 	if !p.IsRelationshipsPart() {
 		return p
 	}
 
-	// 解析关系文件路径
+	// Parse the relationships file path.
 	dir := p.DirName()
 	filename := p.FileName()
 
-	// 检查是否在 _rels 目录中
+	// Verify the file is inside a _rels directory.
 	if path.Base(dir) != PathRelsDir {
 		return p
 	}
 
-	// 移除 _rels 目录
+	// Remove the _rels directory and the .rels extension.
 	parentDir := path.Dir(dir)
-	// 移除 .rels 扩展名
 	sourceFilename := strings.TrimSuffix(filename, ".rels")
 
 	return NewPackURI(path.Join(parentDir, sourceFilename))
 }
 
-// Equals 比较两个 PackURI 是否相等
+// Equals reports whether two PackURIs are equal.
 func (p *PackURI) Equals(other *PackURI) bool {
 	if other == nil {
 		return false
@@ -218,28 +217,28 @@ func (p *PackURI) Equals(other *PackURI) bool {
 	return p.uri == other.uri
 }
 
-// EqualsStr 比较与字符串 URI 是否相等
+// EqualsStr reports whether the URI equals the given string URI.
 func (p *PackURI) EqualsStr(uri string) bool {
 	other := NewPackURI(uri)
 	return p.Equals(other)
 }
 
-// IsAbsolute 检查是否为绝对路径
+// IsAbsolute reports whether the URI is an absolute path.
 func (p *PackURI) IsAbsolute() bool {
 	return strings.HasPrefix(p.uri, "/")
 }
 
-// Clone 创建 PackURI 的副本
+// Clone returns a copy of this PackURI.
 func (p *PackURI) Clone() *PackURI {
 	return NewPackURI(p.uri)
 }
 
-// MarshalText 实现 encoding.TextMarshaler 接口
+// MarshalText implements encoding.TextMarshaler.
 func (p PackURI) MarshalText() ([]byte, error) {
 	return []byte(p.uri), nil
 }
 
-// UnmarshalText 实现 encoding.TextUnmarshaler 接口
+// UnmarshalText implements encoding.TextUnmarshaler.
 func (p *PackURI) UnmarshalText(data []byte) error {
 	p.uri = string(data)
 	if !strings.HasPrefix(p.uri, "/") {
@@ -249,39 +248,39 @@ func (p *PackURI) UnmarshalText(data []byte) error {
 	return nil
 }
 
-// RootURI 返回包根目录 URI
+// RootURI returns the package root URI.
 func RootURI() *PackURI {
 	return NewPackURI("/")
 }
 
-// ContentTypesURI 返回 [Content_Types].xml 的 URI
+// ContentTypesURI returns the URI of [Content_Types].xml.
 func ContentTypesURI() *PackURI {
 	return NewPackURI("/" + PathContentTypes)
 }
 
-// PackageRelsURI 返回包级别关系文件的 URI
+// PackageRelsURI returns the URI of the package-level relationships file.
 func PackageRelsURI() *PackURI {
 	return NewPackURI("/" + PathRelsDir + "/" + PathRelsFile)
 }
 
-// IsPackageRels 检查是否为包级别关系文件
+// IsPackageRels reports whether this URI refers to the package-level relationships file.
 func (p *PackURI) IsPackageRels() bool {
 	return p.uri == "/"+PathRelsDir+"/"+PathRelsFile
 }
 
-// IsValidPackURI 检查 URI 是否有效
+// IsValidPackURI reports whether the given string is a valid pack URI.
 func IsValidPackURI(uri string) bool {
-	// 基本验证
+	// Basic validation.
 	if uri == "" {
 		return false
 	}
 
-	// 必须以 / 开头（绝对路径）
+	// Must start with / (absolute path).
 	if !strings.HasPrefix(uri, "/") {
 		return false
 	}
 
-	// 检查非法字符
+	// Check for illegal characters.
 	illegalChars := []string{"\\", ":", "*", "?", "\"", "<", ">", "|"}
 	for _, char := range illegalChars {
 		if strings.Contains(uri, char) {
@@ -292,22 +291,22 @@ func IsValidPackURI(uri string) bool {
 	return true
 }
 
-// NormalizeURI 规范化 URI
+// NormalizeURI normalises a URI string.
 func NormalizeURI(uri string) string {
-	// 将反斜杠转换为正斜杠
+	// Convert backslashes to forward slashes.
 	uri = filepath.ToSlash(uri)
 
-	// 确保以 / 开头
+	// Ensure a leading slash.
 	if !strings.HasPrefix(uri, "/") {
 		uri = "/" + uri
 	}
 
-	// 移除重复的斜杠
+	// Collapse duplicate slashes.
 	for strings.Contains(uri, "//") {
 		uri = strings.ReplaceAll(uri, "//", "/")
 	}
 
-	// 移除结尾的斜杠（除非是根目录）
+	// Remove trailing slash (except for the root).
 	if len(uri) > 1 && strings.HasSuffix(uri, "/") {
 		uri = strings.TrimSuffix(uri, "/")
 	}
@@ -315,23 +314,23 @@ func NormalizeURI(uri string) string {
 	return uri
 }
 
-// NormalizeZipPath 规范化 ZIP 内部路径
-// 专门用于处理从 ZIP 文件读取的路径，解决 Windows 斜杠问题
-// 与 NormalizeURI 的区别：不添加前导 /，保持相对路径形式
+// NormalizeZipPath normalises an internal ZIP path.
+// Designed specifically for paths read from ZIP archives, handling Windows backslash issues.
+// Unlike NormalizeURI, this function does not add a leading slash — it preserves the relative form.
 func NormalizeZipPath(path string) string {
-	// 1. 将 Windows 反斜杠转换为正斜杠
-	// ZIP 规范要求使用正斜杠，但某些工具可能在 Windows 上创建了反斜杠路径
+	// 1. Convert Windows backslashes to forward slashes.
+	//    The ZIP spec requires forward slashes, but some tools on Windows may produce backslashes.
 	path = strings.ReplaceAll(path, "\\", "/")
 
-	// 2. 移除重复的斜杠（如 // 或 ///）
+	// 2. Collapse duplicate slashes (e.g. // or ///).
 	for strings.Contains(path, "//") {
 		path = strings.ReplaceAll(path, "//", "/")
 	}
 
-	// 3. 移除前导斜杠（ZIP 内部路径是相对的）
+	// 3. Remove any leading slash (ZIP internal paths are relative).
 	path = strings.TrimPrefix(path, "/")
 
-	// 4. 移除结尾的斜杠（除非是空路径）
+	// 4. Remove any trailing slash (unless the path is empty).
 	if len(path) > 0 && strings.HasSuffix(path, "/") {
 		path = strings.TrimSuffix(path, "/")
 	}
