@@ -67,6 +67,12 @@ type Presentation struct {
 	// relCounter generates relationship IDs.
 	relCounter int32
 
+	// fontSource resolves font bytes for EmbedFont (nil = no source). D-019.
+	fontSource FontSource
+
+	// fontCounter generates embedded font part names (font1.fntdata, …).
+	fontCounter int32
+
 	// mu guards concurrent access.
 	mu sync.RWMutex
 }

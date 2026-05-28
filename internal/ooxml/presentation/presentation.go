@@ -50,6 +50,9 @@ type PresentationPart struct {
 	notesMasterID string    // notes master rId
 	themeID       string    // theme rId
 
+	// Embedded fonts (<p:embeddedFontLst>) recorded via AddEmbeddedFont.
+	embeddedFonts []EmbeddedFontEntry
+
 	mu sync.RWMutex
 }
 
@@ -196,6 +199,9 @@ type XPresentation struct {
 	// Notes master ID list
 	NotesMasterIdLst *XSldMasterIdLst `xml:"notesMasterIdLst,omitempty"`
 
+	// Embedded font list (<p:embeddedFontLst>)
+	EmbeddedFontLst *XEmbeddedFontList `xml:"embeddedFontLst,omitempty"`
+
 	// Print settings
 	PrintSettings *XPrintSettings `xml:"printSettings,omitempty"`
 }
@@ -282,6 +288,9 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 			}
 		}
 	}
+
+	// Build the embedded font list.
+	xp.EmbeddedFontLst = buildEmbeddedFontList(p.embeddedFonts)
 
 	output, err := xml.Marshal(&xp)
 	if err != nil {

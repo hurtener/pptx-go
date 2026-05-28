@@ -146,7 +146,15 @@ font name + style + weight to bytes. Registered via
 `pptx.WithFontSource(...)`. The presentation's `EmbedFont(name, style,
 weight)` method uses it to write font-embedding parts. No auto-embed
 default: the caller invokes `EmbedFont` explicitly for each font to
-embed. (D-019, `RFC §7.6`.)
+embed. (D-019, `RFC §7.6`.) Registered in V1 via
+`pres.SetFontSource(...)`; the functional `pptx.WithFontSource(...)`
+option arrives with the builder spine (D-030).
+
+## FontSpec
+
+A resolved typography value: font `Family`, `Size` (points), `Weight`
+(100–900; ≥600 is bold), and `Italic`. `Theme.ResolveType(TypeRole)`
+returns one.
 
 ## Format
 
@@ -389,7 +397,12 @@ renderer, Theme, Assets, Charts). Phase plans name their owning subsystem.
 
 The token-to-OOXML mapping the builder consults at write time. Tokens are
 resolved lazily; theme swaps re-render the same builder/scene input in the
-new visual language. See `RFC-001-pptx-go.md §7`.
+new visual language. A `Theme` holds five per-role value maps —
+**ColorPalette** (surface + text colors), **Typography** (`TypeRole` →
+`FontSpec`), **Spacing** (`SpaceRole` → `EMU`), **Radii** (`RadiusRole` →
+`EMU`), and **Elevations** (`ElevationRole` → `Elevation` shadow spec) —
+plus the major/minor font faces. See `RFC-001-pptx-go.md §7`,
+`docs/design/THEME.md`.
 
 ## TextColorRole
 
