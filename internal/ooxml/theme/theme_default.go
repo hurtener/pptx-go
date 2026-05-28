@@ -372,15 +372,24 @@ func cloneFontScheme(src *XFontScheme) *XFontScheme {
 	return dst
 }
 
+// cloneFace returns a deep copy of a font face.
+func cloneFace(src *XFontFace) *XFontFace {
+	if src == nil {
+		return nil
+	}
+	c := *src
+	return &c
+}
+
 // cloneFontCollection returns a deep copy of a font collection.
 func cloneFontCollection(src *XFontCollection) *XFontCollection {
 	if src == nil {
 		return nil
 	}
 	dst := &XFontCollection{
-		Latin:    src.Latin,
-		EastAsia: src.EastAsia,
-		Complex:  src.Complex,
+		Latin:    cloneFace(src.Latin),
+		EastAsia: cloneFace(src.EastAsia),
+		Complex:  cloneFace(src.Complex),
 	}
 	if len(src.Fonts) > 0 {
 		dst.Fonts = make([]XScriptFont, len(src.Fonts))

@@ -131,12 +131,22 @@ type XFontScheme struct {
 	MinorFont *XFontCollection `xml:"minorFont,omitempty"` // body font
 }
 
-// XFontCollection holds a font collection.
+// XFontCollection holds a font collection. The Latin/EastAsia/Complex faces
+// are nested elements (<latin typeface="…"/>), not attributes of the
+// collection — modelling them as a string attribute (the prior shape) emitted
+// invalid OOXML that PowerPoint ignored.
 type XFontCollection struct {
-	Latin    string        `xml:"latin typeface,attr,omitempty"` // Latin font
-	EastAsia string        `xml:"ea typeface,attr,omitempty"`    // East Asian font
-	Complex  string        `xml:"cs typeface,attr,omitempty"`    // complex-script font
-	Fonts    []XScriptFont `xml:"font"`                          // script-specific fonts
+	Latin    *XFontFace    `xml:"latin,omitempty"` // Latin font face
+	EastAsia *XFontFace    `xml:"ea,omitempty"`    // East Asian font face
+	Complex  *XFontFace    `xml:"cs,omitempty"`    // complex-script font face
+	Fonts    []XScriptFont `xml:"font"`            // script-specific fonts
+}
+
+// XFontFace is a single font face: a typeface name plus an optional panose
+// classification, preserved across a round-trip.
+type XFontFace struct {
+	Typeface string `xml:"typeface,attr"`
+	Panose   string `xml:"panose,attr,omitempty"`
 }
 
 // XScriptFont holds a script-specific font definition.
