@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# pptx-go pre-commit hook — runs the preflight gate (CLAUDE.md §4.1).
+#
+# Installed by scripts/install-hooks.sh. Do not bypass with --no-verify
+# outside a documented emergency (CLAUDE.md §13).
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+exec ./scripts/preflight.sh

@@ -7,21 +7,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
-// ===== PartSource 测试 =====
+// ===== PartSource tests =====
 
 func TestBytesSource(t *testing.T) {
 	data := []byte("test content")
 	source := opc.NewBytesSource(data)
 
-	// 测试 Size
+	// test Size
 	if source.Size() != int64(len(data)) {
 		t.Errorf("Size() = %d, want %d", source.Size(), len(data))
 	}
 
-	// 测试 Open
+	// test Open
 	rc, err := source.Open()
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
@@ -43,12 +43,12 @@ func TestReaderSource(t *testing.T) {
 	reader := bytes.NewReader(data)
 	source := opc.NewReaderSource(reader, int64(len(data)))
 
-	// 测试 Size
+	// test Size
 	if source.Size() != int64(len(data)) {
 		t.Errorf("Size() = %d, want %d", source.Size(), len(data))
 	}
 
-	// 测试 Open
+	// test Open
 	rc, err := source.Open()
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
@@ -65,7 +65,7 @@ func TestReaderSource(t *testing.T) {
 	}
 }
 
-// ===== StreamPart 测试 =====
+// ===== StreamPart tests =====
 
 func TestStreamPart_New(t *testing.T) {
 	uri := opc.NewPackURI("/ppt/slides/slide1.xml")
@@ -92,12 +92,12 @@ func TestStreamPart_LazyLoad(t *testing.T) {
 
 	part := opc.NewStreamPart(uri, opc.ContentTypeSlide, source)
 
-	// 初始状态：未加载
+	// initial state: not loaded
 	if part.IsLoaded() {
 		t.Error("new StreamPart should not be loaded")
 	}
 
-	// 打开流读取（不加载到内存）
+	// open stream for reading (without loading into memory)
 	rc, err := part.Open()
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
@@ -109,22 +109,22 @@ func TestStreamPart_LazyLoad(t *testing.T) {
 		t.Error("Open returned wrong data")
 	}
 
-	// 仍然未加载
+	// still not loaded
 	if part.IsLoaded() {
 		t.Error("Open should not load into memory")
 	}
 
-	// 显式加载
+	// explicit load
 	if err := part.Load(); err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
 
-	// 现在已加载
+	// now loaded
 	if !part.IsLoaded() {
 		t.Error("Load should mark as loaded")
 	}
 
-	// 再次加载应该是无操作
+	// loading again should be a no-op
 	if err := part.Load(); err != nil {
 		t.Fatalf("second Load failed: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestStreamPart_Blob(t *testing.T) {
 
 	part := opc.NewStreamPart(uri, opc.ContentTypeSlide, source)
 
-	// Blob 会触发加载
+	// Blob triggers a load
 	blob, err := part.Blob()
 	if err != nil {
 		t.Fatalf("Blob failed: %v", err)
@@ -157,21 +157,21 @@ func TestStreamPart_SetBlob(t *testing.T) {
 	source := opc.NewBytesSource([]byte("original"))
 	part := opc.NewStreamPart(uri, opc.ContentTypeSlide, source)
 
-	// 设置新内容
+	// set new content
 	newData := []byte("<new slide/>")
 	part.SetBlob(newData)
 
-	// 应该已加载
+	// should be loaded
 	if !part.IsLoaded() {
 		t.Error("SetBlob should mark as loaded")
 	}
 
-	// 应该标记为脏
+	// should be marked dirty
 	if !part.IsDirty() {
 		t.Error("SetBlob should mark as dirty")
 	}
 
-	// 读取应该是新内容
+	// read should return new content
 	blob, _ := part.Blob()
 	if string(blob) != string(newData) {
 		t.Error("Blob should return new data")
@@ -185,12 +185,12 @@ func TestStreamPart_Size(t *testing.T) {
 
 	part := opc.NewStreamPart(uri, opc.ContentTypeSlide, source)
 
-	// 未加载时从源获取大小
+	// size from source when not loaded
 	if part.Size() != int64(len(data)) {
 		t.Errorf("Size() = %d, want %d", part.Size(), len(data))
 	}
 
-	// 加载后
+	// after load
 	part.Load()
 	if part.Size() != int64(len(data)) {
 		t.Errorf("Size() after load = %d, want %d", part.Size(), len(data))
@@ -210,12 +210,12 @@ func TestStreamPart_Clone(t *testing.T) {
 		t.Fatal("Clone returned nil")
 	}
 
-	// 验证克隆是独立的
+	// verify the clone is independent
 	if clone == part {
 		t.Error("clone should be a different instance")
 	}
 
-	// 修改原始不应该影响克隆
+	// modifying the original should not affect the clone
 	part.SetBlob([]byte("<modified/>"))
 	blob, _ := clone.Blob()
 	if string(blob) != string(data) {
@@ -223,28 +223,28 @@ func TestStreamPart_Clone(t *testing.T) {
 	}
 }
 
-// ===== StreamingZipWriter 测试 =====
+// ===== StreamingZipWriter tests =====
 
 func TestStreamingZipWriter(t *testing.T) {
 	buf := &bytes.Buffer{}
 	sw := opc.NewStreamingZipWriter(buf)
 
-	// 写入字节数据
+	// write byte data
 	if err := sw.WriteBytes("test.txt", []byte("hello world")); err != nil {
 		t.Fatalf("WriteBytes failed: %v", err)
 	}
 
-	// 写入 XML 数据
+	// write XML data
 	if err := sw.WriteXML("test.xml", []byte("<root/>")); err != nil {
 		t.Fatalf("WriteXML failed: %v", err)
 	}
 
-	// 关闭
+	// close
 	if err := sw.Close(); err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
 
-	// 验证生成的 ZIP
+	// verify the generated ZIP
 	data := buf.Bytes()
 	if len(data) == 0 {
 		t.Error("ZIP data should not be empty")
@@ -255,13 +255,13 @@ func TestStreamingZipWriter_StreamPart(t *testing.T) {
 	buf := &bytes.Buffer{}
 	sw := opc.NewStreamingZipWriter(buf)
 
-	// 创建流式部件
+	// create a streaming part
 	uri := opc.NewPackURI("/ppt/slides/slide1.xml")
 	data := []byte("<p:sld/>")
 	source := opc.NewBytesSource(data)
 	part := opc.NewStreamPart(uri, opc.ContentTypeSlide, source)
 
-	// 流式写入
+	// stream write
 	if err := sw.WriteStreamPart(part); err != nil {
 		t.Fatalf("WriteStreamPart failed: %v", err)
 	}
@@ -270,13 +270,13 @@ func TestStreamingZipWriter_StreamPart(t *testing.T) {
 		t.Fatalf("Close failed: %v", err)
 	}
 
-	// 验证
+	// verify
 	if buf.Len() == 0 {
 		t.Error("ZIP data should not be empty")
 	}
 }
 
-// ===== StreamPackage 测试 =====
+// ===== StreamPackage tests =====
 
 func TestStreamPackage_New(t *testing.T) {
 	pkg := opc.NewStreamPackage()
@@ -319,12 +319,12 @@ func TestStreamPackage_CreatePartFromBytes(t *testing.T) {
 		t.Fatalf("CreatePartFromBytes failed: %v", err)
 	}
 
-	// 应该已加载
+	// should be loaded
 	if !part.IsLoaded() {
 		t.Error("CreatePartFromBytes should mark part as loaded")
 	}
 
-	// 内容应该正确
+	// content should be correct
 	blob, _ := part.Blob()
 	if string(blob) != string(data) {
 		t.Error("Blob content mismatch")
@@ -341,7 +341,7 @@ func TestStreamPackage_GetPart(t *testing.T) {
 		t.Fatal("GetPart returned nil")
 	}
 
-	// 获取不存在的部件
+	// get a non-existent part
 	nonExistent := opc.NewPackURI("/ppt/slides/slide999.xml")
 	if pkg.GetPart(nonExistent) != nil {
 		t.Error("GetPart for non-existent URI should return nil")
@@ -379,58 +379,58 @@ func TestStreamPackage_RemovePart(t *testing.T) {
 }
 
 func TestStreamPackage_SaveAndOpen(t *testing.T) {
-	// 创建包
+	// create package
 	pkg := opc.NewStreamPackage()
 
-	// 添加部件
+	// add parts
 	slideURI := opc.NewPackURI("/ppt/slides/slide1.xml")
 	pkg.CreatePartFromBytes(slideURI, opc.ContentTypeSlide, []byte(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`))
 
 	themeURI := opc.NewPackURI("/ppt/theme/theme1.xml")
 	pkg.CreatePartFromBytes(themeURI, opc.ContentTypeTheme, []byte(`<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>`))
 
-	// 添加关系
+	// add relationship
 	pkg.AddRelationship(opc.RelTypeOfficeDocument, "/ppt/presentation.xml", false)
 
-	// 创建临时文件
+	// create temp file
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test_stream.pptx")
 
-	// 流式保存
+	// stream save
 	err := pkg.StreamSaveFile(tmpFile)
 	if err != nil {
 		t.Fatalf("StreamSaveFile failed: %v", err)
 	}
 
-	// 验证文件存在
+	// verify file exists
 	if _, err := os.Stat(tmpFile); os.IsNotExist(err) {
 		t.Fatal("saved file does not exist")
 	}
 
-	// 流式打开
+	// stream open
 	openedPkg, err := opc.OpenStream(tmpFile)
 	if err != nil {
 		t.Fatalf("OpenStream failed: %v", err)
 	}
 	defer openedPkg.Close()
 
-	// 验证内容
+	// verify content
 	if openedPkg.PartCount() < 2 {
 		t.Errorf("opened package has %d parts, expected at least 2", openedPkg.PartCount())
 	}
 
-	// 验证部件存在
+	// verify part exists
 	slidePart := openedPkg.GetPart(slideURI)
 	if slidePart == nil {
 		t.Error("slide part not found after reopening")
 	}
 
-	// 验证懒加载
+	// verify lazy loading
 	if slidePart.IsLoaded() {
 		t.Error("part should not be loaded initially in stream mode")
 	}
 
-	// 加载部件内容
+	// load part content
 	blob, err := slidePart.Blob()
 	if err != nil {
 		t.Fatalf("Blob failed: %v", err)
@@ -443,17 +443,17 @@ func TestStreamPackage_SaveAndOpen(t *testing.T) {
 func TestStreamPackage_PartIterator(t *testing.T) {
 	pkg := opc.NewStreamPackage()
 
-	// 添加多个部件
+	// add multiple parts
 	for i := 1; i <= 3; i++ {
 		uri := opc.NewPackURI("/ppt/slides/slide" + string(rune('0'+i)) + ".xml")
 		pkg.CreatePartFromBytes(uri, opc.ContentTypeSlide, []byte("<slide/>"))
 	}
 
-	// 添加一个不同类型的部件
+	// add a part of a different type
 	themeURI := opc.NewPackURI("/ppt/theme/theme1.xml")
 	pkg.CreatePartFromBytes(themeURI, opc.ContentTypeTheme, []byte("<theme/>"))
 
-	// 迭代所有部件
+	// iterate over all parts
 	count := 0
 	iter := pkg.NewPartIterator()
 	for iter.Next() {
@@ -463,7 +463,7 @@ func TestStreamPackage_PartIterator(t *testing.T) {
 		t.Errorf("iterator returned %d parts, want 4", count)
 	}
 
-	// 按类型过滤
+	// filter by type
 	slideCount := 0
 	iter2 := pkg.NewPartIterator().FilterByType(opc.ContentTypeSlide)
 	for iter2.Next() {
@@ -474,7 +474,7 @@ func TestStreamPackage_PartIterator(t *testing.T) {
 	}
 }
 
-// ===== RelationshipsStreamer 测试 =====
+// ===== RelationshipsStreamer tests =====
 
 func TestRelationshipsStreamer(t *testing.T) {
 	rels := opc.NewRelationships(opc.RootURI())
@@ -493,7 +493,7 @@ func TestRelationshipsStreamer(t *testing.T) {
 		t.Error("streamed data should not be empty")
 	}
 
-	// 验证 XML 结构
+	// verify XML structure
 	if !bytes.Contains(buf.Bytes(), []byte("<Relationships")) {
 		t.Error("should contain Relationships element")
 	}
@@ -502,7 +502,7 @@ func TestRelationshipsStreamer(t *testing.T) {
 	}
 }
 
-// ===== ContentTypesStreamer 测试 =====
+// ===== ContentTypesStreamer tests =====
 
 func TestContentTypesStreamer(t *testing.T) {
 	ct := opc.NewContentTypes()
@@ -522,7 +522,7 @@ func TestContentTypesStreamer(t *testing.T) {
 		t.Error("streamed data should not be empty")
 	}
 
-	// 验证 XML 结构
+	// verify XML structure
 	if !bytes.Contains(buf.Bytes(), []byte("<Types")) {
 		t.Error("should contain Types element")
 	}
@@ -534,7 +534,7 @@ func TestContentTypesStreamer(t *testing.T) {
 	}
 }
 
-// ===== 性能测试 =====
+// ===== Benchmarks =====
 
 func BenchmarkStreamPart_Open(b *testing.B) {
 	data := make([]byte, 1024*1024) // 1MB
@@ -575,7 +575,7 @@ func BenchmarkStreamingZipWriter(b *testing.B) {
 	}
 }
 
-// ===== PartData 和 Channel 测试 =====
+// ===== PartData and Channel tests =====
 
 func TestPartData_New(t *testing.T) {
 	data := []byte("<slide/>")
@@ -603,7 +603,7 @@ func TestPartDataChannel(t *testing.T) {
 		t.Fatal("NewPartDataChannel returned nil")
 	}
 
-	// 发送数据
+	// send data
 	go func() {
 		ch <- &opc.PartData{
 			Path: "test.txt",
@@ -612,7 +612,7 @@ func TestPartDataChannel(t *testing.T) {
 		close(ch)
 	}()
 
-	// 接收数据
+	// receive data
 	received := 0
 	for data := range ch {
 		received++
@@ -626,16 +626,16 @@ func TestPartDataChannel(t *testing.T) {
 	}
 }
 
-// ===== ResourceDedupPool 测试 =====
+// ===== ResourceDedupPool tests =====
 
 func TestResourceDedupPool_Register(t *testing.T) {
 	pool := opc.NewResourceDedupPool()
 
 	data1 := []byte("image data 1")
 	data2 := []byte("image data 2")
-	data3 := []byte("image data 1") // 与 data1 相同
+	data3 := []byte("image data 1") // same as data1
 
-	// 注册新资源
+	// register a new resource
 	isNew, uri1 := pool.Register("/ppt/media/image1.png", data1)
 	if !isNew {
 		t.Error("first registration should be new")
@@ -644,13 +644,13 @@ func TestResourceDedupPool_Register(t *testing.T) {
 		t.Errorf("URI = %q, want %q", uri1, "/ppt/media/image1.png")
 	}
 
-	// 注册另一个新资源
+	// register another new resource
 	isNew, _ = pool.Register("/ppt/media/image2.png", data2)
 	if !isNew {
 		t.Error("second registration should be new")
 	}
 
-	// 注册重复资源（相同内容）
+	// register duplicate resource (same content)
 	isNew, existingURI := pool.Register("/ppt/media/image3.png", data3)
 	if isNew {
 		t.Error("duplicate registration should not be new")
@@ -693,27 +693,27 @@ func TestGlobalResourcePool(t *testing.T) {
 		t.Fatal("GetGlobalResourcePool returned nil")
 	}
 
-	// 清空以确保测试干净
+	// clear to ensure a clean test
 	pool.Clear()
 
-	// 注册资源
+	// register resource
 	isNew, _ := pool.Register("/test/image.png", []byte("test data"))
 	if !isNew {
 		t.Error("global pool registration should be new")
 	}
 
-	// 清理
+	// cleanup
 	pool.Clear()
 }
 
-// ===== ConcurrentZipCollector 测试 =====
+// ===== ConcurrentZipCollector tests =====
 
 func TestConcurrentZipCollector(t *testing.T) {
 	buf := &bytes.Buffer{}
 	collector := opc.NewConcurrentZipCollector(buf, 10)
 	collector.Start()
 
-	// 提交一些数据
+	// submit some data
 	if err := collector.SubmitBytes("test1.txt", []byte("hello")); err != nil {
 		t.Fatalf("SubmitBytes failed: %v", err)
 	}
@@ -721,12 +721,12 @@ func TestConcurrentZipCollector(t *testing.T) {
 		t.Fatalf("SubmitBytes failed: %v", err)
 	}
 
-	// 关闭并等待
+	// close and wait
 	if err := collector.Wait(); err != nil {
 		t.Fatalf("Wait failed: %v", err)
 	}
 
-	// 验证 ZIP 数据
+	// verify ZIP data
 	data := buf.Bytes()
 	if len(data) == 0 {
 		t.Error("ZIP data should not be empty")
@@ -738,7 +738,7 @@ func TestConcurrentZipCollector_WithPartData(t *testing.T) {
 	collector := opc.NewConcurrentZipCollector(buf, 5)
 	collector.Start()
 
-	// 使用 PartData 提交
+	// submit using PartData
 	partData := &opc.PartData{
 		Path: "slide.xml",
 		Data: []byte("<slide/>"),
@@ -747,7 +747,7 @@ func TestConcurrentZipCollector_WithPartData(t *testing.T) {
 		t.Fatalf("Submit failed: %v", err)
 	}
 
-	// 使用 Source 提交
+	// submit using Source
 	sourcePart := &opc.PartData{
 		Path:   "from_source.txt",
 		Source: opc.NewBytesSource([]byte("from source")),
@@ -765,37 +765,37 @@ func TestConcurrentZipCollector_WithPartData(t *testing.T) {
 	}
 }
 
-// ===== ConcurrentStreamSave 测试 =====
+// ===== ConcurrentStreamSave tests =====
 
 func TestStreamPackage_ConcurrentStreamSave(t *testing.T) {
 	pkg := opc.NewStreamPackage()
 
-	// 添加多个部件
+	// add multiple parts
 	for i := 1; i <= 5; i++ {
 		uri := opc.NewPackURI("/ppt/slides/slide" + string(rune('0'+i)) + ".xml")
 		data := []byte("<slide id=\"" + string(rune('0'+i)) + "\"/>")
 		pkg.CreatePartFromBytes(uri, opc.ContentTypeSlide, data)
 	}
 
-	// 添加关系
+	// add relationship
 	pkg.AddRelationship(opc.RelTypeOfficeDocument, "/ppt/presentation.xml", false)
 
-	// 创建临时文件
+	// create temp file
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "concurrent_test.pptx")
 
-	// 并发保存
+	// concurrent save
 	err := pkg.ConcurrentStreamSaveFile(tmpFile, 3, 10)
 	if err != nil {
 		t.Fatalf("ConcurrentStreamSaveFile failed: %v", err)
 	}
 
-	// 验证文件存在
+	// verify file exists
 	if _, err := os.Stat(tmpFile); os.IsNotExist(err) {
 		t.Fatal("saved file does not exist")
 	}
 
-	// 验证可以重新打开
+	// verify it can be reopened
 	openedPkg, err := opc.OpenStream(tmpFile)
 	if err != nil {
 		t.Fatalf("OpenStream failed: %v", err)
@@ -807,15 +807,15 @@ func TestStreamPackage_ConcurrentStreamSave(t *testing.T) {
 	}
 }
 
-// ===== 媒体资源去重测试 =====
+// ===== Media deduplication tests =====
 
 func TestStreamPackage_MediaDedup(t *testing.T) {
 	pkg := opc.NewStreamPackage()
 
-	// 清空全局资源池
+	// clear the global resource pool
 	pkg.ClearMediaDedupPool()
 
-	// 添加相同的图片两次
+	// add the same image twice
 	imageData := []byte("PNG image data here")
 
 	uri1 := opc.NewPackURI("/ppt/media/image1.png")
@@ -827,7 +827,7 @@ func TestStreamPackage_MediaDedup(t *testing.T) {
 		t.Error("first image should be new")
 	}
 
-	// 尝试添加相同的图片（应该去重）
+	// attempt to add the same image again (should be deduplicated)
 	uri2 := opc.NewPackURI("/ppt/media/image2.png")
 	actualURI2, isNew2, err := pkg.AddMediaPartWithDedup(uri2, opc.ContentTypePNG, imageData)
 	if err != nil {
@@ -840,17 +840,17 @@ func TestStreamPackage_MediaDedup(t *testing.T) {
 		t.Errorf("second image should return first URI, got %q, want %q", actualURI2.URI(), actualURI1.URI())
 	}
 
-	// 检查统计
+	// check stats
 	count, _ := pkg.GetMediaDedupStats()
 	if count != 1 {
 		t.Errorf("media dedup count = %d, want 1", count)
 	}
 
-	// 清理
+	// cleanup
 	pkg.ClearMediaDedupPool()
 }
 
-// ===== 并发性能测试 =====
+// ===== Concurrent benchmarks =====
 
 func BenchmarkConcurrentZipCollector(b *testing.B) {
 	data := make([]byte, 1024)
@@ -882,7 +882,7 @@ func BenchmarkResourceDedupPool(b *testing.B) {
 func BenchmarkConcurrentStreamSave(b *testing.B) {
 	pkg := opc.NewStreamPackage()
 
-	// 添加部件
+	// add parts
 	for i := 0; i < 10; i++ {
 		uri := opc.NewPackURI("/ppt/slides/slide" + string(rune('0'+i%10)) + ".xml")
 		pkg.CreatePartFromBytes(uri, opc.ContentTypeSlide, make([]byte, 1024))

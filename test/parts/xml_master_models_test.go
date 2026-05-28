@@ -4,11 +4,11 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================
-// 基础坐标与尺寸测试 - XMLOffset 和 XMLExtents
+// Base coordinate and size tests — XMLOffset and XMLExtents
 // ============================================================================
 
 func TestParseXMLOffset(t *testing.T) {
@@ -20,37 +20,37 @@ func TestParseXMLOffset(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name:    "正常解析-正数坐标",
+			name:    "happy-path-positive-coords",
 			xmlData: `<a:off x="1524000" y="1143000"/>`,
 			wantX:   1524000,
 			wantY:   1143000,
 		},
 		{
-			name:    "正常解析-零值坐标",
+			name:    "happy-path-zero-coords",
 			xmlData: `<a:off x="0" y="0"/>`,
 			wantX:   0,
 			wantY:   0,
 		},
 		{
-			name:    "正常解析-大数值",
+			name:    "happy-path-large-values",
 			xmlData: `<a:off x="9144000" y="6858000"/>`,
 			wantX:   9144000,
 			wantY:   6858000,
 		},
 		{
-			name:    "边界-缺失x属性Go默认零值",
+			name:    "edge-missing-x-defaults-to-zero",
 			xmlData: `<a:off y="1143000"/>`,
 			wantX:   0,
 			wantY:   1143000,
 		},
 		{
-			name:    "边界-缺失y属性Go默认零值",
+			name:    "edge-missing-y-defaults-to-zero",
 			xmlData: `<a:off x="1524000"/>`,
 			wantX:   1524000,
 			wantY:   0,
 		},
 		{
-			name:    "边界-空元素Go默认零值",
+			name:    "edge-empty-element-defaults-to-zero",
 			xmlData: `<a:off/>`,
 			wantX:   0,
 			wantY:   0,
@@ -64,13 +64,13 @@ func TestParseXMLOffset(t *testing.T) {
 
 			if tt.wantError {
 				if err == nil {
-					t.Error("期望返回错误，但解析成功")
+					t.Error("expected an error but parsing succeeded")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if off.X != tt.wantX {
@@ -92,37 +92,37 @@ func TestParseXMLExtents(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name:    "正常解析-标准尺寸",
+			name:    "happy-path-standard-size",
 			xmlData: `<a:ext cx="6858000" cy="5143500"/>`,
 			wantCx:  6858000,
 			wantCy:  5143500,
 		},
 		{
-			name:    "正常解析-零值尺寸",
+			name:    "happy-path-zero-size",
 			xmlData: `<a:ext cx="0" cy="0"/>`,
 			wantCx:  0,
 			wantCy:  0,
 		},
 		{
-			name:    "正常解析-宽屏尺寸",
+			name:    "happy-path-widescreen-size",
 			xmlData: `<a:ext cx="12192000" cy="6858000"/>`,
 			wantCx:  12192000,
 			wantCy:  6858000,
 		},
 		{
-			name:    "边界-缺失cx属性Go默认零值",
+			name:    "edge-missing-cx-defaults-to-zero",
 			xmlData: `<a:ext cy="5143500"/>`,
 			wantCx:  0,
 			wantCy:  5143500,
 		},
 		{
-			name:    "边界-缺失cy属性Go默认零值",
+			name:    "edge-missing-cy-defaults-to-zero",
 			xmlData: `<a:ext cx="6858000"/>`,
 			wantCx:  6858000,
 			wantCy:  0,
 		},
 		{
-			name:    "边界-空元素Go默认零值",
+			name:    "edge-empty-element-defaults-to-zero",
 			xmlData: `<a:ext/>`,
 			wantCx:  0,
 			wantCy:  0,
@@ -136,13 +136,13 @@ func TestParseXMLExtents(t *testing.T) {
 
 			if tt.wantError {
 				if err == nil {
-					t.Error("期望返回错误，但解析成功")
+					t.Error("expected an error but parsing succeeded")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if ext.Cx != tt.wantCx {
@@ -156,27 +156,27 @@ func TestParseXMLExtents(t *testing.T) {
 }
 
 // ============================================================================
-// 组合变换结构测试 - XMLTransform
+// Composite transform structure test — XMLTransform
 // ============================================================================
 
-// xmlSpPrWrapper 用于测试 XMLTransform 的包装结构（通过 p:spPr）
+// xmlSpPrWrapper is a test wrapper for XMLTransform (via p:spPr).
 type xmlSpPrWrapper struct {
 	Xfrm *parts.XMLTransform `xml:"xfrm"`
 }
 
 func TestParseXMLTransform(t *testing.T) {
 	tests := []struct {
-		name      string
-		xmlData   string
-		wantX     int64
-		wantY     int64
-		wantCx    int64
-		wantCy    int64
-		hasOff    bool
-		hasExt    bool
+		name    string
+		xmlData string
+		wantX   int64
+		wantY   int64
+		wantCx  int64
+		wantCy  int64
+		hasOff  bool
+		hasExt  bool
 	}{
 		{
-			name:    "正常解析-完整变换",
+			name:    "happy-path-full-transform",
 			xmlData: `<spPr><xfrm><off x="1524000" y="1143000"/><ext cx="6858000" cy="5143500"/></xfrm></spPr>`,
 			wantX:   1524000,
 			wantY:   1143000,
@@ -186,7 +186,7 @@ func TestParseXMLTransform(t *testing.T) {
 			hasExt:  true,
 		},
 		{
-			name:    "正常解析-宽屏尺寸",
+			name:    "happy-path-widescreen-size",
 			xmlData: `<spPr><xfrm><off x="0" y="0"/><ext cx="12192000" cy="6858000"/></xfrm></spPr>`,
 			wantX:   0,
 			wantY:   0,
@@ -196,7 +196,7 @@ func TestParseXMLTransform(t *testing.T) {
 			hasExt:  true,
 		},
 		{
-			name:    "边界-仅有坐标无尺寸",
+			name:    "edge-offset-only-no-extent",
 			xmlData: `<spPr><xfrm><off x="9144000" y="6858000"/></xfrm></spPr>`,
 			wantX:   9144000,
 			wantY:   6858000,
@@ -206,7 +206,7 @@ func TestParseXMLTransform(t *testing.T) {
 			hasExt:  false,
 		},
 		{
-			name:    "边界-仅有尺寸无坐标",
+			name:    "edge-extent-only-no-offset",
 			xmlData: `<spPr><xfrm><ext cx="4572000" cy="3429000"/></xfrm></spPr>`,
 			wantX:   0,
 			wantY:   0,
@@ -216,7 +216,7 @@ func TestParseXMLTransform(t *testing.T) {
 			hasExt:  true,
 		},
 		{
-			name:    "边界-空变换元素",
+			name:    "edge-empty-transform-element",
 			xmlData: `<spPr><xfrm/></spPr>`,
 			wantX:   0,
 			wantY:   0,
@@ -232,19 +232,19 @@ func TestParseXMLTransform(t *testing.T) {
 			var wrapper xmlSpPrWrapper
 			err := xml.Unmarshal([]byte(tt.xmlData), &wrapper)
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if wrapper.Xfrm == nil {
-				t.Fatal("Xfrm 为 nil")
+				t.Fatal("Xfrm is nil")
 			}
 
 			xfrm := wrapper.Xfrm
 
-			// 检查 Off 是否存在
+			// Check whether Off is present.
 			if tt.hasOff {
 				if xfrm.Off == nil {
-					t.Fatal("期望 Off 不为 nil")
+					t.Fatal("expected Off to be non-nil")
 				}
 				if xfrm.Off.X != tt.wantX {
 					t.Errorf("Off.X = %d, want %d", xfrm.Off.X, tt.wantX)
@@ -254,14 +254,14 @@ func TestParseXMLTransform(t *testing.T) {
 				}
 			} else {
 				if xfrm.Off != nil {
-					t.Errorf("期望 Off 为 nil，实际为 %+v", xfrm.Off)
+					t.Errorf("expected Off to be nil, got %+v", xfrm.Off)
 				}
 			}
 
-			// 检查 Ext 是否存在
+			// Check whether Ext is present.
 			if tt.hasExt {
 				if xfrm.Ext == nil {
-					t.Fatal("期望 Ext 不为 nil")
+					t.Fatal("expected Ext to be non-nil")
 				}
 				if xfrm.Ext.Cx != tt.wantCx {
 					t.Errorf("Ext.Cx = %d, want %d", xfrm.Ext.Cx, tt.wantCx)
@@ -271,7 +271,7 @@ func TestParseXMLTransform(t *testing.T) {
 				}
 			} else {
 				if xfrm.Ext != nil {
-					t.Errorf("期望 Ext 为 nil，实际为 %+v", xfrm.Ext)
+					t.Errorf("expected Ext to be nil, got %+v", xfrm.Ext)
 				}
 			}
 		})
@@ -279,7 +279,7 @@ func TestParseXMLTransform(t *testing.T) {
 }
 
 // ============================================================================
-// 占位符结构测试 - XMLPlaceholder
+// Placeholder structure test — XMLPlaceholder
 // ============================================================================
 
 func TestParseXMLPlaceholder(t *testing.T) {
@@ -290,73 +290,73 @@ func TestParseXMLPlaceholder(t *testing.T) {
 		wantIdx  string
 	}{
 		{
-			name:     "标准标题占位符",
+			name:     "standard-title-placeholder",
 			xmlData:  `<ph type="title"/>`,
 			wantType: "title",
 			wantIdx:  "",
 		},
 		{
-			name:     "带索引的正文占位符",
+			name:     "body-placeholder-with-index",
 			xmlData:  `<ph type="body" idx="1"/>`,
 			wantType: "body",
 			wantIdx:  "1",
 		},
 		{
-			name:     "日期占位符-带额外sz属性",
+			name:     "date-placeholder-with-extra-sz-attr",
 			xmlData:  `<ph type="dt" sz="half"/>`,
 			wantType: "dt",
 			wantIdx:  "",
 		},
 		{
-			name:     "幻灯片编号占位符",
+			name:     "slide-number-placeholder",
 			xmlData:  `<ph type="sldNum"/>`,
 			wantType: "sldNum",
 			wantIdx:  "",
 		},
 		{
-			name:     "页脚占位符",
+			name:     "footer-placeholder",
 			xmlData:  `<ph type="ftr"/>`,
 			wantType: "ftr",
 			wantIdx:  "",
 		},
 		{
-			name:     "居中标题占位符",
+			name:     "center-title-placeholder",
 			xmlData:  `<ph type="ctrTitle"/>`,
 			wantType: "ctrTitle",
 			wantIdx:  "",
 		},
 		{
-			name:     "副标题占位符",
+			name:     "subtitle-placeholder",
 			xmlData:  `<ph type="subTitle"/>`,
 			wantType: "subTitle",
 			wantIdx:  "",
 		},
 		{
-			name:     "图表占位符",
+			name:     "chart-placeholder-with-index",
 			xmlData:  `<ph type="chart" idx="2"/>`,
 			wantType: "chart",
 			wantIdx:  "2",
 		},
 		{
-			name:     "表格占位符",
+			name:     "table-placeholder",
 			xmlData:  `<ph type="tbl"/>`,
 			wantType: "tbl",
 			wantIdx:  "",
 		},
 		{
-			name:     "图片占位符",
+			name:     "picture-placeholder",
 			xmlData:  `<ph type="pic"/>`,
 			wantType: "pic",
 			wantIdx:  "",
 		},
 		{
-			name:     "仅有idx无type",
+			name:     "idx-only-no-type",
 			xmlData:  `<ph idx="0"/>`,
 			wantType: "",
 			wantIdx:  "0",
 		},
 		{
-			name:     "边界-空占位符元素",
+			name:     "edge-empty-placeholder-element",
 			xmlData:  `<ph/>`,
 			wantType: "",
 			wantIdx:  "",
@@ -368,7 +368,7 @@ func TestParseXMLPlaceholder(t *testing.T) {
 			var ph parts.XMLPlaceholder
 			err := xml.Unmarshal([]byte(tt.xmlData), &ph)
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if ph.Type != tt.wantType {

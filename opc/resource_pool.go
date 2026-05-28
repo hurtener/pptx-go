@@ -4,21 +4,21 @@ import (
 	"sync"
 )
 
-// ResourcePool 全局资源池，管理可共享的静态资源
-// 使用 zero-copy 策略，多个 Package 可以共享相同的二进制数据
+// ResourcePool is a global pool that manages shareable static resources.
+// It uses a zero-copy strategy so multiple Packages can share the same binary data.
 type ResourcePool struct {
 	mu      sync.RWMutex
 	themes  map[string][]byte // theme URI -> blob
 	masters map[string][]byte // master URI -> blob
 	layouts map[string][]byte // layout URI -> blob
-	media   map[string][]byte // media URI -> blob (图片、音视频等)
+	media   map[string][]byte // media URI -> blob (images, audio, video, etc.)
 	fonts   map[string][]byte // font URI -> blob
 
-	// 引用计数，用于追踪资源使用情况
+	// Reference counts for tracking resource usage.
 	refCount map[string]int
 }
 
-// globalPool 全局资源池单例
+// globalPool is the singleton global resource pool.
 var globalPool = &ResourcePool{
 	themes:   make(map[string][]byte),
 	masters:  make(map[string][]byte),
@@ -28,15 +28,15 @@ var globalPool = &ResourcePool{
 	refCount: make(map[string]int),
 }
 
-// GetGlobalPool 获取全局资源池
+// GetGlobalPool returns the global resource pool.
 func GetGlobalPool() *ResourcePool {
 	return globalPool
 }
 
-// GetOrLoad 获取或加载资源（全局唯一实例，zero-copy）
-// loader 函数仅在资源不存在时调用一次
+// GetOrLoad returns the cached resource for the given URI, loading it via loader if absent.
+// The loader is called at most once per unique URI.
 func (p *ResourcePool) GetOrLoad(uri string, contentType string, loader func() ([]byte, error)) ([]byte, error) {
-	// 先尝试读锁快速路径
+	// Fast path: try the read lock first.
 	p.mu.RLock()
 	if data, ok := p.getResource(uri, contentType); ok {
 		p.mu.RUnlock()
@@ -45,30 +45,30 @@ func (p *ResourcePool) GetOrLoad(uri string, contentType string, loader func() (
 	}
 	p.mu.RUnlock()
 
-	// 需要加载，使用写锁
+	// Slow path: acquire write lock.
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// double check
+	// Double-check after acquiring the write lock.
 	if data, ok := p.getResource(uri, contentType); ok {
 		p.incrementRefLocked(uri)
 		return data, nil
 	}
 
-	// 加载资源
+	// Load the resource.
 	data, err := loader()
 	if err != nil {
 		return nil, err
 	}
 
-	// 存储到对应的池中
+	// Store in the appropriate sub-pool.
 	p.storeResource(uri, contentType, data)
 	p.incrementRefLocked(uri)
 
 	return data, nil
 }
 
-// getResource 从池中获取资源（需持有锁）
+// getResource retrieves a resource from the pool (caller must hold the lock).
 func (p *ResourcePool) getResource(uri string, contentType string) ([]byte, bool) {
 	var data []byte
 	var ok bool
@@ -91,7 +91,7 @@ func (p *ResourcePool) getResource(uri string, contentType string) ([]byte, bool
 	return data, ok
 }
 
-// storeResource 存储资源到池中（需持有写锁）
+// storeResource stores a resource in the pool (caller must hold the write lock).
 func (p *ResourcePool) storeResource(uri string, contentType string, data []byte) {
 	switch {
 	case contentType == ContentTypeTheme || contentType == ContentTypeThemeOverride:
@@ -107,27 +107,27 @@ func (p *ResourcePool) storeResource(uri string, contentType string, data []byte
 	}
 }
 
-// incrementRef 增加引用计数（需持有读锁）
+// incrementRef increments the reference count (caller must hold the read lock).
 func (p *ResourcePool) incrementRef(uri string) {
 	p.mu.Lock()
 	p.refCount[uri]++
 	p.mu.Unlock()
 }
 
-// incrementRefLocked 增加引用计数（已持有写锁）
+// incrementRefLocked increments the reference count (caller must already hold the write lock).
 func (p *ResourcePool) incrementRefLocked(uri string) {
 	p.refCount[uri]++
 }
 
-// Release 释放资源引用（引用计数减一）
-// 当引用计数归零时，资源会被移除
+// Release decrements the reference count for the given URI.
+// When the count reaches zero the resource is removed from the pool.
 func (p *ResourcePool) Release(uri string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if count, ok := p.refCount[uri]; ok {
 		if count <= 1 {
-			// 引用计数归零，移除资源
+			// Reference count is zero — remove the resource.
 			delete(p.refCount, uri)
 			delete(p.themes, uri)
 			delete(p.masters, uri)
@@ -140,7 +140,7 @@ func (p *ResourcePool) Release(uri string) {
 	}
 }
 
-// ReleaseAll 释放所有资源（慎用！）
+// ReleaseAll removes all resources from the pool. Use with care.
 func (p *ResourcePool) ReleaseAll() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -153,7 +153,7 @@ func (p *ResourcePool) ReleaseAll() {
 	p.refCount = make(map[string]int)
 }
 
-// Stats 返回资源池统计信息
+// Stats returns resource pool statistics.
 func (p *ResourcePool) Stats() map[string]int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -168,8 +168,7 @@ func (p *ResourcePool) Stats() map[string]int {
 	}
 }
 
-// Prefetch 预加载资源到池中
-// 用于提前加载已知会使用的资源，避免运行时加载延迟
+// Prefetch pre-loads a set of resources into the pool to avoid load latency at render time.
 func (p *ResourcePool) Prefetch(resources map[string]func() ([]byte, error)) error {
 	for uri, loader := range resources {
 		if _, err := p.GetOrLoad(uri, "", loader); err != nil {
@@ -179,8 +178,8 @@ func (p *ResourcePool) Prefetch(resources map[string]func() ([]byte, error)) err
 	return nil
 }
 
-// CreateSharedPart 从资源池创建共享部件
-// 如果资源不在池中，会使用 loader 加载
+// CreateSharedPart creates a shared Part backed by the pool.
+// If the resource is not already in the pool it is loaded via loader.
 func (p *ResourcePool) CreateSharedPart(uri *PackURI, contentType string, loader func() ([]byte, error)) (*Part, error) {
 	data, err := p.GetOrLoad(uri.URI(), contentType, loader)
 	if err != nil {

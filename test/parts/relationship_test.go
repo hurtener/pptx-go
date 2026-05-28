@@ -3,11 +3,11 @@ package parts_test
 import (
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================
-// Relationships 解析测试
+// Relationships parse tests
 // ============================================================================
 
 func TestParseRelationships(t *testing.T) {
@@ -20,7 +20,7 @@ func TestParseRelationships(t *testing.T) {
 		wantError      bool
 	}{
 		{
-			name: "正常解析-图片和视频关系",
+			name: "happy-path-image-and-video",
 			xmlData: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>
@@ -31,7 +31,7 @@ func TestParseRelationships(t *testing.T) {
 			wantRID1Target: "../media/image1.png",
 		},
 		{
-			name: "正常解析-外部链接",
+			name: "happy-path-external-hyperlink",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com" TargetMode="External"/>
@@ -41,14 +41,14 @@ func TestParseRelationships(t *testing.T) {
 			wantRID1Target: "https://example.com",
 		},
 		{
-			name: "边界-空关系集合",
+			name: "edge-empty-relationships",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 </Relationships>`,
 			wantCount: 0,
 		},
 		{
-			name:      "错误-无效XML",
+			name:      "error-invalid-xml",
 			xmlData:   `<invalid><unclosed>`,
 			wantError: true,
 		},
@@ -60,17 +60,17 @@ func TestParseRelationships(t *testing.T) {
 
 			if tt.wantError {
 				if err == nil {
-					t.Error("期望返回错误，但解析成功")
+					t.Error("expected an error but parsing succeeded")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Fatalf("解析失败: %v", err)
+				t.Fatalf("parse failed: %v", err)
 			}
 
 			if rs == nil {
-				t.Fatal("ParseRelationships 返回 nil")
+				t.Fatal("ParseRelationships returned nil")
 			}
 
 			if rs.Count() != tt.wantCount {
@@ -80,7 +80,7 @@ func TestParseRelationships(t *testing.T) {
 			if tt.wantCount > 0 && tt.wantRID1Type != "" {
 				rel := rs.GetByID("rId1")
 				if rel == nil {
-					t.Fatal("GetByID(\"rId1\") 返回 nil")
+					t.Fatal("GetByID(\"rId1\") returned nil")
 				}
 				if rel.Type != tt.wantRID1Type {
 					t.Errorf("Type = %q, want %q", rel.Type, tt.wantRID1Type)
@@ -94,7 +94,7 @@ func TestParseRelationships(t *testing.T) {
 }
 
 // ============================================================================
-// Relationship 辅助方法测试
+// Relationship helper method tests
 // ============================================================================
 
 func TestXMLRelationshipsMethods(t *testing.T) {
@@ -108,17 +108,17 @@ func TestXMLRelationshipsMethods(t *testing.T) {
 
 		rs, err := parts.ParseRelationships([]byte(xmlData))
 		if err != nil {
-			t.Fatalf("解析失败: %v", err)
+			t.Fatalf("parse failed: %v", err)
 		}
 
 		images := rs.GetByType(parts.RelTypeImage)
 		if len(images) != 2 {
-			t.Errorf("GetByType(image) 返回 %d 个, want 2", len(images))
+			t.Errorf("GetByType(image) returned %d, want 2", len(images))
 		}
 
 		videos := rs.GetByType(parts.RelTypeMedia)
 		if len(videos) != 1 {
-			t.Errorf("GetByType(video) 返回 %d 个, want 1", len(videos))
+			t.Errorf("GetByType(video) returned %d, want 1", len(videos))
 		}
 	})
 
@@ -130,12 +130,12 @@ func TestXMLRelationshipsMethods(t *testing.T) {
 
 		rs, err := parts.ParseRelationships([]byte(xmlData))
 		if err != nil {
-			t.Fatalf("解析失败: %v", err)
+			t.Fatalf("parse failed: %v", err)
 		}
 
 		rel := rs.GetByTarget("../media/image1.png")
 		if rel == nil {
-			t.Fatal("GetByTarget 返回 nil")
+			t.Fatal("GetByTarget returned nil")
 		}
 		if rel.ID != "rId1" {
 			t.Errorf("ID = %q, want %q", rel.ID, "rId1")
@@ -151,17 +151,17 @@ func TestXMLRelationshipsMethods(t *testing.T) {
 
 		rs, err := parts.ParseRelationships([]byte(xmlData))
 		if err != nil {
-			t.Fatalf("解析失败: %v", err)
+			t.Fatalf("parse failed: %v", err)
 		}
 
 		external := rs.GetByID("rId1")
 		if !external.IsExternal() {
-			t.Error("rId1 应为外部链接")
+			t.Error("rId1 should be an external link")
 		}
 
 		internal := rs.GetByID("rId2")
 		if internal.IsExternal() {
-			t.Error("rId2 应为内部链接")
+			t.Error("rId2 should be an internal link")
 		}
 	})
 }

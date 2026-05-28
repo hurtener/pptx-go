@@ -5,51 +5,51 @@ import (
 )
 
 // ============================================================================
-// 媒体资源结构体 - 统一处理图片、音频、视频
+// MediaResource - unified handling for images, audio, and video
 // ============================================================================
 //
-// 设计原则：
-// 1. 所有字段均为只读（小写字段通过构造函数初始化）
-// 2. 支持小文件直接存储 []byte，大文件使用 io.Reader
-// 3. 针对高并发读取优化，无需加锁即可安全读取
+// Design principles:
+// 1. All fields are read-only (lowercase fields initialized via constructors).
+// 2. Small files store []byte directly; large files use io.Reader.
+// 3. Optimized for high-concurrency reads — no locking required.
 // ============================================================================
 
-// MediaType 媒体类型枚举
+// MediaType enumerates the supported media kinds.
 type MediaType int8
 
 const (
 	MediaTypeUnknown MediaType = iota
-	MediaTypeImage   // 图片
-	MediaTypeAudio   // 音频
-	MediaTypeVideo   // 视频
+	MediaTypeImage             // image
+	MediaTypeAudio             // audio
+	MediaTypeVideo             // video
 )
 
-// MediaResource 媒体资源结构体（只读）
-// 统一处理 PPTX 中的图片、音频、视频等媒体文件
+// MediaResource is a read-only representation of a media file (image, audio,
+// or video) inside a PPTX package.
 type MediaResource struct {
-	// 基础属性
-	fileName     string      // 文件名（如 image1.png, audio1.mp3）
-	contentType  string      // MIME 类型（如 image/png, audio/mpeg）
-	mediaType    MediaType   // 媒体类型枚举
-	target       string      // 在 ZIP 中的完整路径（如 ppt/media/image1.png）
+	// basic attributes
+	fileName    string    // file name (e.g. image1.png, audio1.mp3)
+	contentType string    // MIME type (e.g. image/png, audio/mpeg)
+	mediaType   MediaType // media kind
+	target      string    // full path inside the ZIP (e.g. ppt/media/image1.png)
 
-	// 数据存储（二选一）
-	data     []byte   // 小文件：直接存储字节数据
-	dataSize int64    // 数据大小（字节）
-	reader   io.Reader // 大文件：延迟加载的 Reader
+	// data storage — one of these is set
+	data     []byte    // small file: raw bytes
+	dataSize int64     // data size in bytes
+	reader   io.Reader // large file: lazy-loaded reader
 
-	// 关联信息
-	rId       string // 关系 ID（在 slide/slideLayout/slideMaster 中的引用）
-	extension string // 文件扩展名（如 .png, .mp3）
-	hash      string // 内容 Hash（MD5，用于去重）
+	// association info
+	rId       string // relationship ID (referenced by slide/slideLayout/slideMaster)
+	extension string // file extension (e.g. .png, .mp3)
+	hash      string // content hash (MD5, used for deduplication)
 }
 
 // ============================================================================
-// 构造函数
+// Constructors
 // ============================================================================
 
-// NewMediaResourceFromBytes 从字节数据创建媒体资源
-// 适用于小文件（如小图片）
+// NewMediaResourceFromBytes creates a MediaResource from raw bytes.
+// Suitable for small files (e.g. small images).
 func NewMediaResourceFromBytes(fileName, contentType, target string, data []byte) *MediaResource {
 	return &MediaResource{
 		fileName:    fileName,
@@ -62,8 +62,8 @@ func NewMediaResourceFromBytes(fileName, contentType, target string, data []byte
 	}
 }
 
-// NewMediaResourceFromReader 从 Reader 创建媒体资源
-// 适用于大文件（如视频、大图片）
+// NewMediaResourceFromReader creates a MediaResource from an io.Reader.
+// Suitable for large files (e.g. videos, large images).
 func NewMediaResourceFromReader(fileName, contentType, target string, reader io.Reader, size int64) *MediaResource {
 	return &MediaResource{
 		fileName:    fileName,
@@ -77,75 +77,73 @@ func NewMediaResourceFromReader(fileName, contentType, target string, reader io.
 }
 
 // ============================================================================
-// Getter 方法
+// Getter methods
 // ============================================================================
 
-// FileName 返回文件名（如 image1.png）
+// FileName returns the file name (e.g. image1.png).
 func (m *MediaResource) FileName() string { return m.fileName }
 
-// ContentType 返回 MIME 类型（如 image/png）
+// ContentType returns the MIME type (e.g. image/png).
 func (m *MediaResource) ContentType() string { return m.contentType }
 
-// MediaType 返回媒体类型枚举
+// MediaType returns the media kind.
 func (m *MediaResource) MediaType() MediaType { return m.mediaType }
 
-// Target 返回在 ZIP 中的完整路径（如 ppt/media/image1.png）
+// Target returns the full path inside the ZIP (e.g. ppt/media/image1.png).
 func (m *MediaResource) Target() string { return m.target }
 
-// Data 返回字节数据（如果存在）
-// 对于大文件（使用 Reader 创建），返回 nil
+// Data returns the raw bytes, or nil for reader-backed resources.
 func (m *MediaResource) Data() []byte { return m.data }
 
-// DataSize 返回数据大小（字节）
+// DataSize returns the data size in bytes.
 func (m *MediaResource) DataSize() int64 { return m.dataSize }
 
-// Reader 返回数据 Reader
-// 对于小文件（使用 Bytes 创建），返回 nil
+// Reader returns the data reader, or nil for byte-backed resources.
 func (m *MediaResource) Reader() io.Reader { return m.reader }
 
-// RID 返回关系 ID
+// RID returns the relationship ID.
 func (m *MediaResource) RID() string { return m.rId }
 
-// Extension 返回文件扩展名（如 .png）
+// Extension returns the file extension (e.g. .png).
 func (m *MediaResource) Extension() string { return m.extension }
 
-// HasData 检查是否有字节数据
+// HasData reports whether raw bytes are available.
 func (m *MediaResource) HasData() bool { return m.data != nil }
 
-// HasReader 检查是否有 Reader
+// HasReader reports whether a reader is available.
 func (m *MediaResource) HasReader() bool { return m.reader != nil }
 
-// IsImage 检查是否为图片类型
+// IsImage reports whether the media is an image.
 func (m *MediaResource) IsImage() bool { return m.mediaType == MediaTypeImage }
 
-// IsAudio 检查是否为音频类型
+// IsAudio reports whether the media is audio.
 func (m *MediaResource) IsAudio() bool { return m.mediaType == MediaTypeAudio }
 
-// IsVideo 检查是否为视频类型
+// IsVideo reports whether the media is video.
 func (m *MediaResource) IsVideo() bool { return m.mediaType == MediaTypeVideo }
 
 // ============================================================================
-// Setter 方法（仅用于初始化阶段）
+// Setter methods (initialization only)
 // ============================================================================
 
-// SetRID 设置关系 ID
+// SetRID sets the relationship ID.
 func (m *MediaResource) SetRID(rId string) {
 	m.rId = rId
 }
 
-// SetHash 设置内容 Hash
+// SetHash sets the content hash.
 func (m *MediaResource) SetHash(hash string) {
 	m.hash = hash
 }
 
-// Hash 返回内容 Hash
+// Hash returns the content hash.
 func (m *MediaResource) Hash() string { return m.hash }
 
 // ============================================================================
-// 辅助函数
+// Helper functions
 // ============================================================================
 
-// detectMediaType 根据 MIME 类型检测媒体类型
+// detectMediaType infers the MediaType from a MIME content type string.
 func detectMediaType(contentType string) MediaType {
 	switch {
 	case isImageContentType(contentType):
@@ -159,7 +157,7 @@ func detectMediaType(contentType string) MediaType {
 	}
 }
 
-// isImageContentType 检查是否为图片 MIME 类型
+// isImageContentType reports whether ct is an image MIME type.
 func isImageContentType(ct string) bool {
 	prefixes := []string{
 		"image/png",
@@ -180,7 +178,7 @@ func isImageContentType(ct string) bool {
 	return false
 }
 
-// isAudioContentType 检查是否为音频 MIME 类型
+// isAudioContentType reports whether ct is an audio MIME type.
 func isAudioContentType(ct string) bool {
 	prefixes := []string{
 		"audio/mpeg",
@@ -197,7 +195,7 @@ func isAudioContentType(ct string) bool {
 	return false
 }
 
-// isVideoContentType 检查是否为视频 MIME 类型
+// isVideoContentType reports whether ct is a video MIME type.
 func isVideoContentType(ct string) bool {
 	prefixes := []string{
 		"video/mp4",
@@ -215,7 +213,7 @@ func isVideoContentType(ct string) bool {
 	return false
 }
 
-// extractExtension 从文件名提取扩展名
+// extractExtension extracts the file extension from a file name.
 func extractExtension(fileName string) string {
 	for i := len(fileName) - 1; i >= 0; i-- {
 		if fileName[i] == '.' {
@@ -226,10 +224,10 @@ func extractExtension(fileName string) string {
 }
 
 // ============================================================================
-// MediaType String 方法
+// MediaType String method
 // ============================================================================
 
-// String 返回媒体类型的字符串表示
+// String returns a human-readable name for the media type.
 func (mt MediaType) String() string {
 	switch mt {
 	case MediaTypeImage:

@@ -1,76 +1,76 @@
-# XML Master Models 接口文档
+# XML Master Models — Interface Documentation
 
-> 母版和版式解析相关的 XML 结构体定义
+> XML struct definitions used when parsing masters and layouts
 
 ---
 
-## 基础类型
+## Base Types
 
 ### XMLOffset
 
-偏移量结构体，对应 XML: `<a:off x="..." y="..."/>`
+Offset struct, corresponding to XML: `<a:off x="..." y="..."/>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `X` | `x` | `int64` | X 坐标 |
-| `Y` | `y` | `int64` | Y 坐标 |
+| `X` | `x` | `int64` | X coordinate |
+| `Y` | `y` | `int64` | Y coordinate |
 
-#### 方法
+#### Methods
 
 ```go
-func (o *XMLOffset) IsValid() bool  // 检查是否有效（x 和 y 属性必须存在）
-func (o *XMLOffset) IsZero() bool   // 检查是否为零值
+func (o *XMLOffset) IsValid() bool  // Returns true if valid (x and y attributes must be present)
+func (o *XMLOffset) IsZero() bool   // Returns true if zero value
 ```
 
 ---
 
 ### XMLExtents
 
-尺寸结构体，对应 XML: `<a:ext cx="..." cy="..."/>`
+Extents struct, corresponding to XML: `<a:ext cx="..." cy="..."/>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Cx` | `cx` | `int64` | 宽度（EMU 单位） |
-| `Cy` | `cy` | `int64` | 高度（EMU 单位） |
+| `Cx` | `cx` | `int64` | Width (EMU units) |
+| `Cy` | `cy` | `int64` | Height (EMU units) |
 
-#### 方法
+#### Methods
 
 ```go
-func (e *XMLExtents) IsValid() bool  // 检查是否有效（OpenXML 规范要求 cx 和 cy 必须为正数）
-func (e *XMLExtents) IsZero() bool   // 检查是否为零值
+func (e *XMLExtents) IsValid() bool  // Returns true if valid (OpenXML spec requires cx and cy to be positive)
+func (e *XMLExtents) IsZero() bool   // Returns true if zero value
 ```
 
 ---
 
 ### XMLTransform
 
-二维变换结构体，对应 XML: `<a:xfrm>...</a:xfrm>`
+2D transform struct, corresponding to XML: `<a:xfrm>...</a:xfrm>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Off` | `*XMLOffset` | 位置偏移 |
-| `Ext` | `*XMLExtents` | 尺寸扩展 |
+| `Off` | `*XMLOffset` | Position offset |
+| `Ext` | `*XMLExtents` | Size extents |
 
 ---
 
 ### XMLPlaceholder
 
-占位符结构体，对应 XML: `<p:ph type="..." idx="..."/>`
+Placeholder struct, corresponding to XML: `<p:ph type="..." idx="..."/>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Type` | `type` | `string` | 占位符类型 |
-| `Idx` | `idx` | `string` | 占位符索引 |
+| `Type` | `type` | `string` | Placeholder type |
+| `Idx` | `idx` | `string` | Placeholder index |
 
 ---
 
-## 非视觉属性
+## Non-Visual Properties
 
 ### XMLCNvPr
 
-通用非视觉属性，对应 XML: `<p:cNvPr id="..." name="..."/>`
+Common non-visual properties, corresponding to XML: `<p:cNvPr id="..." name="..."/>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `ID` | `id` | `int` |
 | `Name` | `name` | `string` |
@@ -79,42 +79,42 @@ func (e *XMLExtents) IsZero() bool   // 检查是否为零值
 
 ### XMLNvPr
 
-非视觉属性，对应 XML: `<p:nvPr>...</p:nvPr>`
+Non-visual properties, corresponding to XML: `<p:nvPr>...</p:nvPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Ph` | `*XMLPlaceholder` | 占位符定义（若存在） |
+| `Ph` | `*XMLPlaceholder` | Placeholder definition (if present) |
 
 ---
 
 ### XMLNvSpPr
 
-非视觉形状属性，对应 XML: `<p:nvSpPr>...</p:nvSpPr>`
+Non-visual shape properties, corresponding to XML: `<p:nvSpPr>...</p:nvSpPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `CNvPr` | `*XMLCNvPr` | 通用非视觉属性 |
-| `NvPr` | `*XMLNvPr` | 非视觉属性 |
+| `CNvPr` | `*XMLCNvPr` | Common non-visual properties |
+| `NvPr` | `*XMLNvPr` | Non-visual properties |
 
 ---
 
 ### XMLSpPr
 
-视觉形状属性，对应 XML: `<p:spPr>...</p:spPr>`
+Visual shape properties, corresponding to XML: `<p:spPr>...</p:spPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Xfrm` | `*XMLTransform` | 变换信息 |
+| `Xfrm` | `*XMLTransform` | Transform information |
 
 ---
 
-## 组形状
+## Group Shapes
 
 ### XMLNvGrpSpPr
 
-非视觉组属性，对应 XML: `<p:nvGrpSpPr>...</p:nvGrpSpPr>`
+Non-visual group properties, corresponding to XML: `<p:nvGrpSpPr>...</p:nvGrpSpPr>`
 
-| 字段 | 类型 |
+| Field | Type |
 |------|------|
 | `CNvPr` | `*XMLCNvPr` |
 | `CNvGrpSpPr` | `*XMLCNvGrpSpPr` |
@@ -123,73 +123,73 @@ func (e *XMLExtents) IsZero() bool   // 检查是否为零值
 
 ### XMLCNvGrpSpPr
 
-组形状非视觉属性，对应 XML: `<p:cNvGrpSpPr>...</p:cNvGrpSpPr>`
+Group shape common non-visual properties, corresponding to XML: `<p:cNvGrpSpPr>...</p:cNvGrpSpPr>`
 
 ---
 
 ### XMLGrpSpPr
 
-组形状属性，对应 XML: `<p:grpSpPr>...</p:grpSpPr>`
+Group shape properties, corresponding to XML: `<p:grpSpPr>...</p:grpSpPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Xfrm` | `*XMLTransform` | 组变换 |
+| `Xfrm` | `*XMLTransform` | Group transform |
 
 ---
 
 ### XMLGroupShape
 
-组形状，对应 XML: `<p:grpSp>...</p:grpSp>`
+Group shape, corresponding to XML: `<p:grpSp>...</p:grpSp>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `NvGrpSpPr` | `*XMLNvGrpSpPr` | 非视觉组属性 |
-| `GrpSpPr` | `*XMLGrpSpPr` | 组形状属性 |
-| `Shapes` | `[]XMLShape` | 子形状列表 |
+| `NvGrpSpPr` | `*XMLNvGrpSpPr` | Non-visual group properties |
+| `GrpSpPr` | `*XMLGrpSpPr` | Group shape properties |
+| `Shapes` | `[]XMLShape` | Child shape list |
 
 ---
 
-## 背景
+## Background
 
 ### XMLBackground
 
-背景结构体，对应 XML: `<p:bg>...</p:bg>`
+Background struct, corresponding to XML: `<p:bg>...</p:bg>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `BgPr` | `*XMLBackgroundPr` | 背景属性 |
-| `BgRef` | `*XMLBackgroundRef` | 背景引用 |
+| `BgPr` | `*XMLBackgroundPr` | Background properties |
+| `BgRef` | `*XMLBackgroundRef` | Background reference |
 
 ---
 
 ### XMLBackgroundRef
 
-背景引用，对应 XML: `<p:bgRef idx="..."><a:schemeClr val="..."/>`
+Background reference, corresponding to XML: `<p:bgRef idx="..."><a:schemeClr val="..."/>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Idx` | `idx` | `string` | 背景索引 |
-| `Clr` | `schemeClr` | `*XMLSchemeColor` | 主题颜色 |
+| `Idx` | `idx` | `string` | Background index |
+| `Clr` | `schemeClr` | `*XMLSchemeColor` | Theme color |
 
 ---
 
 ### XMLBackgroundPr
 
-背景属性，对应 XML: `<p:bgPr>...</p:bgPr>`
+Background properties, corresponding to XML: `<p:bgPr>...</p:bgPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Fill` | `*XMLFillProperties` | 填充属性 |
+| `Fill` | `*XMLFillProperties` | Fill properties |
 
 ---
 
-## 填充
+## Fill
 
 ### XMLFillProperties
 
-填充属性（联合类型），对应 XML: `<a:solidFill>` / `<a:gradFill>` / `<a:blipFill>` 等
+Fill properties (union type), corresponding to XML: `<a:solidFill>` / `<a:gradFill>` / `<a:blipFill>`, etc.
 
-| 字段 | XML 元素 | 类型 |
+| Field | XML Element | Type |
 |------|----------|------|
 | `SolidFill` | `a:solidFill` | `*XMLSolidFill` |
 | `GradFill` | `a:gradFill` | `*XMLGradFill` |
@@ -200,20 +200,20 @@ func (e *XMLExtents) IsZero() bool   // 检查是否为零值
 
 ### XMLSolidFill
 
-纯色填充，对应 XML: `<a:solidFill>...</a:solidFill>`
+Solid fill, corresponding to XML: `<a:solidFill>...</a:solidFill>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `SrgbClr` | `*XMLSRgbColor` | RGB 颜色 |
-| `SchemeClr` | `*XMLSchemeColor` | 主题颜色 |
+| `SrgbClr` | `*XMLSRgbColor` | RGB color |
+| `SchemeClr` | `*XMLSchemeColor` | Theme color |
 
 ---
 
 ### XMLSRgbColor
 
-RGB 颜色，对应 XML: `<a:srgbClr val="..."/>`
+RGB color, corresponding to XML: `<a:srgbClr val="..."/>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `Val` | `val` | `string` |
 
@@ -221,9 +221,9 @@ RGB 颜色，对应 XML: `<a:srgbClr val="..."/>`
 
 ### XMLSchemeColor
 
-主题颜色，对应 XML: `<a:schemeClr val="..."/>`
+Theme color, corresponding to XML: `<a:schemeClr val="..."/>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `Val` | `val` | `string` |
 
@@ -231,41 +231,41 @@ RGB 颜色，对应 XML: `<a:srgbClr val="..."/>`
 
 ### XMLGradFill
 
-渐变填充，对应 XML: `<a:gradFill>...</a:gradFill>`
+Gradient fill, corresponding to XML: `<a:gradFill>...</a:gradFill>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `GsLst` | `*XMLGradientStopList` | 色标列表 |
-| `Lin` | `*XMLLinearGradient` | 线性渐变 |
+| `GsLst` | `*XMLGradientStopList` | Gradient stop list |
+| `Lin` | `*XMLLinearGradient` | Linear gradient |
 
 ---
 
 ### XMLGradientStopList
 
-渐变色标列表，对应 XML: `<a:gsLst>...</a:gsLst>`
+Gradient stop list, corresponding to XML: `<a:gsLst>...</a:gsLst>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Stops` | `[]XMLGradientStop` | 色标 |
+| `Stops` | `[]XMLGradientStop` | Gradient stops |
 
 ---
 
 ### XMLGradientStop
 
-渐变色标，对应 XML: `<a:gs pos="...">...</a:gs>`
+Gradient stop, corresponding to XML: `<a:gs pos="...">...</a:gs>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Pos` | `pos` | `int64` | 位置 |
-| `SolidFill` | `a:solidFill` | `*XMLSolidFill` | 颜色 |
+| `Pos` | `pos` | `int64` | Position |
+| `SolidFill` | `a:solidFill` | `*XMLSolidFill` | Color |
 
 ---
 
 ### XMLLinearGradient
 
-线性渐变，对应 XML: `<a:lin ang="..." scaled="..."/>`
+Linear gradient, corresponding to XML: `<a:lin ang="..." scaled="..."/>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `Ang` | `ang` | `int64` |
 | `Scaled` | `scaled` | `bool` |
@@ -274,217 +274,217 @@ RGB 颜色，对应 XML: `<a:srgbClr val="..."/>`
 
 ### XMLBlipFill
 
-图片填充，对应 XML: `<a:blipFill>...</a:blipFill>`
+Picture fill, corresponding to XML: `<a:blipFill>...</a:blipFill>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Blip` | `*XMLBlip` | 图片引用 |
+| `Blip` | `*XMLBlip` | Picture reference |
 
 ---
 
 ### XMLBlip
 
-图片引用，对应 XML: `<a:blip r:embed="..."/>`
+Picture reference, corresponding to XML: `<a:blip r:embed="..."/>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `Embed` | `r:embed` | `string` |
 
 ---
 
-## 形状
+## Shapes
 
 ### XMLShape
 
-形状结构体，对应 XML: `<p:sp>...</p:sp>`
+Shape struct, corresponding to XML: `<p:sp>...</p:sp>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `NvSpPr` | `*XMLNvSpPr` | 非视觉形状属性 |
-| `SpPr` | `*XMLSpPr` | 视觉形状属性 |
+| `NvSpPr` | `*XMLNvSpPr` | Non-visual shape properties |
+| `SpPr` | `*XMLSpPr` | Visual shape properties |
 
 ---
 
 ### XMLShapeTree
 
-形状树结构体，对应 XML: `<p:spTree>...</p:spTree>`
+Shape tree struct, corresponding to XML: `<p:spTree>...</p:spTree>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `NvGrpSpPr` | `*XMLNvGrpSpPr` | 非视觉组属性 |
-| `GrpSpPr` | `*XMLGrpSpPr` | 组形状属性 |
-| `Shapes` | `[]XMLShape` | 形状列表 |
-| `GroupShapes` | `[]XMLGroupShape` | 组形状列表 |
+| `NvGrpSpPr` | `*XMLNvGrpSpPr` | Non-visual group properties |
+| `GrpSpPr` | `*XMLGrpSpPr` | Group shape properties |
+| `Shapes` | `[]XMLShape` | Shape list |
+| `GroupShapes` | `[]XMLGroupShape` | Group shape list |
 
 ---
 
-## 幻灯片结构
+## Slide Structures
 
 ### XMLCommonSlideData
 
-通用幻灯片数据，对应 XML: `<p:cSld>...</p:cSld>`
+Common slide data, corresponding to XML: `<p:cSld>...</p:cSld>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Bg` | `*XMLBackground` | 背景 |
-| `SpTree` | `*XMLShapeTree` | 形状树 |
+| `Bg` | `*XMLBackground` | Background |
+| `SpTree` | `*XMLShapeTree` | Shape tree |
 
 ---
 
 ### XMLSlideLayout
 
-幻灯片版式，对应 XML: `<p:sldLayout>...</p:sldLayout>`
+Slide layout, corresponding to XML: `<p:sldLayout>...</p:sldLayout>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `XmlnsA` | `string` | DrawingML 命名空间 |
-| `XmlnsR` | `string` | 关系命名空间 |
-| `XmlnsP` | `string` | PresentationML 命名空间 |
-| `CSld` | `*XMLCommonSlideData` | 通用幻灯片数据 |
+| `XmlnsA` | `string` | DrawingML namespace |
+| `XmlnsR` | `string` | Relationships namespace |
+| `XmlnsP` | `string` | PresentationML namespace |
+| `CSld` | `*XMLCommonSlideData` | Common slide data |
 
 ---
 
 ### XMLSlideMaster
 
-幻灯片母版，对应 XML: `<p:sldMaster>...</p:sldMaster>`
+Slide master, corresponding to XML: `<p:sldMaster>...</p:sldMaster>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `XmlnsA` | `string` | DrawingML 命名空间 |
-| `XmlnsR` | `string` | 关系命名空间 |
-| `XmlnsP` | `string` | PresentationML 命名空间 |
-| `CSld` | `*XMLCommonSlideData` | 通用幻灯片数据 |
+| `XmlnsA` | `string` | DrawingML namespace |
+| `XmlnsR` | `string` | Relationships namespace |
+| `XmlnsP` | `string` | PresentationML namespace |
+| `CSld` | `*XMLCommonSlideData` | Common slide data |
 
 ---
 
-## 线条
+## Lines
 
 ### XLineProperties
 
-线条属性，对应 XML: `<a:ln w="...">`
+Line properties, corresponding to XML: `<a:ln w="...">`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Width` | `w` | `int` | 线条宽度 |
-| `SolidFill` | `a:solidFill` | `*XPresetFill` | 填充 |
+| `Width` | `w` | `int` | Line width |
+| `SolidFill` | `a:solidFill` | `*XPresetFill` | Fill |
 
 ---
 
 ### XPresetFill
 
-预设填充，对应 XML: `<a:solidFill>` 或 `<a:schemeClr>`
+Preset fill, corresponding to XML: `<a:solidFill>` or `<a:schemeClr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `SrgbClr` | `*XSrgbClr` | RGB 颜色 |
-| `SchemeClr` | `*XSchemeClr` | 主题颜色 |
+| `SrgbClr` | `*XSrgbClr` | RGB color |
+| `SchemeClr` | `*XSchemeClr` | Theme color |
 
 ---
 
-## 文本属性
+## Text Properties
 
 ### XTextProperties
 
-文本属性，对应 `<a:rPr>`
+Text properties, corresponding to `<a:rPr>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `FontSize` | `sz` | `int` | 字体大小（百分之一磅） |
-| `Bold` | `b` | `bool` | 粗体 |
-| `Italic` | `i` | `bool` | 斜体 |
-| `Underline` | `u` | `string` | 下划线 |
-| `FontFace` | `typeface` | `string` | 字体 |
-| `Color` | `solidFill` | `string` | 颜色 |
+| `FontSize` | `sz` | `int` | Font size (hundredths of a point) |
+| `Bold` | `b` | `bool` | Bold |
+| `Italic` | `i` | `bool` | Italic |
+| `Underline` | `u` | `string` | Underline |
+| `FontFace` | `typeface` | `string` | Font face |
+| `Color` | `solidFill` | `string` | Color |
 
 ---
 
-## 表格
+## Tables
 
 ### XTableGrid
 
-表格网格，对应 XML: `<a:tblGrid>`
+Table grid, corresponding to XML: `<a:tblGrid>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `GridCols` | `[]XTableColumn` | 列定义 |
+| `GridCols` | `[]XTableColumn` | Column definitions |
 
 ---
 
 ### XTableColumn
 
-表格列，对应 XML: `<a:gridCol w="..."/>`
+Table column, corresponding to XML: `<a:gridCol w="..."/>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `W` | `w` | `int` | 列宽 |
+| `W` | `w` | `int` | Column width |
 
 ---
 
-## 其他
+## Miscellaneous
 
 ### XFillRectProperties
 
-填充矩形属性，对应 XML: `<a:fillRect/>`
+Fill rectangle properties, corresponding to XML: `<a:fillRect/>`
 
 ### XStretchProperties
 
-拉伸填充属性，对应 XML: `<a:stretch><a:fillRect/></a:stretch>`
+Stretch fill properties, corresponding to XML: `<a:stretch><a:fillRect/></a:stretch>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `FillRect` | `*XFillRectProperties` | 填充矩形 |
+| `FillRect` | `*XFillRectProperties` | Fill rectangle |
 
 ### XGraphic
 
-图形，对应 XML: `<a:graphic>`
+Graphic, corresponding to XML: `<a:graphic>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Table` | `*XTable` | 表格 |
+| `Table` | `*XTable` | Table |
 
 ### XNonVisualGraphicFrame
 
-图形框架非视觉属性，对应 `<p:nvGraphicFramePr>`
+Graphic frame non-visual properties, corresponding to `<p:nvGraphicFramePr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `CNvPr` | `*XNvCxnSpPr` | 通用非视觉属性 |
-| `CNvGraphicFramePr` | `*XNvGraphicFramePr` | 图形框架非视觉属性 |
+| `CNvPr` | `*XNvCxnSpPr` | Common non-visual properties |
+| `CNvGraphicFramePr` | `*XNvGraphicFramePr` | Graphic frame non-visual properties |
 
 ### XNvGraphicFramePr
 
-图形框架非视觉属性，对应 `<p:cNvGraphicFramePr>`
+Graphic frame non-visual properties, corresponding to `<p:cNvGraphicFramePr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `CNvPr` | `*XNvPr` | 非视觉属性 |
+| `CNvPr` | `*XNvPr` | Non-visual properties |
 
 ### XNvCxnSpPr
 
-连接形状非视觉属性，对应 `<p:cNvCxnSpPr>`
+Connector shape non-visual properties, corresponding to `<p:cNvCxnSpPr>`
 
-| 字段 | XML 属性 | 类型 |
+| Field | XML Attribute | Type |
 |------|----------|------|
 | `ID` | `id` | `int` |
 | `Name` | `name` | `string` |
 
 ### XNvPicPr
 
-图片非视觉属性，对应 `<p:cNvPicPr>`
+Picture non-visual properties, corresponding to `<p:cNvPicPr>`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `CNvPr` | `*XNvPr` | 非视觉属性 |
+| `CNvPr` | `*XNvPr` | Non-visual properties |
 
 ### XTextParagraphList
 
-文本段落列表，对应 `<a:lstStyle/>`
+Text paragraph list, corresponding to `<a:lstStyle/>`
 
 ### XOutputOptions
 
-输出选项，对应 `<p:outputOptions>`
+Output options, corresponding to `<p:outputOptions>`
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `UsePrintFml` | `usePrintFml` | `*bool` | 使用打印格式 |
-| `CloneLinkedObjs` | `cloneLinkedObjs` | `*bool` | 克隆链接对象 |
+| `UsePrintFml` | `usePrintFml` | `*bool` | Use print format |
+| `CloneLinkedObjs` | `cloneLinkedObjs` | `*bool` | Clone linked objects |

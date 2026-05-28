@@ -1,11 +1,11 @@
 package parts
 
 // ============================================================================
-// EmbeddingPart - 嵌入部件
+// EmbeddingPart - embedded object part
 // ============================================================================
 //
-// 对应 /ppt/embeddings/Microsoft_Excel_WorksheetN.xlsx
-// 存储嵌入的 Excel 数据（二进制文件）
+// Corresponds to /ppt/embeddings/Microsoft_Excel_WorksheetN.xlsx
+// Stores embedded binary data (e.g. Excel workbooks).
 //
 // ============================================================================
 
@@ -15,20 +15,20 @@ import (
 	"io"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
-// EmbeddingType 嵌入类型
+// EmbeddingType identifies the kind of embedded object.
 type EmbeddingType int
 
 const (
 	EmbeddingTypeUnknown EmbeddingType = iota
-	EmbeddingTypeExcel      // Excel 工作表
-	EmbeddingTypeWord       // Word 文档
-	EmbeddingTypeOther      // 其他
+	EmbeddingTypeExcel                 // Excel worksheet
+	EmbeddingTypeWord                  // Word document
+	EmbeddingTypeOther                 // other binary
 )
 
-// EmbeddingPart 嵌入部件
+// EmbeddingPart holds an embedded binary file inside the package.
 type EmbeddingPart struct {
 	uri       *opc.PackURI
 	data      []byte
@@ -36,7 +36,7 @@ type EmbeddingPart struct {
 	mu        sync.RWMutex
 }
 
-// NewEmbeddingPart 创建新的嵌入部件
+// NewEmbeddingPart creates a new embedding part with the given numeric ID.
 func NewEmbeddingPart(id int, embedType EmbeddingType) *EmbeddingPart {
 	return &EmbeddingPart{
 		uri:       opc.NewPackURI(fmt.Sprintf("/ppt/embeddings/Microsoft_Excel_Worksheet%d.xlsx", id)),
@@ -44,7 +44,7 @@ func NewEmbeddingPart(id int, embedType EmbeddingType) *EmbeddingPart {
 	}
 }
 
-// NewEmbeddingPartWithURI 使用指定 URI 创建嵌入部件
+// NewEmbeddingPartWithURI creates an embedding part using the specified URI.
 func NewEmbeddingPartWithURI(uri *opc.PackURI, embedType EmbeddingType) *EmbeddingPart {
 	return &EmbeddingPart{
 		uri:       uri,
@@ -52,26 +52,26 @@ func NewEmbeddingPartWithURI(uri *opc.PackURI, embedType EmbeddingType) *Embeddi
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (e *EmbeddingPart) PartURI() *opc.PackURI {
 	return e.uri
 }
 
-// Data 返回嵌入数据
+// Data returns the embedded bytes.
 func (e *EmbeddingPart) Data() []byte {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	return e.data
 }
 
-// SetData 设置嵌入数据
+// SetData sets the embedded bytes.
 func (e *EmbeddingPart) SetData(data []byte) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.data = data
 }
 
-// SetDataReader 从 Reader 设置数据
+// SetDataReader reads all bytes from r and stores them as the embedded data.
 func (e *EmbeddingPart) SetDataReader(r io.Reader) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -84,14 +84,14 @@ func (e *EmbeddingPart) SetDataReader(r io.Reader) error {
 	return nil
 }
 
-// EmbedType 返回嵌入类型
+// EmbedType returns the embedding type.
 func (e *EmbeddingPart) EmbedType() EmbeddingType {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	return e.embedType
 }
 
-// Size 返回数据大小
+// Size returns the size of the embedded data in bytes.
 func (e *EmbeddingPart) Size() int {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -99,10 +99,10 @@ func (e *EmbeddingPart) Size() int {
 }
 
 // ============================================================================
-// 数据写入
+// Data writing
 // ============================================================================
 
-// WriteTo 将数据写入 Writer
+// WriteTo writes the embedded data to w.
 func (e *EmbeddingPart) WriteTo(w io.Writer) (int64, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -115,7 +115,7 @@ func (e *EmbeddingPart) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-// Reader 返回数据 Reader
+// Reader returns a reader over the embedded data.
 func (e *EmbeddingPart) Reader() io.Reader {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -123,12 +123,12 @@ func (e *EmbeddingPart) Reader() io.Reader {
 }
 
 // ============================================================================
-// 类型检测
+// Type detection
 // ============================================================================
 
-// DetectEmbeddingType 从文件名检测嵌入类型
+// DetectEmbeddingType infers the embedding type from a file name.
 func DetectEmbeddingType(filename string) EmbeddingType {
-	// 简单的扩展名检测
+	// simple extension-based detection
 	if len(filename) >= 5 {
 		ext := filename[len(filename)-5:]
 		switch ext {
@@ -141,12 +141,12 @@ func DetectEmbeddingType(filename string) EmbeddingType {
 	return EmbeddingTypeUnknown
 }
 
-// IsExcel 是否为 Excel 嵌入
+// IsExcel reports whether this is an Excel embedding.
 func (e *EmbeddingPart) IsExcel() bool {
 	return e.embedType == EmbeddingTypeExcel
 }
 
-// IsWord 是否为 Word 嵌入
+// IsWord reports whether this is a Word embedding.
 func (e *EmbeddingPart) IsWord() bool {
 	return e.embedType == EmbeddingTypeWord
 }

@@ -1,252 +1,256 @@
-# parts 包功能概览
+# parts Package — Feature Overview
 
-## 1. Slide 模块 (slide.go, slide_types.go)
+## 1. Slide Module (slide.go, slide_types.go)
 
-**核心职责**：幻灯片 XML 结构的生成和解析
+**Core responsibility**: Generating and parsing slide XML structures
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 |----------|------|
-| SlidePart | 幻灯片部件，对应 /ppt/slides/slideN.xml |
-| SlideLayoutPart | 版式部件，对应 /ppt/slideLayouts/slideLayoutN.xml |
-| ShapeIDAllocator | 形状 ID 分配器（单线程） |
-| ShapeIDAllocatorSync | 形状 ID 分配器（线程安全） |
-| XMLWriter / XMLWriterPool | 流式 XML 写入辅助 |
-| XML 结构类型：XSlide, XSpTree, XSp, XPicture, XGraphicFrame, XTable, XTextBody 等 |
+| SlidePart | Slide part, corresponds to /ppt/slides/slideN.xml |
+| SlideLayoutPart | Layout part, corresponds to /ppt/slideLayouts/slideLayoutN.xml |
+| ShapeIDAllocator | Shape ID allocator (single-threaded) |
+| ShapeIDAllocatorSync | Shape ID allocator (thread-safe) |
+| XMLWriter / XMLWriterPool | Streaming XML write helpers |
+| XML struct types: XSlide, XSpTree, XSp, XPicture, XGraphicFrame, XTable, XTextBody, etc. |
 
-**注意**： `SlidePart` 的关係管理使用 `opc.Relationships`，去重逻辑通过 `AddImageRel`/`AddMediaRel`/`AddChartRel`/`AddTableRel` 方法封装。
+**Note:** Relationship management in `SlidePart` uses `opc.Relationships`; deduplication logic is encapsulated through the `AddImageRel`/`AddMediaRel`/`AddChartRel`/`AddTableRel` methods.
 
-## 2. Master 模块 (master.go, master_types.go, master_parser.go, master_cache.go)
-**核心职责**： 母版/版式的只读数据结构、解析和缓存
+## 2. Master Module (master.go, master_types.go, master_parser.go, master_cache.go)
+**Core responsibility:** Read-only data structures, parsing, and caching for slide masters and layouts
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 |----------|------|
-| MasterManager | 母版管理器（门面模式） |
-| MasterCache | 母版/版式缓存（并发安全读取） |
-| SlideMasterData | 母版只读数据 |
-| SlideLayoutData | 版式只读数据 |
-| Placeholder | 占位符定义 |
-| Background | 背景定义 |
-| ParseLayout() | 解析版式 XML |
-| ParseMaster() | 解析母版 XML |
-| 枽数类型：PlaceholderType, BackgroundType, SlideLayoutType | |
+| MasterManager | Master manager (facade pattern) |
+| MasterCache | Master/layout cache (concurrency-safe reads) |
+| SlideMasterData | Read-only master data |
+| SlideLayoutData | Read-only layout data |
+| Placeholder | Placeholder definition |
+| Background | Background definition |
+| ParseLayout() | Parse layout XML |
+| ParseMaster() | Parse master XML |
+| Enum types: PlaceholderType, BackgroundType, SlideLayoutType | |
 
-## 3. Presentation 模块 (presentation.go)
-**核心职责**: 演示文稿根节点
+## 3. Presentation Module (presentation.go)
+**Core responsibility**: Presentation root node
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| PresentationPart | 演示文稿部件，对应 /ppt/presentation.xml |
-| SlideSize | 幻灯片尺寸（EMU 单位） |
-| StandardSlideSizes | 标准尺寸（16:9, 4:3） |
-| EMUFromPoints() 等 | EMU 单位转换函数 |
-| XML 结构类型：XPresentation, XSldIdLst, XSldMasterIdLst | |
+| PresentationPart | Presentation part, corresponds to /ppt/presentation.xml |
+| SlideSize | Slide size (EMU units) |
+| StandardSlideSizes | Standard sizes (16:9, 4:3) |
+| EMUFromPoints() etc. | EMU unit conversion functions |
+| XML struct types: XPresentation, XSldIdLst, XSldMasterIdLst | |
 
-## 4. Media 模块 (media.go, media_manager.go)
-**核心职责**: 媒体资源管理
+## 4. Media Module (media.go, media_manager.go)
+**Core responsibility**: Media resource management
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| MediaResource | 媒体资源（图片/音频/视频） |
-| MediaManager | 媒体资源管理器（并发安全缓存） |
-| MediaType | 媒体类型枚举 |
-| NewMediaResourceFromBytes() | 从字节创建资源 |
-| NewMediaResourceFromReader() | 从 Reader 创建资源 |
-| 功能：去重、多索引（rID/fileName/target/hash）、MIME 类型推断 |
+| MediaResource | Media resource (image/audio/video) |
+| MediaManager | Media resource manager (concurrency-safe cache) |
+| MediaType | Media type enum |
+| NewMediaResourceFromBytes() | Create resource from bytes |
+| NewMediaResourceFromReader() | Create resource from Reader |
+| Features: deduplication, multi-index (rID/fileName/target/hash), MIME type inference |
 
-## 5. Relationship 模块 (relationship.go)
-**核心职责**: OPC 关系 XML 结构定义（纯 DTO)
+## 5. Relationship Module (relationship.go)
+**Core responsibility**: OPC relationship XML structure definitions (pure DTO)
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| XMLRelationships | 关系集合（用于 .rels 文件的序列化/反序列化） |
-| XMLRelationship | 单个关系 |
-| ParseRelationships() | 解析关系 XML |
-| 常量：RelTypeImage, RelTypeSlide, RelTypeSlideLayout 等 |
+| XMLRelationships | Relationship collection (for serializing/deserializing .rels files) |
+| XMLRelationship | Single relationship |
+| ParseRelationships() | Parse relationship XML |
+| Constants: RelTypeImage, RelTypeSlide, RelTypeSlideLayout, etc. |
 
-**注意**： 关系管理逻辑已移至 `opc` 层的 `opc.Relationships`，此模块仅保留 XML DTO 用于 .rels 文件的读写。
+**Note:** Relationship management logic has been moved to `opc.Relationships` in the `opc` layer; this module retains only the XML DTO for reading and writing .rels files.
 
-## 6. Theme 模块 (theme.go, theme_types.go, theme_default.go)
-**核心职责**: 主题模板管理（最小化处理）
+## 6. Theme Module (theme.go, theme_types.go, theme_default.go)
+**Core responsibility**: Theme template management (minimally processed)
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| ThemePart | 主题部件，对应 /ppt/theme/themeN.xml |
-| XTheme, XThemeElements | 主题 XML 结构 |
-| XColorScheme, XColorVariant | 颜色方案 |
-| XFontScheme, XFontCollection | 字体方案 |
-| XFmtScheme | 格式方案（通过 InnerXML 保留原始数据） |
-| DefaultThemeXML | 完整的 Office 主题模板常量 |
-| DefaultTheme() | 获取默认主题（单例懒加载） |
-| CloneTheme() | 克隆主题（深拷贝） |
-| GetThemeColor/GetThemeColorRGB/GetThemeColorType | 颜色访问方法 |
-| SetThemeColorRGB/SetThemeColorSystem | 颜色设置方法 |
-| SetThemeMajorFont/SetThemeMinorFont/SetThemeScriptFont | 字体设置方法 |
+| ThemePart | Theme part, corresponds to /ppt/theme/themeN.xml |
+| XTheme, XThemeElements | Theme XML structures |
+| XColorScheme, XColorVariant | Color scheme |
+| XFontScheme, XFontCollection | Font scheme |
+| XFmtScheme | Format scheme (raw data preserved via InnerXML) |
+| DefaultThemeXML | Complete Office theme template constant |
+| DefaultTheme() | Get the default theme (lazy-loaded singleton) |
+| CloneTheme() | Clone a theme (deep copy) |
+| GetThemeColor/GetThemeColorRGB/GetThemeColorType | Color accessor methods |
+| SetThemeColorRGB/SetThemeColorSystem | Color setter methods |
+| SetThemeMajorFont/SetThemeMinorFont/SetThemeScriptFont | Font setter methods |
 
-**设计原则**：
-1. **预留入口，非主要依据**：提供了颜色/字体的读写方法，但主题复杂度高，不建议深度定制
-2. **模板优先**：通过 `DefaultThemeXML`（完整 Office 主题）+ `CloneTheme()` 保证生成的 PPTX 结构完整
-3. **数据保留**：FmtScheme 使用 `InnerXML` 保留原始 XML，避免解析丢失
+**Design principles:**
+1. **Entry point, not the primary concern**: Color/font read-write methods are provided, but themes are highly complex — deep customisation is not recommended.
+2. **Template-first**: `DefaultThemeXML` (a complete Office theme) + `CloneTheme()` ensure the generated PPTX structure is complete.
+3. **Data preservation**: FmtScheme uses `InnerXML` to retain the original XML, avoiding data loss during parsing.
 
-## 7. AppProps 模块 (appprops.go, appprops_types.go)
-**核心职责**: 应用程序属性（公司、管理者等）
+## 7. AppProps Module (appprops.go, appprops_types.go)
+**Core responsibility**: Application properties (company, manager, etc.)
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| AppPropsPart | 应用程序属性部件，对应 /docProps/app.xml |
-| XMLAppProps | 应用属性 XML 结构 |
-| GetAppCompany/SetAppCompany | 公司名称读写 |
-| GetAppManager/SetAppManager | 管理者读写 |
-| GetAppSlideCount/SetAppSlideCount | 幻灯片数量读写 |
-| SetAppWordCount/SetAppTotalTime | 字数/编辑时间设置 |
-| HeadingPairs/TitlesOfParts | 标题对/部件标题（InnerXML 保留） |
+| AppPropsPart | Application properties part, corresponds to /docProps/app.xml |
+| XMLAppProps | Application properties XML structure |
+| GetAppCompany/SetAppCompany | Company name read/write |
+| GetAppManager/SetAppManager | Manager read/write |
+| GetAppSlideCount/SetAppSlideCount | Slide count read/write |
+| SetAppWordCount/SetAppTotalTime | Word count / editing time setters |
+| HeadingPairs/TitlesOfParts | Heading pairs / part titles (preserved via InnerXML) |
 
-**设计说明**：
-- OOXML 规定公司、管理者等元数据必须写在 `/docProps/app.xml`
-- 方法统一使用 `App` 前缀避免与 Go 原生关键字冲突
-- HeadingPairs 和 TitlesOfParts 使用 InnerXML 保留原始结构，避免复杂解析
+**Design notes:**
+- The OOXML spec requires company, manager, and similar metadata to be written to `/docProps/app.xml`.
+- Methods uniformly use the `App` prefix to avoid conflicts with Go keywords.
+- HeadingPairs and TitlesOfParts use InnerXML to preserve the original structure and avoid complex parsing.
 
-## 8. CoreProps 模块 (coreprops.go)
-**核心职责**: 核心属性
+## 8. CoreProps Module (coreprops.go)
+**Core responsibility**: Core properties
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| XMLCoreProperties | 核心属性结构 |
-| XMLW3CDTFDate | W3CDTF 日期格式 |
-| ParseCoreProperties() | 解析核心属性 |
+| XMLCoreProperties | Core properties structure |
+| XMLW3CDTFDate | W3CDTF date format |
+| ParseCoreProperties() | Parse core properties |
 
-## 9. Chart 模块 (chart.go, chart_types.go)
-**核心职责**: 图表部件（模板 + 占位符策略）
+## 9. Chart Module (chart.go, chart_types.go)
+**Core responsibility**: Chart parts (template + placeholder strategy)
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| ChartPart | 图表部件，对应 /ppt/charts/chartN.xml |
-| ChartType | 图表类型枚举（Bar/Pie/Line/Area/Scatter/Doughnut） |
-| ChartTemplateBar/Pie/Line... | 预定义图表模板常量 |
-| SetTemplate/SetRawXML | 设置图表模板/原始 XML |
-| ReplacePlaceholder | 替换单个占位符 |
-| ReplacePlaceholders | 批量替换占位符 |
-| SetExternalDataRID/GetExternalDataRID | 外部 Excel 数据引用 |
-| HasExternalData | 检查是否有外部数据引用 |
+| ChartPart | Chart part, corresponds to /ppt/charts/chartN.xml |
+| ChartType | Chart type enum (Bar/Pie/Line/Area/Scatter/Doughnut) |
+| ChartTemplateBar/Pie/Line... | Pre-defined chart template constants |
+| SetTemplate/SetRawXML | Set chart template / raw XML |
+| ReplacePlaceholder | Replace a single placeholder |
+| ReplacePlaceholders | Batch-replace placeholders |
+| SetExternalDataRID/GetExternalDataRID | External Excel data reference |
+| HasExternalData | Check whether an external data reference exists |
 
-**设计策略**：
-- **模板 + 占位符**：不尝试用 Go Struct 映射复杂图表 XML（几百种元素组合）
-- **预定义模板**：提供常见图表类型（柱状图、饼图、折线图等）
-- **占位符替换**：`{{CHART_TITLE}}`、`{{CATEGORIES}}`、`{{SERIES_VALUES}}` 等
-- **两种路线**：
-  - 路线 C（无 Excel）：数据直接嵌入 `strCache`/`numCache`，无外部依赖
-  - 路线 A/B（有 Excel）：通过 `externalData` 引用嵌入的 Excel 文件
+**Design strategy:**
+- **Template + placeholders**: Avoids mapping complex chart XML (hundreds of element combinations) to Go structs.
+- **Pre-defined templates**: Provides common chart types (bar, pie, line, etc.).
+- **Placeholder replacement**: `{{CHART_TITLE}}`, `{{CATEGORIES}}`, `{{SERIES_VALUES}}`, etc.
+- **Two approaches:**
+  - Route C (no Excel): Data is embedded directly in `strCache`/`numCache` with no external dependency.
+  - Route A/B (with Excel): References an embedded Excel file via `externalData`.
 
-**常用占位符**：
-| 占位符 | 说明 |
+**Common placeholders:**
+| Placeholder | Description |
 |--------|------|
-| `{{CHART_TITLE}}` | 图表标题 |
-| `{{SERIES_NAME}}` | 系列名称 |
-| `{{CATEGORIES}}` | 分类标签 XML 片段 |
-| `{{SERIES_VALUES}}` | 数值 XML 片段 |
-| `{{CAT_COUNT}}` | 分类数量 |
-| `{{CAT_COUNT_PLUS_1}}` | 分类数量+1（用于 Excel 公式） |
+| `{{CHART_TITLE}}` | Chart title |
+| `{{SERIES_NAME}}` | Series name |
+| `{{CATEGORIES}}` | Category label XML fragment |
+| `{{SERIES_VALUES}}` | Value XML fragment |
+| `{{CAT_COUNT}}` | Category count |
+| `{{CAT_COUNT_PLUS_1}}` | Category count + 1 (used in Excel formulas) |
 
-## 10. Embedding 模块 (embedding.go)
-**核心职责**: 嵌入数据部件
+## 10. Embedding Module (embedding.go)
+**Core responsibility**: Embedded data parts
 
-| 类型/函数 | 说明 |
+| Type / Function | Description |
 | ---------- | ------ |
-| EmbeddingPart | 嵌入部件，对应 /ppt/embeddings/*.xlsx |
-| EmbeddingType | 嵌入类型枚举（Excel/Word/Other） |
-| Data/SetData | 二进制数据读写 |
-| SetDataReader | 从 Reader 设置数据 |
-| DetectEmbeddingType | 从文件名检测类型 |
+| EmbeddingPart | Embedding part, corresponds to /ppt/embeddings/*.xlsx |
+| EmbeddingType | Embedding type enum (Excel/Word/Other) |
+| Data/SetData | Binary data read/write |
+| SetDataReader | Set data from Reader |
+| DetectEmbeddingType | Detect type from file name |
 
-**设计说明**：
-- 嵌入数据是二进制文件（如 Excel），不进行 XML 解析
-- 提供 Reader/Writer 接口便于流式处理
+**Design notes:**
+- Embedded data is a binary file (e.g. Excel); no XML parsing is performed.
+- Reader/Writer interfaces are provided for streaming use.
 
-## 11. XML 工具模块 (xmlutils.go)
-**核心职责**: XML 处理工具
+## 11. XML Utilities Module (xmlutils.go)
+**Core responsibility**: XML processing utilities
 
-| 函数/常量 | 说明 |
+| Function / Constant | Description |
 |----------|------|
-| XMLDeclaration | XML 声明头常量 |
-| StripNamespacePrefixes() | 去除命名空间前缀 |
+| XMLDeclaration | XML declaration header constant |
+| StripNamespacePrefixes() | Remove namespace prefixes |
 
 ## 12. XML Master Models (xml_master_models.go)
-**核心职责**: 母版/版式 XML 解析用到的中间结构
+**Core responsibility**: Intermediate structures used when parsing master/layout XML
 
-| 类型 | 说明 |
+| Type | Description |
 |------|------|
-| XMLOffset, XMLExtents, XMLTransform | 位置/尺寸/变换 |
-| XMLPlaceholder | 占位符 |
-| XMLShape, XMLShapeTree | 形状/形状树 |
-| XMLBackground, XMLFillProperties | 背景/填充 |
-| XMLSlideLayout, XMLSlideMaster | 版式/母版 |
+| XMLOffset, XMLExtents, XMLTransform | Position / size / transform |
+| XMLPlaceholder | Placeholder |
+| XMLShape, XMLShapeTree | Shape / shape tree |
+| XMLBackground, XMLFillProperties | Background / fill |
+| XMLSlideLayout, XMLSlideMaster | Layout / master |
 
 ---
 
-# 架构分层图
+# Architecture Layering Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        opc 包                              │
-│  职责：通用 OPC 规范实现（包、部件、关系管理）          │
-│  - PackURI: 路径处理                                        │
-│  - Relationships: 线程安全的关系管理 + 原子 ID 分配      │
-│  - Part/Package: 部件和包的基础结构                     │
+│                        opc package                          │
+│  Responsibility: generic OPC spec implementation            │
+│                  (package, parts, relationship management)  │
+│  - PackURI: path handling                                   │
+│  - Relationships: thread-safe relationship management +     │
+│                   atomic ID allocation                      │
+│  - Part/Package: foundational structures for parts/packages │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                        parts 包                            │
-│  职责：PPTX 特定的 XML 结构定义 + 序列化/反序列化         │
+│                        parts package                        │
+│  Responsibility: PPTX-specific XML structure definitions +  │
+│                  serialization / deserialization            │
 ├─────────────────────────────────────────────────────────────┤
-│                                                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Slide      │  │   Master     │  │ Presentation │     │
-│  │  幻灯片 XML  │  │ 母版/版式    │  │  演示文稿    │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │    Theme     │  │    Media     │  │ Relationship │     │
-│  │  主题模板    │  │  媒体资源    │  │   XML DTO    │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  CoreProps   │  │     App      │  │   XMLUtils   │     │
-│  │  核心属性    │  │  应用属性    │  │  XML 工具    │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                            │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Slide      │  │   Master     │  │ Presentation │      │
+│  │  Slide XML   │  │ Master/Layout│  │ Presentation │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │    Theme     │  │    Media     │  │ Relationship │      │
+│  │  Theme tmpl  │  │  Media res.  │  │   XML DTO    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  CoreProps   │  │     App      │  │   XMLUtils   │      │
+│  │ Core props   │  │  App props   │  │  XML utils   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       slide 包                               │
-│  职责：高层业务逻辑（SlideBuilder、MediaManager）            │
+│                       slide package                         │
+│  Responsibility: high-level business logic                  │
+│                  (SlideBuilder, MediaManager)               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-# 文件清单
+# File Inventory
 
-| 文件 | 行数 | 主要内容 |
+| File | Lines | Main Contents |
 |------|------|----------|
-| slide.go | ~1700 | SlidePart、XMLWriter、WriteXML 方法 |
-| slide_types.go | ~450 | XML 结构类型定义 |
-| theme.go | ~490 | ThemePart、主题读写方法 |
-| theme_types.go | ~180 | 主题 XML 结构类型 |
-| theme_default.go | ~260 | 默认主题模板、CloneTheme |
-| appprops.go | ~270 | AppPropsPart、应用属性读写方法 |
-| appprops_types.go | ~100 | 应用属性 XML 结构类型 |
-| chart.go | ~130 | ChartPart、图表读写方法 |
-| chart_types.go | ~120 | 图表 XML 结构类型 |
-| embedding.go | ~130 | EmbeddingPart、嵌入数据读写 |
-| media_manager.go | 460 | MediaManager 媒体管理器 |
+| slide.go | ~1700 | SlidePart, XMLWriter, WriteXML methods |
+| slide_types.go | ~450 | XML struct type definitions |
+| theme.go | ~490 | ThemePart, theme read/write methods |
+| theme_types.go | ~180 | Theme XML struct types |
+| theme_default.go | ~260 | Default theme template, CloneTheme |
+| appprops.go | ~270 | AppPropsPart, application property read/write methods |
+| appprops_types.go | ~100 | Application properties XML struct types |
+| chart.go | ~130 | ChartPart, chart read/write methods |
+| chart_types.go | ~120 | Chart XML struct types |
+| embedding.go | ~130 | EmbeddingPart, embedded data read/write |
+| media_manager.go | 460 | MediaManager |
 | presentation.go | 393 | PresentationPart |
-| master_parser.go | 344 | 母版/版式解析器 |
-| master_types.go | 358 | 母版数据结构 |
-| master_cache.go | 275 | MasterCache 缓存 |
-| xml_master_models.go | 272 | 母版 XML 中间结构 |
+| master_parser.go | 344 | Master/layout parser |
+| master_types.go | 358 | Master data structures |
+| master_cache.go | 275 | MasterCache |
+| xml_master_models.go | 272 | Intermediate XML structures for masters |
 | master.go | 255 | MasterManager |
 | media.go | 244 | MediaResource |
-| relationship.go | 179 | XMLRelationships（纯 DTO） |
+| relationship.go | 179 | XMLRelationships (pure DTO) |
 | coreprops.go | 161 | XMLCoreProperties |
-| xmlutils.go | 89 | XML 工具函数 |
+| xmlutils.go | 89 | XML utility functions |

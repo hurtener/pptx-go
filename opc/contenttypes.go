@@ -7,53 +7,53 @@ import (
 	"sync"
 )
 
-// ContentTypes 表示 [Content_Types].xml 的内容
-// 定义包中所有部件的内容类型
+// ContentTypes represents the contents of [Content_Types].xml,
+// which defines the content type of every part in the package.
 type ContentTypes struct {
-	defaults  map[string]string // 扩展名 -> 内容类型
-	overrides map[string]string // URI -> 内容类型
+	defaults  map[string]string // extension -> content type
+	overrides map[string]string // URI -> content type
 	mu        sync.RWMutex
 }
 
-// NewContentTypes 创建新的内容类型定义
+// NewContentTypes creates a new ContentTypes definition populated with the default mappings.
 func NewContentTypes() *ContentTypes {
 	ct := &ContentTypes{
 		defaults:  make(map[string]string),
 		overrides: make(map[string]string),
 	}
-	// 初始化默认内容类型
+	// Seed with the built-in default content types.
 	for ext, ctType := range DefaultContentTypes {
 		ct.defaults[ext] = ctType
 	}
 	return ct
 }
 
-// AddDefault 添加默认内容类型映射
+// AddDefault adds a default content type mapping for the given extension.
 func (ct *ContentTypes) AddDefault(extension, contentType string) {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	ct.defaults[extension] = contentType
 }
 
-// AddOverride 添加特定 URI 的内容类型覆盖
+// AddOverride adds a content type override for a specific URI.
 func (ct *ContentTypes) AddOverride(uri *PackURI, contentType string) {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	ct.overrides[uri.URI()] = contentType
 }
 
-// GetContentType 获取指定 URI 的内容类型
-// 优先查找 overrides，然后查找 defaults
+// GetContentType returns the content type for the given URI.
+// Overrides take precedence over defaults.
 func (ct *ContentTypes) GetContentType(uri *PackURI) string {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
 
-	// 先查找 override
+	// Check overrides first.
 	if ct, ok := ct.overrides[uri.URI()]; ok {
 		return ct
 	}
 
-	// 再查找 default
+	// Fall back to defaults by extension.
 	ext := uri.Extension()
 	if ct, ok := ct.defaults[ext]; ok {
 		return ct
@@ -62,28 +62,28 @@ func (ct *ContentTypes) GetContentType(uri *PackURI) string {
 	return ContentTypeDefault
 }
 
-// GetDefault 获取扩展名对应的默认内容类型
+// GetDefault returns the default content type for the given extension.
 func (ct *ContentTypes) GetDefault(extension string) string {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
 	return ct.defaults[extension]
 }
 
-// GetOverride 获取 URI 对应的内容类型覆盖
+// GetOverride returns the content type override for the given URI.
 func (ct *ContentTypes) GetOverride(uri *PackURI) string {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
 	return ct.overrides[uri.URI()]
 }
 
-// RemoveOverride 移除内容类型覆盖
+// RemoveOverride removes the content type override for the given URI.
 func (ct *ContentTypes) RemoveOverride(uri *PackURI) {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	delete(ct.overrides, uri.URI())
 }
 
-// Defaults 返回所有默认内容类型映射
+// Defaults returns a snapshot of all default content type mappings.
 func (ct *ContentTypes) Defaults() map[string]string {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
@@ -95,7 +95,7 @@ func (ct *ContentTypes) Defaults() map[string]string {
 	return result
 }
 
-// Overrides 返回所有内容类型覆盖
+// Overrides returns a snapshot of all content type overrides.
 func (ct *ContentTypes) Overrides() map[string]string {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()
@@ -107,29 +107,29 @@ func (ct *ContentTypes) Overrides() map[string]string {
 	return result
 }
 
-// ===== XML 序列化 =====
+// ===== XML serialization =====
 
-// XContentTypes XML 序列化的内容类型根元素
+// XContentTypes is the root element for XML serialization of content types.
 type XContentTypes struct {
-	XMLName   xml.Name     `xml:"Types"`
-	Xmlns     string       `xml:"xmlns,attr"`
-	Defaults  []XDefault   `xml:"Default"`
-	Overrides []XOverride  `xml:"Override"`
+	XMLName   xml.Name    `xml:"Types"`
+	Xmlns     string      `xml:"xmlns,attr"`
+	Defaults  []XDefault  `xml:"Default"`
+	Overrides []XOverride `xml:"Override"`
 }
 
-// XDefault XML 序列化的默认内容类型
+// XDefault is the XML representation of a default content type entry.
 type XDefault struct {
 	Extension   string `xml:"Extension,attr"`
 	ContentType string `xml:"ContentType,attr"`
 }
 
-// XOverride XML 序列化的内容类型覆盖
+// XOverride is the XML representation of a content type override entry.
 type XOverride struct {
 	PartName    string `xml:"PartName,attr"`
 	ContentType string `xml:"ContentType,attr"`
 }
 
-// FromXML 从 XML 解析内容类型
+// FromXML parses content types from XML data.
 func (ct *ContentTypes) FromXML(data []byte) error {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
@@ -147,14 +147,14 @@ func (ct *ContentTypes) FromXML(data []byte) error {
 	}
 
 	for _, o := range xct.Overrides {
-		// PartName 通常是绝对路径如 /ppt/presentation.xml
+		// PartName is typically an absolute path such as /ppt/presentation.xml.
 		ct.overrides[o.PartName] = o.ContentType
 	}
 
 	return nil
 }
 
-// ToXML 将内容类型序列化为 XML
+// ToXML serializes the content types to XML.
 func (ct *ContentTypes) ToXML() ([]byte, error) {
 	ct.mu.RLock()
 	defer ct.mu.RUnlock()

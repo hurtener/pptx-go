@@ -6,29 +6,29 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/slide"
+	"github.com/hurtener/pptx-go/pptx"
 )
 
 // ============================================================================
-// MediaManager 并发安全性测试
+// MediaManager concurrency safety tests
 // ============================================================================
 
 func TestMediaManager_Concurrency(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const goroutines = 100
 	const opsPerGoroutine = 50
 
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
 
-	// 预先添加一些媒体供读取
+	// Pre-populate some media for reads.
 	for i := 0; i < 20; i++ {
 		rID := "rId" + strconv.Itoa(i+1)
 		fileName := "preset_" + strconv.Itoa(i) + ".png"
 		mgr.AddMediaWithBytes(rID, fileName, "image/png", "ppt/media/"+fileName, []byte("preset_data"))
 	}
 
-	// 启动并发 goroutine
+	// Launch concurrent goroutines.
 	for g := 0; g < goroutines; g++ {
 		go func(goroutineID int) {
 			defer wg.Done()
@@ -38,20 +38,20 @@ func TestMediaManager_Concurrency(t *testing.T) {
 
 				switch op {
 				case 0:
-					// 随机添加
+					// Random add.
 					n := rand.Intn(1000)
 					fileName := "img_" + strconv.Itoa(n) + ".png"
 					mgr.AddMediaAuto(fileName, []byte("data_"+strconv.Itoa(n)))
 
 				case 1:
-					// 随机读取
+					// Random read.
 					rID := "rId" + strconv.Itoa(rand.Intn(50)+1)
 					mgr.GetMedia(rID)
 					mgr.GetMediaByFileName("preset_" + strconv.Itoa(rand.Intn(20)) + ".png")
 					mgr.HasMedia(rID)
 
 				case 2:
-					// 随机删除
+					// Random remove.
 					rID := "rId" + strconv.Itoa(rand.Intn(30)+1)
 					mgr.RemoveMedia(rID)
 				}
@@ -61,18 +61,18 @@ func TestMediaManager_Concurrency(t *testing.T) {
 
 	wg.Wait()
 
-	// 验证管理器仍然可用
+	// Verify the manager is still usable.
 	_ = mgr.Count()
 	_ = mgr.AllMedia()
 	_ = mgr.ListRIDs()
 }
 
 // ============================================================================
-// 并发读写分离测试
+// Concurrent read/write separation test
 // ============================================================================
 
 func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const writers = 20
 	const readers = 80
 	const iterations = 100
@@ -80,7 +80,7 @@ func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(writers + readers)
 
-	// 写者 goroutine
+	// Writer goroutines.
 	for w := 0; w < writers; w++ {
 		go func(id int) {
 			defer wg.Done()
@@ -91,12 +91,12 @@ func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
 		}(w)
 	}
 
-	// 读者 goroutine
+	// Reader goroutines.
 	for r := 0; r < readers; r++ {
 		go func(id int) {
 			defer wg.Done()
 			for i := 0; i < iterations; i++ {
-				// 随机读取各种方法
+				// Exercise various read methods.
 				rID := "rId" + strconv.Itoa(rand.Intn(100)+1)
 				mgr.GetMedia(rID)
 				mgr.HasMedia(rID)
@@ -111,11 +111,11 @@ func TestMediaManager_ConcurrentReadWrite(t *testing.T) {
 }
 
 // ============================================================================
-// 并发计数器测试
+// Concurrent counter test
 // ============================================================================
 
 func TestMediaManager_ConcurrentCount(t *testing.T) {
-	mgr := slide.NewMediaManager()
+	mgr := pptx.NewMediaManager()
 	const ops = 1000
 
 	var wg sync.WaitGroup
@@ -125,7 +125,7 @@ func TestMediaManager_ConcurrentCount(t *testing.T) {
 		go func(n int) {
 			defer wg.Done()
 			fileName := "count_test_" + strconv.Itoa(n) + ".png"
-			// 使用唯一数据避免去重，确保每个操作都添加新资源
+			// Use unique data to prevent dedup, ensuring each operation adds a new resource.
 			data := []byte("data_for_count_test_" + strconv.Itoa(n))
 			mgr.AddMediaAuto(fileName, data)
 		}(i)
@@ -133,7 +133,7 @@ func TestMediaManager_ConcurrentCount(t *testing.T) {
 
 	wg.Wait()
 
-	// 最终计数应等于操作数
+	// Final count must equal the number of operations.
 	if mgr.Count() != ops {
 		t.Errorf("Count = %d, want %d", mgr.Count(), ops)
 	}

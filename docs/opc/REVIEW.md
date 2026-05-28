@@ -1,62 +1,62 @@
-# OPC 层功能审查报告
+# OPC Layer Feature Review
 
-> 审查日期：2026-03-30
-> 审查范围：opc 包核心功能
+> Review date: 2026-03-30
+> Review scope: opc package core functionality
 
 ---
 
-## 1. PPTX-ZIP 打包和解包
+## 1. PPTX ZIP Packaging and Unpacking
 
-### 状态：✅ 完美
+### Status: ✅ Complete
 
-| 功能 | 实现 | 文件 |
-|------|------|------|
-| ZIP 读取 | `archive/zip.Reader` | `package.go:64-89` |
-| ZIP 写入 | `archive/zip.Writer` + `CreateHeader` | `package.go:454-485` |
-| 路径规范化 | `NormalizeZipPath()` | `packuri.go:318-340` |
-| 时间戳处理 | `time.Now()` + MS-DOS 格式 | `package.go:468` |
+| Feature | Implementation | File |
+|---------|---------------|------|
+| ZIP reading | `archive/zip.Reader` | `package.go:64-89` |
+| ZIP writing | `archive/zip.Writer` + `CreateHeader` | `package.go:454-485` |
+| Path normalization | `NormalizeZipPath()` | `packuri.go:318-340` |
+| Timestamp handling | `time.Now()` + MS-DOS format | `package.go:468` |
 
-### 关键实现
+### Key Implementation
 
 ```go
-// 创建 ZIP 条目时使用 FileHeader 确保时间戳正确
+// Use FileHeader when creating ZIP entries to ensure correct timestamps
 func createZipEntry(zipWriter *zip.Writer, path string, size int) (io.Writer, error) {
-    path = strings.TrimPrefix(path, "/")  // 剥离前导斜杠
+    path = strings.TrimPrefix(path, "/")  // Strip leading slash
 
     header := &zip.FileHeader{
         Name:               path,
         UncompressedSize:   uint32(size),
         UncompressedSize64: uint64(size),
-        Modified:           time.Now(),  // 解决 Windows Explorer MS-DOS 时间 bug
+        Modified:           time.Now(),  // Fixes Windows Explorer MS-DOS time bug
         Method:             zip.Deflate,
     }
-    header.Flags |= 0x800  // UTF-8 文件名标记
+    header.Flags |= 0x800  // UTF-8 filename flag
 
     return zipWriter.CreateHeader(header)
 }
 ```
 
-### 解决的问题
+### Issues Resolved
 
-- ✅ Windows 反斜杠路径兼容
-- ✅ MS-DOS 时间戳（解决 Windows 资源管理器显示问题）
-- ✅ UTF-8 文件名支持
-- ✅ 前导斜杠剥离（符合 ZIP 规范）
+- ✅ Windows backslash path compatibility
+- ✅ MS-DOS timestamps (fixes Windows Explorer display issue)
+- ✅ UTF-8 filename support
+- ✅ Leading slash stripping (conforms to ZIP specification)
 
 ---
 
-## 2. .rels 关系管理
+## 2. .rels Relationship Management
 
-### 状态：✅ 完美
+### Status: ✅ Complete
 
-| 功能 | 实现 | 文件 |
-|------|------|------|
-| rId 自动分配 | `atomic.Int32` 原子计数器 | `relation.go:110` |
-| 递增且不重复 | `allocateRID()` | `relation.go:246-248` |
-| 计数器初始化 | `InitRIDCounter()` | `relation.go:252-256` |
-| 线程安全 | `sync.RWMutex` | `relation.go:108` |
+| Feature | Implementation | File |
+|---------|---------------|------|
+| Automatic rId allocation | `atomic.Int32` atomic counter | `relation.go:110` |
+| Monotonically increasing, no duplicates | `allocateRID()` | `relation.go:246-248` |
+| Counter initialization | `InitRIDCounter()` | `relation.go:252-256` |
+| Thread safety | `sync.RWMutex` | `relation.go:108` |
 
-### 关键实现
+### Key Implementation
 
 ```go
 type Relationships struct {
@@ -64,15 +64,15 @@ type Relationships struct {
     order        []string
     mu           sync.RWMutex
     sourceURI    *PackURI
-    rIDCounter   atomic.Int32  // 原子计数器
+    rIDCounter   atomic.Int32  // Atomic counter
 }
 
-// 线程安全的 ID 分配
+// Thread-safe ID allocation
 func (rs *Relationships) allocateRID() string {
     return fmt.Sprintf("rId%d", rs.rIDCounter.Add(1))
 }
 
-// 从 XML 加载后初始化计数器，避免冲突
+// Initialize the counter after loading from XML to avoid conflicts
 func (rs *Relationships) initRIDCounterLocked() {
     maxNum := int32(0)
     for rID := range rs.relationships {
@@ -90,44 +90,44 @@ func (rs *Relationships) initRIDCounterLocked() {
 
 ---
 
-## 3. [Content_Types].xml 管理
+## 3. [Content_Types].xml Management
 
-### 状态：✅ 完美
+### Status: ✅ Complete
 
-| 功能 | 实现 | 文件 |
-|------|------|------|
-| 自动注册 | `updateContentTypes()` | `package.go:495-511` |
-| 默认类型 | `DefaultContentTypes` | `constants.go:109-131` |
-| Override 管理 | `AddOverride()` | `contenttypes.go:39-43` |
-| 智能判断 | 按扩展名/内容类型 | `contenttypes.go:47-63` |
+| Feature | Implementation | File |
+|---------|---------------|------|
+| Automatic registration | `updateContentTypes()` | `package.go:495-511` |
+| Default types | `DefaultContentTypes` | `constants.go:109-131` |
+| Override management | `AddOverride()` | `contenttypes.go:39-43` |
+| Smart detection | By extension / content type | `contenttypes.go:47-63` |
 
-### 工作流程
+### Workflow
 
 ```
 Package.Save()
     └─> writeContentTypes()
-        └─> updateContentTypes()  // 遍历所有 Parts
-            ├─> 获取 URI 和 ContentType
-            ├─> 检查是否有默认映射
-            └─> 无默认或不同则添加 Override
+        └─> updateContentTypes()  // Iterates all Parts
+            ├─> Get URI and ContentType
+            ├─> Check for default mapping
+            └─> Add Override if no default or type differs
 ```
 
 ---
 
-## 4. Clone() 智能拷贝方法
+## 4. Clone() Smart Copy Method
 
-### 状态：✅ 完美
+### Status: ✅ Complete
 
-| 类型 | 拷贝策略 | 方法 | 判断依据 |
-|------|----------|------|----------|
-| 图片 (PNG/JPEG/GIF/...) | 浅拷贝 (zero-copy) | `CloneShared()` | `IsImmutableContentType()` |
-| 音视频 (MP4/WAV/...) | 浅拷贝 | `CloneShared()` | `IsImmutableContentType()` |
-| 主题/母版 (Theme/Master) | 浅拷贝 | `CloneShared()` | `IsImmutableContentType()` |
-| 字体 (Font) | 浅拷贝 | `CloneShared()` | `IsImmutableContentType()` |
-| 幻灯片 (Slide) | 深拷贝 | `Clone()` | 默认可变 |
-| 演示文稿 (Presentation) | 深拷贝 | `Clone()` | 默认可变 |
+| Type | Copy Strategy | Method | Criterion |
+|------|--------------|--------|-----------|
+| Images (PNG/JPEG/GIF/...) | Shallow copy (zero-copy) | `CloneShared()` | `IsImmutableContentType()` |
+| Audio/video (MP4/WAV/...) | Shallow copy | `CloneShared()` | `IsImmutableContentType()` |
+| Theme/master (Theme/Master) | Shallow copy | `CloneShared()` | `IsImmutableContentType()` |
+| Font | Shallow copy | `CloneShared()` | `IsImmutableContentType()` |
+| Slide | Deep copy | `Clone()` | Mutable by default |
+| Presentation | Deep copy | `Clone()` | Mutable by default |
 
-### 关键实现
+### Key Implementation
 
 ```go
 // package.go:479-529
@@ -140,12 +140,12 @@ func (p *Package) Clone() *Package {
         if IsImmutableContentType(part.ContentType()) {
             newPart = part.CloneShared()  // zero-copy
         } else {
-            newPart = part.Clone()  // 深拷贝
+            newPart = part.Clone()  // deep copy
         }
         _ = newPkg.parts.Add(newPart)
     }
 
-    // 克隆关系和内容类型
+    // Clone relationships and content types
     newPkg.relationships = p.relationships.Clone()
     // ...
 
@@ -153,24 +153,24 @@ func (p *Package) Clone() *Package {
 }
 ```
 
-### Part 拷贝实现
+### Part Copy Implementation
 
 ```go
-// part.go:219-241 - 浅拷贝
+// part.go:219-241 - Shallow copy
 func (p *Part) CloneShared() *Part {
     return &Part{
-        uri:          p.uri,              // 共享指针
+        uri:          p.uri,              // Shared pointer
         contentType:  p.contentType,
-        sharedBlob:   p.blob,             // zero-copy！
-        relationships: p.relationships,   // 共享
+        sharedBlob:   p.blob,             // zero-copy!
+        relationships: p.relationships,   // Shared
         immutable:    true,
     }
 }
 
-// part.go:194-217 - 深拷贝
+// part.go:194-217 - Deep copy
 func (p *Part) Clone() *Part {
     blobCopy := make([]byte, len(p.blob))
-    copy(blobCopy, p.blob)  // 独立副本
+    copy(blobCopy, p.blob)  // Independent copy
 
     return &Part{
         uri:          p.uri.Clone(),
@@ -183,111 +183,111 @@ func (p *Part) Clone() *Part {
 
 ---
 
-## 5. 其他功能
+## 5. Other Features
 
-### 5.1 流式处理 (Streaming)
+### 5.1 Streaming
 
-| 组件 | 功能 | 文件 |
-|------|------|------|
-| `StreamPackage` | 懒加载、流式读写 | `streampkg.go` |
-| `StreamPart` | 按需加载内容 | `stream.go:206-421` |
-| `StreamingZipWriter` | 流式 ZIP 写入 | `stream.go:95-203` |
-| `PartIterator` | 懒加载迭代器 | `streampkg.go:501-557` |
+| Component | Purpose | File |
+|-----------|---------|------|
+| `StreamPackage` | Lazy loading, streaming reads and writes | `streampkg.go` |
+| `StreamPart` | On-demand content loading | `stream.go:206-421` |
+| `StreamingZipWriter` | Streaming ZIP writes | `stream.go:95-203` |
+| `PartIterator` | Lazy-loading iterator | `streampkg.go:501-557` |
 
-### 5.2 并发处理 (Concurrency)
+### 5.2 Concurrency
 
-| 组件 | 功能 | 文件 |
-|------|------|------|
-| `ConcurrentZipCollector` | goroutine + channel 收集 | `stream.go:730-831` |
-| `ConcurrentStreamSave()` | 并发保存 | `streampkg.go:564-705` |
-| `sync.RWMutex` | 读写锁保护 | 所有结构体 |
-| `atomic.Int32` | 原子计数器 | `relation.go:110` |
+| Component | Purpose | File |
+|-----------|---------|------|
+| `ConcurrentZipCollector` | goroutine + channel collection | `stream.go:730-831` |
+| `ConcurrentStreamSave()` | Concurrent save | `streampkg.go:564-705` |
+| `sync.RWMutex` | Read-write lock protection | All structs |
+| `atomic.Int32` | Atomic counter | `relation.go:110` |
 
-### 5.3 资源管理 (Resource Management)
+### 5.3 Resource Management
 
-| 组件 | 功能 | 文件 |
-|------|------|------|
-| `ResourcePool` | 全局资源池 + 引用计数 | `resource_pool.go` |
-| `ResourceDedupPool` | 哈希去重池 | `stream.go:586-712` |
-| `GetGlobalPool()` | 全局单例 | `resource_pool.go:32` |
+| Component | Purpose | File |
+|-----------|---------|------|
+| `ResourcePool` | Global resource pool + reference counting | `resource_pool.go` |
+| `ResourceDedupPool` | Hash-based deduplication pool | `stream.go:586-712` |
+| `GetGlobalPool()` | Global singleton | `resource_pool.go:32` |
 
-### 5.4 核心属性 (Core Properties)
+### 5.4 Core Properties
 
-| 组件 | 功能 | 文件 |
-|------|------|------|
-| `CoreProperties` | Dublin Core 元数据 | `coreprops.go` |
-| 标题/作者/时间等 | 12 个属性 | `coreprops.go:11-23` |
-| XML 序列化 | `ToXML()` / `FromXML()` | `coreprops.go:263-300` |
+| Component | Purpose | File |
+|-----------|---------|------|
+| `CoreProperties` | Dublin Core metadata | `coreprops.go` |
+| Title/author/timestamps/etc. | 12 properties | `coreprops.go:11-23` |
+| XML serialization | `ToXML()` / `FromXML()` | `coreprops.go:263-300` |
 
-### 5.5 URI 处理 (PackURI)
+### 5.5 URI Handling (PackURI)
 
-| 功能 | 方法 | 文件 |
-|------|------|------|
-| 路径解析 | `Join()`, `RelPathFrom()` | `packuri.go:96-158` |
-| 关系文件 | `RelationshipsURI()`, `SourceURI()` | `packuri.go:174-211` |
-| 规范化 | `NormalizeURI()`, `NormalizeZipPath()` | `packuri.go:295-340` |
-
----
-
-## 6. 测试覆盖
-
-### 测试统计
-
-| 目录 | 测试数 | 状态 |
-|------|--------|------|
-| `test/opc` | 5 | ✅ 全部通过 |
-| `test/utils` | 97+ | ✅ 全部通过 |
-
-### 关键测试
-
-| 测试 | 验证内容 |
-|------|----------|
-| `TestResourcePool_*` | 资源池功能 |
-| `TestPackage_Clone_SmartCloning` | 智能拷贝策略 |
-| `TestZipEntry_Timestamp` | 时间戳正确性 |
-| `TestZipEntry_TimestampNotZero` | Windows 兼容性 |
-| `TestNormalizeZipPath_*` | 路径规范化 |
+| Feature | Method | File |
+|---------|--------|------|
+| Path resolution | `Join()`, `RelPathFrom()` | `packuri.go:96-158` |
+| Relationships file | `RelationshipsURI()`, `SourceURI()` | `packuri.go:174-211` |
+| Normalization | `NormalizeURI()`, `NormalizeZipPath()` | `packuri.go:295-340` |
 
 ---
 
-## 7. 总结
+## 6. Test Coverage
 
-### 功能完整性
+### Test Statistics
 
-| 功能 | 状态 |
-|------|------|
-| ZIP 打包/解包 | ✅ 完美 |
-| Windows 斜杠处理 | ✅ 完美 |
-| 时间戳处理 | ✅ 完美 |
-| .rels 关系管理 | ✅ 完美 |
-| ContentTypes 管理 | ✅ 完美 |
-| Clone() 智能拷贝 | ✅ 完美 |
-| 流式处理 | ✅ 完美 |
-| 并发安全 | ✅ 完美 |
-| 资源池/去重 | ✅ 完美 |
+| Directory | Test Count | Status |
+|-----------|-----------|--------|
+| `test/opc` | 5 | ✅ All passing |
+| `test/utils` | 97+ | ✅ All passing |
 
-### 设计亮点
+### Key Tests
 
-1. **Zero-copy 优化**：不可变资源共享底层数据，减少内存占用
-2. **原子操作**：rId 分配使用 `atomic.Int32`，无锁竞争
-3. **懒加载**：`StreamPackage` 支持按需加载，处理大文件更高效
-4. **并发收集**：`ConcurrentZipCollector` 使用 goroutine 并行写入
-5. **资源去重**：基于哈希的去重池，避免重复存储相同资源
+| Test | What It Verifies |
+|------|-----------------|
+| `TestResourcePool_*` | Resource pool functionality |
+| `TestPackage_Clone_SmartCloning` | Smart copy strategy |
+| `TestZipEntry_Timestamp` | Timestamp correctness |
+| `TestZipEntry_TimestampNotZero` | Windows compatibility |
+| `TestNormalizeZipPath_*` | Path normalization |
 
 ---
 
-## 8. 文件结构
+## 7. Summary
+
+### Feature Completeness
+
+| Feature | Status |
+|---------|--------|
+| ZIP packaging/unpacking | ✅ Complete |
+| Windows slash handling | ✅ Complete |
+| Timestamp handling | ✅ Complete |
+| .rels relationship management | ✅ Complete |
+| ContentTypes management | ✅ Complete |
+| Clone() smart copy | ✅ Complete |
+| Streaming | ✅ Complete |
+| Concurrency safety | ✅ Complete |
+| Resource pool / deduplication | ✅ Complete |
+
+### Design Highlights
+
+1. **Zero-copy optimization**: Immutable resources share their underlying data, reducing memory usage.
+2. **Atomic operations**: rId allocation uses `atomic.Int32`, eliminating lock contention.
+3. **Lazy loading**: `StreamPackage` supports on-demand loading, making large-file handling more efficient.
+4. **Concurrent collection**: `ConcurrentZipCollector` uses goroutines for parallel writes.
+5. **Resource deduplication**: Hash-based deduplication pool prevents redundant storage of identical resources.
+
+---
+
+## 8. File Structure
 
 ```
 opc/
-├── constants.go      # 常量定义（内容类型、关系类型、命名空间）
-├── packuri.go        # PackURI 路径处理
-├── package.go        # Package 核心实现
-├── streampkg.go      # StreamPackage 流式处理
-├── stream.go         # 流式写入器、数据源
-├── part.go           # Part 部件实现
-├── contenttypes.go   # ContentTypes 管理
-├── relation.go       # Relationships 关系管理
-├── coreprops.go      # CoreProperties 核心属性
-└── resource_pool.go  # ResourcePool 资源池
+├── constants.go      # Constants (content types, relationship types, namespaces)
+├── packuri.go        # PackURI path handling
+├── package.go        # Package core implementation
+├── streampkg.go      # StreamPackage streaming support
+├── stream.go         # Streaming writers, data sources
+├── part.go           # Part implementation
+├── contenttypes.go   # ContentTypes management
+├── relation.go       # Relationships management
+├── coreprops.go      # CoreProperties
+└── resource_pool.go  # ResourcePool
 ```

@@ -1,10 +1,10 @@
-# Media - 媒体管理
+# Media - Media Management
 
-媒体资源管理器维护 PPTX 中所有媒体资源的并发安全缓存，支持图片、音频、视频等资源的自动去重。
+The media manager maintains a concurrency-safe cache of all media assets in a PPTX file, with automatic deduplication for images, audio, video, and other resources.
 
 ## MediaManager
 
-媒体资源管理器。
+Media asset manager.
 
 ```go
 type MediaManager struct {
@@ -12,17 +12,17 @@ type MediaManager struct {
 }
 ```
 
-### 构造函数
+### Constructor
 
 ```go
 func NewMediaManager() *MediaManager
 ```
 
-### 基础操作
+### Basic Operations
 
 #### AddMedia
 
-添加媒体资源到缓存，返回资源的 rID，如果已存在则返回现有 rID。
+Adds a media asset to the cache and returns its rID. If the asset already exists, the existing rID is returned.
 
 ```go
 func (m *MediaManager) AddMedia(resource *parts.MediaResource) string
@@ -30,87 +30,88 @@ func (m *MediaManager) AddMedia(resource *parts.MediaResource) string
 
 #### AddMediaAuto
 
-自动推断 MIME 类型并生成自增 rID，如果相同内容已存在（基于 Hash），则返回已有资源（去重）。
+Automatically infers the MIME type and generates an auto-incremented rID. If the same content already exists (based on its hash), the existing resource is returned (deduplication).
 
 ```go
 func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *parts.MediaResource)
 ```
 
-**参数:**
-- `fileName`: 文件名（用于推断 MIME 类型）
-- `data`: 媒体数据
+**Parameters:**
+- `fileName`: file name (used to infer the MIME type)
+- `data`: media data
 
-**返回:**
-- 生成的 rID 和创建的 MediaResource
+**Returns:**
+- The generated rID and the created MediaResource
 
-**示例:**
+**Example:**
 
 ```go
 mm := pptx.NewMediaManager()
 data, _ := os.ReadFile("logo.png")
 
 rId, resource := mm.AddMediaAuto("logo.png", data)
-fmt.Printf("添加媒体: rId=%s, 类型=%s\n", rId, resource.ContentType)
+fmt.Printf("Added media: rId=%s, type=%s\n", rId, resource.ContentType)
 ```
 
 #### AddMediaForSlide
 
-为指定幻灯片添加媒体（支持跨幻灯片去重）。
+Adds media for a specific slide (supports cross-slide deduplication).
 
 ```go
 func (m *MediaManager) AddMediaForSlide(slideIndex int, data []byte, fileName string) (string, *parts.MediaResource)
 ```
 
-**参数:**
-- `slideIndex`: 幻灯片索引
-- `data`: 媒体数据
-- `fileName`: 文件名
+**Parameters:**
+- `slideIndex`: slide index
+- `data`: media data
+- `fileName`: file name
 
-**返回:**
-- 该幻灯片的本地 rId 和全局媒体资源
+**Returns:**
+- The slide-local rId and the global media resource
 
-**示例:**
+**Example:**
 
 ```go
-// 第 1 页插入 Logo
+// Insert logo on slide 1
 rId1, _ := mm.AddMediaForSlide(0, logoData, "logo.png")
-// 返回: rId1="rId1", 全局存储 image1.png
+// Returns: rId1="rId1", stores image1.png globally
 
-// 第 2 页插入同一个 Logo
+// Insert the same logo on slide 2
 rId2, _ := mm.AddMediaForSlide(1, logoData, "logo.png")
-// 返回: rId2="rId1"（该幻灯片的本地 rId）, 复用 image1.png
+// Returns: rId2="rId1" (local rId for that slide), reuses image1.png
 
-// 最终 ZIP 包中只有一份 image1.png，但两张幻灯片都有各自的 rId 引用
+// The final ZIP contains only one copy of image1.png,
+// but both slides have their own rId references
 ```
 
 #### AddMediaWithBytes
 
-从字节数据添加媒体资源。
+Adds a media asset from byte data.
 
 ```go
 func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target string, data []byte) *parts.MediaResource
 ```
 
-**参数:**
-- `rID`: 关系 ID
-- `fileName`: 文件名
-- `contentType`: MIME 类型
-- `target`: 目标路径
-- `data`: 媒体数据
+**Parameters:**
+- `rID`: relationship ID
+- `fileName`: file name
+- `contentType`: MIME type
+- `target`: target path
+- `data`: media data
 
 #### AddMediaWithReader
 
-从 Reader 添加媒体资源。
+Adds a media asset from a Reader.
 
 ```go
 func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target string, reader io.Reader, size int64) *parts.MediaResource
 ```
 
-### 查询操作
+### Query Operations
 
 #### GetMedia
 
-根据 rID 获取媒体资源。
+Retrieves a media asset by rID.
 
 ```go
 func (m *MediaManager) GetMedia(rID string) *parts.MediaResource
@@ -118,7 +119,7 @@ func (m *MediaManager) GetMedia(rID string) *parts.MediaResource
 
 #### GetMediaByFileName
 
-根据文件名获取媒体资源。
+Retrieves a media asset by file name.
 
 ```go
 func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource
@@ -126,7 +127,7 @@ func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource
 
 #### GetMediaByHash
 
-根据内容 Hash 获取媒体资源（用于去重）。
+Retrieves a media asset by content hash (used for deduplication).
 
 ```go
 func (m *MediaManager) GetMediaByHash(hash string) *parts.MediaResource
@@ -134,7 +135,7 @@ func (m *MediaManager) GetMediaByHash(hash string) *parts.MediaResource
 
 #### GetMediaByTarget
 
-根据目标路径获取媒体资源。
+Retrieves a media asset by target path.
 
 ```go
 func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource
@@ -142,7 +143,7 @@ func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource
 
 #### GetGlobalMediaByHash
 
-根据 Hash 获取全局媒体资源。
+Retrieves a global media asset by hash.
 
 ```go
 func (m *MediaManager) GetGlobalMediaByHash(hash string) *parts.MediaResource
@@ -150,17 +151,17 @@ func (m *MediaManager) GetGlobalMediaByHash(hash string) *parts.MediaResource
 
 #### GetSlideMediaIndex
 
-获取幻灯片媒体索引。
+Returns the media index for a slide.
 
 ```go
 func (m *MediaManager) GetSlideMediaIndex(slideIndex int) *SlideMediaIndex
 ```
 
-### 列表操作
+### List Operations
 
 #### AllMedia
 
-返回所有媒体资源（返回新切片，线程安全）。
+Returns all media assets (returns a new slice; thread-safe).
 
 ```go
 func (m *MediaManager) AllMedia() []*parts.MediaResource
@@ -168,7 +169,7 @@ func (m *MediaManager) AllMedia() []*parts.MediaResource
 
 #### AllGlobalMedia
 
-返回所有全局媒体资源（去重后的）。
+Returns all global media assets (after deduplication).
 
 ```go
 func (m *MediaManager) AllGlobalMedia() []*parts.MediaResource
@@ -176,7 +177,7 @@ func (m *MediaManager) AllGlobalMedia() []*parts.MediaResource
 
 #### AllImages
 
-返回所有图片资源。
+Returns all image assets.
 
 ```go
 func (m *MediaManager) AllImages() []*parts.MediaResource
@@ -184,7 +185,7 @@ func (m *MediaManager) AllImages() []*parts.MediaResource
 
 #### AllVideo
 
-返回所有视频资源。
+Returns all video assets.
 
 ```go
 func (m *MediaManager) AllVideo() []*parts.MediaResource
@@ -192,7 +193,7 @@ func (m *MediaManager) AllVideo() []*parts.MediaResource
 
 #### AllAudio
 
-返回所有音频资源。
+Returns all audio assets.
 
 ```go
 func (m *MediaManager) AllAudio() []*parts.MediaResource
@@ -200,7 +201,7 @@ func (m *MediaManager) AllAudio() []*parts.MediaResource
 
 #### AllMediaByType
 
-返回指定类型的所有媒体资源。
+Returns all media assets of the specified type.
 
 ```go
 func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaResource
@@ -208,7 +209,7 @@ func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaR
 
 #### ListRIDs
 
-返回所有 rID。
+Returns all rIDs.
 
 ```go
 func (m *MediaManager) ListRIDs() []string
@@ -216,7 +217,7 @@ func (m *MediaManager) ListRIDs() []string
 
 #### ListFileNames
 
-返回所有文件名。
+Returns all file names.
 
 ```go
 func (m *MediaManager) ListFileNames() []string
@@ -224,17 +225,17 @@ func (m *MediaManager) ListFileNames() []string
 
 #### ListTargets
 
-返回所有目标路径。
+Returns all target paths.
 
 ```go
 func (m *MediaManager) ListTargets() []string
 ```
 
-### 统计操作
+### Statistics Operations
 
 #### Count
 
-返回媒体资源总数。
+Returns the total number of media assets.
 
 ```go
 func (m *MediaManager) Count() int64
@@ -242,7 +243,7 @@ func (m *MediaManager) Count() int64
 
 #### GlobalMediaCount
 
-返回全局媒体资源数量（去重后）。
+Returns the number of global media assets (after deduplication).
 
 ```go
 func (m *MediaManager) GlobalMediaCount() int64
@@ -250,7 +251,7 @@ func (m *MediaManager) GlobalMediaCount() int64
 
 #### CountImages
 
-返回图片数量。
+Returns the number of image assets.
 
 ```go
 func (m *MediaManager) CountImages() int64
@@ -258,7 +259,7 @@ func (m *MediaManager) CountImages() int64
 
 #### CountVideo
 
-返回视频数量。
+Returns the number of video assets.
 
 ```go
 func (m *MediaManager) CountVideo() int64
@@ -266,7 +267,7 @@ func (m *MediaManager) CountVideo() int64
 
 #### CountAudio
 
-返回音频数量。
+Returns the number of audio assets.
 
 ```go
 func (m *MediaManager) CountAudio() int64
@@ -274,7 +275,7 @@ func (m *MediaManager) CountAudio() int64
 
 #### CountByType
 
-返回指定类型的媒体资源数量。
+Returns the number of media assets of the specified type.
 
 ```go
 func (m *MediaManager) CountByType(mediaType parts.MediaType) int64
@@ -282,17 +283,17 @@ func (m *MediaManager) CountByType(mediaType parts.MediaType) int64
 
 #### SlideCount
 
-返回引用媒体的幻灯片数量。
+Returns the number of slides that reference media.
 
 ```go
 func (m *MediaManager) SlideCount() int64
 ```
 
-### 其他操作
+### Other Operations
 
 #### HasMedia
 
-检查媒体资源是否存在。
+Checks whether a media asset exists.
 
 ```go
 func (m *MediaManager) HasMedia(rID string) bool
@@ -300,7 +301,7 @@ func (m *MediaManager) HasMedia(rID string) bool
 
 #### HasMediaByFileName
 
-检查文件名是否存在。
+Checks whether a file name exists.
 
 ```go
 func (m *MediaManager) HasMediaByFileName(fileName string) bool
@@ -308,7 +309,7 @@ func (m *MediaManager) HasMediaByFileName(fileName string) bool
 
 #### RemoveMedia
 
-移除媒体资源。
+Removes a media asset.
 
 ```go
 func (m *MediaManager) RemoveMedia(rID string) bool
@@ -316,17 +317,17 @@ func (m *MediaManager) RemoveMedia(rID string) bool
 
 #### Clear
 
-清空所有媒体资源。
+Clears all media assets.
 
 ```go
 func (m *MediaManager) Clear()
 ```
 
-### 去重统计
+### Deduplication Statistics
 
 #### GetDeduplicationStats
 
-获取去重统计信息。
+Returns deduplication statistics.
 
 ```go
 func (m *MediaManager) GetDeduplicationStats() DeduplicationStats
@@ -334,40 +335,40 @@ func (m *MediaManager) GetDeduplicationStats() DeduplicationStats
 
 ## DeduplicationStats
 
-去重统计信息。
+Deduplication statistics.
 
 ```go
 type DeduplicationStats struct {
-    // 全局媒体数量（实际存储）
+    // GlobalMediaCount is the number of globally stored media assets (actual storage)
     GlobalMediaCount int64
 
-    // 总引用次数（所有幻灯片的引用总和）
+    // TotalReferences is the total number of references across all slides
     TotalReferences int64
 
-    // 幻灯片数量
+    // SlideCount is the number of slides
     SlideCount int64
 
-    // 节省的存储空间（字节）
+    // SavedBytes is the storage saved by deduplication (in bytes)
     SavedBytes int64
 
-    // 去重率（0.0 - 1.0）
+    // DeduplicationRate is the deduplication ratio (0.0 - 1.0)
     DeduplicationRate float64
 }
 ```
 
-**示例:**
+**Example:**
 
 ```go
 stats := mm.GetDeduplicationStats()
-fmt.Printf("全局媒体数: %d\n", stats.GlobalMediaCount)
-fmt.Printf("总引用次数: %d\n", stats.TotalReferences)
-fmt.Printf("节省空间: %d 字节\n", stats.SavedBytes)
-fmt.Printf("去重率: %.2f%%\n", stats.DeduplicationRate*100)
+fmt.Printf("Global media count: %d\n", stats.GlobalMediaCount)
+fmt.Printf("Total references: %d\n", stats.TotalReferences)
+fmt.Printf("Bytes saved: %d\n", stats.SavedBytes)
+fmt.Printf("Deduplication rate: %.2f%%\n", stats.DeduplicationRate*100)
 ```
 
 ## SlideMediaIndex
 
-幻灯片媒体索引，管理单个幻灯片的媒体引用。
+A slide media index that manages the media references for a single slide.
 
 ```go
 type SlideMediaIndex struct {
@@ -375,17 +376,17 @@ type SlideMediaIndex struct {
 }
 ```
 
-### 构造函数
+### Constructor
 
 ```go
 func NewSlideMediaIndex(slideIndex int) *SlideMediaIndex
 ```
 
-### 方法
+### Methods
 
 #### GetLocalRIDByHash
 
-根据 Hash 获取本地 rId。
+Returns the local rId for a given hash.
 
 ```go
 func (smi *SlideMediaIndex) GetLocalRIDByHash(hash string) string
@@ -393,7 +394,7 @@ func (smi *SlideMediaIndex) GetLocalRIDByHash(hash string) string
 
 #### GetHashByLocalRID
 
-根据本地 rId 获取 Hash。
+Returns the hash for a given local rId.
 
 ```go
 func (smi *SlideMediaIndex) GetHashByLocalRID(localRID string) string
@@ -401,7 +402,7 @@ func (smi *SlideMediaIndex) GetHashByLocalRID(localRID string) string
 
 #### AllLocalRIDs
 
-返回所有本地 rId。
+Returns all local rIDs.
 
 ```go
 func (smi *SlideMediaIndex) AllLocalRIDs() []string
@@ -409,7 +410,7 @@ func (smi *SlideMediaIndex) AllLocalRIDs() []string
 
 #### LocalRefCount
 
-返回本地引用数量。
+Returns the number of local references.
 
 ```go
 func (smi *SlideMediaIndex) LocalRefCount() int64
@@ -417,9 +418,9 @@ func (smi *SlideMediaIndex) LocalRefCount() int64
 
 ---
 
-# MasterManager - 母版/版式管理器
+# MasterManager - Slide Master/Layout Manager
 
-母版/版式管理器。
+Slide master and slide layout manager.
 
 ```go
 type MasterManager struct {
@@ -427,7 +428,7 @@ type MasterManager struct {
 }
 ```
 
-### 构造函数
+### Constructors
 
 ```go
 func NewMasterManager() *MasterManager
@@ -435,11 +436,11 @@ func NewMasterManager() *MasterManager
 func NewMasterManagerWithCache(cache *MasterCache) *MasterManager
 ```
 
-### 加载方法
+### Load Methods
 
 #### LoadFromZipFile
 
-从 ZIP 文件路径加载。
+Loads from a ZIP file path.
 
 ```go
 func (m *MasterManager) LoadFromZipFile(filePath string) error
@@ -447,19 +448,19 @@ func (m *MasterManager) LoadFromZipFile(filePath string) error
 
 #### LoadFromZip
 
-从 ZIP Reader 加载母版和版式。
+Loads slide masters and layouts from a ZIP Reader.
 
 ```go
 func (m *MasterManager) LoadFromZip(zipReader *zip.Reader) error
 ```
 
-**说明:** 遍历 ZIP 内的 `/ppt/slideMasters/` 和 `/ppt/slideLayouts/` 目录
+**Note:** Iterates over `/ppt/slideMasters/` and `/ppt/slideLayouts/` directories inside the ZIP.
 
-### 查询方法
+### Query Methods
 
 #### GetMaster
 
-获取母版。
+Returns a slide master.
 
 ```go
 func (m *MasterManager) GetMaster(masterID string) (*parts.SlideMasterData, bool)
@@ -467,7 +468,7 @@ func (m *MasterManager) GetMaster(masterID string) (*parts.SlideMasterData, bool
 
 #### GetMasterByName
 
-根据名称获取母版。
+Returns a slide master by name.
 
 ```go
 func (m *MasterManager) GetMasterByName(name string) (*parts.SlideMasterData, bool)
@@ -475,7 +476,7 @@ func (m *MasterManager) GetMasterByName(name string) (*parts.SlideMasterData, bo
 
 #### GetLayout
 
-获取版式。
+Returns a slide layout.
 
 ```go
 func (m *MasterManager) GetLayout(layoutID string) (*parts.SlideLayoutData, bool)
@@ -483,7 +484,7 @@ func (m *MasterManager) GetLayout(layoutID string) (*parts.SlideLayoutData, bool
 
 #### GetLayoutByName
 
-根据名称获取版式。
+Returns a slide layout by name.
 
 ```go
 func (m *MasterManager) GetLayoutByName(name string) (*parts.SlideLayoutData, bool)
@@ -491,17 +492,17 @@ func (m *MasterManager) GetLayoutByName(name string) (*parts.SlideLayoutData, bo
 
 #### GetPlaceholder
 
-获取占位符。
+Returns a placeholder.
 
 ```go
 func (m *MasterManager) GetPlaceholder(layoutID, phType string) (*parts.Placeholder, bool)
 ```
 
-### 列表方法
+### List Methods
 
 #### AllMasters
 
-返回所有母版。
+Returns all slide masters.
 
 ```go
 func (m *MasterManager) AllMasters() map[string]*parts.SlideMasterData
@@ -509,7 +510,7 @@ func (m *MasterManager) AllMasters() map[string]*parts.SlideMasterData
 
 #### AllLayouts
 
-返回所有版式。
+Returns all slide layouts.
 
 ```go
 func (m *MasterManager) AllLayouts() map[string]*parts.SlideLayoutData
@@ -517,7 +518,7 @@ func (m *MasterManager) AllLayouts() map[string]*parts.SlideLayoutData
 
 #### ListLayoutIDs
 
-列出所有版式 ID。
+Lists all layout IDs.
 
 ```go
 func (m *MasterManager) ListLayoutIDs() []string
@@ -525,17 +526,17 @@ func (m *MasterManager) ListLayoutIDs() []string
 
 #### ListLayoutNames
 
-列出所有版式名称。
+Lists all layout names.
 
 ```go
 func (m *MasterManager) ListLayoutNames() []string
 ```
 
-### 统计方法
+### Statistics Methods
 
 #### MasterCount
 
-返回母版数量。
+Returns the number of slide masters.
 
 ```go
 func (m *MasterManager) MasterCount() int
@@ -543,7 +544,7 @@ func (m *MasterManager) MasterCount() int
 
 #### LayoutCount
 
-返回版式数量。
+Returns the number of slide layouts.
 
 ```go
 func (m *MasterManager) LayoutCount() int
@@ -551,7 +552,7 @@ func (m *MasterManager) LayoutCount() int
 
 #### Cache
 
-返回内部缓存（只读）。
+Returns the internal cache (read-only).
 
 ```go
 func (m *MasterManager) Cache() *MasterCache
@@ -559,9 +560,9 @@ func (m *MasterManager) Cache() *MasterCache
 
 ---
 
-# MasterCache - 母版缓存
+# MasterCache - Slide Master Cache
 
-母版/版式只读缓存，初始化后所有字段只读，支持无锁并发访问。
+A read-only cache of slide masters and layouts. After initialization all fields are read-only, enabling lock-free concurrent access.
 
 ```go
 type MasterCache struct {
@@ -569,17 +570,17 @@ type MasterCache struct {
 }
 ```
 
-### 构造函数
+### Constructor
 
 ```go
 func NewMasterCache() *MasterCache
 ```
 
-### 初始化方法
+### Initialization Methods
 
 #### Init
 
-使用提供的数据初始化缓存（仅执行一次），后续调用将被忽略。
+Initializes the cache with the provided data (runs only once; subsequent calls are ignored).
 
 ```go
 func (c *MasterCache) Init(masters []*parts.SlideMasterData, layouts []*parts.SlideLayoutData)
@@ -587,17 +588,17 @@ func (c *MasterCache) Init(masters []*parts.SlideMasterData, layouts []*parts.Sl
 
 #### InitFunc
 
-延迟初始化，接受初始化函数，函数仅在第一次访问时执行。
+Lazy initialization: accepts an initialization function that runs only on the first access.
 
 ```go
 func (c *MasterCache) InitFunc(initFn func() ([]*parts.SlideMasterData, []*parts.SlideLayoutData))
 ```
 
-### 查询方法
+### Query Methods
 
 #### GetMaster
 
-根据 ID 获取母版。
+Returns a slide master by ID.
 
 ```go
 func (c *MasterCache) GetMaster(masterID string) (*parts.SlideMasterData, bool)
@@ -605,7 +606,7 @@ func (c *MasterCache) GetMaster(masterID string) (*parts.SlideMasterData, bool)
 
 #### GetMasterByName
 
-根据名称获取母版。
+Returns a slide master by name.
 
 ```go
 func (c *MasterCache) GetMasterByName(name string) (*parts.SlideMasterData, bool)
@@ -613,7 +614,7 @@ func (c *MasterCache) GetMasterByName(name string) (*parts.SlideMasterData, bool
 
 #### GetLayout
 
-根据 ID 获取版式。
+Returns a slide layout by ID.
 
 ```go
 func (c *MasterCache) GetLayout(layoutID string) (*parts.SlideLayoutData, bool)
@@ -621,7 +622,7 @@ func (c *MasterCache) GetLayout(layoutID string) (*parts.SlideLayoutData, bool)
 
 #### GetLayoutByName
 
-根据名称获取版式。
+Returns a slide layout by name.
 
 ```go
 func (c *MasterCache) GetLayoutByName(name string) (*parts.SlideLayoutData, bool)
@@ -629,18 +630,18 @@ func (c *MasterCache) GetLayoutByName(name string) (*parts.SlideLayoutData, bool
 
 #### GetPlaceholder
 
-根据版式 ID 和占位符类型获取占位符。
+Returns a placeholder by layout ID and placeholder type.
 
 ```go
 func (c *MasterCache) GetPlaceholder(layoutID, phType string) (*parts.Placeholder, bool)
 ```
 
-**参数:**
-- `phType`: 可以是 `PlaceholderType.String()` 的值，如 "title", "body" 等
+**Parameters:**
+- `phType`: a value returned by `PlaceholderType.String()`, e.g. "title", "body"
 
 #### GetPlaceholderByID
 
-根据版式 ID 和占位符 ID 获取占位符。
+Returns a placeholder by layout ID and placeholder ID.
 
 ```go
 func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*parts.Placeholder, bool)
@@ -648,17 +649,17 @@ func (c *MasterCache) GetPlaceholderByID(layoutID, placeholderID string) (*parts
 
 #### GetMasterPlaceholder
 
-根据母版 ID 和占位符类型获取占位符。
+Returns a placeholder by master ID and placeholder type.
 
 ```go
 func (c *MasterCache) GetMasterPlaceholder(masterID, phType string) (*parts.Placeholder, bool)
 ```
 
-### 列表方法
+### List Methods
 
 #### AllMasters
 
-返回所有母版（只读）。
+Returns all slide masters (read-only).
 
 ```go
 func (c *MasterCache) AllMasters() map[string]*parts.SlideMasterData
@@ -666,7 +667,7 @@ func (c *MasterCache) AllMasters() map[string]*parts.SlideMasterData
 
 #### AllLayouts
 
-返回所有版式（只读）。
+Returns all slide layouts (read-only).
 
 ```go
 func (c *MasterCache) AllLayouts() map[string]*parts.SlideLayoutData
@@ -674,7 +675,7 @@ func (c *MasterCache) AllLayouts() map[string]*parts.SlideLayoutData
 
 #### ListMasterIDs
 
-列出所有母版 ID。
+Lists all master IDs.
 
 ```go
 func (c *MasterCache) ListMasterIDs() []string
@@ -682,7 +683,7 @@ func (c *MasterCache) ListMasterIDs() []string
 
 #### ListLayoutIDs
 
-列出所有版式 ID。
+Lists all layout IDs.
 
 ```go
 func (c *MasterCache) ListLayoutIDs() []string
@@ -690,17 +691,17 @@ func (c *MasterCache) ListLayoutIDs() []string
 
 #### ListLayoutNames
 
-列出所有版式名称。
+Lists all layout names.
 
 ```go
 func (c *MasterCache) ListLayoutNames() []string
 ```
 
-### 检查方法
+### Existence Check Methods
 
 #### MasterExists
 
-检查母版是否存在。
+Checks whether a slide master exists.
 
 ```go
 func (c *MasterCache) MasterExists(masterID string) bool
@@ -708,17 +709,17 @@ func (c *MasterCache) MasterExists(masterID string) bool
 
 #### LayoutExists
 
-检查版式是否存在。
+Checks whether a slide layout exists.
 
 ```go
 func (c *MasterCache) LayoutExists(layoutID string) bool
 ```
 
-### 统计方法
+### Statistics Methods
 
 #### MasterCount
 
-返回母版数量。
+Returns the number of slide masters.
 
 ```go
 func (c *MasterCache) MasterCount() int
@@ -726,80 +727,80 @@ func (c *MasterCache) MasterCount() int
 
 #### LayoutCount
 
-返回版式数量。
+Returns the number of slide layouts.
 
 ```go
 func (c *MasterCache) LayoutCount() int
 ```
 
-## 使用示例
+## Usage Examples
 
-### 基础媒体管理
+### Basic Media Management
 
 ```go
-// 获取媒体管理器
+// Get the media manager
 mm := pres.MediaManager()
 
-// 添加图片
+// Add an image
 data, _ := os.ReadFile("logo.png")
 rId, resource := mm.AddMediaAuto("logo.png", data)
 
-// 在幻灯片上使用
+// Use it on a slide
 slide := pres.AddSlide()
 slide.AddPicture(100, 100, 200, 150, rId)
 ```
 
-### 跨幻灯片去重
+### Cross-Slide Deduplication
 
 ```go
-// 同一张图片在多页使用
+// Use the same image on multiple slides
 logoData, _ := os.ReadFile("logo.png")
 
-// 在多个幻灯片上添加相同的 logo
+// Add the same logo to multiple slides
 for i := 0; i < 5; i++ {
     slide := pres.AddSlide()
     rId, _ := mm.AddMediaForSlide(i, logoData, "logo.png")
     slide.AddPicture(100, 100, 200, 150, rId)
 }
 
-// 最终只存储一份 logo 图片
+// Only one copy of the logo is stored
 stats := mm.GetDeduplicationStats()
-fmt.Printf("节省空间: %d 字节\n", stats.SavedBytes)
+fmt.Printf("Bytes saved: %d\n", stats.SavedBytes)
 ```
 
-### 查询媒体信息
+### Querying Media Information
 
 ```go
-// 按类型获取媒体
+// Get media by type
 images := mm.AllImages()
 videos := mm.AllVideo()
 audio := mm.AllAudio()
 
-// 统计
-fmt.Printf("图片: %d, 视频: %d, 音频: %d\n",
+// Statistics
+fmt.Printf("Images: %d, Videos: %d, Audio: %d\n",
     mm.CountImages(), mm.CountVideo(), mm.CountAudio())
 ```
 
-### 使用母版缓存
+### Using the Master Cache
 
 ```go
-// 获取母版缓存
+// Get the master cache
 cache := pres.MasterCache()
 
-// 获取版式
+// Get a layout
 layout, ok := cache.GetLayoutByName("title")
 if ok {
-    fmt.Println("找到标题版式:", layout.Name)
+    fmt.Println("Found title layout:", layout.Name)
 }
 
-// 获取占位符
+// Get a placeholder
 ph, ok := cache.GetPlaceholder(layout.ID, "title")
 if ok {
-    fmt.Printf("标题占位符位置: (%d, %d)\n", ph.X, ph.Y)
+    fmt.Printf("Title placeholder position: (%d, %d)\n", ph.X, ph.Y)
 }
 
-// 列出所有版式
+// List all layouts
 for _, name := range cache.ListLayoutNames() {
-    fmt.Println("版式:", name)
+    fmt.Println("Layout:", name)
 }
 ```

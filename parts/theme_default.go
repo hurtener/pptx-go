@@ -1,11 +1,11 @@
 package parts
 
 // ============================================================================
-// 默认主题模板 - Office 主题
+// Default theme template - Office Theme
 // ============================================================================
 //
-// 基于标准 Office 主题，在程序启动时只解析一次
-// 用于创建新主题时的快速克隆
+// Based on the standard Office theme; parsed once at startup.
+// Used for fast cloning when creating new themes.
 //
 // ============================================================================
 
@@ -13,10 +13,10 @@ import (
 	"sync"
 )
 
-// DefaultThemeXML 默认 Office 主题 XML（完整版）
-// 直接复制自标准 Office 主题，确保内容不缺漏
+// DefaultThemeXML is the complete default Office theme XML.
+// Copied verbatim from a standard Office theme to ensure no content is missing.
 const DefaultThemeXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office 主题">
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
     <a:themeElements>
         <a:clrScheme name="Office">
             <a:dk1>
@@ -63,8 +63,6 @@ const DefaultThemeXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                 <a:cs typeface=""/>
                 <a:font script="Jpan" typeface="ＭＳ Ｐゴシック"/>
                 <a:font script="Hang" typeface="맑은 고딕"/>
-                <a:font script="Hans" typeface="宋体"/>
-                <a:font script="Hant" typeface="新細明體"/>
                 <a:font script="Arab" typeface="Times New Roman"/>
                 <a:font script="Hebr" typeface="Times New Roman"/>
                 <a:font script="Thai" typeface="Angsana New"/>
@@ -98,8 +96,6 @@ const DefaultThemeXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                 <a:cs typeface=""/>
                 <a:font script="Jpan" typeface="ＭＳ Ｐゴシック"/>
                 <a:font script="Hang" typeface="맑은 고딕"/>
-                <a:font script="Hans" typeface="宋体"/>
-                <a:font script="Hant" typeface="新細明體"/>
                 <a:font script="Arab" typeface="Arial"/>
                 <a:font script="Hebr" typeface="Arial"/>
                 <a:font script="Thai" typeface="Cordia New"/>
@@ -275,14 +271,14 @@ const DefaultThemeXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </a:extLst>
 </a:theme>`
 
-// defaultThemeOnce 单例：解析后的默认主题
-// 程序启动时通过 sync.Once 解析一次
+// defaultThemeOnce is a singleton holding the parsed default theme.
+// It is initialized once at first use via sync.Once.
 var defaultThemeOnce struct {
 	theme *XTheme
-	once sync.Once
+	once  sync.Once
 }
 
-// DefaultTheme 返回默认主题（懒加载解析）
+// DefaultTheme returns the default theme, parsing it lazily on first call.
 func DefaultTheme() *XTheme {
 	if defaultThemeOnce.theme == nil {
 		theme, err := ParseTheme([]byte(DefaultThemeXML))
@@ -294,14 +290,14 @@ func DefaultTheme() *XTheme {
 	return defaultThemeOnce.theme
 }
 
-// CloneTheme 克隆主题（深拷贝）
+// CloneTheme returns a deep copy of the default theme.
 func CloneTheme() *XTheme {
 	src := DefaultTheme()
 	if src == nil {
 		return nil
 	}
 
-	// 深拷贝
+	// deep copy
 	dst := &XTheme{
 		XmlnsA: src.XmlnsA,
 		Name:   src.Name,
@@ -318,30 +314,30 @@ func CloneTheme() *XTheme {
 	return dst
 }
 
-// cloneColorScheme 深拷贝颜色方案
+// cloneColorScheme returns a deep copy of a color scheme.
 func cloneColorScheme(src *XColorScheme) *XColorScheme {
 	if src == nil {
 		return nil
 	}
 	dst := &XColorScheme{
-		Name:            src.Name,
-		Dark1:            cloneColorVariant(src.Dark1),
-		Light1:           cloneColorVariant(src.Light1),
-		Dark2:            cloneColorVariant(src.Dark2),
-		Light2:           cloneColorVariant(src.Light2),
-		Accent1:          cloneColorVariant(src.Accent1),
-		Accent2:          cloneColorVariant(src.Accent2),
-		Accent3:          cloneColorVariant(src.Accent3),
-		Accent4:          cloneColorVariant(src.Accent4),
-		Accent5:          cloneColorVariant(src.Accent5),
-		Accent6:          cloneColorVariant(src.Accent6),
-		Hyperlink:        cloneColorVariant(src.Hyperlink),
+		Name:              src.Name,
+		Dark1:             cloneColorVariant(src.Dark1),
+		Light1:            cloneColorVariant(src.Light1),
+		Dark2:             cloneColorVariant(src.Dark2),
+		Light2:            cloneColorVariant(src.Light2),
+		Accent1:           cloneColorVariant(src.Accent1),
+		Accent2:           cloneColorVariant(src.Accent2),
+		Accent3:           cloneColorVariant(src.Accent3),
+		Accent4:           cloneColorVariant(src.Accent4),
+		Accent5:           cloneColorVariant(src.Accent5),
+		Accent6:           cloneColorVariant(src.Accent6),
+		Hyperlink:         cloneColorVariant(src.Hyperlink),
 		FollowedHyperlink: cloneColorVariant(src.FollowedHyperlink),
 	}
 	return dst
 }
 
-// cloneColorVariant 深拷贝颜色变体
+// cloneColorVariant returns a deep copy of a color variant.
 func cloneColorVariant(src *XColorVariant) *XColorVariant {
 	if src == nil {
 		return nil
@@ -358,7 +354,8 @@ func cloneColorVariant(src *XColorVariant) *XColorVariant {
 	}
 	return dst
 }
-// cloneFontScheme 深拷贝字体方案
+
+// cloneFontScheme returns a deep copy of a font scheme.
 func cloneFontScheme(src *XFontScheme) *XFontScheme {
 	if src == nil {
 		return nil
@@ -374,7 +371,8 @@ func cloneFontScheme(src *XFontScheme) *XFontScheme {
 	}
 	return dst
 }
-// cloneFontCollection 深拷贝字体集合
+
+// cloneFontCollection returns a deep copy of a font collection.
 func cloneFontCollection(src *XFontCollection) *XFontCollection {
 	if src == nil {
 		return nil
@@ -390,7 +388,8 @@ func cloneFontCollection(src *XFontCollection) *XFontCollection {
 	}
 	return dst
 }
-// cloneFmtScheme 深拷贝格式方案
+
+// cloneFmtScheme returns a deep copy of a format scheme.
 func cloneFmtScheme(src *XFmtScheme) *XFmtScheme {
 	if src == nil {
 		return nil

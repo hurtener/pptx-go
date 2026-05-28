@@ -3,7 +3,7 @@ package opc_test
 import (
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 func TestPackURI_New(t *testing.T) {
@@ -227,7 +227,7 @@ func TestPackURI_Join(t *testing.T) {
 		relative string
 		expected string
 	}{
-		// 注意：Join 的实现可能与预期不同，这里测试实际行为
+		// Note: Join's behavior may differ from expectations; this tests the actual behavior.
 		{"absolute", "/ppt/slides", "/docProps/core.xml", "/docProps/core.xml"},
 	}
 
@@ -250,7 +250,7 @@ func TestPackURI_Clone(t *testing.T) {
 		t.Error("cloned URI should equal original")
 	}
 
-	// 确保是独立的副本
+	// ensure it is an independent copy
 	if &uri1 == &uri2 {
 		t.Error("clone should create a new instance")
 	}
@@ -321,30 +321,30 @@ func TestIsValidPackURI(t *testing.T) {
 	}
 }
 
-// TestNormalizeZipPath 测试 ZIP 路径规范化函数
-// 确保能正确处理 Windows 反斜杠和各种异常路径
+// TestNormalizeZipPath tests the ZIP path normalization function, ensuring it
+// correctly handles Windows backslashes and other malformed paths.
 func TestNormalizeZipPath(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
 		expected string
 	}{
-		// 正常路径
+		// normal paths
 		{"normal path", "ppt/slides/slide1.xml", "ppt/slides/slide1.xml"},
 		{"normal path with leading slash", "/ppt/slides/slide1.xml", "ppt/slides/slide1.xml"},
 
-		// Windows 反斜杠问题
+		// Windows backslash issues
 		{"windows backslash", "ppt\\slides\\slide1.xml", "ppt/slides/slide1.xml"},
 		{"mixed slashes", "ppt\\slides/slide1.xml", "ppt/slides/slide1.xml"},
 		{"all backslashes", "ppt\\slides\\_rels\\slide1.xml.rels", "ppt/slides/_rels/slide1.xml.rels"},
 		{"windows with leading backslash", "\\ppt\\slides\\slide1.xml", "ppt/slides/slide1.xml"},
 
-		// 重复斜杠问题
+		// repeated slash issues
 		{"double forward slashes", "ppt//slides//slide1.xml", "ppt/slides/slide1.xml"},
 		{"triple slashes", "ppt///slides/slide1.xml", "ppt/slides/slide1.xml"},
 		{"mixed repeated slashes", "ppt\\/\\\\slides/slide1.xml", "ppt/slides/slide1.xml"},
 
-		// 边界情况
+		// edge cases
 		{"empty string", "", ""},
 		{"single slash", "/", ""},
 		{"trailing slash", "ppt/slides/", "ppt/slides"},
@@ -353,7 +353,7 @@ func TestNormalizeZipPath(t *testing.T) {
 		{"rels file", "_rels/.rels", "_rels/.rels"},
 		{"windows rels file", "_rels\\.rels", "_rels/.rels"},
 
-		// 复杂场景
+		// complex scenarios
 		{"deeply nested windows", "ppt\\slides\\slide1\\_rels\\slide1.xml.rels", "ppt/slides/slide1/_rels/slide1.xml.rels"},
 		{"media file windows", "ppt\\media\\image1.png", "ppt/media/image1.png"},
 	}
@@ -368,8 +368,8 @@ func TestNormalizeZipPath(t *testing.T) {
 	}
 }
 
-// TestNormalizeZipPath_Idempotent 测试规范化是幂等的
-// 多次规范化应该产生相同的结果
+// TestNormalizeZipPath_Idempotent tests that normalization is idempotent:
+// applying it multiple times should always produce the same result.
 func TestNormalizeZipPath_Idempotent(t *testing.T) {
 	testCases := []string{
 		"ppt/slides/slide1.xml",
@@ -389,12 +389,12 @@ func TestNormalizeZipPath_Idempotent(t *testing.T) {
 	}
 }
 
-// TestNormalizeURI_vs_NormalizeZipPath 测试两个规范化函数的区别
+// TestNormalizeURI_vs_NormalizeZipPath tests the difference between the two normalization functions.
 func TestNormalizeURI_vs_NormalizeZipPath(t *testing.T) {
 	testCases := []struct {
-		input      string
-		uriResult  string
-		zipResult  string
+		input     string
+		uriResult string
+		zipResult string
 	}{
 		{"ppt/slides/slide1.xml", "/ppt/slides/slide1.xml", "ppt/slides/slide1.xml"},
 		{"/ppt/slides/slide1.xml", "/ppt/slides/slide1.xml", "ppt/slides/slide1.xml"},
@@ -412,7 +412,7 @@ func TestNormalizeURI_vs_NormalizeZipPath(t *testing.T) {
 			t.Errorf("NormalizeZipPath(%q) = %q, want %q", tc.input, zipResult, tc.zipResult)
 		}
 
-		// NormalizeZipPath 的结果加上 "/" 前缀应该等于 NormalizeURI 的结果
+		// NormalizeZipPath result prepended with "/" should equal NormalizeURI result
 		expectedURIFromZip := "/" + zipResult
 		if uriResult != expectedURIFromZip {
 			t.Errorf("NormalizeURI(%q) = %q, but NormalizeZipPath + / = %q", tc.input, uriResult, expectedURIFromZip)

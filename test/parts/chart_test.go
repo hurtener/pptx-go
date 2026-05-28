@@ -4,12 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/parts"
 )
 
-// 这是一个极其经典的【无 Excel 图表 XML】(路线 C 的核心图纸)
-// 注意看：里面只有 strCache 和 numCache，绝对没有 <c:externalData> 标签！
+// routeCChartXML is a minimal chart XML with no Excel dependency (Route C).
+// It contains only strCache and numCache — no <c:externalData> tag.
 const routeCChartXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <c:chart>
@@ -41,136 +41,136 @@ const routeCChartXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </c:chartSpace>`
 
 // ============================================================================
-// 测试 1：ChartPart 原始 XML 承载测试
-// 目标：证明 ChartPart 能原封不动地保存我们利用模板引擎生成的 XML
+// Test 1: ChartPart raw-XML carrier test
+// Goal: prove that ChartPart can preserve template-generated XML verbatim.
 // ============================================================================
 func TestChartPart_RawXMLCarrier(t *testing.T) {
-	// 使用 SetRawXML 方法加载原始 XML
+	// Load raw XML via SetRawXML.
 	chartPart := parts.NewChartPart(1)
 	chartPart.SetRawXML([]byte(routeCChartXML))
 
-	// 模拟序列化过程
+	// Simulate serialization.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("图表序列化失败: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
-	// 核心验证 1：必须包含缓存数据
+	// Core check 1: cached data must be present.
 	if !strings.Contains(outputXML, "<c:strCache>") || !strings.Contains(outputXML, "Q1") {
-		t.Error("丢失了字符串缓存数据 (strCache)")
+		t.Error("string cache data (strCache) was lost")
 	}
 	if !strings.Contains(outputXML, "<c:numCache>") || !strings.Contains(outputXML, "200") {
-		t.Error("丢失了数字缓存数据 (numCache)")
+		t.Error("numeric cache data (numCache) was lost")
 	}
 
-	// 核心验证 2：【路线 C 护城河】绝对不能包含 externalData
+	// Core check 2: Route C charts must never contain externalData.
 	if strings.Contains(outputXML, "<c:externalData") {
-		t.Fatal("严重错误：路线 C 的图表中出现了外部 Excel 引用标签！")
+		t.Fatal("critical: Route C chart contains an external Excel reference tag")
 	}
 
-	t.Log("✅ ChartPart 原始数据承载测试通过")
+	t.Log("ChartPart raw-data carrier test passed")
 }
 
 // ============================================================================
-// 测试 2：OPC 关系纯净度测试 (验证没有挂载 Excel)
-// 目标：证明在打包图表时，没有意外生成指向 embedding 文件夹的 Excel 关系
+// Test 2: OPC relationship purity test (no Excel attachment)
+// Goal: prove that no relationship pointing to an embedding folder is generated.
 // ============================================================================
 func TestChartPart_NoExcelRelationship(t *testing.T) {
 	pkg := opc.NewPackage()
 
-	// 1. 创建并写入图表部件
+	// 1. Create and write the chart part.
 	chartURI := opc.NewPackURI("/ppt/charts/chart1.xml")
 	chartPartOp, err := pkg.CreatePart(chartURI, "application/vnd.openxmlformats-officedocument.drawingml.chart+xml", []byte(routeCChartXML))
 	if err != nil {
-		t.Fatalf("创建 Chart Part 失败: %v", err)
+		t.Fatalf("creating Chart Part failed: %v", err)
 	}
 
-	// 2. 检查这个 chartPartOp 底下挂载的关系
-	// 在路线 C 中，图表自身不应该拥有任何关系（因为它不依赖 Excel）
+	// 2. Inspect the relationships on this chartPartOp.
+	// In Route C the chart itself must have no relationships (no Excel dependency).
 	rels := chartPartOp.Relationships()
 	if rels != nil && rels.Count() > 0 {
-		// 遍历检查是否有 Excel 类型的关联
+		// Scan for any Excel-type relationship.
 		for _, rel := range rels.All() {
 			if strings.Contains(rel.Type(), "officeDocument/2006/relationships/package") {
-				t.Fatalf("架构违规：发现图表挂载了 Excel 关系 -> %s", rel.TargetURI())
+				t.Fatalf("architecture violation: chart has an Excel relationship -> %s", rel.TargetURI())
 			}
 		}
 	}
 
-	t.Log("✅ Chart OPC 关系纯净度测试通过 (无 Excel 依赖)")
+	t.Log("Chart OPC relationship purity test passed (no Excel dependency)")
 }
 
 // ============================================================================
-// 测试 3：占位符替换测试
-// 目标：证明模板占位符策略能正确注入数据
+// Test 3: Placeholder replacement test
+// Goal: prove that the template-placeholder strategy injects data correctly.
 // ============================================================================
 func TestChartPart_PlaceholderReplacement(t *testing.T) {
 	chartPart := parts.NewChartPartWithType(1, parts.ChartTypeBar)
 
-	// 替换占位符
-	chartPart.ReplacePlaceholder("CHART_TITLE", "销售报表")
-	chartPart.ReplacePlaceholder("SERIES_NAME", "2024年")
+	// Replace placeholders.
+	chartPart.ReplacePlaceholder("CHART_TITLE", "Sales Report")
+	chartPart.ReplacePlaceholder("SERIES_NAME", "FY2024")
 	chartPart.ReplacePlaceholder("CAT_COUNT", "3")
 	chartPart.ReplacePlaceholder("CAT_COUNT_PLUS_1", "4")
 
-	// 序列化
+	// Serialize.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("图表序列化失败: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
-	// 验证替换成功
-	if !strings.Contains(outputXML, "销售报表") {
-		t.Error("CHART_TITLE 占位符替换失败")
+	// Verify replacements.
+	if !strings.Contains(outputXML, "Sales Report") {
+		t.Error("CHART_TITLE placeholder replacement failed")
 	}
-	if !strings.Contains(outputXML, "2024年") {
-		t.Error("SERIES_NAME 占位符替换失败")
+	if !strings.Contains(outputXML, "FY2024") {
+		t.Error("SERIES_NAME placeholder replacement failed")
 	}
 	if !strings.Contains(outputXML, `<c:ptCount val="3"/>`) {
-		t.Error("CAT_COUNT 占位符替换失败")
+		t.Error("CAT_COUNT placeholder replacement failed")
 	}
 
-	t.Log("✅ ChartPart 占位符替换测试通过")
+	t.Log("ChartPart placeholder replacement test passed")
 }
 
 // ============================================================================
-// 测试 4：外部数据引用测试
-// 目标：证明可以正确设置外部 Excel 数据引用
+// Test 4: External data reference test
+// Goal: prove that an external Excel data reference can be set correctly.
 // ============================================================================
 func TestChartPart_ExternalDataReference(t *testing.T) {
 	chartPart := parts.NewChartPart(1)
 
-	// 初始状态不应该有外部数据
+	// A newly created chart must not have external data.
 	if chartPart.HasExternalData() {
-		t.Error("新创建的图表不应该有外部数据")
+		t.Error("newly created chart should not have external data")
 	}
 
-	// 设置外部数据引用
+	// Set external data reference.
 	chartPart.SetExternalDataRID("rId1")
 
-	// 验证
+	// Verify.
 	if !chartPart.HasExternalData() {
-		t.Error("设置后应该有外部数据")
+		t.Error("external data should be present after setting it")
 	}
 	if chartPart.GetExternalDataRID() != "rId1" {
-		t.Errorf("期望 rId1，得到 %s", chartPart.GetExternalDataRID())
+		t.Errorf("expected rId1, got %s", chartPart.GetExternalDataRID())
 	}
 
-	// 序列化后应该包含 externalData 标签
+	// Serialized output must contain the externalData tag.
 	outputBytes, err := chartPart.ToXML()
 	if err != nil {
-		t.Fatalf("图表序列化失败: %v", err)
+		t.Fatalf("chart serialization failed: %v", err)
 	}
 	outputXML := string(outputBytes)
 
 	if !strings.Contains(outputXML, `<c:externalData`) {
-		t.Error("序列化后应包含 externalData 标签")
+		t.Error("serialized output should contain an externalData tag")
 	}
 	if !strings.Contains(outputXML, `r:id="rId1"`) {
-		t.Error("externalData 标签应包含正确的 r:id")
+		t.Error("externalData tag should contain the correct r:id")
 	}
 
-	t.Log("✅ ChartPart 外部数据引用测试通过")
+	t.Log("ChartPart external data reference test passed")
 }

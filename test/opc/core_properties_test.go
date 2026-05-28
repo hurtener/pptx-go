@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 func TestCoreProperties_GettersSetters(t *testing.T) {
 	cp := &opc.CoreProperties{}
 
-	// 测试所有 getter/setter
+	// test all getters/setters
 	cp.SetTitle("Test Title")
 	if cp.Title() != "Test Title" {
 		t.Error("Title getter/setter failed")
@@ -84,13 +84,13 @@ func TestCoreProperties_XML(t *testing.T) {
 	cp.SetLastModifiedBy("Test User 2")
 	cp.SetRevision("2")
 
-	// 序列化
+	// serialize
 	data, err := cp.ToXML()
 	if err != nil {
 		t.Fatalf("ToXML failed: %v", err)
 	}
 
-	// 验证序列化输出包含正确的数据
+	// verify the serialized output contains the correct data
 	dataStr := string(data)
 	if !strings.Contains(dataStr, "Test Presentation") {
 		t.Error("ToXML output should contain title")
@@ -101,7 +101,7 @@ func TestCoreProperties_XML(t *testing.T) {
 }
 
 func TestCoreProperties_FromXML(t *testing.T) {
-	// 测试 FromXML 能正确解析 ToXML 生成的 XML
+	// test that FromXML correctly parses XML produced by ToXML
 	cp := &opc.CoreProperties{}
 	cp.SetTitle("Test Title")
 	cp.SetCreator("Test Creator")
@@ -117,14 +117,14 @@ func TestCoreProperties_FromXML(t *testing.T) {
 		t.Fatalf("FromXML failed: %v", err)
 	}
 
-	// 验证 XML 可以被解析（即使命名空间前缀可能不完全匹配）
-	// 这个测试主要验证 FromXML 不会出错
+	// verify the XML can be parsed (even if namespace prefixes don't fully match)
+	// this test primarily checks that FromXML does not error
 }
 
 func TestCoreProperties_EmptyFields(t *testing.T) {
 	cp := &opc.CoreProperties{}
 
-	// 空 XML 不应该导致错误
+	// empty fields should not cause an error
 	data, err := cp.ToXML()
 	if err != nil {
 		t.Fatalf("ToXML with empty fields failed: %v", err)
@@ -136,7 +136,7 @@ func TestCoreProperties_EmptyFields(t *testing.T) {
 		t.Fatalf("FromXML with empty fields failed: %v", err)
 	}
 
-	// 验证空值
+	// verify empty values remain empty
 	if cp2.Title() != "" || cp2.Creator() != "" {
 		t.Error("empty fields should remain empty")
 	}

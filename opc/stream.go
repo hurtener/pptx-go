@@ -10,125 +10,125 @@ import (
 	"time"
 )
 
-// ===== 数据源接口和实现 =====
+// ===== Data source interfaces and implementations =====
 
-// PartSource 部件数据源接口
+// PartSource is the interface for a part's data source.
 type PartSource interface {
 	Open() (io.ReadCloser, error)
 	Size() int64
 }
 
-// ZipFileSource ZIP 文件中的部件数据源
+// ZipFileSource is a data source backed by an entry in a ZIP archive.
 type ZipFileSource struct {
 	file *zip.File
 }
 
-// NewZipFileSource 从 zip.File 创建数据源
+// NewZipFileSource creates a data source from a zip.File.
 func NewZipFileSource(f *zip.File) *ZipFileSource {
 	return &ZipFileSource{file: f}
 }
 
-// Open 打开 ZIP 文件条目
+// Open opens the ZIP archive entry.
 func (s *ZipFileSource) Open() (io.ReadCloser, error) {
 	return s.file.Open()
 }
 
-// Size 返回未压缩大小
+// Size returns the uncompressed size.
 func (s *ZipFileSource) Size() int64 {
 	return int64(s.file.UncompressedSize64)
 }
 
-// BytesSource 内存中的字节数据源
+// BytesSource is a data source backed by an in-memory byte slice.
 type BytesSource struct {
 	data []byte
 }
 
-// NewBytesSource 从字节数组创建数据源
+// NewBytesSource creates a data source from a byte slice.
 func NewBytesSource(data []byte) *BytesSource {
 	return &BytesSource{data: data}
 }
 
-// Open 返回 bytes.Reader
+// Open returns a reader over the byte slice.
 func (s *BytesSource) Open() (io.ReadCloser, error) {
 	return io.NopCloser(&bytesReaderAt{data: s.data}), nil
 }
 
-// Size 返回数据大小
+// Size returns the data size.
 func (s *BytesSource) Size() int64 {
 	return int64(len(s.data))
 }
 
-// ReaderSource io.Reader 数据源
+// ReaderSource is a data source backed by an io.Reader.
 type ReaderSource struct {
 	reader io.Reader
 	size   int64
 }
 
-// NewReaderSource 从 io.Reader 创建数据源
+// NewReaderSource creates a data source from an io.Reader.
 func NewReaderSource(r io.Reader, size int64) *ReaderSource {
 	return &ReaderSource{reader: r, size: size}
 }
 
-// Open 返回 reader
+// Open returns the underlying reader.
 func (s *ReaderSource) Open() (io.ReadCloser, error) {
 	return io.NopCloser(s.reader), nil
 }
 
-// Size 返回数据大小
+// Size returns the data size.
 func (s *ReaderSource) Size() int64 {
 	return s.size
 }
 
-// ===== 流式写入接口 =====
+// ===== Streaming write interfaces =====
 
-// StreamWriter 流式写入器接口
+// StreamWriter is the interface for streaming writers.
 type StreamWriter interface {
 	StreamWriteTo(w io.Writer) error
 }
 
-// XMLStreamer XML 流式写入器接口
+// XMLStreamer is the interface for XML streaming writers.
 type XMLStreamer interface {
 	StreamXML(enc *xml.Encoder) error
 }
 
-// ===== 流式 ZIP 写入器 =====
+// ===== Streaming ZIP writer =====
 
-// StreamingZipWriter 流式 ZIP 写入器
+// StreamingZipWriter is a streaming ZIP writer.
 type StreamingZipWriter struct {
 	zipWriter *zip.Writer
 }
 
-// NewStreamingZipWriter 创建流式 ZIP 写入器
+// NewStreamingZipWriter creates a streaming ZIP writer.
 func NewStreamingZipWriter(w io.Writer) *StreamingZipWriter {
 	return &StreamingZipWriter{
 		zipWriter: zip.NewWriter(w),
 	}
 }
 
-// createZipHeader 创建 ZIP 文件头，使用正确的时间戳和兼容性设置
+// createZipHeader creates a ZIP file header with correct timestamps and compatibility settings.
 func (sw *StreamingZipWriter) createZipHeader(path string) *zip.FileHeader {
-	// 剥离前导斜杠，确保符合 ZIP 规范
+	// Strip the leading slash to comply with the ZIP spec.
 	path = strings.TrimPrefix(path, "/")
 
 	header := &zip.FileHeader{
 		Name:     path,
-		Modified: time.Now(), // 设置当前时间戳
+		Modified: time.Now(), // Set current timestamp.
 		Method:   zip.Deflate,
 	}
 
-	// UTF-8 文件名标记
+	// UTF-8 file name flag.
 	header.Flags |= 0x800
 
 	return header
 }
 
-// Create 创建 ZIP 条目并返回写入器
+// Create creates a ZIP entry and returns a writer for it.
 func (sw *StreamingZipWriter) Create(path string) (io.Writer, error) {
 	header := sw.createZipHeader(path)
 	return sw.zipWriter.CreateHeader(header)
 }
 
-// WriteFromReader 从 Reader 流式写入 ZIP 条目
+// WriteFromReader streams a ZIP entry from a Reader.
 func (sw *StreamingZipWriter) WriteFromReader(path string, reader io.Reader) error {
 	header := sw.createZipHeader(path)
 	w, err := sw.zipWriter.CreateHeader(header)
@@ -139,7 +139,7 @@ func (sw *StreamingZipWriter) WriteFromReader(path string, reader io.Reader) err
 	return err
 }
 
-// WriteFromStreamer 从 StreamWriter 流式写入 ZIP 条目
+// WriteFromStreamer streams a ZIP entry using a StreamWriter.
 func (sw *StreamingZipWriter) WriteFromStreamer(path string, streamer StreamWriter) error {
 	header := sw.createZipHeader(path)
 	w, err := sw.zipWriter.CreateHeader(header)
@@ -149,7 +149,7 @@ func (sw *StreamingZipWriter) WriteFromStreamer(path string, streamer StreamWrit
 	return streamer.StreamWriteTo(w)
 }
 
-// WriteFromXMLStreamer 从 XMLStreamer 流式写入 ZIP 条目
+// WriteFromXMLStreamer streams a ZIP entry using an XMLStreamer (automatically prepends the XML declaration).
 func (sw *StreamingZipWriter) WriteFromXMLStreamer(path string, streamer XMLStreamer) error {
 	header := sw.createZipHeader(path)
 	w, err := sw.zipWriter.CreateHeader(header)
@@ -157,7 +157,7 @@ func (sw *StreamingZipWriter) WriteFromXMLStreamer(path string, streamer XMLStre
 		return err
 	}
 
-	// 写入 XML 头
+	// Write the XML declaration.
 	if _, err := w.Write([]byte(XMLDeclaration)); err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (sw *StreamingZipWriter) WriteFromXMLStreamer(path string, streamer XMLStre
 	return encoder.Flush()
 }
 
-// WriteStreamPart 流式写入 StreamPart
+// WriteStreamPart streams a StreamPart to the ZIP archive.
 func (sw *StreamingZipWriter) WriteStreamPart(part *StreamPart) error {
 	path := part.PartURI().MemberName()
 	header := sw.createZipHeader(path)
@@ -178,19 +178,19 @@ func (sw *StreamingZipWriter) WriteStreamPart(part *StreamPart) error {
 		return err
 	}
 
-	// 打开部件流
+	// Open the part stream.
 	rc, err := part.Open()
 	if err != nil {
 		return err
 	}
 	defer rc.Close()
 
-	// 流式复制
+	// Stream-copy the content.
 	_, err = io.Copy(w, rc)
 	return err
 }
 
-// WriteBytes 写入字节数据
+// WriteBytes writes a byte slice to a ZIP entry.
 func (sw *StreamingZipWriter) WriteBytes(path string, data []byte) error {
 	header := sw.createZipHeader(path)
 	w, err := sw.zipWriter.CreateHeader(header)
@@ -201,14 +201,14 @@ func (sw *StreamingZipWriter) WriteBytes(path string, data []byte) error {
 	return err
 }
 
-// WriteXML 写入 XML 数据（自动添加 XML 头）
+// WriteXML writes XML data to a ZIP entry, automatically prepending the XML declaration.
 func (sw *StreamingZipWriter) WriteXML(path string, data []byte) error {
 	header := sw.createZipHeader(path)
 	w, err := sw.zipWriter.CreateHeader(header)
 	if err != nil {
 		return err
 	}
-	// 写入 XML 头
+	// Write the XML declaration.
 	if _, err := w.Write([]byte(XMLDeclaration)); err != nil {
 		return err
 	}
@@ -216,14 +216,14 @@ func (sw *StreamingZipWriter) WriteXML(path string, data []byte) error {
 	return err
 }
 
-// Close 关闭 ZIP 写入器
+// Close closes the underlying ZIP writer.
 func (sw *StreamingZipWriter) Close() error {
 	return sw.zipWriter.Close()
 }
 
-// ===== 流式部件 =====
+// ===== Streaming parts =====
 
-// StreamPart 流式部件 - 支持懒加载
+// StreamPart is a streaming part that supports lazy loading.
 type StreamPart struct {
 	uri           *PackURI
 	contentType   string
@@ -231,11 +231,11 @@ type StreamPart struct {
 	relationships *Relationships
 	dirty         bool
 	loaded        bool
-	blob          []byte // 缓存的数据（如果已加载）
+	blob          []byte // Cached data (set once loaded).
 	mu            sync.RWMutex
 }
 
-// NewStreamPart 创建流式部件
+// NewStreamPart creates a streaming part.
 func NewStreamPart(uri *PackURI, contentType string, source PartSource) *StreamPart {
 	return &StreamPart{
 		uri:           uri,
@@ -247,17 +247,17 @@ func NewStreamPart(uri *PackURI, contentType string, source PartSource) *StreamP
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (p *StreamPart) PartURI() *PackURI {
 	return p.uri
 }
 
-// ContentType 返回内容类型
+// ContentType returns the content type.
 func (p *StreamPart) ContentType() string {
 	return p.contentType
 }
 
-// SetContentType 设置内容类型
+// SetContentType sets the content type.
 func (p *StreamPart) SetContentType(ct string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -265,17 +265,17 @@ func (p *StreamPart) SetContentType(ct string) {
 	p.dirty = true
 }
 
-// Open 打开部件内容流
+// Open opens the part content stream.
 func (p *StreamPart) Open() (io.ReadCloser, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// 如果已加载到内存，返回内存数据
+	// If already loaded into memory, return an in-memory reader.
 	if p.loaded {
 		return io.NopCloser(&bytesReaderAt{data: p.blob}), nil
 	}
 
-	// 否则从源打开
+	// Otherwise open from the source.
 	if p.source != nil {
 		return p.source.Open()
 	}
@@ -283,7 +283,7 @@ func (p *StreamPart) Open() (io.ReadCloser, error) {
 	return nil, nil
 }
 
-// Load 将内容加载到内存
+// Load reads the part content into memory.
 func (p *StreamPart) Load() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -311,7 +311,7 @@ func (p *StreamPart) Load() error {
 	return nil
 }
 
-// Blob 返回内容（如果未加载则先加载）
+// Blob returns the content, loading it first if necessary.
 func (p *StreamPart) Blob() ([]byte, error) {
 	if err := p.Load(); err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (p *StreamPart) Blob() ([]byte, error) {
 	return p.blob, nil
 }
 
-// SetBlob 设置内容
+// SetBlob sets the content.
 func (p *StreamPart) SetBlob(data []byte) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -330,7 +330,7 @@ func (p *StreamPart) SetBlob(data []byte) {
 	p.dirty = true
 }
 
-// SetBlobFromReader 从 Reader 设置内容
+// SetBlobFromReader sets the content from a Reader.
 func (p *StreamPart) SetBlobFromReader(r io.Reader) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -345,43 +345,43 @@ func (p *StreamPart) SetBlobFromReader(r io.Reader) error {
 	return nil
 }
 
-// IsLoaded 返回是否已加载到内存
+// IsLoaded reports whether the content has been loaded into memory.
 func (p *StreamPart) IsLoaded() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.loaded
 }
 
-// IsDirty 返回是否被修改
+// IsDirty reports whether the part has been modified.
 func (p *StreamPart) IsDirty() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.dirty
 }
 
-// SetDirty 设置修改标记
+// SetDirty sets the dirty flag.
 func (p *StreamPart) SetDirty(dirty bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.dirty = dirty
 }
 
-// Relationships 返回关系集合
+// Relationships returns the relationship collection.
 func (p *StreamPart) Relationships() *Relationships {
 	return p.relationships
 }
 
-// LoadRelationships 从 XML 加载关系
+// LoadRelationships loads relationships from XML data.
 func (p *StreamPart) LoadRelationships(data []byte) error {
 	return p.relationships.FromXML(data)
 }
 
-// HasRelationships 检查是否有关系
+// HasRelationships reports whether the part has any relationships.
 func (p *StreamPart) HasRelationships() bool {
 	return p.relationships.Count() > 0
 }
 
-// RelationshipsBlob 返回关系的 XML 内容
+// RelationshipsBlob returns the serialized XML of the relationships.
 func (p *StreamPart) RelationshipsBlob() ([]byte, error) {
 	if p.relationships.Count() == 0 {
 		return nil, nil
@@ -389,12 +389,12 @@ func (p *StreamPart) RelationshipsBlob() ([]byte, error) {
 	return p.relationships.ToXML()
 }
 
-// RelationshipsURI 返回关系文件的 URI
+// RelationshipsURI returns the URI of the relationships file for this part.
 func (p *StreamPart) RelationshipsURI() *PackURI {
 	return p.uri.RelationshipsURI()
 }
 
-// Size 返回内容大小
+// Size returns the content size.
 func (p *StreamPart) Size() int64 {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -407,7 +407,7 @@ func (p *StreamPart) Size() int64 {
 	return 0
 }
 
-// UnmarshalBlob 从 blob 解析 XML 内容
+// UnmarshalBlob unmarshals the blob as XML into v, loading it first if necessary.
 func (p *StreamPart) UnmarshalBlob(v any) error {
 	if err := p.Load(); err != nil {
 		return err
@@ -417,7 +417,7 @@ func (p *StreamPart) UnmarshalBlob(v any) error {
 	return xml.Unmarshal(p.blob, v)
 }
 
-// Clone 克隆部件
+// Clone returns a deep copy of the part.
 func (p *StreamPart) Clone() *StreamPart {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -439,23 +439,23 @@ func (p *StreamPart) Clone() *StreamPart {
 	}
 }
 
-// ===== 流式写入器实现 =====
+// ===== Streaming writer implementations =====
 
-// RelationshipsStreamer 关系流式写入器
+// RelationshipsStreamer is a streaming writer for relationships.
 type RelationshipsStreamer struct {
 	rels *Relationships
 }
 
-// NewRelationshipsStreamer 创建关系流式写入器
+// NewRelationshipsStreamer creates a streaming writer for relationships.
 func NewRelationshipsStreamer(rels *Relationships) *RelationshipsStreamer {
 	return &RelationshipsStreamer{rels: rels}
 }
 
-// StreamWriteTo 实现 StreamWriter 接口
+// StreamWriteTo implements StreamWriter.
 func (rs *RelationshipsStreamer) StreamWriteTo(w io.Writer) error {
 	encoder := xml.NewEncoder(w)
 
-	// 写入 Relationships 根元素
+	// Write the Relationships root element.
 	start := xml.StartElement{
 		Name: xml.Name{Local: "Relationships"},
 		Attr: []xml.Attr{
@@ -467,7 +467,7 @@ func (rs *RelationshipsStreamer) StreamWriteTo(w io.Writer) error {
 		return err
 	}
 
-	// 写入每个 Relationship
+	// Write each Relationship element.
 	for _, rel := range rs.rels.All() {
 		relElem := xml.StartElement{
 			Name: xml.Name{Local: "Relationship"},
@@ -492,7 +492,7 @@ func (rs *RelationshipsStreamer) StreamWriteTo(w io.Writer) error {
 		}
 	}
 
-	// 结束根元素
+	// Close the root element.
 	if err := encoder.EncodeToken(start.End()); err != nil {
 		return err
 	}
@@ -500,21 +500,21 @@ func (rs *RelationshipsStreamer) StreamWriteTo(w io.Writer) error {
 	return encoder.Flush()
 }
 
-// ContentTypesStreamer ContentTypes 流式写入器
+// ContentTypesStreamer is a streaming writer for ContentTypes.
 type ContentTypesStreamer struct {
 	ct *ContentTypes
 }
 
-// NewContentTypesStreamer 创建 ContentTypes 流式写入器
+// NewContentTypesStreamer creates a streaming writer for ContentTypes.
 func NewContentTypesStreamer(ct *ContentTypes) *ContentTypesStreamer {
 	return &ContentTypesStreamer{ct: ct}
 }
 
-// StreamWriteTo 实现 StreamWriter 接口
+// StreamWriteTo implements StreamWriter.
 func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error {
 	encoder := xml.NewEncoder(w)
 
-	// 写入 Types 根元素
+	// Write the Types root element.
 	start := xml.StartElement{
 		Name: xml.Name{Local: "Types"},
 		Attr: []xml.Attr{
@@ -526,7 +526,7 @@ func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error {
 		return err
 	}
 
-	// 写入 Default 元素
+	// Write Default elements.
 	for ext, ctType := range cs.ct.Defaults() {
 		defElem := xml.StartElement{
 			Name: xml.Name{Local: "Default"},
@@ -543,7 +543,7 @@ func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error {
 		}
 	}
 
-	// 写入 Override 元素
+	// Write Override elements.
 	for uri, ctType := range cs.ct.Overrides() {
 		overrideElem := xml.StartElement{
 			Name: xml.Name{Local: "Override"},
@@ -560,7 +560,7 @@ func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error {
 		}
 	}
 
-	// 结束根元素
+	// Close the root element.
 	if err := encoder.EncodeToken(start.End()); err != nil {
 		return err
 	}
@@ -568,80 +568,80 @@ func (cs *ContentTypesStreamer) StreamWriteTo(w io.Writer) error {
 	return encoder.Flush()
 }
 
-// ===== 并发写入数据结构 =====
+// ===== Concurrent write data structures =====
 
-// PartData 部件数据 - 用于 channel 传递
+// PartData carries part data through a channel.
 type PartData struct {
-	URI         string    // 部件 URI
-	Path        string    // ZIP 内路径
-	ContentType string    // 内容类型
-	Data        []byte    // 数据内容
-	Source      PartSource // 数据源（用于懒加载）
-	Error       error     // 写入错误（如果有）
+	URI         string     // Part URI
+	Path        string     // ZIP internal path
+	ContentType string     // Content type
+	Data        []byte     // Data payload
+	Source      PartSource // Data source (for lazy loading)
+	Error       error      // Write error, if any
 }
 
-// PartDataChannel 部件数据通道类型
+// PartDataChannel is the channel type for PartData.
 type PartDataChannel chan *PartData
 
-// NewPartDataChannel 创建部件数据通道
+// NewPartDataChannel creates a buffered PartData channel.
 func NewPartDataChannel(bufferSize int) PartDataChannel {
 	return make(PartDataChannel, bufferSize)
 }
 
-// ===== 全局资源去重池 =====
+// ===== Global resource deduplication pool =====
 
-// ResourceHashKey 资源哈希键
+// ResourceHashKey is the key type used in the deduplication pool.
 type ResourceHashKey string
 
-// ResourceEntry 资源条目
+// ResourceEntry is an entry in the deduplication pool.
 type ResourceEntry struct {
-	URI       string    // 部件 URI
-	Hash      string    // 内容哈希（SHA256）
-	Size      int64     // 原始大小
-	Reference int       // 引用计数
+	URI       string // Part URI
+	Hash      string // Content hash (SHA256)
+	Size      int64  // Original size
+	Reference int    // Reference count
 }
 
-// ResourceDedupPool 全局资源去重池
-// 使用 sync.Map 实现并发安全的资源去重
+// ResourceDedupPool is a globally shared resource deduplication pool.
+// It uses sync.Map for concurrent-safe deduplication.
 type ResourceDedupPool struct {
 	entries sync.Map // map[ResourceHashKey]*ResourceEntry
 	mu      sync.RWMutex
 }
 
-// globalResourcePool 全局资源池单例
+// globalResourcePool is the singleton resource deduplication pool.
 var globalResourcePool = &ResourceDedupPool{}
 
-// GetGlobalResourcePool 获取全局资源池
+// GetGlobalResourcePool returns the global resource deduplication pool.
 func GetGlobalResourcePool() *ResourceDedupPool {
 	return globalResourcePool
 }
 
-// NewResourceDedupPool 创建新的资源去重池
+// NewResourceDedupPool creates a new resource deduplication pool.
 func NewResourceDedupPool() *ResourceDedupPool {
 	return &ResourceDedupPool{}
 }
 
-// ComputeHash 计算数据的 SHA256 哈希
+// ComputeHash computes a hash of the given data.
+// Note: this is a fast non-cryptographic FNV-1a hash, not SHA-256.
+// It avoids an extra import; callers that need cryptographic strength should use crypto/sha256.
 func ComputeHash(data []byte) string {
-	// 使用简单的哈希算法（实际生产中应使用 crypto/sha256）
-	// 这里使用简化版本以避免额外依赖
 	if len(data) == 0 {
 		return ""
 	}
 
-	// 简单的 FNV-1a 哈希
+	// FNV-1a hash.
 	var hash uint32 = 2166136261
 	for _, b := range data {
 		hash ^= uint32(b)
 		hash *= 16777619
 	}
 
-	// 加上长度以增强唯一性
+	// Include the length to reduce collision probability.
 	return fmt.Sprintf("%x-%d", hash, len(data))
 }
 
-// Register 注册资源，返回是否为新资源
-// 如果资源已存在，增加引用计数并返回 false
+// Register registers a resource and returns whether it is new.
+// If the resource already exists, its reference count is incremented and false is returned.
 func (p *ResourceDedupPool) Register(uri string, data []byte) (isNew bool, existingURI string) {
 	hash := ComputeHash(data)
 	key := ResourceHashKey(hash)
@@ -649,14 +649,14 @@ func (p *ResourceDedupPool) Register(uri string, data []byte) (isNew bool, exist
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 检查是否已存在
+	// Check if already registered.
 	if entry, ok := p.entries.Load(key); ok {
 		e := entry.(*ResourceEntry)
 		e.Reference++
 		return false, e.URI
 	}
 
-	// 新资源
+	// New resource.
 	entry := &ResourceEntry{
 		URI:       uri,
 		Hash:      hash,
@@ -667,7 +667,7 @@ func (p *ResourceDedupPool) Register(uri string, data []byte) (isNew bool, exist
 	return true, uri
 }
 
-// RegisterWithHash 使用预计算的哈希注册资源
+// RegisterWithHash registers a resource using a pre-computed hash.
 func (p *ResourceDedupPool) RegisterWithHash(uri string, hash string, size int64) (isNew bool, existingURI string) {
 	key := ResourceHashKey(hash)
 
@@ -690,7 +690,7 @@ func (p *ResourceDedupPool) RegisterWithHash(uri string, hash string, size int64
 	return true, uri
 }
 
-// Lookup 查找资源
+// Lookup looks up a resource by hash.
 func (p *ResourceDedupPool) Lookup(hash string) (*ResourceEntry, bool) {
 	if entry, ok := p.entries.Load(ResourceHashKey(hash)); ok {
 		return entry.(*ResourceEntry), true
@@ -698,7 +698,7 @@ func (p *ResourceDedupPool) Lookup(hash string) (*ResourceEntry, bool) {
 	return nil, false
 }
 
-// Release 释放资源引用
+// Release decrements the reference count for the resource with the given hash.
 func (p *ResourceDedupPool) Release(hash string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -712,14 +712,14 @@ func (p *ResourceDedupPool) Release(hash string) {
 	}
 }
 
-// Clear 清空资源池
+// Clear removes all entries from the pool.
 func (p *ResourceDedupPool) Clear() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.entries = sync.Map{}
 }
 
-// Stats 返回资源池统计信息
+// Stats returns the count and total size of all registered resources.
 func (p *ResourceDedupPool) Stats() (count int, totalSize int64) {
 	p.entries.Range(func(key, value interface{}) bool {
 		count++
@@ -730,10 +730,9 @@ func (p *ResourceDedupPool) Stats() (count int, totalSize int64) {
 	return
 }
 
-// ===== 并发 ZIP 收集器 =====
+// ===== Concurrent ZIP collector =====
 
-// ConcurrentZipCollector 并发 ZIP 收集器
-// 使用 goroutine 从 channel 收集部件数据并写入 ZIP
+// ConcurrentZipCollector collects part data from a channel and writes it to a ZIP archive concurrently.
 type ConcurrentZipCollector struct {
 	zipWriter  *zip.Writer
 	dataChan   PartDataChannel
@@ -743,7 +742,7 @@ type ConcurrentZipCollector struct {
 	bufferSize int
 }
 
-// NewConcurrentZipCollector 创建并发 ZIP 收集器
+// NewConcurrentZipCollector creates a concurrent ZIP collector.
 func NewConcurrentZipCollector(w io.Writer, bufferSize int) *ConcurrentZipCollector {
 	return &ConcurrentZipCollector{
 		zipWriter:  zip.NewWriter(w),
@@ -754,13 +753,13 @@ func NewConcurrentZipCollector(w io.Writer, bufferSize int) *ConcurrentZipCollec
 	}
 }
 
-// Start 启动收集器 goroutine
+// Start launches the collector goroutine.
 func (c *ConcurrentZipCollector) Start() {
 	c.wg.Add(1)
 	go c.collect()
 }
 
-// collect 收集 goroutine
+// collect is the collector goroutine.
 func (c *ConcurrentZipCollector) collect() {
 	defer c.wg.Done()
 
@@ -770,14 +769,14 @@ func (c *ConcurrentZipCollector) collect() {
 			return
 		}
 
-		// 写入 ZIP 条目
+		// Write the ZIP entry.
 		if err := c.writePart(data); err != nil {
 			c.errorChan <- err
 			return
 		}
 	}
 
-	// 所有数据已写入，关闭 ZIP
+	// All data written — close the ZIP.
 	if err := c.zipWriter.Close(); err != nil {
 		c.errorChan <- err
 		return
@@ -786,11 +785,11 @@ func (c *ConcurrentZipCollector) collect() {
 	close(c.doneChan)
 }
 
-// writePart 写入单个部件
+// writePart writes a single part to the ZIP archive.
 func (c *ConcurrentZipCollector) writePart(data *PartData) error {
 	path := strings.TrimPrefix(data.Path, "/")
 
-	// 使用 FileHeader 设置正确的时间戳
+	// Use FileHeader to set correct timestamps.
 	header := &zip.FileHeader{
 		Name:     path,
 		Modified: time.Now(),
@@ -821,7 +820,7 @@ func (c *ConcurrentZipCollector) writePart(data *PartData) error {
 	return nil
 }
 
-// Submit 提交部件数据到收集器
+// Submit submits part data to the collector.
 func (c *ConcurrentZipCollector) Submit(data *PartData) error {
 	select {
 	case c.dataChan <- data:
@@ -833,7 +832,7 @@ func (c *ConcurrentZipCollector) Submit(data *PartData) error {
 	}
 }
 
-// SubmitBytes 提交字节数据
+// SubmitBytes submits a byte slice as a ZIP entry.
 func (c *ConcurrentZipCollector) SubmitBytes(path string, data []byte) error {
 	return c.Submit(&PartData{
 		Path: path,
@@ -841,7 +840,7 @@ func (c *ConcurrentZipCollector) SubmitBytes(path string, data []byte) error {
 	})
 }
 
-// Close 关闭收集器，等待所有数据写入完成
+// Close signals that no more data will be submitted and waits for the collector to finish.
 func (c *ConcurrentZipCollector) Close() error {
 	close(c.dataChan)
 
@@ -853,19 +852,19 @@ func (c *ConcurrentZipCollector) Close() error {
 	}
 }
 
-// Wait 等待收集器完成
+// Wait waits for the collector to finish (alias for Close).
 func (c *ConcurrentZipCollector) Wait() error {
 	return c.Close()
 }
 
-// DataChannel 返回数据通道（用于外部生产者）
+// DataChannel returns the data channel (for external producers).
 func (c *ConcurrentZipCollector) DataChannel() PartDataChannel {
 	return c.dataChan
 }
 
-// ===== 辅助类型 =====
+// ===== Helper types =====
 
-// bytesReaderAt 简单的 bytes reader
+// bytesReaderAt is a simple byte-slice reader.
 type bytesReaderAt struct {
 	data []byte
 	pos  int

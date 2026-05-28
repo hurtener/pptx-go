@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 func TestPart_New(t *testing.T) {
@@ -142,7 +142,7 @@ func TestPart_Relationships(t *testing.T) {
 		t.Fatal("Relationships() returned nil")
 	}
 
-	// 添加关系
+	// add a relationship
 	rel, err := part.AddRelationship(opc.RelTypeImage, "../media/image1.png", false)
 	if err != nil {
 		t.Fatalf("AddRelationship failed: %v", err)
@@ -183,7 +183,7 @@ func TestPart_GetRelatedPart(t *testing.T) {
 		t.Fatal("GetRelatedPart returned nil")
 	}
 
-	// 获取不存在的关系
+	// get a non-existent relationship
 	if part.GetRelatedPart("rId999") != nil {
 		t.Error("GetRelatedPart for non-existent rID should return nil")
 	}
@@ -219,7 +219,7 @@ func TestPart_XML(t *testing.T) {
 	xmlData := []byte(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`)
 	part := opc.NewPart(uri, opc.ContentTypeSlide, xmlData)
 
-	// 测试 UnmarshalBlob
+	// test UnmarshalBlob
 	var slide struct {
 		XMLName struct{} `xml:"sld"`
 	}
@@ -228,7 +228,7 @@ func TestPart_XML(t *testing.T) {
 		t.Fatalf("UnmarshalBlob failed: %v", err)
 	}
 
-	// 测试 MarshalToBlob
+	// test MarshalToBlob
 	type newSlide struct {
 		XMLName struct{} `xml:"sld"`
 	}
@@ -253,19 +253,19 @@ func TestPart_Clone(t *testing.T) {
 		t.Fatal("Clone returned nil")
 	}
 
-	// 验证克隆是独立的
+	// verify the clone is independent
 	if clone == part {
 		t.Error("clone should be a different instance")
 	}
 
-	// 修改原始不应该影响克隆
+	// modifying the original should not affect the clone
 	part.SetBlob([]byte("<modified/>"))
 	if string(clone.Blob()) != "<slide/>" {
 		t.Error("modifying original should not affect clone")
 	}
 }
 
-// ===== PartCollection 测试 =====
+// ===== PartCollection tests =====
 
 func TestPartCollection_New(t *testing.T) {
 	pc := opc.NewPartCollection()
@@ -290,7 +290,7 @@ func TestPartCollection_Add(t *testing.T) {
 		t.Errorf("Count() = %d, want 1", pc.Count())
 	}
 
-	// 添加重复 URI 应该失败
+	// adding a duplicate URI should fail
 	duplicatePart := opc.NewPart(uri, opc.ContentTypeSlide, []byte{})
 	err = pc.Add(duplicatePart)
 	if err == nil {
@@ -312,7 +312,7 @@ func TestPartCollection_Get(t *testing.T) {
 		t.Error("Get returned wrong part")
 	}
 
-	// 获取不存在的部件
+	// get a non-existent part
 	nonExistent := opc.NewPackURI("/ppt/slides/slide999.xml")
 	if pc.Get(nonExistent) != nil {
 		t.Error("Get for non-existent URI should return nil")
@@ -345,7 +345,7 @@ func TestPartCollection_Remove(t *testing.T) {
 		t.Error("part should be removed")
 	}
 
-	// 删除不存在的部件应该失败
+	// removing a non-existent part should fail
 	err = pc.Remove(uri)
 	if err == nil {
 		t.Error("removing non-existent part should fail")
@@ -435,13 +435,13 @@ func TestPartCollection_DirtyParts(t *testing.T) {
 	pc.Add(part1)
 	pc.Add(part2)
 
-	// 所有新部件都是 dirty
+	// all new parts are dirty
 	dirty := pc.DirtyParts()
 	if len(dirty) != 2 {
 		t.Errorf("DirtyParts() returned %d, want 2", len(dirty))
 	}
 
-	// 清除 dirty 标记
+	// clear dirty flags
 	part1.SetDirty(false)
 	part2.SetDirty(false)
 

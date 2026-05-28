@@ -1,11 +1,11 @@
 package parts
 
 // ============================================================================
-// AppPropsPart - 应用程序属性部件
+// AppPropsPart - application properties part
 // ============================================================================
 //
-// 对应 /docProps/app.xml
-// 包含应用程序相关的元数据（公司、管理者、幻灯片数等）
+// Corresponds to /docProps/app.xml
+// Carries application-related metadata (company, manager, slide count, etc.)
 //
 // ============================================================================
 
@@ -14,17 +14,17 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
-// AppPropsPart 应用程序属性部件
+// AppPropsPart holds the application properties part (/docProps/app.xml).
 type AppPropsPart struct {
-	uri       *opc.PackURI
-	appProps  *XMLAppProps
-	mu        sync.RWMutex
+	uri      *opc.PackURI
+	appProps *XMLAppProps
+	mu       sync.RWMutex
 }
 
-// NewAppPropsPart 创建新的应用程序属性部件
+// NewAppPropsPart creates a new application properties part with defaults.
 func NewAppPropsPart() *AppPropsPart {
 	return &AppPropsPart{
 		uri: opc.NewPackURI("/docProps/app.xml"),
@@ -35,12 +35,12 @@ func NewAppPropsPart() *AppPropsPart {
 	}
 }
 
-// PartURI 返回部件 URI
+// PartURI returns the part URI.
 func (a *AppPropsPart) PartURI() *opc.PackURI {
 	return a.uri
 }
 
-// AppProps 返回应用属性数据
+// AppProps returns the application properties data.
 func (a *AppPropsPart) AppProps() *XMLAppProps {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -48,10 +48,10 @@ func (a *AppPropsPart) AppProps() *XMLAppProps {
 }
 
 // ============================================================================
-// 属性访问方法
+// Property getter methods
 // ============================================================================
 
-// GetAppApplication 获取应用程序名称
+// GetAppApplication returns the application name.
 func (a *AppPropsPart) GetAppApplication() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -61,7 +61,7 @@ func (a *AppPropsPart) GetAppApplication() string {
 	return a.appProps.Application
 }
 
-// GetAppVersion 获取应用程序版本
+// GetAppVersion returns the application version.
 func (a *AppPropsPart) GetAppVersion() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -71,7 +71,7 @@ func (a *AppPropsPart) GetAppVersion() string {
 	return a.appProps.AppVersion
 }
 
-// GetAppCompany 获取公司名称
+// GetAppCompany returns the company name.
 func (a *AppPropsPart) GetAppCompany() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -81,7 +81,7 @@ func (a *AppPropsPart) GetAppCompany() string {
 	return a.appProps.Company
 }
 
-// GetAppManager 获取管理者
+// GetAppManager returns the manager name.
 func (a *AppPropsPart) GetAppManager() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -91,7 +91,7 @@ func (a *AppPropsPart) GetAppManager() string {
 	return a.appProps.Manager
 }
 
-// GetAppSlideCount 获取幻灯片数量
+// GetAppSlideCount returns the slide count.
 func (a *AppPropsPart) GetAppSlideCount() int {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -101,7 +101,7 @@ func (a *AppPropsPart) GetAppSlideCount() int {
 	return *a.appProps.Slides
 }
 
-// GetAppWordCount 获取字数
+// GetAppWordCount returns the word count.
 func (a *AppPropsPart) GetAppWordCount() int {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -111,7 +111,7 @@ func (a *AppPropsPart) GetAppWordCount() int {
 	return *a.appProps.Words
 }
 
-// GetAppTotalTime 获取总编辑时间（分钟）
+// GetAppTotalTime returns the total editing time in minutes.
 func (a *AppPropsPart) GetAppTotalTime() int {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -122,10 +122,10 @@ func (a *AppPropsPart) GetAppTotalTime() int {
 }
 
 // ============================================================================
-// 属性设置方法
+// Property setter methods
 // ============================================================================
 
-// SetAppCompany 设置公司名称
+// SetAppCompany sets the company name.
 func (a *AppPropsPart) SetAppCompany(company string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -133,7 +133,7 @@ func (a *AppPropsPart) SetAppCompany(company string) {
 	a.appProps.Company = company
 }
 
-// SetAppManager 设置管理者
+// SetAppManager sets the manager name.
 func (a *AppPropsPart) SetAppManager(manager string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -141,7 +141,7 @@ func (a *AppPropsPart) SetAppManager(manager string) {
 	a.appProps.Manager = manager
 }
 
-// SetAppApplication 设置应用程序名称
+// SetAppApplication sets the application name.
 func (a *AppPropsPart) SetAppApplication(app string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -149,7 +149,7 @@ func (a *AppPropsPart) SetAppApplication(app string) {
 	a.appProps.Application = app
 }
 
-// SetAppVersion 设置应用程序版本
+// SetAppVersion sets the application version.
 func (a *AppPropsPart) SetAppVersion(version string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -157,7 +157,7 @@ func (a *AppPropsPart) SetAppVersion(version string) {
 	a.appProps.AppVersion = version
 }
 
-// SetAppSlideCount 设置幻灯片数量
+// SetAppSlideCount sets the slide count.
 func (a *AppPropsPart) SetAppSlideCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -165,7 +165,7 @@ func (a *AppPropsPart) SetAppSlideCount(count int) {
 	a.appProps.Slides = &count
 }
 
-// SetAppWordCount 设置字数
+// SetAppWordCount sets the word count.
 func (a *AppPropsPart) SetAppWordCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -173,7 +173,7 @@ func (a *AppPropsPart) SetAppWordCount(count int) {
 	a.appProps.Words = &count
 }
 
-// SetAppTotalTime 设置总编辑时间（分钟）
+// SetAppTotalTime sets the total editing time in minutes.
 func (a *AppPropsPart) SetAppTotalTime(minutes int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -181,7 +181,7 @@ func (a *AppPropsPart) SetAppTotalTime(minutes int) {
 	a.appProps.TotalTime = &minutes
 }
 
-// SetAppNoteCount 设置备注数量
+// SetAppNoteCount sets the notes count.
 func (a *AppPropsPart) SetAppNoteCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -189,7 +189,7 @@ func (a *AppPropsPart) SetAppNoteCount(count int) {
 	a.appProps.Notes = &count
 }
 
-// SetAppHiddenSlideCount 设置隐藏幻灯片数量
+// SetAppHiddenSlideCount sets the hidden slide count.
 func (a *AppPropsPart) SetAppHiddenSlideCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -197,7 +197,7 @@ func (a *AppPropsPart) SetAppHiddenSlideCount(count int) {
 	a.appProps.HiddenSlides = &count
 }
 
-// SetAppMMClipCount 设置多媒体剪辑数量
+// SetAppMMClipCount sets the multimedia clip count.
 func (a *AppPropsPart) SetAppMMClipCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -205,7 +205,7 @@ func (a *AppPropsPart) SetAppMMClipCount(count int) {
 	a.appProps.MMClips = &count
 }
 
-// SetAppParagraphCount 设置段落数量
+// SetAppParagraphCount sets the paragraph count.
 func (a *AppPropsPart) SetAppParagraphCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -213,7 +213,7 @@ func (a *AppPropsPart) SetAppParagraphCount(count int) {
 	a.appProps.Paragraphs = &count
 }
 
-// SetAppCharacterCount 设置字符数量
+// SetAppCharacterCount sets the character count.
 func (a *AppPropsPart) SetAppCharacterCount(count int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -221,7 +221,7 @@ func (a *AppPropsPart) SetAppCharacterCount(count int) {
 	a.appProps.Characters = &count
 }
 
-// SetAppHyperlinkBase 设置超链接基础
+// SetAppHyperlinkBase sets the hyperlink base URL.
 func (a *AppPropsPart) SetAppHyperlinkBase(base string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -229,7 +229,7 @@ func (a *AppPropsPart) SetAppHyperlinkBase(base string) {
 	a.appProps.HyperlinkBase = base
 }
 
-// SetAppLinksUpToDate 设置链接是否最新
+// SetAppLinksUpToDate sets whether links are up to date.
 func (a *AppPropsPart) SetAppLinksUpToDate(upToDate bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -237,7 +237,7 @@ func (a *AppPropsPart) SetAppLinksUpToDate(upToDate bool) {
 	a.appProps.LinksUpToDate = &upToDate
 }
 
-// SetAppSharedDoc 设置是否共享文档
+// SetAppSharedDoc sets whether the document is shared.
 func (a *AppPropsPart) SetAppSharedDoc(shared bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -245,7 +245,7 @@ func (a *AppPropsPart) SetAppSharedDoc(shared bool) {
 	a.appProps.SharedDoc = &shared
 }
 
-// SetAppHeadingPairs 设置标题对
+// SetAppHeadingPairs sets the heading pairs.
 func (a *AppPropsPart) SetAppHeadingPairs(headingPairs *XMLHeadingPairs) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -253,7 +253,7 @@ func (a *AppPropsPart) SetAppHeadingPairs(headingPairs *XMLHeadingPairs) {
 	a.appProps.HeadingPairs = headingPairs
 }
 
-// SetAppTitlesOfParts 设置部件标题
+// SetAppTitlesOfParts sets the titles of parts.
 func (a *AppPropsPart) SetAppTitlesOfParts(titlesOfParts *XMLTitlesOfParts) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -261,7 +261,7 @@ func (a *AppPropsPart) SetAppTitlesOfParts(titlesOfParts *XMLTitlesOfParts) {
 	a.appProps.TitlesOfParts = titlesOfParts
 }
 
-// ensureAppProps 确保应用属性结构存在（调用时需持有锁）
+// ensureAppProps ensures the app properties struct is initialized (must be called with the lock held).
 func (a *AppPropsPart) ensureAppProps() {
 	if a.appProps == nil {
 		a.appProps = &XMLAppProps{
@@ -272,10 +272,10 @@ func (a *AppPropsPart) ensureAppProps() {
 }
 
 // ============================================================================
-// XML 序列化/反序列化
+// XML serialization / deserialization
 // ============================================================================
 
-// ToXML 将应用属性序列化为 XML
+// ToXML serializes the application properties to XML.
 func (a *AppPropsPart) ToXML() ([]byte, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -284,7 +284,7 @@ func (a *AppPropsPart) ToXML() ([]byte, error) {
 		return nil, fmt.Errorf("app data is nil")
 	}
 
-	// 设置命名空间
+	// ensure namespace declarations are present
 	a.appProps.XmlnsProp = NamespaceExtendedProperties
 	a.appProps.XmlnsVt = NamespaceDocPropsVTypes
 
@@ -296,7 +296,7 @@ func (a *AppPropsPart) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从 XML 反序列化应用属性
+// FromXML deserializes application properties from XML.
 func (a *AppPropsPart) FromXML(data []byte) error {
 	var app XMLAppProps
 	if err := xml.Unmarshal(data, &app); err != nil {
@@ -310,7 +310,7 @@ func (a *AppPropsPart) FromXML(data []byte) error {
 	return nil
 }
 
-// ParseAppProps 从 XML 字节解析应用属性
+// ParseAppProps parses application properties from XML bytes.
 func ParseAppProps(data []byte) (*XMLAppProps, error) {
 	var app XMLAppProps
 	if err := xml.Unmarshal(data, &app); err != nil {

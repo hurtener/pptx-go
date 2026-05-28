@@ -1,23 +1,25 @@
-// Package pptx 提供 PPTX 文件的高级操作接口
+// Package pptx provides a high-level API for authoring PPTX files.
 package pptx
 
 import (
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================
-// Component 接口 - 积木抽象
+// Component interface — the building-block abstraction
 // ============================================================================
 //
-// Component 是所有可渲染到幻灯片上的组件的统一接口。
-// 任何实现了此接口的类型都可以作为"积木"添加到幻灯片。
+// Component is the unified interface for anything that can be rendered onto a
+// slide. Any type that implements this interface can be used as a "building
+// block" added to a slide.
 //
-// 设计原则：
-// 1. 单一职责 - 组件只负责生成自己的 XML 结构
-// 2. 依赖注入 - 通过 SlideContext 获取所需资源（ID、媒体等）
-// 3. 可组合性 - 多个组件可以组合成更复杂的组件
+// Design principles:
+// 1. Single responsibility — a component only generates its own XML structure.
+// 2. Dependency injection — resources (IDs, media, etc.) are obtained via
+//    SlideContext.
+// 3. Composability — components can be combined to form more complex components.
 //
-// 使用示例：
+// Usage example:
 //
 //	type TitleComponent struct {
 //		text string
@@ -34,65 +36,64 @@ import (
 //
 // ============================================================================
 
-// Component 组件接口
-// 所有可渲染到幻灯片的积木必须实现此接口
+// Component is the interface that all renderable slide building blocks must
+// implement.
 type Component interface {
-	// Render 将组件渲染到幻灯片
-	// ctx: 提供组件所需的上下文和资源访问能力
-	// 返回 error 表示渲染失败
+	// Render writes the component's shapes into the slide via ctx.
+	// An error indicates a rendering failure.
 	Render(ctx *SlideContext) error
 }
 
 // ============================================================================
-// 常用组件接口扩展
+// Extended component interfaces
 // ============================================================================
 
-// ComponentWithSize 带尺寸信息的组件
+// ComponentWithSize is a component that exposes its bounding box.
 type ComponentWithSize interface {
 	Component
-	// Bounds 返回组件的边界框 (x, y, cx, cy in EMU)
+	// Bounds returns the bounding box (x, y, cx, cy in EMU).
 	Bounds() (x, y, cx, cy int)
 }
 
-// ComponentWithName 带名称的组件
+// ComponentWithName is a component that has a human-readable name (useful for
+// debugging and logging).
 type ComponentWithName interface {
 	Component
-	// Name 返回组件名称（用于调试和日志）
+	// Name returns the component's name.
 	Name() string
 }
 
-// ComponentWithPosition 可定位的组件
+// ComponentWithPosition is a component whose position can be read and set.
 type ComponentWithPosition interface {
 	Component
-	// SetPosition 设置组件位置 (EMU 单位)
+	// SetPosition sets the component's position in EMU.
 	SetPosition(x, y int)
-	// Position 返回组件位置
+	// Position returns the component's current position in EMU.
 	Position() (x, y int)
 }
 
-// ComponentWithSizeSetter 可调整尺寸的组件
+// ComponentWithSizeSetter is a component whose size can be read and set.
 type ComponentWithSizeSetter interface {
 	Component
-	// SetSize 设置组件尺寸 (EMU 单位)
+	// SetSize sets the component's size in EMU.
 	SetSize(cx, cy int)
-	// Size 返回组件尺寸
+	// Size returns the component's current size in EMU.
 	Size() (cx, cy int)
 }
 
 // ============================================================================
-// 组件工具函数
+// Component utilities
 // ============================================================================
 
-// ComponentList 组件列表
-// 用于批量管理组件
+// ComponentList is an ordered collection of components.
 type ComponentList []Component
 
-// Add 添加组件到列表
+// Add appends a component to the list.
 func (cl *ComponentList) Add(c Component) {
 	*cl = append(*cl, c)
 }
 
-// RenderAll 渲染所有组件
+// RenderAll renders every component in order, stopping on the first error.
 func (cl ComponentList) RenderAll(ctx *SlideContext) error {
 	for i, c := range cl {
 		if err := c.Render(ctx); err != nil {
@@ -106,23 +107,23 @@ func (cl ComponentList) RenderAll(ctx *SlideContext) error {
 	return nil
 }
 
-// Count 返回组件数量
+// Count returns the number of components in the list.
 func (cl ComponentList) Count() int {
 	return len(cl)
 }
 
 // ============================================================================
-// 错误类型
+// Error types
 // ============================================================================
 
-// ComponentRenderError 组件渲染错误
+// ComponentRenderError is returned when a component fails to render.
 type ComponentRenderError struct {
 	Index      int
 	Component  Component
 	Underlying error
 }
 
-// Error 实现 error 接口
+// Error implements the error interface.
 func (e *ComponentRenderError) Error() string {
 	name := "<unknown>"
 	if n, ok := e.Component.(ComponentWithName); ok {
@@ -131,36 +132,35 @@ func (e *ComponentRenderError) Error() string {
 	return "component render error at index " + string(rune(e.Index)) + " (" + name + "): " + e.Underlying.Error()
 }
 
-// Unwrap 返回底层错误
+// Unwrap returns the underlying error.
 func (e *ComponentRenderError) Unwrap() error {
 	return e.Underlying
 }
 
 // ============================================================================
-// 基础组件实现
+// Built-in component implementations
 // ============================================================================
 
-// FuncComponent 函数式组件
-// 将普通函数包装为 Component 接口
+// FuncComponent wraps a plain function as a Component.
 type FuncComponent func(ctx *SlideContext) error
 
-// Render 实现 Component 接口
+// Render implements Component.
 func (fc FuncComponent) Render(ctx *SlideContext) error {
 	return fc(ctx)
 }
 
 // ============================================================================
-// 组合组件
+// Composite component
 // ============================================================================
 
-// CompositeComponent 组合组件
-// 将多个组件组合为一个
+// CompositeComponent groups multiple components and renders them in order.
 type CompositeComponent struct {
 	components []Component
 	name       string
 }
 
-// NewCompositeComponent 创建组合组件
+// NewCompositeComponent creates a CompositeComponent with the given name and
+// initial children.
 func NewCompositeComponent(name string, components ...Component) *CompositeComponent {
 	return &CompositeComponent{
 		components: components,
@@ -168,12 +168,12 @@ func NewCompositeComponent(name string, components ...Component) *CompositeCompo
 	}
 }
 
-// Add 添加子组件
+// Add appends a child component.
 func (cc *CompositeComponent) Add(c Component) {
 	cc.components = append(cc.components, c)
 }
 
-// Render 实现 Component 接口
+// Render implements Component.
 func (cc *CompositeComponent) Render(ctx *SlideContext) error {
 	for i, c := range cc.components {
 		if err := c.Render(ctx); err != nil {
@@ -187,29 +187,31 @@ func (cc *CompositeComponent) Render(ctx *SlideContext) error {
 	return nil
 }
 
-// Name 实现 ComponentWithName 接口
+// Name implements ComponentWithName.
 func (cc *CompositeComponent) Name() string {
 	return cc.name
 }
 
-// Components 返回所有子组件
+// Components returns all child components.
 func (cc *CompositeComponent) Components() []Component {
 	return cc.components
 }
 
 // ============================================================================
-// 条件组件
+// Conditional component
 // ============================================================================
 
-// ConditionalComponent 条件组件
-// 根据条件决定是否渲染
+// ConditionalComponent renders one of two components depending on a runtime
+// condition.
 type ConditionalComponent struct {
-	condition  func() bool
-	component  Component
+	condition     func() bool
+	component     Component
 	elseComponent Component
 }
 
-// NewConditionalComponent 创建条件组件
+// NewConditionalComponent creates a ConditionalComponent. ifComponent is
+// rendered when condition returns true; elseComponent is rendered otherwise.
+// Either may be nil.
 func NewConditionalComponent(condition func() bool, ifComponent, elseComponent Component) *ConditionalComponent {
 	return &ConditionalComponent{
 		condition:     condition,
@@ -218,7 +220,7 @@ func NewConditionalComponent(condition func() bool, ifComponent, elseComponent C
 	}
 }
 
-// Render 实现 Component 接口
+// Render implements Component.
 func (cc *ConditionalComponent) Render(ctx *SlideContext) error {
 	if cc.condition() {
 		if cc.component != nil {
@@ -233,17 +235,18 @@ func (cc *ConditionalComponent) Render(ctx *SlideContext) error {
 }
 
 // ============================================================================
-// 重复组件
+// Repeated component
 // ============================================================================
 
-// RepeatedComponent 重复组件
-// 根据数据切片重复渲染组件
+// RepeatedComponent renders a template component once for each item in a
+// data slice.
 type RepeatedComponent struct {
 	template func(index int) Component
 	count    int
 }
 
-// NewRepeatedComponent 创建重复组件
+// NewRepeatedComponent creates a RepeatedComponent that calls template(i) for
+// i in [0, count) and renders the result.
 func NewRepeatedComponent(count int, template func(index int) Component) *RepeatedComponent {
 	return &RepeatedComponent{
 		template: template,
@@ -251,7 +254,7 @@ func NewRepeatedComponent(count int, template func(index int) Component) *Repeat
 	}
 }
 
-// Render 实现 Component 接口
+// Render implements Component.
 func (rc *RepeatedComponent) Render(ctx *SlideContext) error {
 	for i := 0; i < rc.count; i++ {
 		c := rc.template(i)
@@ -270,18 +273,17 @@ func (rc *RepeatedComponent) Render(ctx *SlideContext) error {
 }
 
 // ============================================================================
-// 形状组件辅助
+// Shape component helper
 // ============================================================================
 
-// ShapeComponent 形状组件
-// 最基础的组件类型，直接包装 XSp
+// ShapeComponent is the simplest component type: it wraps a single XSp shape.
 type ShapeComponent struct {
 	sp   *parts.XSp
 	x, y int
 	name string
 }
 
-// NewShapeComponent 创建形状组件
+// NewShapeComponent creates a ShapeComponent at the given position (EMU).
 func NewShapeComponent(sp *parts.XSp, x, y int) *ShapeComponent {
 	return &ShapeComponent{
 		sp: sp,
@@ -290,7 +292,7 @@ func NewShapeComponent(sp *parts.XSp, x, y int) *ShapeComponent {
 	}
 }
 
-// Render 实现 Component 接口
+// Render implements Component.
 func (sc *ShapeComponent) Render(ctx *SlideContext) error {
 	if sc.sp == nil {
 		return nil
@@ -299,17 +301,17 @@ func (sc *ShapeComponent) Render(ctx *SlideContext) error {
 	return nil
 }
 
-// Name 实现 ComponentWithName 接口
+// Name implements ComponentWithName.
 func (sc *ShapeComponent) Name() string {
 	return sc.name
 }
 
-// SetName 设置名称
+// SetName sets the component's name.
 func (sc *ShapeComponent) SetName(name string) {
 	sc.name = name
 }
 
-// Bounds 实现 ComponentWithSize 接口
+// Bounds implements ComponentWithSize.
 func (sc *ShapeComponent) Bounds() (x, y, cx, cy int) {
 	if sc.sp != nil && sc.sp.ShapeProperties != nil && sc.sp.ShapeProperties.Transform2D != nil {
 		x = sc.sp.ShapeProperties.Transform2D.Offset.X
@@ -320,7 +322,7 @@ func (sc *ShapeComponent) Bounds() (x, y, cx, cy int) {
 	return
 }
 
-// SetPosition 实现 ComponentWithPosition 接口
+// SetPosition implements ComponentWithPosition.
 func (sc *ShapeComponent) SetPosition(x, y int) {
 	sc.x = x
 	sc.y = y
@@ -330,7 +332,7 @@ func (sc *ShapeComponent) SetPosition(x, y int) {
 	}
 }
 
-// Position 实现 ComponentWithPosition 接口
+// Position implements ComponentWithPosition.
 func (sc *ShapeComponent) Position() (x, y int) {
 	return sc.x, sc.y
 }

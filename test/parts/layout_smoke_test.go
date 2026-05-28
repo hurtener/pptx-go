@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================
-// Layout 冒烟测试
+// Layout smoke tests
 // ============================================================================
 
 func TestParseLayoutFromFile(t *testing.T) {
@@ -24,75 +24,81 @@ func TestParseLayoutFromFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			xmlData, err := os.ReadFile(tt.filePath)
 			if err != nil {
-				t.Fatalf("读取文件失败: %v", err)
+				if os.IsNotExist(err) {
+					t.Skipf("fixture not present; skipping (gitignored, not committed upstream): %v", err)
+				}
+				t.Fatalf("reading file failed: %v", err)
 			}
 
 			layout, err := parts.ParseLayout(xmlData)
 			if err != nil {
-				t.Fatalf("ParseLayout 返回错误: %v", err)
+				t.Fatalf("ParseLayout returned an error: %v", err)
 			}
 			if layout == nil {
-				t.Fatal("ParseLayout 返回 nil")
+				t.Fatal("ParseLayout returned nil")
 			}
 
 			placeholders := layout.Placeholders()
 			if len(placeholders) == 0 {
-				t.Error("Placeholders 长度为 0，期望至少有 1 个占位符")
+				t.Error("Placeholders length is 0; expected at least 1 placeholder")
 			}
 		})
 	}
 }
 
 // ============================================================================
-// Layout 精准坐标与类型断言
+// Layout precise coordinate and type assertions
 // ============================================================================
 
 func TestParseLayout_PlaceholderDetails(t *testing.T) {
 	xmlData, err := os.ReadFile("../test-data/test/ppt/slideLayouts/slideLayout5.xml")
 	if err != nil {
-		t.Fatalf("读取文件失败: %v", err)
+		if os.IsNotExist(err) {
+			t.Skipf("fixture not present; skipping (gitignored, not committed upstream): %v", err)
+		}
+		t.Fatalf("reading file failed: %v", err)
 	}
 
 	layout, err := parts.ParseLayout(xmlData)
 	if err != nil {
-		t.Fatalf("ParseLayout 返回错误: %v", err)
+		t.Fatalf("ParseLayout returned an error: %v", err)
 	}
 
-	// 断言：获取标题占位符
+	// Retrieve the title placeholder.
 	titlePh := layout.PlaceholderByType(parts.PlaceholderTypeTitle)
 	if titlePh == nil {
-		t.Fatal("未找到 title 类型的占位符")
+		t.Fatal("title-type placeholder not found")
 	}
 
-	// 断言：标题占位符坐标和尺寸必须大于 0
+	// Title placeholder coordinates and size must all be positive.
 	if titlePh.X() <= 0 {
-		t.Errorf("标题占位符 X = %d, 期望 > 0", titlePh.X())
+		t.Errorf("title placeholder X = %d, want > 0", titlePh.X())
 	}
 	if titlePh.Y() <= 0 {
-		t.Errorf("标题占位符 Y = %d, 期望 > 0", titlePh.Y())
+		t.Errorf("title placeholder Y = %d, want > 0", titlePh.Y())
 	}
 	if titlePh.Cx() <= 0 {
-		t.Errorf("标题占位符 Cx (宽度) = %d, 期望 > 0", titlePh.Cx())
+		t.Errorf("title placeholder Cx (width) = %d, want > 0", titlePh.Cx())
 	}
 	if titlePh.Cy() <= 0 {
-		t.Errorf("标题占位符 Cy (高度) = %d, 期望 > 0", titlePh.Cy())
+		t.Errorf("title placeholder Cy (height) = %d, want > 0", titlePh.Cy())
 	}
 
-	// 尝试获取 body 占位符（可能不存在）
+	// Attempt to retrieve the body placeholder (may not exist in this layout).
 	bodyPh := layout.PlaceholderByType(parts.PlaceholderTypeBody)
 	if bodyPh != nil {
-		// 断言：正文占位符坐标和尺寸必须大于 0
+		// Body placeholder coordinates and size must all be positive.
 		if bodyPh.X() <= 0 {
-			t.Errorf("正文占位符 X = %d, 期望 > 0", bodyPh.X())
+			t.Errorf("body placeholder X = %d, want > 0", bodyPh.X())
 		}
 		if bodyPh.Y() <= 0 {
-			t.Errorf("正文占位符 Y = %d, 期望 > 0", bodyPh.Y())
+			t.Errorf("body placeholder Y = %d, want > 0", bodyPh.Y())
 		}
 		if bodyPh.Cx() <= 0 {
-			t.Errorf("正文占位符 Cx (宽度) = %d, 期望 > 0", bodyPh.Cx())
+			t.Errorf("body placeholder Cx (width) = %d, want > 0", bodyPh.Cx())
 		}
 		if bodyPh.Cy() <= 0 {
-			t.Errorf("正文占位符 Cy (高度) = %d, 期望 > 0", bodyPh.Cy())
+			t.Errorf("body placeholder Cy (height) = %d, want > 0", bodyPh.Cy())
 		}
 	}
 }

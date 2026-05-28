@@ -5,40 +5,40 @@ import (
 )
 
 // ============================================================================
-// Core Properties XML 结构体 - 对应 /docProps/core.xml
+// Core Properties XML struct - corresponds to /docProps/core.xml
 // ============================================================================
 //
-// OpenXML 核心属性基于 Dublin Core 元数据标准
-// 命名空间:
-//   - cp:  http://schemas.openxmlformats.org/package/2006/metadata/core-properties
-//   - dc:  http://purl.org/dc/elements/1.1/
+// OpenXML core properties are based on the Dublin Core metadata standard.
+// Namespaces:
+//   - cp:      http://schemas.openxmlformats.org/package/2006/metadata/core-properties
+//   - dc:      http://purl.org/dc/elements/1.1/
 //   - dcterms: http://purl.org/dc/terms/
-//   - xsi: http://www.w3.org/2001/XMLSchema-instance
+//   - xsi:     http://www.w3.org/2001/XMLSchema-instance
+//
 // ============================================================================
 
-// XMLCoreProperties 核心属性 XML 结构体
-// 对应 XML: /docProps/core.xml
-// 包含文档的元数据信息（标题、作者、创建/修改时间等）
+// XMLCoreProperties is the XML struct for /docProps/core.xml.
+// It carries document metadata (title, author, created/modified times, etc.).
 type XMLCoreProperties struct {
 	XMLName xml.Name `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties coreProperties"`
 
-	// 命名空间声明（用于序列化）
+	// namespace declarations (for serialization)
 	XmlnsCp      string `xml:"xmlns:cp,attr,omitempty"`
 	XmlnsDc      string `xml:"xmlns:dc,attr,omitempty"`
 	XmlnsDcterms string `xml:"xmlns:dcterms,attr,omitempty"`
 	XmlnsXsi     string `xml:"xmlns:xsi,attr,omitempty"`
 
-	// Dublin Core 元素 (dc: 命名空间 -> http://purl.org/dc/elements/1.1/)
+	// Dublin Core elements (dc: namespace -> http://purl.org/dc/elements/1.1/)
 	Title       string `xml:"http://purl.org/dc/elements/1.1/ title,omitempty"`
 	Creator     string `xml:"http://purl.org/dc/elements/1.1/ creator,omitempty"`
 	Subject     string `xml:"http://purl.org/dc/elements/1.1/ subject,omitempty"`
 	Description string `xml:"http://purl.org/dc/elements/1.1/ description,omitempty"`
 
-	// Dublin Core Terms 元素 (dcterms: 命名空间 -> http://purl.org/dc/terms/)
+	// Dublin Core Terms elements (dcterms: namespace -> http://purl.org/dc/terms/)
 	Created  *XMLW3CDTFDate `xml:"http://purl.org/dc/terms/ created,omitempty"`
 	Modified *XMLW3CDTFDate `xml:"http://purl.org/dc/terms/ modified,omitempty"`
 
-	// 核心属性扩展 (cp: 命名空间 -> http://schemas.openxmlformats.org/package/2006/metadata/core-properties)
+	// Core properties extension (cp: namespace -> http://schemas.openxmlformats.org/package/2006/metadata/core-properties)
 	Keywords       string `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties keywords,omitempty"`
 	LastModifiedBy string `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties lastModifiedBy,omitempty"`
 	Revision       string `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties revision,omitempty"`
@@ -49,37 +49,36 @@ type XMLCoreProperties struct {
 	Language       string `xml:"http://purl.org/dc/elements/1.1/ language,omitempty"`
 }
 
-// XMLW3CDTFDate W3CDTF 格式日期元素
-// 对应 XML: <dcterms:created xsi:type="dcterms:W3CDTF">...</dcterms:created>
-// W3CDTF 格式: YYYY-MM-DDThh:mm:ssZ
+// XMLW3CDTFDate represents a W3CDTF-format date element.
+// Example XML: <dcterms:created xsi:type="dcterms:W3CDTF">...</dcterms:created>
+// W3CDTF format: YYYY-MM-DDThh:mm:ssZ
 type XMLW3CDTFDate struct {
 	Type  string `xml:"xsi:type,attr,omitempty"`
 	Value string `xml:",chardata"`
 }
 
 // ============================================================================
-// 常量定义
+// Constants
 // ============================================================================
 
 const (
-	// 命名空间常量
-	NamespaceCoreProperties = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
-	NamespaceDublinCore     = "http://purl.org/dc/elements/1.1/"
+	// namespace URIs
+	NamespaceCoreProperties  = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+	NamespaceDublinCore      = "http://purl.org/dc/elements/1.1/"
 	NamespaceDublinCoreTerms = "http://purl.org/dc/terms/"
-	NamespaceXMLSchema      = "http://www.w3.org/2001/XMLSchema-instance"
+	NamespaceXMLSchema       = "http://www.w3.org/2001/XMLSchema-instance"
 
-	// W3CDTF 类型标识
+	// W3CDTF type identifier
 	W3CDTFType = "dcterms:W3CDTF"
 )
 
-// XMLDeclaration OPC 包中所有 XML 文件的标准声明头
-// 注意：此常量已在 xmlutils.go 中定义
+// XMLDeclaration is defined in xmlutils.go.
 
 // ============================================================================
-// 构造函数
+// Constructor
 // ============================================================================
 
-// NewXMLCoreProperties 创建带默认命名空间的核心属性结构体
+// NewXMLCoreProperties creates a core properties struct with default namespace declarations.
 func NewXMLCoreProperties() *XMLCoreProperties {
 	return &XMLCoreProperties{
 		XmlnsCp:      NamespaceCoreProperties,
@@ -90,10 +89,10 @@ func NewXMLCoreProperties() *XMLCoreProperties {
 }
 
 // ============================================================================
-// 辅助方法
+// Helper methods
 // ============================================================================
 
-// SetCreated 设置创建时间
+// SetCreated sets the created timestamp.
 func (cp *XMLCoreProperties) SetCreated(value string) {
 	cp.Created = &XMLW3CDTFDate{
 		Type:  W3CDTFType,
@@ -101,7 +100,7 @@ func (cp *XMLCoreProperties) SetCreated(value string) {
 	}
 }
 
-// SetModified 设置修改时间
+// SetModified sets the last-modified timestamp.
 func (cp *XMLCoreProperties) SetModified(value string) {
 	cp.Modified = &XMLW3CDTFDate{
 		Type:  W3CDTFType,
@@ -109,7 +108,7 @@ func (cp *XMLCoreProperties) SetModified(value string) {
 	}
 }
 
-// GetCreated 获取创建时间值
+// GetCreated returns the created timestamp value.
 func (cp *XMLCoreProperties) GetCreated() string {
 	if cp.Created == nil {
 		return ""
@@ -117,7 +116,7 @@ func (cp *XMLCoreProperties) GetCreated() string {
 	return cp.Created.Value
 }
 
-// GetModified 获取修改时间值
+// GetModified returns the last-modified timestamp value.
 func (cp *XMLCoreProperties) GetModified() string {
 	if cp.Modified == nil {
 		return ""
@@ -125,7 +124,7 @@ func (cp *XMLCoreProperties) GetModified() string {
 	return cp.Modified.Value
 }
 
-// ToXML 将核心属性序列化为 XML 字节
+// ToXML serializes the core properties to XML bytes.
 func (cp *XMLCoreProperties) ToXML() ([]byte, error) {
 	output, err := xml.MarshalIndent(cp, "", "  ")
 	if err != nil {
@@ -134,8 +133,7 @@ func (cp *XMLCoreProperties) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从 XML 字节反序列化核心属性
-// 统一命名规范，与其他 Part 保持一致
+// FromXML deserializes core properties from XML bytes.
 func (cp *XMLCoreProperties) FromXML(data []byte) error {
 	if err := xml.Unmarshal(data, cp); err != nil {
 		return err
@@ -143,8 +141,7 @@ func (cp *XMLCoreProperties) FromXML(data []byte) error {
 	return nil
 }
 
-// ParseCoreProperties 从 XML 字节解析核心属性
-// 这是创建新实例的便捷方法
+// ParseCoreProperties parses core properties from XML bytes.
 func ParseCoreProperties(data []byte) (*XMLCoreProperties, error) {
 	var cp XMLCoreProperties
 	if err := cp.FromXML(data); err != nil {
@@ -153,9 +150,9 @@ func ParseCoreProperties(data []byte) (*XMLCoreProperties, error) {
 	return &cp, nil
 }
 
-// ParseCoreProps 是 ParseCoreProperties 的简写别名
-// 提供更简洁的调用方式
-// Deprecated: 建议使用 ParseCoreProperties 或 FromXML
+// ParseCoreProps is a short alias for ParseCoreProperties.
+//
+// Deprecated: use ParseCoreProperties or FromXML instead.
 func ParseCoreProps(data []byte) (*XMLCoreProperties, error) {
 	return ParseCoreProperties(data)
 }

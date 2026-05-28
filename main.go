@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Muprprpr/Go-pptx/opc"
+	"github.com/hurtener/pptx-go/opc"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func printInfo(path string) {
 		fmt.Printf("Error opening file: %v\n", err)
 		return
 	}
-	defer pkg.Close()
+	defer func() { _ = pkg.Close() }()
 
 	fmt.Printf("File: %s\n", path)
 	fmt.Printf("Parts: %d\n", pkg.PartCount())
@@ -72,7 +72,7 @@ func printInfoStream(path string) {
 		fmt.Printf("Error opening file: %v\n", err)
 		return
 	}
-	defer pkg.Close()
+	defer func() { _ = pkg.Close() }()
 
 	fmt.Printf("File: %s (streaming mode)\n", path)
 	fmt.Printf("Parts: %d\n", pkg.PartCount())

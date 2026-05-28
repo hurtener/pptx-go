@@ -1,149 +1,149 @@
-# Presentation 模块接口文档
+# Presentation Module — Interface Documentation
 
-> 对应 `/ppt/presentation.xml`，是整个 PPTX 逻辑上的根节点
+> Corresponds to `/ppt/presentation.xml`, the logical root node of the entire PPTX
 
 ---
 
-## 常量
+## Constants
 
 ```go
-SlideIDStart = 256  // Slide ID 的起始值
+SlideIDStart = 256  // Starting value for slide IDs
 ```
 
 ---
 
-## 数据结构
+## Data Structures
 
 ### SlideSize
 
-幻灯片尺寸，单位 EMU (English Metric Units)。
+Slide size in EMU (English Metric Units).
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `Cx` | `int` | 宽度 |
-| `Cy` | `int` | 高度 |
+| `Cx` | `int` | Width |
+| `Cy` | `int` | Height |
 
 ### StandardSlideSizes
 
-标准幻灯片尺寸。
+Standard slide sizes.
 
-| 字段 | 类型 | 尺寸 |
+| Field | Type | Dimensions |
 |------|------|------|
 | `Wide16x9` | `SlideSize` | 12192000 x 6858000 EMU |
 | `Standard4x3` | `SlideSize` | 9144000 x 6858000 EMU |
 
 ### PresentationPart
 
-演示文稿部件，对应 `/ppt/presentation.xml`。
+Presentation part, corresponding to `/ppt/presentation.xml`.
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `uri` | `*opc.PackURI` | 部件 URI |
-| `slideIDs` | `[]uint32` | 分配过的 slide ID 列表 |
-| `slideIDNext` | `uint32` | 下一个可分配的 slide ID |
-| `slideCount` | `int32` | 当前幻灯片数量 |
-| `slideMasterIDs` | `[]string` | 母版 rId 列表 |
-| `slideLayoutIDs` | `[]string` | 布局 rId 列表 |
-| `slideSize` | `SlideSize` | 幻灯片尺寸 |
-| `notesMasterID` | `string` | 备注母版 rId |
-| `themeID` | `string` | 主题 rId |
+| `uri` | `*opc.PackURI` | Part URI |
+| `slideIDs` | `[]uint32` | List of allocated slide IDs |
+| `slideIDNext` | `uint32` | Next slide ID to allocate |
+| `slideCount` | `int32` | Current slide count |
+| `slideMasterIDs` | `[]string` | List of master rIds |
+| `slideLayoutIDs` | `[]string` | List of layout rIds |
+| `slideSize` | `SlideSize` | Slide size |
+| `notesMasterID` | `string` | Notes master rId |
+| `themeID` | `string` | Theme rId |
 
 ---
 
-## XML 结构类型
+## XML Struct Types
 
 ### XPresentation
 
-对应 `presentation.xml` 的完整 XML 结构。
+Complete XML structure corresponding to `presentation.xml`.
 
-| 字段 | XML 路径 | 类型 | 说明 |
+| Field | XML Path | Type | Description |
 |------|----------|------|------|
-| `XmlnsA` | `xmlns:a` | `string` | DrawingML 命名空间 |
-| `XmlnsR` | `xmlns:r` | `string` | 关系命名空间 |
-| `XmlnsP` | `xmlns:p` | `string` | PresentationML 命名空间 |
-| `Compatibility` | `p:compatSpt` | `*XCompatibility` | 兼容设置 |
-| `SldSz` | `p:sldSz` | `*XSldSz` | 幻灯片尺寸 |
-| `NotesSz` | `p:notesSz` | `*XSldSz` | 备注尺寸 |
-| `SldIdLst` | `p:sldIdLst` | `*XSldIdLst` | 幻灯片 ID 列表 |
-| `SldMasterIdLst` | `p:sldMasterIdLst` | `*XSldMasterIdLst` | 母版 ID 列表 |
-| `NotesMasterIdLst` | `p:notesMasterIdLst` | `*XSldMasterIdLst` | 备注母版 ID 列表 |
-| `PrintSettings` | `p:printSettings` | `*XPrintSettings` | 打印设置 |
+| `XmlnsA` | `xmlns:a` | `string` | DrawingML namespace |
+| `XmlnsR` | `xmlns:r` | `string` | Relationships namespace |
+| `XmlnsP` | `xmlns:p` | `string` | PresentationML namespace |
+| `Compatibility` | `p:compatSpt` | `*XCompatibility` | Compatibility settings |
+| `SldSz` | `p:sldSz` | `*XSldSz` | Slide size |
+| `NotesSz` | `p:notesSz` | `*XSldSz` | Notes size |
+| `SldIdLst` | `p:sldIdLst` | `*XSldIdLst` | Slide ID list |
+| `SldMasterIdLst` | `p:sldMasterIdLst` | `*XSldMasterIdLst` | Master ID list |
+| `NotesMasterIdLst` | `p:notesMasterIdLst` | `*XSldMasterIdLst` | Notes master ID list |
+| `PrintSettings` | `p:printSettings` | `*XPrintSettings` | Print settings |
 
 ### XCompatibility
 
-兼容设置，对应 `p:compatSpt`。
+Compatibility settings, corresponding to `p:compatSpt`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `CompatMode` | `compatMode` | `string` | 兼容模式 |
+| `CompatMode` | `compatMode` | `string` | Compatibility mode |
 
 ### XSldSz
 
-幻灯片尺寸，对应 `p:sldSz`。
+Slide size, corresponding to `p:sldSz`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Cx` | `cx` | `int` | 宽度 |
-| `Cy` | `cy` | `int` | 高度 |
+| `Cx` | `cx` | `int` | Width |
+| `Cy` | `cy` | `int` | Height |
 
 ### XSldIdLst
 
-幻灯片 ID 列表，对应 `p:sldIdLst`。
+Slide ID list, corresponding to `p:sldIdLst`.
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `SldIds` | `[]XSldId` | 幻灯片 ID 列表 |
+| `SldIds` | `[]XSldId` | List of slide IDs |
 
 ### XSldId
 
-单个幻灯片 ID，对应 `p:sldId`。
+Single slide ID, corresponding to `p:sldId`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Id` | `id` | `uint32` | 幻灯片 ID |
-| `RId` | `rid` | `string` | 关系 ID |
+| `Id` | `id` | `uint32` | Slide ID |
+| `RId` | `rid` | `string` | Relationship ID |
 
-> **注意**: XML 属性 `r:id` 在解析时会转换为 `rid`（Go xml 标签为 `xml:"rid,attr"`）。
+> **Note**: The XML attribute `r:id` is converted to `rid` during parsing (Go xml tag: `xml:"rid,attr"`).
 
 ### XSldMasterIdLst
 
-母版 ID 列表，对应 `p:sldMasterIdLst`。
+Master ID list, corresponding to `p:sldMasterIdLst`.
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `SldMasterIds` | `[]XSldMasterId` | 母版 ID 列表 |
+| `SldMasterIds` | `[]XSldMasterId` | List of master IDs |
 
 ### XSldMasterId
 
-单个母版 ID，对应 `p:sldMasterId`。
+Single master ID, corresponding to `p:sldMasterId`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Id` | `id` | `uint32` | 母版 ID |
-| `RId` | `rid` | `string` | 关系 ID |
+| `Id` | `id` | `uint32` | Master ID |
+| `RId` | `rid` | `string` | Relationship ID |
 
-> **注意**: XML 属性 `r:id` 在解析时会转换为 `rid`。
+> **Note**: The XML attribute `r:id` is converted to `rid` during parsing.
 
 ### XPrintSettings
 
-打印设置，对应 `p:printSettings`。
+Print settings, corresponding to `p:printSettings`.
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `OutputOptions` | `*XOutputOptions` | 输出选项 |
+| `OutputOptions` | `*XOutputOptions` | Output options |
 
 ### XOutputOptions
 
-输出选项，对应 `p:outputOptions`。
+Output options, corresponding to `p:outputOptions`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `UsePrintFml` | `usePrintFml` | `*bool` | 使用打印格式 |
-| `CloneLinkedObjs` | `cloneLinkedObjs` | `*bool` | 克隆链接对象 |
+| `UsePrintFml` | `usePrintFml` | `*bool` | Use print format |
+| `CloneLinkedObjs` | `cloneLinkedObjs` | `*bool` | Clone linked objects |
 
 ---
 
-## 构造函数
+## Constructors
 
 ### NewPresentationPart
 
@@ -151,7 +151,7 @@ SlideIDStart = 256  // Slide ID 的起始值
 func NewPresentationPart() *PresentationPart
 ```
 
-创建演示文稿部件，使用默认 16:9 宽屏尺寸。
+Creates a presentation part using the default 16:9 widescreen size.
 
 ### NewPresentationPartWithSize
 
@@ -159,26 +159,26 @@ func NewPresentationPart() *PresentationPart
 func NewPresentationPartWithSize(size SlideSize) *PresentationPart
 ```
 
-创建演示文稿并设置指定尺寸。
+Creates a presentation part with the specified size.
 
 ---
 
-## PresentationPart 方法
+## PresentationPart Methods
 
-### URI 方法
+### URI Methods
 
 ```go
 func (p *PresentationPart) PartURI() *opc.PackURI
 ```
 
-### 尺寸方法
+### Size Methods
 
 ```go
 func (p *PresentationPart) SlideSize() SlideSize
 func (p *PresentationPart) SetSlideSize(size SlideSize)
 ```
 
-### 幻灯片管理
+### Slide Management
 
 ```go
 func (p *PresentationPart) SlideCount() int32
@@ -188,25 +188,25 @@ func (p *PresentationPart) AddSlide(layoutRId string, slidePart *SlidePart) erro
 func (p *PresentationPart) RemoveSlide(index int) error
 ```
 
-### 母版管理
+### Master Management
 
 ```go
 func (p *PresentationPart) SlideMasterIDs() []string
 func (p *PresentationPart) AddSlideMaster(rId string)
 ```
 
-### XML 序列化/反序列化
+### XML Serialization / Deserialization
 
 ```go
 func (p *PresentationPart) ToXML() ([]byte, error)
 func (p *PresentationPart) FromXML(data []byte) error
 ```
 
-> **注意**: `FromXML` 内部会自动调用 `StripNamespacePrefixes` 处理命名空间前缀问题。详见 [xmlutils.md](xmlutils.md)。
+> **Note**: `FromXML` calls `StripNamespacePrefixes` internally to handle namespace prefix issues. See [xmlutils.md](xmlutils.md).
 
 ---
 
-## 辅助函数
+## Helper Functions
 
 ### NewSlideSizeFromStandard
 
@@ -214,17 +214,17 @@ func (p *PresentationPart) FromXML(data []byte) error
 func NewSlideSizeFromStandard(name string) SlideSize
 ```
 
-根据标准尺寸名称创建 SlideSize。
+Creates a SlideSize from a standard size name.
 
-| 参数 | 说明 |
+| Argument | Description |
 |------|------|
-| `"16:9"`, `"wide"`, `"widescreen"` | 返回 Wide16x9 |
-| `"4:3"`, `"standard"` | 返回 Standard4x3 |
-| 其他 | 默认返回 Wide16x9 |
+| `"16:9"`, `"wide"`, `"widescreen"` | Returns Wide16x9 |
+| `"4:3"`, `"standard"` | Returns Standard4x3 |
+| Any other value | Returns Wide16x9 by default |
 
 ---
 
-## EMU 单位转换
+## EMU Unit Conversions
 
 ### EMUFromPoints / PointsFromEMU
 
@@ -233,7 +233,7 @@ func EMUFromPoints(points float64) int
 func PointsFromEMU(emu int) float64
 ```
 
-磅值与 EMU 互转（1 pt = 12700 EMU）。
+Converts between points and EMU (1 pt = 12700 EMU).
 
 ### EMUFromInches / InchesFromEMU
 
@@ -242,7 +242,7 @@ func EMUFromInches(inches float64) int
 func InchesFromEMU(emu int) float64
 ```
 
-英寸与 EMU 互转（1 inch = 914400 EMU）。
+Converts between inches and EMU (1 inch = 914400 EMU).
 
 ### EMUFromMM / MMFromEMU
 
@@ -251,4 +251,4 @@ func EMUFromMM(mm float64) int
 func MMFromEMU(emu int) float64
 ```
 
-毫米与 EMU 互转（1 mm = 36000 EMU）。
+Converts between millimeters and EMU (1 mm = 36000 EMU).

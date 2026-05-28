@@ -1,70 +1,70 @@
-# Media 模块接口文档
+# Media Module — Interface Documentation
 
-> 统一处理 PPTX 中的图片、音频、视频等媒体文件
+> Unified handling of images, audio, video, and other media files in PPTX
 
 ---
 
-## 枚举类型
+## Enum Types
 
 ### MediaType
 
-媒体类型枚举。
+Media type enum.
 
-| 常量 | 值 | 说明 |
+| Constant | Value | Description |
 |------|-----|------|
-| `MediaTypeUnknown` | `0` | 未知类型 |
-| `MediaTypeImage` | `1` | 图片 |
-| `MediaTypeAudio` | `2` | 音频 |
-| `MediaTypeVideo` | `3` | 视频 |
+| `MediaTypeUnknown` | `0` | Unknown type |
+| `MediaTypeImage` | `1` | Image |
+| `MediaTypeAudio` | `2` | Audio |
+| `MediaTypeVideo` | `3` | Video |
 
-#### 方法
+#### Methods
 
 ```go
 func (mt MediaType) String() string
 ```
-返回媒体类型的字符串表示：`"image"` / `"audio"` / `"video"` / `"unknown"`
+Returns the string representation of the media type: `"image"` / `"audio"` / `"video"` / `"unknown"`
 
 ---
 
 ## MediaResource
 
-媒体资源结构体（只读），统一处理图片、音频、视频。
+Media resource struct (read-only), for unified handling of images, audio, and video.
 
-### 字段
+### Fields
 
-| 字段 | 类型 | 访问器 | 说明 |
+| Field | Type | Accessor | Description |
 |------|------|--------|------|
-| `fileName` | `string` | `FileName()` | 文件名（如 `image1.png`） |
-| `contentType` | `string` | `ContentType()` | MIME 类型（如 `image/png`） |
-| `mediaType` | `MediaType` | `MediaType()` | 媒体类型枚举 |
-| `target` | `string` | `Target()` | ZIP 中完整路径（如 `ppt/media/image1.png`） |
-| `data` | `[]byte` | `Data()` | 小文件字节数据（可为 nil） |
-| `dataSize` | `int64` | `DataSize()` | 数据大小（字节） |
-| `reader` | `io.Reader` | `Reader()` | 大文件 Reader（可为 nil） |
-| `rId` | `string` | `RID()` | 关系 ID |
-| `extension` | `string` | `Extension()` | 文件扩展名（如 `.png`） |
-| `hash` | `string` | `Hash()` | 内容 Hash（MD5） |
+| `fileName` | `string` | `FileName()` | File name (e.g. `image1.png`) |
+| `contentType` | `string` | `ContentType()` | MIME type (e.g. `image/png`) |
+| `mediaType` | `MediaType` | `MediaType()` | Media type enum |
+| `target` | `string` | `Target()` | Full path within the ZIP (e.g. `ppt/media/image1.png`) |
+| `data` | `[]byte` | `Data()` | Byte data for small files (may be nil) |
+| `dataSize` | `int64` | `DataSize()` | Data size in bytes |
+| `reader` | `io.Reader` | `Reader()` | Reader for large files (may be nil) |
+| `rId` | `string` | `RID()` | Relationship ID |
+| `extension` | `string` | `Extension()` | File extension (e.g. `.png`) |
+| `hash` | `string` | `Hash()` | Content hash (MD5) |
 
-### 类型判断方法
+### Type-check Methods
 
 ```go
-func (m *MediaResource) HasData() bool      // 是否有字节数据
-func (m *MediaResource) HasReader() bool     // 是否有 Reader
-func (m *MediaResource) IsImage() bool       // 是否为图片
-func (m *MediaResource) IsAudio() bool       // 是否为音频
-func (m *MediaResource) IsVideo() bool       // 是否为视频
+func (m *MediaResource) HasData() bool      // Returns true if byte data is present
+func (m *MediaResource) HasReader() bool     // Returns true if a Reader is present
+func (m *MediaResource) IsImage() bool       // Returns true if the resource is an image
+func (m *MediaResource) IsAudio() bool       // Returns true if the resource is audio
+func (m *MediaResource) IsVideo() bool       // Returns true if the resource is video
 ```
 
-### 设置方法
+### Setter Methods
 
 ```go
-func (m *MediaResource) SetRID(rId string)   // 设置关系 ID
-func (m *MediaResource) SetHash(hash string)  // 设置内容 Hash
+func (m *MediaResource) SetRID(rId string)   // Sets the relationship ID
+func (m *MediaResource) SetHash(hash string)  // Sets the content hash
 ```
 
 ---
 
-## 构造函数
+## Constructors
 
 ### NewMediaResourceFromBytes
 
@@ -72,7 +72,7 @@ func (m *MediaResource) SetHash(hash string)  // 设置内容 Hash
 func NewMediaResourceFromBytes(fileName, contentType, target string, data []byte) *MediaResource
 ```
 
-从字节数据创建媒体资源，适用于小文件（如小图片）。
+Creates a media resource from byte data; suitable for small files (e.g. small images).
 
 ### NewMediaResourceFromReader
 
@@ -80,26 +80,26 @@ func NewMediaResourceFromBytes(fileName, contentType, target string, data []byte
 func NewMediaResourceFromReader(fileName, contentType, target string, reader io.Reader, size int64) *MediaResource
 ```
 
-从 Reader 创建媒体资源，适用于大文件（如视频、大图片）。
+Creates a media resource from a Reader; suitable for large files (e.g. video, large images).
 
 ---
 
-## MIME 类型辅助函数
+## MIME Type Helper Functions
 
-### 支持的图片类型
+### Supported Image Types
 
 ```go
 image/png, image/jpeg, image/gif, image/bmp, image/tiff,
 image/svg+xml, image/webp, image/x-emf, image/x-wmf
 ```
 
-### 支持的音频类型
+### Supported Audio Types
 
 ```go
 audio/mpeg, audio/wav, audio/ogg, audio/aac, audio/mp4
 ```
 
-### 支持的视频类型
+### Supported Video Types
 
 ```go
 video/mp4, video/webm, video/ogg, video/quicktime,
@@ -110,31 +110,31 @@ video/x-msvideo, video/x-ms-wmv
 
 ## MediaManager
 
-媒体资源管理器（并发安全缓存）。
+Media resource manager (concurrency-safe cache).
 
-### 设计原则
+### Design Principles
 
-1. 一次写入，到处读取 - 初始化后主要操作是读取
-2. 读取优化 - 使用 `sync.RWMutex`，读操作无需阻塞
-3. 双重索引 - 按 rID 和 fileName 都能快速查找
+1. Write once, read everywhere — after initialization the primary operation is reads.
+2. Read-optimized — uses `sync.RWMutex`; read operations do not block.
+3. Dual index — fast lookup by both rID and fileName.
 
-### 索引结构
+### Index Structure
 
-| 索引 | key | value |
+| Index | Key | Value |
 |------|-----|-------|
 | `byRID` | rID | `*MediaResource` |
 | `byName` | fileName | rID |
 | `byTarget` | target | rID |
 | `byHash` | contentHash | rID |
 
-### 全局实例
+### Global Instance
 
 ```go
 func DefaultMediaManager() *MediaManager
 var defaultMediaManager *MediaManager
 ```
 
-### 构造函数
+### Constructor
 
 ```go
 func NewMediaManager() *MediaManager
@@ -142,7 +142,7 @@ func NewMediaManager() *MediaManager
 
 ---
 
-## MediaManager 写入方法
+## MediaManager Write Methods
 
 ### AddMedia
 
@@ -150,7 +150,7 @@ func NewMediaManager() *MediaManager
 func (m *MediaManager) AddMedia(resource *MediaResource) string
 ```
 
-添加媒体资源到缓存，返回资源的 rID，如果已存在则返回现有 rID。
+Adds a media resource to the cache and returns its rID. Returns the existing rID if the resource is already present.
 
 ### AddMediaWithBytes
 
@@ -158,7 +158,7 @@ func (m *MediaManager) AddMedia(resource *MediaResource) string
 func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target string, data []byte) *MediaResource
 ```
 
-从字节数据添加媒体资源。
+Adds a media resource from byte data.
 
 ### AddMediaWithReader
 
@@ -166,7 +166,7 @@ func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target stri
 func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target string, reader io.Reader, size int64) *MediaResource
 ```
 
-从 Reader 添加媒体资源。
+Adds a media resource from a Reader.
 
 ### AddMediaAuto
 
@@ -174,7 +174,7 @@ func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target str
 func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *MediaResource)
 ```
 
-自动推断 MIME 类型并生成自增 rID。如果相同内容已存在（基于 Hash），则返回已有资源（去重）。
+Automatically infers the MIME type and generates an auto-incrementing rID. If the same content already exists (based on hash), returns the existing resource (deduplication).
 
 ### RemoveMedia
 
@@ -182,7 +182,7 @@ func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *Medi
 func (m *MediaManager) RemoveMedia(rID string) bool
 ```
 
-移除媒体资源。
+Removes a media resource.
 
 ### Clear
 
@@ -190,11 +190,11 @@ func (m *MediaManager) RemoveMedia(rID string) bool
 func (m *MediaManager) Clear()
 ```
 
-清空所有媒体资源。
+Clears all media resources.
 
 ---
 
-## MediaManager 读取方法
+## MediaManager Read Methods
 
 ### GetMedia
 
@@ -202,7 +202,7 @@ func (m *MediaManager) Clear()
 func (m *MediaManager) GetMedia(rID string) *MediaResource
 ```
 
-根据 rID 获取媒体资源。
+Retrieves a media resource by rID.
 
 ### GetMediaByFileName
 
@@ -210,7 +210,7 @@ func (m *MediaManager) GetMedia(rID string) *MediaResource
 func (m *MediaManager) GetMediaByFileName(fileName string) *MediaResource
 ```
 
-根据文件名获取媒体资源。
+Retrieves a media resource by file name.
 
 ### GetMediaByTarget
 
@@ -218,7 +218,7 @@ func (m *MediaManager) GetMediaByFileName(fileName string) *MediaResource
 func (m *MediaManager) GetMediaByTarget(target string) *MediaResource
 ```
 
-根据目标路径获取媒体资源。
+Retrieves a media resource by target path.
 
 ### GetMediaByHash
 
@@ -226,7 +226,7 @@ func (m *MediaManager) GetMediaByTarget(target string) *MediaResource
 func (m *MediaManager) GetMediaByHash(hash string) *MediaResource
 ```
 
-根据内容 Hash 获取媒体资源（用于去重）。
+Retrieves a media resource by content hash (used for deduplication).
 
 ### HasMedia
 
@@ -234,7 +234,7 @@ func (m *MediaManager) GetMediaByHash(hash string) *MediaResource
 func (m *MediaManager) HasMedia(rID string) bool
 ```
 
-检查媒体资源是否存在。
+Checks whether a media resource exists.
 
 ### HasMediaByFileName
 
@@ -242,11 +242,11 @@ func (m *MediaManager) HasMedia(rID string) bool
 func (m *MediaManager) HasMediaByFileName(fileName string) bool
 ```
 
-检查文件名是否存在。
+Checks whether a file name exists.
 
 ---
 
-## MediaManager 批量读取方法
+## MediaManager Bulk Read Methods
 
 ### AllMedia
 
@@ -254,7 +254,7 @@ func (m *MediaManager) HasMediaByFileName(fileName string) bool
 func (m *MediaManager) AllMedia() []*MediaResource
 ```
 
-返回所有媒体资源。
+Returns all media resources.
 
 ### AllMediaByType
 
@@ -262,7 +262,7 @@ func (m *MediaManager) AllMedia() []*MediaResource
 func (m *MediaManager) AllMediaByType(mediaType MediaType) []*MediaResource
 ```
 
-返回指定类型的所有媒体资源。
+Returns all media resources of the specified type.
 
 ### AllImages
 
@@ -270,7 +270,7 @@ func (m *MediaManager) AllMediaByType(mediaType MediaType) []*MediaResource
 func (m *MediaManager) AllImages() []*MediaResource
 ```
 
-返回所有图片资源。
+Returns all image resources.
 
 ### AllAudio
 
@@ -278,7 +278,7 @@ func (m *MediaManager) AllImages() []*MediaResource
 func (m *MediaManager) AllAudio() []*MediaResource
 ```
 
-返回所有音频资源。
+Returns all audio resources.
 
 ### AllVideo
 
@@ -286,11 +286,11 @@ func (m *MediaManager) AllAudio() []*MediaResource
 func (m *MediaManager) AllVideo() []*MediaResource
 ```
 
-返回所有视频资源。
+Returns all video resources.
 
 ---
 
-## MediaManager 统计方法
+## MediaManager Statistics Methods
 
 ### Count
 
@@ -298,7 +298,7 @@ func (m *MediaManager) AllVideo() []*MediaResource
 func (m *MediaManager) Count() int64
 ```
 
-返回媒体资源总数。
+Returns the total number of media resources.
 
 ### CountByType
 
@@ -306,7 +306,7 @@ func (m *MediaManager) Count() int64
 func (m *MediaManager) CountByType(mediaType MediaType) int64
 ```
 
-返回指定类型的媒体资源数量。
+Returns the number of media resources of the specified type.
 
 ### CountImages
 
@@ -314,7 +314,7 @@ func (m *MediaManager) CountByType(mediaType MediaType) int64
 func (m *MediaManager) CountImages() int64
 ```
 
-返回图片数量。
+Returns the number of images.
 
 ### CountAudio
 
@@ -322,7 +322,7 @@ func (m *MediaManager) CountImages() int64
 func (m *MediaManager) CountAudio() int64
 ```
 
-返回音频数量。
+Returns the number of audio resources.
 
 ### CountVideo
 
@@ -330,11 +330,11 @@ func (m *MediaManager) CountAudio() int64
 func (m *MediaManager) CountVideo() int64
 ```
 
-返回视频数量。
+Returns the number of video resources.
 
 ---
 
-## MediaManager 列表方法
+## MediaManager List Methods
 
 ### ListRIDs
 
@@ -342,7 +342,7 @@ func (m *MediaManager) CountVideo() int64
 func (m *MediaManager) ListRIDs() []string
 ```
 
-返回所有 rID。
+Returns all rIDs.
 
 ### ListFileNames
 
@@ -350,7 +350,7 @@ func (m *MediaManager) ListRIDs() []string
 func (m *MediaManager) ListFileNames() []string
 ```
 
-返回所有文件名。
+Returns all file names.
 
 ### ListTargets
 
@@ -358,11 +358,11 @@ func (m *MediaManager) ListFileNames() []string
 func (m *MediaManager) ListTargets() []string
 ```
 
-返回所有目标路径。
+Returns all target paths.
 
 ---
 
-## 全局便捷函数
+## Global Convenience Functions
 
 ```go
 func AddMedia(resource *MediaResource) string
@@ -372,4 +372,4 @@ func GetMediaByTarget(target string) *MediaResource
 func ClearMedia()
 ```
 
-操作全局默认管理器 `defaultMediaManager`。
+These operate on the global default manager `defaultMediaManager`.

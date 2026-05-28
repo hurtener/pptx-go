@@ -1,49 +1,49 @@
-# Core Properties 接口文档
+# Core Properties — Interface Documentation
 
-> 对应 `/docProps/core.xml`，基于 Dublin Core 元数据标准
+> Corresponds to `/docProps/core.xml`, based on the Dublin Core metadata standard
 
-## 命名空间
+## Namespaces
 
-| 常量 | 值 |
+| Constant | Value |
 |------|-----|
 | `NamespaceCoreProperties` | `http://schemas.openxmlformats.org/package/2006/metadata/core-properties` |
 | `NamespaceDublinCore` | `http://purl.org/dc/elements/1.1/` |
 | `NamespaceDublinCoreTerms` | `http://purl.org/dc/terms/` |
 | `NamespaceXMLSchema` | `http://www.w3.org/2001/XMLSchema-instance` |
 
-## 结构体
+## Structs
 
 ### XMLCoreProperties
 
-核心属性 XML 结构体，对应 `core.xml` 文件。
+Core properties XML struct corresponding to the `core.xml` file.
 
-| 字段 | XML 路径 | 类型 | 说明 |
+| Field | XML Path | Type | Description |
 |------|----------|------|------|
-| `Title` | `dc:title` | `string` | 文档标题 |
-| `Creator` | `dc:creator` | `string` | 创建者 |
-| `Subject` | `dc:subject` | `string` | 主题 |
-| `Description` | `dc:description` | `string` | 描述 |
-| `Created` | `dcterms:created` | `*XMLW3CDTFDate` | 创建时间 |
-| `Modified` | `dcterms:modified` | `*XMLW3CDTFDate` | 修改时间 |
-| `Keywords` | `cp:keywords` | `string` | 关键词 |
-| `LastModifiedBy` | `cp:lastModifiedBy` | `string` | 最后修改者 |
-| `Revision` | `cp:revision` | `string` | 修订号 |
-| `Category` | `cp:category` | `string` | 类别 |
-| `ContentType` | `cp:contentType` | `string` | 内容类型 |
-| `Version` | `cp:version` | `string` | 版本 |
-| `Identifier` | `cp:identifier` | `string` | 标识符 |
-| `Language` | `dc:language` | `string` | 语言 |
+| `Title` | `dc:title` | `string` | Document title |
+| `Creator` | `dc:creator` | `string` | Creator |
+| `Subject` | `dc:subject` | `string` | Subject |
+| `Description` | `dc:description` | `string` | Description |
+| `Created` | `dcterms:created` | `*XMLW3CDTFDate` | Creation time |
+| `Modified` | `dcterms:modified` | `*XMLW3CDTFDate` | Modification time |
+| `Keywords` | `cp:keywords` | `string` | Keywords |
+| `LastModifiedBy` | `cp:lastModifiedBy` | `string` | Last modified by |
+| `Revision` | `cp:revision` | `string` | Revision number |
+| `Category` | `cp:category` | `string` | Category |
+| `ContentType` | `cp:contentType` | `string` | Content type |
+| `Version` | `cp:version` | `string` | Version |
+| `Identifier` | `cp:identifier` | `string` | Identifier |
+| `Language` | `dc:language` | `string` | Language |
 
 ### XMLW3CDTFDate
 
-W3CDTF 格式日期元素，对应 `<dcterms:created xsi:type="dcterms:W3CDTF">`。
+W3CDTF-format date element, corresponding to `<dcterms:created xsi:type="dcterms:W3CDTF">`.
 
-| 字段 | XML 属性 | 类型 | 说明 |
+| Field | XML Attribute | Type | Description |
 |------|----------|------|------|
-| `Type` | `xsi:type` | `string` | 类型标识，固定为 `dcterms:W3CDTF` |
-| `Value` | chardata | `string` | 日期值，格式：`YYYY-MM-DDThh:mm:ssZ` |
+| `Type` | `xsi:type` | `string` | Type identifier, fixed as `dcterms:W3CDTF` |
+| `Value` | chardata | `string` | Date value, format: `YYYY-MM-DDThh:mm:ssZ` |
 
-## 构造函数
+## Constructors
 
 ### NewXMLCoreProperties
 
@@ -51,9 +51,9 @@ W3CDTF 格式日期元素，对应 `<dcterms:created xsi:type="dcterms:W3CDTF">`
 func NewXMLCoreProperties() *XMLCoreProperties
 ```
 
-创建带默认命名空间的核心属性结构体。
+Creates a core properties struct with default namespaces.
 
-## 辅助方法
+## Helper Methods
 
 ### SetCreated
 
@@ -61,7 +61,7 @@ func NewXMLCoreProperties() *XMLCoreProperties
 func (cp *XMLCoreProperties) SetCreated(value string)
 ```
 
-设置创建时间，格式为 W3CDTF。
+Sets the creation time in W3CDTF format.
 
 ### SetModified
 
@@ -69,7 +69,7 @@ func (cp *XMLCoreProperties) SetCreated(value string)
 func (cp *XMLCoreProperties) SetModified(value string)
 ```
 
-设置修改时间，格式为 W3CDTF。
+Sets the modification time in W3CDTF format.
 
 ### GetCreated
 
@@ -77,7 +77,7 @@ func (cp *XMLCoreProperties) SetModified(value string)
 func (cp *XMLCoreProperties) GetCreated() string
 ```
 
-获取创建时间值。
+Returns the creation time value.
 
 ### GetModified
 
@@ -85,7 +85,7 @@ func (cp *XMLCoreProperties) GetCreated() string
 func (cp *XMLCoreProperties) GetModified() string
 ```
 
-获取修改时间值。
+Returns the modification time value.
 
 ### ToXML
 
@@ -93,7 +93,7 @@ func (cp *XMLCoreProperties) GetModified() string
 func (cp *XMLCoreProperties) ToXML() ([]byte, error)
 ```
 
-将核心属性序列化为 XML 字节。
+Serializes the core properties to XML bytes.
 
 ### ParseCoreProperties
 
@@ -101,7 +101,7 @@ func (cp *XMLCoreProperties) ToXML() ([]byte, error)
 func ParseCoreProperties(data []byte) (*XMLCoreProperties, error)
 ```
 
-从 XML 字节解析核心属性。
+Parses core properties from XML bytes.
 
 ### ParseCoreProps
 
@@ -109,4 +109,4 @@ func ParseCoreProperties(data []byte) (*XMLCoreProperties, error)
 func ParseCoreProps(data []byte) (*XMLCoreProperties, error)
 ```
 
-`ParseCoreProperties` 的简写别名。
+Shorthand alias for `ParseCoreProperties`.

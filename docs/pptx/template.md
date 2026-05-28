@@ -1,33 +1,33 @@
-# Template - 模板系统
+# Template - Template System
 
-模板系统提供模板的加载、缓存和管理功能，支持从文件系统、嵌入式资源等多种来源加载模板。
+The template system provides template loading, caching, and management, with support for loading templates from the filesystem, embedded resources, and other sources.
 
 ## TemplateType
 
-模板类型。
+Template type.
 
 ```go
 type TemplateType string
 ```
 
-### 预定义模板类型
+### Predefined Template Types
 
 ```go
 const (
-    // TemplateBlank 空白模板
+    // TemplateBlank is the blank template
     TemplateBlank TemplateType = "blank.pptx"
-    // TemplateDefault 默认模板（16:9 宽屏）
+    // TemplateDefault is the default template (16:9 widescreen)
     TemplateDefault TemplateType = "default.pptx"
-    // TemplateWide 宽屏模板
+    // TemplateWide is the widescreen template
     TemplateWide TemplateType = "wide.pptx"
-    // TemplateStandard 标准模板（4:3）
+    // TemplateStandard is the standard template (4:3)
     TemplateStandard TemplateType = "standard.pptx"
 )
 ```
 
 ## TemplateManager
 
-模板管理器，负责模板的懒加载、缓存和克隆。
+The template manager handles lazy loading, caching, and cloning of templates.
 
 ```go
 type TemplateManager struct {
@@ -35,11 +35,11 @@ type TemplateManager struct {
 }
 ```
 
-### 构造函数
+### Constructors
 
 #### NewTemplateManager
 
-创建新的模板管理器。
+Creates a new template manager.
 
 ```go
 func NewTemplateManager() *TemplateManager
@@ -47,20 +47,20 @@ func NewTemplateManager() *TemplateManager
 
 #### NewTemplateManagerWithDir
 
-创建带模板目录的模板管理器。
+Creates a template manager with a template directory.
 
 ```go
 func NewTemplateManagerWithDir(dir string) *TemplateManager
 ```
 
-**参数:**
-- `dir`: 模板文件目录路径
+**Parameters:**
+- `dir`: path to the template file directory
 
-### 模板加载
+### Template Loading
 
 #### LoadDefault
 
-加载默认模板。
+Loads the default template.
 
 ```go
 func (tm *TemplateManager) LoadDefault() (*opc.Package, error)
@@ -68,15 +68,15 @@ func (tm *TemplateManager) LoadDefault() (*opc.Package, error)
 
 #### LoadTemplate
 
-加载指定模板。
+Loads the specified template.
 
 ```go
 func (tm *TemplateManager) LoadTemplate(name TemplateType) (*opc.Package, error)
 ```
 
-**说明:** 如果模板已缓存，直接返回克隆副本；否则尝试从文件系统加载。
+**Note:** If the template is already cached, a cloned copy is returned directly; otherwise an attempt is made to load it from the filesystem.
 
-**示例:**
+**Example:**
 
 ```go
 tm := pptx.NewTemplateManager()
@@ -86,17 +86,17 @@ if err != nil {
 }
 ```
 
-### 模板注册
+### Template Registration
 
 #### RegisterTemplate
 
-从文件路径注册模板。
+Registers a template from a file path.
 
 ```go
 func (tm *TemplateManager) RegisterTemplate(name TemplateType, path string) error
 ```
 
-**示例:**
+**Example:**
 
 ```go
 tm := pptx.NewTemplateManager()
@@ -108,13 +108,13 @@ if err != nil {
 
 #### RegisterTemplateFromBytes
 
-从字节数据注册模板。
+Registers a template from byte data.
 
 ```go
 func (tm *TemplateManager) RegisterTemplateFromBytes(name TemplateType, data []byte) error
 ```
 
-**示例:**
+**Example:**
 
 ```go
 data, _ := os.ReadFile("custom.pptx")
@@ -123,27 +123,27 @@ err := tm.RegisterTemplateFromBytes("custom", data)
 
 #### RegisterTemplateFromFS
 
-从文件系统注册模板。
+Registers a template from a filesystem.
 
 ```go
 func (tm *TemplateManager) RegisterTemplateFromFS(fsys fs.FS, name TemplateType, path string) error
 ```
 
-**示例:**
+**Example:**
 
 ```go
-// 从嵌入的文件系统注册
+// Register from an embedded filesystem
 //go:embed templates/*.pptx
 var templateFS embed.FS
 
 err := tm.RegisterTemplateFromFS(templateFS, "custom", "templates/custom.pptx")
 ```
 
-### 配置方法
+### Configuration Methods
 
 #### SetDefaultTemplate
 
-设置默认模板。
+Sets the default template.
 
 ```go
 func (tm *TemplateManager) SetDefaultTemplate(name TemplateType)
@@ -151,17 +151,17 @@ func (tm *TemplateManager) SetDefaultTemplate(name TemplateType)
 
 #### SetTemplateDir
 
-设置模板目录。
+Sets the template directory.
 
 ```go
 func (tm *TemplateManager) SetTemplateDir(dir string)
 ```
 
-### 缓存管理
+### Cache Management
 
 #### ClearCache
 
-清空模板缓存。
+Clears the template cache.
 
 ```go
 func (tm *TemplateManager) ClearCache()
@@ -169,7 +169,7 @@ func (tm *TemplateManager) ClearCache()
 
 #### HasTemplate
 
-检查模板是否已加载。
+Checks whether a template has been loaded.
 
 ```go
 func (tm *TemplateManager) HasTemplate(name TemplateType) bool
@@ -177,7 +177,7 @@ func (tm *TemplateManager) HasTemplate(name TemplateType) bool
 
 #### GetMasterCache
 
-获取母版缓存。
+Returns the master cache.
 
 ```go
 func (tm *TemplateManager) GetMasterCache() *MasterCache
@@ -187,7 +187,7 @@ func (tm *TemplateManager) GetMasterCache() *MasterCache
 
 ## EmbeddedTemplateManager
 
-嵌入式模板管理器，使用程序化方式创建模板。
+An embedded template manager that creates templates programmatically.
 
 ```go
 type EmbeddedTemplateManager struct {
@@ -195,17 +195,17 @@ type EmbeddedTemplateManager struct {
 }
 ```
 
-### 获取全局管理器
+### Getting the Global Manager
 
 ```go
 func GetEmbeddedTemplateManager() *EmbeddedTemplateManager
 ```
 
-### 方法
+### Methods
 
 #### Init
 
-初始化嵌入式模板（仅执行一次）。
+Initializes the embedded templates (runs only once).
 
 ```go
 func (etm *EmbeddedTemplateManager) Init() error
@@ -213,7 +213,7 @@ func (etm *EmbeddedTemplateManager) Init() error
 
 #### HasTemplate
 
-检查模板是否存在。
+Checks whether a template exists.
 
 ```go
 func (etm *EmbeddedTemplateManager) HasTemplate(name TemplateType) bool
@@ -221,7 +221,7 @@ func (etm *EmbeddedTemplateManager) HasTemplate(name TemplateType) bool
 
 #### GetTemplate
 
-获取模板（返回克隆副本）。
+Returns a template (returns a cloned copy).
 
 ```go
 func (etm *EmbeddedTemplateManager) GetTemplate(name TemplateType) (*opc.Package, error)
@@ -229,7 +229,7 @@ func (etm *EmbeddedTemplateManager) GetTemplate(name TemplateType) (*opc.Package
 
 #### GetDefaultTemplate
 
-获取默认模板。
+Returns the default template.
 
 ```go
 func (etm *EmbeddedTemplateManager) GetDefaultTemplate() (*opc.Package, error)
@@ -239,7 +239,7 @@ func (etm *EmbeddedTemplateManager) GetDefaultTemplate() (*opc.Package, error)
 
 ## TemplateBuilder
 
-模板构建器，用于从零开始创建 PPTX 模板。
+A template builder for creating PPTX templates from scratch.
 
 ```go
 type TemplateBuilder struct {
@@ -247,17 +247,17 @@ type TemplateBuilder struct {
 }
 ```
 
-### 构造函数
+### Constructor
 
 ```go
 func NewTemplateBuilder() *TemplateBuilder
 ```
 
-### 方法
+### Methods
 
 #### Package
 
-返回底层 OPC 包。
+Returns the underlying OPC package.
 
 ```go
 func (tb *TemplateBuilder) Package() *opc.Package
@@ -265,7 +265,7 @@ func (tb *TemplateBuilder) Package() *opc.Package
 
 #### Build
 
-构建模板并返回 OPC 包。
+Builds the template and returns the OPC package.
 
 ```go
 func (tb *TemplateBuilder) Build() *opc.Package
@@ -273,7 +273,7 @@ func (tb *TemplateBuilder) Build() *opc.Package
 
 #### BuildAndRegister
 
-构建模板并注册到全局管理器。
+Builds the template and registers it with the global manager.
 
 ```go
 func (tb *TemplateBuilder) BuildAndRegister(name TemplateType) error
@@ -281,11 +281,11 @@ func (tb *TemplateBuilder) BuildAndRegister(name TemplateType) error
 
 ---
 
-## 全局函数
+## Global Functions
 
 ### LoadDefaultTemplate
 
-加载默认模板（使用全局管理器）。
+Loads the default template (using the global manager).
 
 ```go
 func LoadDefaultTemplate() (*opc.Package, error)
@@ -293,7 +293,7 @@ func LoadDefaultTemplate() (*opc.Package, error)
 
 ### LoadTemplate
 
-加载指定模板（使用全局管理器）。
+Loads the specified template (using the global manager).
 
 ```go
 func LoadTemplate(name TemplateType) (*opc.Package, error)
@@ -301,7 +301,7 @@ func LoadTemplate(name TemplateType) (*opc.Package, error)
 
 ### RegisterTemplate
 
-注册模板（使用全局管理器）。
+Registers a template (using the global manager).
 
 ```go
 func RegisterTemplate(name TemplateType, path string) error
@@ -309,7 +309,7 @@ func RegisterTemplate(name TemplateType, path string) error
 
 ### RegisterTemplateFromBytes
 
-从字节数据注册模板（使用全局管理器）。
+Registers a template from byte data (using the global manager).
 
 ```go
 func RegisterTemplateFromBytes(name TemplateType, data []byte) error
@@ -317,7 +317,7 @@ func RegisterTemplateFromBytes(name TemplateType, data []byte) error
 
 ### GetEmbeddedDefaultTemplate
 
-获取嵌入式默认模板。
+Returns the embedded default template.
 
 ```go
 func GetEmbeddedDefaultTemplate() (*opc.Package, error)
@@ -325,7 +325,7 @@ func GetEmbeddedDefaultTemplate() (*opc.Package, error)
 
 ### GetEmbeddedTemplate
 
-获取嵌入式模板（使用全局管理器）。
+Returns an embedded template (using the global manager).
 
 ```go
 func GetEmbeddedTemplate(name TemplateType) (*opc.Package, error)
@@ -333,7 +333,7 @@ func GetEmbeddedTemplate(name TemplateType) (*opc.Package, error)
 
 ### InitEmbeddedTemplates
 
-初始化嵌入式模板。
+Initializes the embedded templates.
 
 ```go
 func InitEmbeddedTemplates() error
@@ -341,24 +341,24 @@ func InitEmbeddedTemplates() error
 
 ---
 
-## 视口相关
+## Viewport
 
 ### SlideViewport
 
-幻灯片视口。
+Slide viewport.
 
 ```go
 type SlideViewport struct {
-    // Width 视口宽度 (px)
+    // Width is the viewport width (px)
     Width int
-    // Height 视口高度 (px)
+    // Height is the viewport height (px)
     Height int
-    // Size 标准尺寸名称（可选）
+    // SizeName is the standard size name (optional)
     SizeName string
 }
 ```
 
-### 构造函数
+### Constructors
 
 ```go
 func NewSlideViewport(width, height int) *SlideViewport
@@ -366,11 +366,11 @@ func NewSlideViewport(width, height int) *SlideViewport
 func NewSlideViewportFromSize(size SlideSize) *SlideViewport
 ```
 
-### 方法
+### Methods
 
 #### Rect
 
-返回视口矩形。
+Returns the viewport rectangle.
 
 ```go
 func (vp *SlideViewport) Rect() Rect
@@ -378,7 +378,7 @@ func (vp *SlideViewport) Rect() Rect
 
 #### CheckBoundary
 
-检查元素边界。
+Checks the boundary of an element.
 
 ```go
 func (vp *SlideViewport) CheckBoundary(x, y, cx, cy int) BoundaryCheckResult
@@ -386,7 +386,7 @@ func (vp *SlideViewport) CheckBoundary(x, y, cx, cy int) BoundaryCheckResult
 
 #### CheckRect
 
-检查矩形边界。
+Checks the boundary of a rectangle.
 
 ```go
 func (vp *SlideViewport) CheckRect(rect Rect) BoundaryCheckResult
@@ -394,7 +394,7 @@ func (vp *SlideViewport) CheckRect(rect Rect) BoundaryCheckResult
 
 #### IsInside
 
-检查元素是否完全在边界内。
+Checks whether an element is completely within the boundary.
 
 ```go
 func (vp *SlideViewport) IsInside(x, y, cx, cy int) bool
@@ -402,7 +402,7 @@ func (vp *SlideViewport) IsInside(x, y, cx, cy int) bool
 
 #### IsVisible
 
-检查元素是否有部分可见。
+Checks whether any part of an element is visible.
 
 ```go
 func (vp *SlideViewport) IsVisible(x, y, cx, cy int) bool
@@ -410,40 +410,40 @@ func (vp *SlideViewport) IsVisible(x, y, cx, cy int) bool
 
 ---
 
-## 边界检查
+## Boundary Checking
 
 ### BoundaryStatus
 
-边界状态。
+Boundary status.
 
 ```go
 type BoundaryStatus int
 ```
 
-**常量:**
+**Constants:**
 
 ```go
 const (
-    // BoundaryStatusInside 完全在边界内
+    // BoundaryStatusInside means the element is fully within the boundary
     BoundaryStatusInside BoundaryStatus = iota
-    // BoundaryStatusPartial 部分越界
+    // BoundaryStatusPartial means the element is partially outside the boundary
     BoundaryStatusPartial
-    // BoundaryStatusOutside 完全越界
+    // BoundaryStatusOutside means the element is completely outside the boundary
     BoundaryStatusOutside
-    // BoundaryStatusOverflowRight 右侧越界
+    // BoundaryStatusOverflowRight means the element overflows the right edge
     BoundaryStatusOverflowRight
-    // BoundaryStatusOverflowLeft 左侧越界
+    // BoundaryStatusOverflowLeft means the element overflows the left edge
     BoundaryStatusOverflowLeft
-    // BoundaryStatusOverflowTop 顶部越界
+    // BoundaryStatusOverflowTop means the element overflows the top edge
     BoundaryStatusOverflowTop
-    // BoundaryStatusOverflowBottom 底部越界
+    // BoundaryStatusOverflowBottom means the element overflows the bottom edge
     BoundaryStatusOverflowBottom
 )
 ```
 
 #### String
 
-返回边界状态的字符串表示。
+Returns a string representation of the boundary status.
 
 ```go
 func (bs BoundaryStatus) String() string
@@ -451,33 +451,36 @@ func (bs BoundaryStatus) String() string
 
 ### BoundaryCheckResult
 
-边界检查结果。
+Boundary check result.
 
 ```go
 type BoundaryCheckResult struct {
-    // Status 边界状态
+    // Status is the boundary status
     Status BoundaryStatus
-    // ElementRect 元素矩形 (x, y, cx, cy in px)
+    // ElementRect is the element rectangle (x, y, cx, cy in px)
     ElementRect Rect
-    // ViewportRect 视口矩形 (0, 0, width, height in px)
+    // ViewportRect is the viewport rectangle (0, 0, width, height in px)
     ViewportRect Rect
-    // OverflowX X 方向越界量 (正数表示越出右边界，负数表示越出左边界)
+    // OverflowX is the overflow amount in the X direction
+    // (positive = overflows right edge, negative = overflows left edge)
     OverflowX int
-    // OverflowY Y 方向越界量 (正数表示越出下边界，负数表示越出上边界)
+    // OverflowY is the overflow amount in the Y direction
+    // (positive = overflows bottom edge, negative = overflows top edge)
     OverflowY int
-    // IsVisible 是否有部分可见（至少有部分在视口内）
+    // IsVisible indicates whether any part of the element is visible
+    // (at least partially within the viewport)
     IsVisible bool
 }
 ```
 
 ### Rect
 
-矩形区域。
+Rectangular area.
 
 ```go
 type Rect struct {
-    X, Y   int // 左上角坐标 (px)
-    Cx, Cy int // 宽度和高度 (px)
+    X, Y   int // top-left coordinates (px)
+    Cx, Cy int // width and height (px)
 }
 ```
 
@@ -485,175 +488,175 @@ type Rect struct {
 
 ## SlideSize
 
-幻灯片尺寸。
+Slide size.
 
 ```go
 type SlideSize struct {
-    Width  int // 宽度 (px)
-    Height int // 高度 (px)
+    Width  int // width (px)
+    Height int // height (px)
 }
 ```
 
-### 预设尺寸
+### Preset Sizes
 
 ```go
 var (
-    // SlideSize16x9 宽屏幻灯片尺寸 (16:9)
-    // 宽度: 1280 px (13.333 英寸)
-    // 高度: 720 px (7.5 英寸)
+    // SlideSize16x9 is the widescreen slide size (16:9)
+    // Width:  1280 px (13.333 inches)
+    // Height: 720 px (7.5 inches)
     SlideSize16x9 = SlideSize{Width: 1280, Height: 720}
 
-    // SlideSize4x3 标准幻灯片尺寸 (4:3)
-    // 宽度: 960 px (10 英寸)
-    // 高度: 720 px (7.5 英寸)
+    // SlideSize4x3 is the standard slide size (4:3)
+    // Width:  960 px (10 inches)
+    // Height: 720 px (7.5 inches)
     SlideSize4x3 = SlideSize{Width: 960, Height: 720}
 
-    // SlideSize16x10 超宽屏幻灯片尺寸 (16:10)
-    // 宽度: 1280 px (13.333 英寸)
-    // 高度: 800 px (8.333 英寸)
+    // SlideSize16x10 is the wide slide size (16:10)
+    // Width:  1280 px (13.333 inches)
+    // Height: 800 px (8.333 inches)
     SlideSize16x10 = SlideSize{Width: 1280, Height: 800}
 )
 ```
 
 ---
 
-## 使用示例
+## Usage Examples
 
-### 使用预定义模板
+### Using Predefined Templates
 
 ```go
-// 使用默认模板创建演示文稿
+// Create a presentation with the default template
 pres, err := pptx.NewWithTemplate(pptx.TemplateDefault)
 if err != nil {
     panic(err)
 }
 
-// 使用空白模板
+// Use the blank template
 pres, err = pptx.NewWithTemplate(pptx.TemplateBlank)
 
-// 使用宽屏模板
+// Use the widescreen template
 pres, err = pptx.NewWithTemplate(pptx.TemplateWide)
 
-// 使用标准模板（4:3）
+// Use the standard template (4:3)
 pres, err = pptx.NewWithTemplate(pptx.TemplateStandard)
 ```
 
-### 注册自定义模板
+### Registering Custom Templates
 
 ```go
-// 从文件注册
+// Register from a file
 err := pptx.RegisterTemplate("custom", "/path/to/custom.pptx")
 if err != nil {
     panic(err)
 }
 
-// 从字节数据注册
+// Register from byte data
 data, _ := os.ReadFile("custom.pptx")
 err = pptx.RegisterTemplateFromBytes("custom", data)
 
-// 使用自定义模板
+// Use the custom template
 pres, err := pptx.NewWithTemplate("custom")
 ```
 
-### 使用模板管理器
+### Using the Template Manager
 
 ```go
-// 创建模板管理器
+// Create a template manager
 tm := pptx.NewTemplateManagerWithDir("/path/to/templates")
 
-// 注册模板
+// Register templates
 tm.RegisterTemplate("report", "report.pptx")
 tm.RegisterTemplate("proposal", "proposal.pptx")
 
-// 加载模板
+// Load a template
 pkg, err := tm.LoadTemplate("report")
 if err != nil {
     panic(err)
 }
 
-// 检查模板是否存在
+// Check whether a template exists
 if tm.HasTemplate("proposal") {
-    fmt.Println("模板已加载")
+    fmt.Println("Template loaded")
 }
 
-// 清空缓存
+// Clear the cache
 tm.ClearCache()
 ```
 
-### 边界检查
+### Boundary Checking
 
 ```go
 slide := pres.AddSlide()
 
-// 检查元素边界
+// Check element boundary
 result := slide.CheckBoundary(100, 100, 200, 150)
 
 switch result.Status {
 case pptx.BoundaryStatusInside:
-    fmt.Println("元素完全在边界内")
+    fmt.Println("Element is fully within the boundary")
 case pptx.BoundaryStatusPartial:
-    fmt.Printf("元素部分越界: X=%d, Y=%d\n", result.OverflowX, result.OverflowY)
+    fmt.Printf("Element is partially outside: X=%d, Y=%d\n", result.OverflowX, result.OverflowY)
 case pptx.BoundaryStatusOutside:
-    fmt.Println("元素完全越界")
+    fmt.Println("Element is completely outside the boundary")
 }
 
-// 快速检查
+// Quick checks
 if slide.IsInsideBoundary(100, 100, 200, 150) {
-    fmt.Println("元素在边界内")
+    fmt.Println("Element is within the boundary")
 }
 
 if slide.IsVisible(100, 100, 200, 150) {
-    fmt.Println("元素至少部分可见")
+    fmt.Println("Element is at least partially visible")
 }
 ```
 
-### 使用视口
+### Using the Viewport
 
 ```go
-// 创建视口
+// Create a viewport
 viewport := pptx.NewSlideViewport(1280, 720)
 
-// 检查边界
+// Check boundary
 rect := pptx.Rect{X: 100, Y: 100, Cx: 200, Cy: 150}
 result := viewport.CheckRect(rect)
 
-fmt.Printf("边界状态: %s\n", result.Status)
-fmt.Printf("是否可见: %v\n", result.IsVisible)
+fmt.Printf("Boundary status: %s\n", result.Status)
+fmt.Printf("Is visible: %v\n", result.IsVisible)
 ```
 
-### 从嵌入资源加载
+### Loading from Embedded Resources
 
 ```go
 //go:embed templates/*.pptx
 var templateFS embed.FS
 
 func main() {
-    // 初始化嵌入式模板
+    // Initialize embedded templates
     err := pptx.InitEmbeddedTemplates()
     if err != nil {
         panic(err)
     }
 
-    // 使用嵌入式模板
+    // Use the embedded template
     pres, err := pptx.NewWithTemplate(pptx.TemplateDefault)
 }
 ```
 
-### 模板克隆和修改
+### Cloning and Modifying a Template
 
 ```go
-// 加载模板
+// Load a template
 pres, _ := pptx.NewWithTemplate(pptx.TemplateDefault)
 
-// 克隆演示文稿
+// Clone the presentation
 presCopy, err := pres.Clone()
 if err != nil {
     panic(err)
 }
 
-// 修改克隆的版本
+// Modify the clone
 presCopy.AddSlide()
 
-// 原始版本不受影响
-fmt.Printf("原始: %d 页, 克隆: %d 页\n", pres.SlideCount(), presCopy.SlideCount())
+// The original is unaffected
+fmt.Printf("Original: %d slides, Clone: %d slides\n", pres.SlideCount(), presCopy.SlideCount())
 ```

@@ -1,10 +1,10 @@
-# XML 工具函数
+# XML Utility Functions
 
-本模块提供 XML 处理工具函数，主要用于解决 Go 标准库 `encoding/xml` 在处理带命名空间前缀的 XML 时的兼容性问题。
+This module provides XML processing utility functions, primarily for resolving compatibility issues between Go's standard library `encoding/xml` and namespace-prefixed XML.
 
-## 概述
+## Overview
 
-Office Open XML (OOXML) 格式的文件使用带命名空间前缀的 XML 元素和属性，例如：
+Office Open XML (OOXML) files use XML elements and attributes with namespace prefixes, for example:
 
 ```xml
 <p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -14,11 +14,11 @@ Office Open XML (OOXML) 格式的文件使用带命名空间前缀的 XML 元素
 </p:presentation>
 ```
 
-Go 的 `xml.Unmarshal` 无法正确处理这种格式，因为它：
-1. 无法匹配带前缀的元素名（如 `<p:presentation>`）
-2. 无法匹配带前缀的属性名（如 `r:id`）
+Go's `xml.Unmarshal` cannot process this format correctly because it:
+1. Cannot match element names with prefixes (e.g. `<p:presentation>`)
+2. Cannot match attribute names with prefixes (e.g. `r:id`)
 
-## 核心函数
+## Core Function
 
 ### StripNamespacePrefixes
 
@@ -26,63 +26,63 @@ Go 的 `xml.Unmarshal` 无法正确处理这种格式，因为它：
 func StripNamespacePrefixes(data []byte) ([]byte, error)
 ```
 
-处理 XML 数据，去除命名空间前缀使其兼容 Go 的 `xml.Unmarshal`。
+Processes XML data by removing namespace prefixes to make it compatible with Go's `xml.Unmarshal`.
 
-**转换规则：**
+**Transformation rules:**
 
-| 原始 XML | 转换后 |
+| Original XML | After transformation |
 |----------|--------|
 | `<p:presentation>` | `<presentation>` |
 | `<a:solidFill>` | `<solidFill>` |
 | `r:id="rId1"` | `rid="rId1"` |
-| `xmlns:p="..."` | (移除) |
+| `xmlns:p="..."` | (removed) |
 
-**使用示例：**
+**Usage example:**
 
 ```go
-// 从 PPTX 文件读取的原始 XML 数据
+// Raw XML data read from a PPTX file
 rawXML := slidePart.Blob()
 
-// 去除命名空间前缀
+// Strip namespace prefixes
 cleanXML, err := parts.StripNamespacePrefixes(rawXML)
 if err != nil {
     return err
 }
 
-// 现在可以正确解析
+// Can now be parsed correctly
 var slide XSlide
 if err := xml.Unmarshal(cleanXML, &slide); err != nil {
     return err
 }
 ```
 
-## XML 结构体标签约定
+## XML Struct Tag Conventions
 
-使用 `StripNamespacePrefixes` 后，结构体标签应使用以下约定：
+After applying `StripNamespacePrefixes`, struct tags should follow these conventions:
 
-### 元素名
-- 不带前缀：`xml:"presentation"` 而非 `xml:"p:presentation"`
-- 不带命名空间 URI：`xml:"spTree"` 而非 `xml:"http://... spTree"`
+### Element Names
+- No prefix: `xml:"presentation"` not `xml:"p:presentation"`
+- No namespace URI: `xml:"spTree"` not `xml:"http://... spTree"`
 
-### 属性名
-- 合并前缀到属性名：`xml:"rid,attr"` 而非 `xml:"r:id,attr"`
-- 示例：`r:id` → `rid`，`r:embed` → `rembed`
+### Attribute Names
+- Merge prefix into attribute name: `xml:"rid,attr"` not `xml:"r:id,attr"`
+- Examples: `r:id` → `rid`, `r:embed` → `rembed`
 
 ```go
-// 正确的标签格式
+// Correct tag format
 type XSldId struct {
-    Id  uint32 `xml:"id,attr"`    // 匹配 id="256"
-    RId string `xml:"rid,attr"`   // 匹配转换后的 rid="rId2"
+    Id  uint32 `xml:"id,attr"`    // matches id="256"
+    RId string `xml:"rid,attr"`   // matches the transformed rid="rId2"
 }
 
-// 错误的标签格式（会导致解析失败）
+// Incorrect tag format (causes parsing failure)
 type XSldId struct {
     Id  uint32 `xml:"id,attr"`
-    RId string `xml:"r:id,attr"`  // 无法匹配 rid
+    RId string `xml:"r:id,attr"`  // cannot match rid
 }
 ```
 
-## 常量
+## Constants
 
 ### XMLDeclaration
 
@@ -90,18 +90,18 @@ type XSldId struct {
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
 ```
 
-OPC 包中所有 XML 文件的标准 XML 声明头。
+Standard XML declaration header for all XML files in an OPC package.
 
-## 内部实现
+## Internal Implementation
 
-### 处理流程
+### Processing Flow
 
-1. **收集命名空间映射**：遍历所有 `xmlns` 属性，建立 URI → 前缀的映射
-2. **转换元素名**：去除元素名的前缀（如 `p:presentation` → `presentation`）
-3. **转换属性名**：将属性的前缀合并到属性名（如 `r:id` → `rid`）
-4. **移除 xmlns 声明**：删除所有命名空间声明属性
+1. **Collect namespace mappings**: Iterate over all `xmlns` attributes and build a URI → prefix mapping.
+2. **Transform element names**: Remove prefixes from element names (e.g. `p:presentation` → `presentation`).
+3. **Transform attribute names**: Merge prefixes into attribute names (e.g. `r:id` → `rid`).
+4. **Remove xmlns declarations**: Delete all namespace declaration attributes.
 
-### 代码示例
+### Code Example
 
 ```go
 func stripNamespacePrefixes(data []byte) ([]byte, error) {
@@ -114,14 +114,14 @@ func stripNamespacePrefixes(data []byte) ([]byte, error) {
         if err == io.EOF {
             break
         }
-        // ... 处理各种 token 类型
+        // ... handle each token type
     }
     return buf.Bytes(), nil
 }
 ```
 
-## 注意事项
+## Notes
 
-1. **性能考虑**：此函数会复制整个 XML 数据，对于大文件可能有内存开销
-2. **保留信息**：命名空间 URI 信息会丢失，但前缀信息保留在属性名中
-3. **双向转换**：此函数仅用于读取（反序列化），写入时使用完整命名空间
+1. **Performance**: This function copies the entire XML data; it may have memory overhead for large files.
+2. **Information retained**: Namespace URI information is discarded, but prefix information is preserved in attribute names.
+3. **One-way transformation**: This function is intended for reading (deserialization) only; full namespaces are used when writing.

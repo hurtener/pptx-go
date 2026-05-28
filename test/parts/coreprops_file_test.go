@@ -4,55 +4,58 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Muprprpr/Go-pptx/parts"
+	"github.com/hurtener/pptx-go/parts"
 )
 
 // ============================================================================
-// CoreProperties 真实文件解析测试
+// CoreProperties real-file parse tests
 // ============================================================================
 
 func TestParseCorePropsFromFile(t *testing.T) {
-	// 读取真实 core.xml 文件
+	// Read the real core.xml file.
 	xmlData, err := os.ReadFile("../test-data/test/docProps/core.xml")
 	if err != nil {
-		t.Fatalf("读取文件失败: %v", err)
+		if os.IsNotExist(err) {
+			t.Skipf("fixture not present; skipping (gitignored, not committed upstream): %v", err)
+		}
+		t.Fatalf("reading file failed: %v", err)
 	}
 
-	// 解析
+	// Parse.
 	cp, err := parts.ParseCoreProps(xmlData)
 	if err != nil {
-		t.Fatalf("ParseCoreProps 返回错误: %v", err)
+		t.Fatalf("ParseCoreProps returned an error: %v", err)
 	}
 	if cp == nil {
-		t.Fatal("ParseCoreProps 返回 nil")
+		t.Fatal("ParseCoreProps returned nil")
 	}
 
-	// 断言核心字段非空
+	// Assert that core fields are non-empty.
 	if cp.Title == "" {
-		t.Error("Title 为空")
+		t.Error("Title is empty")
 	}
 	if cp.Creator == "" {
-		t.Error("Creator 为空")
+		t.Error("Creator is empty")
 	}
 	if cp.LastModifiedBy == "" {
-		t.Error("LastModifiedBy 为空")
+		t.Error("LastModifiedBy is empty")
 	}
 	if cp.Revision == "" {
-		t.Error("Revision 为空")
+		t.Error("Revision is empty")
 	}
 	if cp.GetCreated() == "" {
-		t.Error("Created 为空")
+		t.Error("Created is empty")
 	}
 	if cp.GetModified() == "" {
-		t.Error("Modified 为空")
+		t.Error("Modified is empty")
 	}
 
-	// 验证具体值
-	if cp.Title != "PowerPoint 演示文稿" {
-		t.Errorf("Title = %q, want %q", cp.Title, "PowerPoint 演示文稿")
+	// Verify exact values.
+	if cp.Title != "PowerPoint Presentation" {
+		t.Errorf("Title = %q, want %q", cp.Title, "PowerPoint Presentation")
 	}
-	if cp.Creator != "优品PPT" {
-		t.Errorf("Creator = %q, want %q", cp.Creator, "优品PPT")
+	if cp.Creator != "YouPin PPT" {
+		t.Errorf("Creator = %q, want %q", cp.Creator, "YouPin PPT")
 	}
 	if cp.LastModifiedBy != "kan" {
 		t.Errorf("LastModifiedBy = %q, want %q", cp.LastModifiedBy, "kan")
@@ -67,5 +70,5 @@ func TestParseCorePropsFromFile(t *testing.T) {
 		t.Errorf("Modified = %q, want %q", cp.GetModified(), "2022-05-30T10:23:18Z")
 	}
 
-	t.Logf("解析成功: Title=%q, Creator=%q, Revision=%q", cp.Title, cp.Creator, cp.Revision)
+	t.Logf("parse succeeded: Title=%q, Creator=%q, Revision=%q", cp.Title, cp.Creator, cp.Revision)
 }

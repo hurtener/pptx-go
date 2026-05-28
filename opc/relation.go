@@ -9,17 +9,17 @@ import (
 	"sync/atomic"
 )
 
-// Relationship 表示两个部件之间的关系
+// Relationship represents a relationship between two parts.
 type Relationship struct {
-	rID         string       // 关系ID (rId1, rId2, ...)
-	relType     string       // 关系类型
-	target      *PackURI     // 目标URI
-	targetMode  string       // Internal 或 External
-	isExternal  bool         // 是否为外部目标
-	source      *PackURI     // 源部件URI（用于解析相对路径）
+	rID        string   // Relationship ID (rId1, rId2, …)
+	relType    string   // Relationship type
+	target     *PackURI // Target URI
+	targetMode string   // Internal or External
+	isExternal bool     // Whether the target is external
+	source     *PackURI // Source part URI (used for resolving relative paths)
 }
 
-// NewRelationship 创建一个新的关系
+// NewRelationship creates a new relationship.
 func NewRelationship(rID, relType, targetURI string, isExternal bool, source *PackURI) *Relationship {
 	rel := &Relationship{
 		rID:        rID,
@@ -33,12 +33,12 @@ func NewRelationship(rID, relType, targetURI string, isExternal bool, source *Pa
 		rel.target = &PackURI{uri: targetURI}
 	} else {
 		rel.targetMode = "Internal"
-		// 对于内部关系，需要基于源 URI 解析相对路径
+		// For internal relationships, resolve relative paths using the source URI's directory.
 		if source != nil && !strings.HasPrefix(targetURI, "/") {
-			// 相对路径：使用 source 的目录来解析
+			// Relative path: resolve against the source's directory.
 			rel.target = source.Join(targetURI)
 		} else {
-			// 绝对路径：直接创建
+			// Absolute path: use directly.
 			rel.target = NewPackURI(targetURI)
 		}
 	}
@@ -46,23 +46,23 @@ func NewRelationship(rID, relType, targetURI string, isExternal bool, source *Pa
 	return rel
 }
 
-// RID 返回关系ID
+// RID returns the relationship ID.
 func (r *Relationship) RID() string {
 	return r.rID
 }
 
-// Type 返回关系类型
+// Type returns the relationship type.
 func (r *Relationship) Type() string {
 	return r.relType
 }
 
-// TargetURI 返回目标URI
+// TargetURI returns the target URI.
 func (r *Relationship) TargetURI() *PackURI {
 	return r.target
 }
 
-// TargetRef 返回目标引用（相对或绝对）
-// 如果有源部件，返回从源部件到目标的相对路径
+// TargetRef returns the target reference (relative or absolute).
+// If a source part is set, returns the relative path from the source to the target.
 func (r *Relationship) TargetRef() string {
 	if r.isExternal {
 		return r.target.URI()
@@ -73,27 +73,27 @@ func (r *Relationship) TargetRef() string {
 	return r.target.URI()
 }
 
-// IsExternal 返回是否为外部关系
+// IsExternal reports whether this is an external relationship.
 func (r *Relationship) IsExternal() bool {
 	return r.isExternal
 }
 
-// TargetMode 返回目标模式
+// TargetMode returns the target mode string.
 func (r *Relationship) TargetMode() string {
 	return r.targetMode
 }
 
-// SourceURI 返回源URI
+// SourceURI returns the source URI.
 func (r *Relationship) SourceURI() *PackURI {
 	return r.source
 }
 
-// SetSource 设置源URI
+// SetSource sets the source URI.
 func (r *Relationship) SetSource(source *PackURI) {
 	r.source = source
 }
 
-// Equals 比较两个关系是否相等
+// Equals reports whether two relationships are equal.
 func (r *Relationship) Equals(other *Relationship) bool {
 	if other == nil {
 		return false
@@ -101,25 +101,25 @@ func (r *Relationship) Equals(other *Relationship) bool {
 	return r.rID == other.rID && r.relType == other.relType && r.target.Equals(other.target)
 }
 
-// Relationships 表示关系的集合
+// Relationships is an ordered collection of relationships.
 type Relationships struct {
 	relationships map[string]*Relationship
-	order        []string // 保持插入顺序
-	mu           sync.RWMutex
-	sourceURI    *PackURI // 关系所属的源部件
-	rIDCounter   atomic.Int32 // 原子计数器用于生成 rID
+	order         []string // Preserves insertion order.
+	mu            sync.RWMutex
+	sourceURI     *PackURI     // The source part this collection belongs to.
+	rIDCounter    atomic.Int32 // Atomic counter for generating rIDs.
 }
 
-// NewRelationships 创建新的关系集合
+// NewRelationships creates a new, empty Relationships collection.
 func NewRelationships(sourceURI *PackURI) *Relationships {
 	return &Relationships{
 		relationships: make(map[string]*Relationship),
-		order:        make([]string, 0),
-		sourceURI:    sourceURI,
+		order:         make([]string, 0),
+		sourceURI:     sourceURI,
 	}
 }
 
-// Add 添加一个关系
+// Add adds a relationship to the collection.
 func (rs *Relationships) Add(rel *Relationship) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
@@ -128,7 +128,7 @@ func (rs *Relationships) Add(rel *Relationship) error {
 		return fmt.Errorf("relationship with rID %s already exists", rel.RID())
 	}
 
-	// 设置源URI
+	// Set the source URI if not already set.
 	if rel.SourceURI() == nil && rs.sourceURI != nil {
 		rel.SetSource(rs.sourceURI)
 	}
@@ -138,7 +138,7 @@ func (rs *Relationships) Add(rel *Relationship) error {
 	return nil
 }
 
-// AddNew 创建并添加一个新关系（使用原子操作分配 ID）
+// AddNew creates and adds a new relationship, allocating an ID atomically.
 func (rs *Relationships) AddNew(relType, targetURI string, isExternal bool) (*Relationship, error) {
 	rID := rs.allocateRID()
 	rel := NewRelationship(rID, relType, targetURI, isExternal, rs.sourceURI)
@@ -149,14 +149,14 @@ func (rs *Relationships) AddNew(relType, targetURI string, isExternal bool) (*Re
 	return rel, nil
 }
 
-// Get 根据rID获取关系
+// Get returns the relationship with the given rID.
 func (rs *Relationships) Get(rID string) *Relationship {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
 	return rs.relationships[rID]
 }
 
-// GetByType 根据关系类型获取所有关系
+// GetByType returns all relationships of the given type.
 func (rs *Relationships) GetByType(relType string) []*Relationship {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -170,7 +170,7 @@ func (rs *Relationships) GetByType(relType string) []*Relationship {
 	return result
 }
 
-// GetByTarget 根据目标URI获取关系
+// GetByTarget returns the relationship whose target matches the given URI.
 func (rs *Relationships) GetByTarget(targetURI *PackURI) *Relationship {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -183,7 +183,7 @@ func (rs *Relationships) GetByTarget(targetURI *PackURI) *Relationship {
 	return nil
 }
 
-// Remove 删除一个关系
+// Remove removes the relationship with the given rID.
 func (rs *Relationships) Remove(rID string) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
@@ -194,7 +194,7 @@ func (rs *Relationships) Remove(rID string) error {
 
 	delete(rs.relationships, rID)
 
-	// 从order中移除
+	// Remove from the order slice.
 	for i, id := range rs.order {
 		if id == rID {
 			rs.order = append(rs.order[:i], rs.order[i+1:]...)
@@ -204,7 +204,7 @@ func (rs *Relationships) Remove(rID string) error {
 	return nil
 }
 
-// Contains 检查是否包含指定rID的关系
+// Contains reports whether a relationship with the given rID exists.
 func (rs *Relationships) Contains(rID string) bool {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -212,7 +212,7 @@ func (rs *Relationships) Contains(rID string) bool {
 	return exists
 }
 
-// All 返回所有关系（按插入顺序）
+// All returns all relationships in insertion order.
 func (rs *Relationships) All() []*Relationship {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -224,56 +224,56 @@ func (rs *Relationships) All() []*Relationship {
 	return result
 }
 
-// Count 返回关系数量
+// Count returns the number of relationships.
 func (rs *Relationships) Count() int {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
 	return len(rs.relationships)
 }
 
-// NextRID 返回下一个关系ID（预览，不消耗）
-// 此方法是幂等的，多次调用返回相同的值，直到 AddNew 实际使用
+// NextRID returns the next relationship ID without consuming it (idempotent preview).
+// Multiple calls return the same value until AddNew actually uses it.
 func (rs *Relationships) NextRID() string {
-	// 读取当前值加 1，但不递增计数器
+	// Peek at the current value + 1 without incrementing the counter.
 	nextID := rs.rIDCounter.Load() + 1
 	return fmt.Sprintf("rId%d", nextID)
 }
 
-// allocateRID 分配并返回下一个关系ID
-// 此方法用于 AddNew 等需要实际分配 ID 的场景
-// 使用原子操作确保线程安全：Int32.Add 返回新值（递增后的值）
-// 例如：计数器=0 时，Add(1) 返回 1（新值），我们直接返回 1
+// allocateRID allocates and returns the next relationship ID.
+// Used by AddNew and similar methods that need an actual ID.
+// The atomic Add returns the new (post-increment) value, e.g. counter=0 → Add(1) returns 1.
 func (rs *Relationships) allocateRID() string {
 	return fmt.Sprintf("rId%d", rs.rIDCounter.Add(1))
 }
 
-// InitRIDCounter 初始化 rID 计数器（从现有关系中找到最大值）
-// 在从 XML 加载关系后调用，确保新分配的 ID 不会与现有的冲突
+// InitRIDCounter initializes the rID counter from the existing relationships,
+// ensuring newly allocated IDs do not clash with existing ones.
+// Call this after loading relationships from XML.
 func (rs *Relationships) InitRIDCounter() {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	rs.initRIDCounterLocked()
 }
 
-// SetSourceURI 设置源URI
+// SetSourceURI sets the source URI and propagates it to all relationships.
 func (rs *Relationships) SetSourceURI(sourceURI *PackURI) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	rs.sourceURI = sourceURI
-	// 更新所有关系的源
+	// Update the source on all existing relationships.
 	for _, rel := range rs.relationships {
 		rel.SetSource(sourceURI)
 	}
 }
 
-// SourceURI 返回源URI
+// SourceURI returns the source URI.
 func (rs *Relationships) SourceURI() *PackURI {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
 	return rs.sourceURI
 }
 
-// Clone 克隆关系集合
+// Clone returns a deep copy of the relationship collection.
 func (rs *Relationships) Clone() *Relationships {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -285,21 +285,21 @@ func (rs *Relationships) Clone() *Relationships {
 		newRs.relationships[rID] = newRel
 		newRs.order = append(newRs.order, rID)
 	}
-	// 复制原子计数器的当前值
+	// Copy the current value of the atomic counter.
 	newRs.rIDCounter.Store(rs.rIDCounter.Load())
 	return newRs
 }
 
-// XML 结构体用于序列化关系
+// XML structs for serializing relationships.
 
-// XRelationships XML序列化的根元素
+// XRelationships is the XML root element for relationships.
 type XRelationships struct {
-	XMLName      xml.Name       `xml:"Relationships"`
-	Xmlns        string         `xml:"xmlns,attr"`
+	XMLName       xml.Name        `xml:"Relationships"`
+	Xmlns         string          `xml:"xmlns,attr"`
 	Relationships []XRelationship `xml:"Relationship"`
 }
 
-// XRelationship XML序列化的关系元素
+// XRelationship is the XML element for a single relationship.
 type XRelationship struct {
 	ID         string `xml:"Id,attr"`
 	Type       string `xml:"Type,attr"`
@@ -307,7 +307,7 @@ type XRelationship struct {
 	TargetMode string `xml:"TargetMode,attr,omitempty"`
 }
 
-// MarshalXML 实现 xml.Marshaler 接口
+// MarshalXML implements xml.Marshaler.
 func (rs *Relationships) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
@@ -332,7 +332,7 @@ func (rs *Relationships) MarshalXML(e *xml.Encoder, start xml.StartElement) erro
 	return e.Encode(xrels)
 }
 
-// UnmarshalXML 实现 xml.Unmarshaler 接口
+// UnmarshalXML implements xml.Unmarshaler.
 func (rs *Relationships) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
@@ -352,13 +352,13 @@ func (rs *Relationships) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 		rs.order = append(rs.order, xrel.ID)
 	}
 
-	// 初始化原子计数器，确保新分配的 ID 不会与现有的冲突
+	// Initialize the counter so new IDs do not clash with existing ones.
 	rs.initRIDCounterLocked()
 
 	return nil
 }
 
-// initRIDCounterLocked 在已持有锁的情况下初始化 rID 计数器
+// initRIDCounterLocked initializes the rID counter while the lock is already held.
 func (rs *Relationships) initRIDCounterLocked() {
 	maxNum := int32(0)
 	for rID := range rs.relationships {
@@ -373,7 +373,7 @@ func (rs *Relationships) initRIDCounterLocked() {
 	rs.rIDCounter.Store(maxNum)
 }
 
-// ToXML 将关系集合序列化为XML
+// ToXML serializes the relationship collection to XML.
 func (rs *Relationships) ToXML() ([]byte, error) {
 	output, err := xml.Marshal(rs)
 	if err != nil {
@@ -382,44 +382,44 @@ func (rs *Relationships) ToXML() ([]byte, error) {
 	return append([]byte(XMLDeclaration), output...), nil
 }
 
-// FromXML 从XML解析关系集合
+// FromXML parses the relationship collection from XML data.
 func (rs *Relationships) FromXML(data []byte) error {
 	return xml.Unmarshal(data, rs)
 }
 
-// Relatable 可关联部件的接口
+// Relatable is the interface for parts that can hold relationships.
 type Relatable interface {
-	// PartURI 返回部件的URI
+	// PartURI returns the part's URI.
 	PartURI() *PackURI
-	// Relationships 返回部件的关系集合
+	// Relationships returns the part's relationship collection.
 	Relationships() *Relationships
-	// AddRelationship 添加一个关系
+	// AddRelationship adds a relationship.
 	AddRelationship(relType, targetURI string, isExternal bool) (*Relationship, error)
 }
 
-// RelTypeCollection 关系类型集合（用于按类型分组查找）
+// RelTypeCollection is a collection of relationships grouped by type.
 type RelTypeCollection struct {
 	types map[string][]*Relationship
 }
 
-// NewRelTypeCollection 创建新的关系类型集合
+// NewRelTypeCollection creates a new, empty RelTypeCollection.
 func NewRelTypeCollection() *RelTypeCollection {
 	return &RelTypeCollection{
 		types: make(map[string][]*Relationship),
 	}
 }
 
-// Add 添加关系到类型集合
+// Add adds a relationship to the type collection.
 func (c *RelTypeCollection) Add(rel *Relationship) {
 	c.types[rel.Type()] = append(c.types[rel.Type()], rel)
 }
 
-// GetByType 按类型获取关系
+// GetByType returns all relationships of the given type.
 func (c *RelTypeCollection) GetByType(relType string) []*Relationship {
 	return c.types[relType]
 }
 
-// Types 返回所有关系类型
+// Types returns all distinct relationship types in sorted order.
 func (c *RelTypeCollection) Types() []string {
 	types := make([]string, 0, len(c.types))
 	for t := range c.types {
@@ -429,7 +429,7 @@ func (c *RelTypeCollection) Types() []string {
 	return types
 }
 
-// ParseRelationshipsFromXML 从XML数据解析关系
+// ParseRelationshipsFromXML parses a Relationships collection from XML data.
 func ParseRelationshipsFromXML(data []byte, sourceURI *PackURI) (*Relationships, error) {
 	rels := NewRelationships(sourceURI)
 	if err := rels.FromXML(data); err != nil {
