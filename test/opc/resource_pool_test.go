@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // TestResourcePool_Basic tests basic resource pool functionality.

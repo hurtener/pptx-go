@@ -1,11 +1,12 @@
-package parts
+package theme
 
 import (
 	"encoding/xml"
 	"fmt"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/ooxml"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================
@@ -395,13 +396,13 @@ func (t *ThemePart) ToXML() ([]byte, error) {
 		return nil, err
 	}
 
-	return append([]byte(XMLDeclaration), output...), nil
+	return append([]byte(ooxml.XMLDeclaration), output...), nil
 }
 
 // FromXML deserializes the theme from XML.
 func (t *ThemePart) FromXML(data []byte) error {
 	// strip namespace prefixes for compatibility with Go's xml.Unmarshal
-	cleanData, err := StripNamespacePrefixes(data)
+	cleanData, err := ooxml.StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
 	}
@@ -424,7 +425,7 @@ func (t *ThemePart) FromXML(data []byte) error {
 
 // ParseTheme parses a theme from XML bytes.
 func ParseTheme(data []byte) (*XTheme, error) {
-	cleanData, err := StripNamespacePrefixes(data)
+	cleanData, err := ooxml.StripNamespacePrefixes(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to clean XML: %w", err)
 	}

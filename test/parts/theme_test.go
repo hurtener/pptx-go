@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	themex "github.com/hurtener/pptx-go/internal/ooxml/theme"
 )
 
 func TestThemePart_FromXML(t *testing.T) {
@@ -30,7 +30,7 @@ func TestThemePart_FromXML(t *testing.T) {
 	</a:themeElements>
 </a:theme>`
 
-	themePart := parts.NewThemePart(1)
+	themePart := themex.NewThemePart(1)
 	err := themePart.FromXML([]byte(themeXML))
 	if err != nil {
 		t.Fatalf("FromXML failed: %v", err)
@@ -76,28 +76,28 @@ func TestThemePart_GetColor(t *testing.T) {
 	</a:themeElements>
 </a:theme>`
 
-	themePart := parts.NewThemePart(1)
+	themePart := themex.NewThemePart(1)
 	if err := themePart.FromXML([]byte(themeXML)); err != nil {
 		t.Fatalf("FromXML failed: %v", err)
 	}
 
 	tests := []struct {
-		role     parts.ColorRole
+		role     themex.ColorRole
 		expected string
 		isSystem bool
 	}{
-		{parts.ColorRoleDark1, "000000", true},   // system color
-		{parts.ColorRoleLight1, "FFFFFF", true},  // system color
-		{parts.ColorRoleDark2, "44546A", false},  // RGB color
-		{parts.ColorRoleLight2, "E7E6E6", false}, // RGB color
-		{parts.ColorRoleAccent1, "5B9BD5", false},
-		{parts.ColorRoleAccent2, "ED7D31", false},
-		{parts.ColorRoleAccent3, "A5A5A5", false},
-		{parts.ColorRoleAccent4, "FFC000", false},
-		{parts.ColorRoleAccent5, "4472C4", false},
-		{parts.ColorRoleAccent6, "70AD47", false},
-		{parts.ColorRoleHyperlink, "0563C1", false},
-		{parts.ColorRoleFollowedHyperlink, "954F72", false},
+		{themex.ColorRoleDark1, "000000", true},   // system color
+		{themex.ColorRoleLight1, "FFFFFF", true},  // system color
+		{themex.ColorRoleDark2, "44546A", false},  // RGB color
+		{themex.ColorRoleLight2, "E7E6E6", false}, // RGB color
+		{themex.ColorRoleAccent1, "5B9BD5", false},
+		{themex.ColorRoleAccent2, "ED7D31", false},
+		{themex.ColorRoleAccent3, "A5A5A5", false},
+		{themex.ColorRoleAccent4, "FFC000", false},
+		{themex.ColorRoleAccent5, "4472C4", false},
+		{themex.ColorRoleAccent6, "70AD47", false},
+		{themex.ColorRoleHyperlink, "0563C1", false},
+		{themex.ColorRoleFollowedHyperlink, "954F72", false},
 	}
 
 	for _, tt := range tests {
@@ -108,10 +108,10 @@ func TestThemePart_GetColor(t *testing.T) {
 			}
 
 			colorType := themePart.GetThemeColorType(tt.role)
-			if tt.isSystem && colorType != parts.ColorTypeSystem {
+			if tt.isSystem && colorType != themex.ColorTypeSystem {
 				t.Errorf("Expected ColorTypeSystem for %v, got %v", tt.role, colorType)
 			}
-			if !tt.isSystem && colorType != parts.ColorTypeRGB {
+			if !tt.isSystem && colorType != themex.ColorTypeRGB {
 				t.Errorf("Expected ColorTypeRGB for %v, got %v", tt.role, colorType)
 			}
 		})
@@ -119,7 +119,7 @@ func TestThemePart_GetColor(t *testing.T) {
 }
 
 func TestThemePart_New(t *testing.T) {
-	themePart := parts.NewThemePart(1)
+	themePart := themex.NewThemePart(1)
 	if themePart == nil {
 		t.Fatal("NewThemePart returned nil")
 	}
@@ -140,7 +140,7 @@ func TestThemePart_New(t *testing.T) {
 // ============================================================================
 func TestTheme_RoundTrip(t *testing.T) {
 	// Use the full default theme XML.
-	theme := parts.DefaultTheme()
+	theme := themex.DefaultTheme()
 	if theme == nil {
 		t.Fatal("DefaultTheme returned nil")
 	}
@@ -178,24 +178,24 @@ func TestTheme_RoundTrip(t *testing.T) {
 // ============================================================================
 func TestTheme_CloneSafety(t *testing.T) {
 	// Obtain two independent clones.
-	themeA := parts.CloneTheme()
-	themeB := parts.CloneTheme()
+	themeA := themex.CloneTheme()
+	themeB := themex.CloneTheme()
 
 	if themeA == nil || themeB == nil {
 		t.Fatal("CloneTheme returned nil")
 	}
 
 	// Create a ThemePart and assign themeA.
-	partA := parts.NewThemePart(1)
+	partA := themex.NewThemePart(1)
 	partA.SetThemeData(themeA)
 
 	// Mutate themeA Accent1 to red.
-	partA.SetThemeColorRGB(parts.ColorRoleAccent1, "FF0000")
+	partA.SetThemeColorRGB(themex.ColorRoleAccent1, "FF0000")
 
 	// Verify themeB was not polluted (it should retain the original value 5B9BD5).
-	partB := parts.NewThemePart(2)
+	partB := themex.NewThemePart(2)
 	partB.SetThemeData(themeB)
-	colorB := partB.GetThemeColorRGB(parts.ColorRoleAccent1)
+	colorB := partB.GetThemeColorRGB(themex.ColorRoleAccent1)
 
 	if colorB == "FF0000" {
 		t.Fatal("clone safety test failed: shallow copy caused memory aliasing — mutating A affected B")
@@ -212,16 +212,16 @@ func TestTheme_CloneSafety(t *testing.T) {
 // Goal: prove that SetThemeColorRGB correctly modifies the XML node tree.
 // ============================================================================
 func TestTheme_SetThemeColorRGB(t *testing.T) {
-	theme := parts.CloneTheme()
-	part := parts.NewThemePart(1)
+	theme := themex.CloneTheme()
+	part := themex.NewThemePart(1)
 	part.SetThemeData(theme)
 
 	// Change Accent1 to pure green.
 	targetColor := "00FF00"
-	part.SetThemeColorRGB(parts.ColorRoleAccent1, targetColor)
+	part.SetThemeColorRGB(themex.ColorRoleAccent1, targetColor)
 
 	// Verify the retrieved color reflects the new value.
-	gotColor := part.GetThemeColorRGB(parts.ColorRoleAccent1)
+	gotColor := part.GetThemeColorRGB(themex.ColorRoleAccent1)
 	if gotColor != targetColor {
 		t.Errorf("mutator test failed: expected '%s', got '%s'", targetColor, gotColor)
 	}

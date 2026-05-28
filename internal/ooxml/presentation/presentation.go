@@ -1,4 +1,4 @@
-package parts
+package presentation
 
 import (
 	"encoding/xml"
@@ -6,7 +6,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/ooxml"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // SlideIDStart is the starting value for slide IDs.
@@ -139,7 +141,7 @@ func (p *PresentationPart) allocateSlideID() uint32 {
 
 // AddSlide adds a slide.
 // layoutRId is the relationship ID of the associated layout; slidePart is the actual slide part.
-func (p *PresentationPart) AddSlide(layoutRId string, slidePart *SlidePart) error {
+func (p *PresentationPart) AddSlide(layoutRId string, slidePart *slide.SlidePart) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -285,13 +287,13 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte(XMLDeclaration), output...), nil
+	return append([]byte(ooxml.XMLDeclaration), output...), nil
 }
 
 // FromXML deserializes a PresentationPart from XML.
 func (p *PresentationPart) FromXML(data []byte) error {
 	// Strip namespace prefixes for compatibility with Go's xml.Unmarshal.
-	cleanData, err := StripNamespacePrefixes(data)
+	cleanData, err := ooxml.StripNamespacePrefixes(data)
 	if err != nil {
 		return fmt.Errorf("failed to clean XML: %w", err)
 	}

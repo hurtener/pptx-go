@@ -3,7 +3,7 @@ package opc_test
 import (
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 func TestContentTypes_New(t *testing.T) {

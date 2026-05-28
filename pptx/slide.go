@@ -5,8 +5,8 @@ import (
 	"io"
 	"sync/atomic"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+	"github.com/hurtener/pptx-go/internal/opc"
 	"github.com/hurtener/pptx-go/utils"
 )
 
@@ -14,7 +14,7 @@ import (
 // Slide - high-level slide wrapper
 // ============================================================================
 //
-// Slide is a high-level wrapper around the underlying parts.SlidePart. It
+// Slide is a high-level wrapper around the underlying slide.SlidePart. It
 // provides:
 //  1. Convenient content-addition methods (text boxes, pictures, tables, etc.)
 //  2. Bidirectional association with Presentation
@@ -266,7 +266,7 @@ type Slide struct {
 	presentation *Presentation
 
 	// part is the underlying slide part.
-	part *parts.SlidePart
+	part *slide.SlidePart
 
 	// builder is the slide builder.
 	builder *SlideBuilder
@@ -291,7 +291,7 @@ func (s *Slide) Index() int {
 }
 
 // Part returns the underlying SlidePart.
-func (s *Slide) Part() *parts.SlidePart {
+func (s *Slide) Part() *slide.SlidePart {
 	return s.part
 }
 
@@ -361,7 +361,7 @@ func (s *Slide) NewContext() *SlideContext {
 
 // AddTextBox adds a text box to the slide.
 // x, y are the position (px); cx, cy are the size (px); text is the content.
-func (s *Slide) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
+func (s *Slide) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
 	return s.builder.AddTextBox(
 		PxToEMU(x), PxToEMU(y),
 		PxToEMU(cx), PxToEMU(cy),
@@ -376,7 +376,7 @@ func (s *Slide) AddTextBox(x, y, cx, cy int, text string) *parts.XSp {
 // AddAutoShape adds an auto shape to the slide.
 // x, y are the position (px); cx, cy are the size (px).
 // presetID is the preset shape type (e.g. "rectangle", "ellipse", "roundRect").
-func (s *Slide) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp {
+func (s *Slide) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XSp {
 	return s.builder.AddAutoShape(
 		PxToEMU(x), PxToEMU(y),
 		PxToEMU(cx), PxToEMU(cy),
@@ -385,17 +385,17 @@ func (s *Slide) AddAutoShape(x, y, cx, cy int, presetID string) *parts.XSp {
 }
 
 // AddRectangle adds a rectangle to the slide.
-func (s *Slide) AddRectangle(x, y, cx, cy int) *parts.XSp {
+func (s *Slide) AddRectangle(x, y, cx, cy int) *slide.XSp {
 	return s.AddAutoShape(x, y, cx, cy, "rect")
 }
 
 // AddEllipse adds an ellipse to the slide.
-func (s *Slide) AddEllipse(x, y, cx, cy int) *parts.XSp {
+func (s *Slide) AddEllipse(x, y, cx, cy int) *slide.XSp {
 	return s.AddAutoShape(x, y, cx, cy, "ellipse")
 }
 
 // AddRoundRect adds a rounded rectangle to the slide.
-func (s *Slide) AddRoundRect(x, y, cx, cy int) *parts.XSp {
+func (s *Slide) AddRoundRect(x, y, cx, cy int) *slide.XSp {
 	return s.AddAutoShape(x, y, cx, cy, "roundRect")
 }
 
@@ -406,7 +406,7 @@ func (s *Slide) AddRoundRect(x, y, cx, cy int) *parts.XSp {
 // AddPicture adds a picture to the slide.
 // x, y are the position (px); cx, cy are the size (px).
 // imageRId is the relationship ID of the image.
-func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture {
+func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPicture {
 	return s.builder.AddPicture(
 		PxToEMU(x), PxToEMU(y),
 		PxToEMU(cx), PxToEMU(cy),
@@ -416,7 +416,7 @@ func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *parts.XPicture {
 
 // AddPictureFromBytes adds a picture from raw bytes.
 // Media resource addition and relationship ID assignment are handled automatically.
-func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []byte) (*parts.XPicture, error) {
+func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []byte) (*slide.XPicture, error) {
 	// Add the media resource.
 	_, resource := s.mediaManager.AddMediaAuto(fileName, data)
 	if resource == nil {
@@ -438,7 +438,7 @@ func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []by
 }
 
 // AddPictureFromFile adds a picture from a file path.
-func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*parts.XPicture, error) {
+func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*slide.XPicture, error) {
 	// Read the file.
 	data, err := io.ReadAll(nil) // TODO: actually read the file
 	if err != nil {
@@ -455,7 +455,7 @@ func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*parts.XPictu
 // AddTable adds a table to the slide.
 // x, y are the position (px); cx, cy are the size (px).
 // rows and cols specify the table dimensions.
-func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame {
+func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFrame {
 	return s.builder.AddTable(
 		PxToEMU(x), PxToEMU(y),
 		PxToEMU(cx), PxToEMU(cy),
@@ -464,7 +464,7 @@ func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *parts.XGraphicFrame {
 }
 
 // SetTableCellText sets the text content of a table cell.
-func (s *Slide) SetTableCellText(gf *parts.XGraphicFrame, row, col int, text string) {
+func (s *Slide) SetTableCellText(gf *slide.XGraphicFrame, row, col int, text string) {
 	s.builder.SetTableCellText(gf, row, col, text)
 }
 

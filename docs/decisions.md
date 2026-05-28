@@ -630,4 +630,66 @@ acceptance item rather than a silent default.
 
 ---
 
+## D-028 — drawingML types stay in `internal/ooxml/slide` for Phase 01
+
+**Date:** 2026-05-28
+**Status:** Settled
+**Context:** RFC §6.2 lists `internal/ooxml/drawing` as its own
+subpackage. In the inherited `parts/` package, every drawingML type
+(`XSp`, `XShapeProperties`, `XFillProperties`, `XBlip`, `XTransform2D`,
+`XTextBody`, `XTable*`, …) and the `XMLWriter`/`XMLWriterPool`
+serialization base their `WriteXML` methods depend on are referenced
+**only** by the slide family (`slide.go` / `slide_types.go`). Extracting
+`drawing/` during Phase 01 would force `XMLWriter` into a shared `common/`
+package and split `slide_types.go` before any cross-family consumer
+exists — avoidable surgery during a "move, don't rewrite" phase.
+**Decision:** Phase 01 keeps the drawingML types and `XMLWriter` inside
+`internal/ooxml/slide` and ships `internal/ooxml/drawing` as a documented
+placeholder (the same treatment RFC §6.2 gives `chart/`). The types
+migrate to `drawing/` — with `XMLWriter` moving to a shared helper — when
+the builder (Phase 03+) or the SVG→OOXML translator (Phase 12) first needs
+them outside the slide family.
+**Consequences:** Phase 01 stays a relocation with no cross-family
+coupling introduced, honoring §6.2's independence rule. The `drawing/`
+extraction is deferred to the phase that first has a real consumer, where
+it can be done with that consumer's requirements in view. RFC §6.2's
+literal layout is reached incrementally, not in one move.
+
+---
+
+## D-029 — Coverage-gate strict flip + test co-location deferred past Phase 01
+
+**Date:** 2026-05-28
+**Status:** Settled (refines D-027)
+**Context:** D-027 committed to flipping `require_configured: true` and
+banding every relocated package in Phase 01. In practice the upstream
+test suite lives in external packages under `test/` (`parts_test`,
+`pptx_test`, …) and is heavily fixture-dependent (the `*FromFile` tests
+skip without `test/test-data`, which was never committed). With the
+standard `make coverage` (no `-coverpkg`), per-package **self**-coverage
+of `internal/opc` and `internal/ooxml/*` is therefore 0% — their tests
+are measured against the external `test/` packages. Switching to
+`-coverpkg=./...` would attribute cross-package coverage but emits
+duplicate coverage blocks across test binaries that the
+`internal/coveragecheck` parser sums rather than de-duplicates,
+producing wrong numbers. Banding the relocated packages at 0% would be
+noise, not signal.
+**Decision:** Phase 01 keeps `require_configured: false` and bands only
+`internal/coveragecheck`. The relocated upstream tests are **preserved
+and passing** but stay under `test/` for this phase; co-locating them
+into the new package directories (so self-coverage is attributed) and
+flipping `require_configured: true` with meaningful bands is deferred to
+the phase that next hardens each package's tests and resolves the
+fixture story (Phase 02+ as the builder is built on these packages).
+`internal/coveragecheck` will gain block de-duplication when/if
+`-coverpkg` is adopted.
+**Consequences:** The coverage gate stays correct and green (no
+double-counting, no fabricated 0% bands). Phase 01 stays a structural
+move. The strict flip and test co-location become an explicit acceptance
+item of the phase that earns it with real tests, rather than a
+box-checking exercise on inherited code. Supersedes the Phase-01 timing
+in D-027; the strict-mode intent stands.
+
+---
+
 *Append new entries below this line.*

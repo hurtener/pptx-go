@@ -10,7 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/media"
 )
 
 // ============================================================================
@@ -110,7 +110,7 @@ func NewMediaManager() *MediaManager {
 
 // AddMedia adds a media resource to the cache.
 // Returns the resource rID; if the resource already exists the existing rID is returned.
-func (m *MediaManager) AddMedia(resource *parts.MediaResource) string {
+func (m *MediaManager) AddMedia(resource *media.MediaResource) string {
 	if resource == nil {
 		return ""
 	}
@@ -140,16 +140,16 @@ func (m *MediaManager) AddMedia(resource *parts.MediaResource) string {
 }
 
 // AddMediaWithBytes creates a media resource from raw bytes and adds it to the cache.
-func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target string, data []byte) *parts.MediaResource {
-	resource := parts.NewMediaResourceFromBytes(fileName, contentType, target, data)
+func (m *MediaManager) AddMediaWithBytes(rID, fileName, contentType, target string, data []byte) *media.MediaResource {
+	resource := media.NewMediaResourceFromBytes(fileName, contentType, target, data)
 	resource.SetRID(rID)
 	m.AddMedia(resource)
 	return resource
 }
 
 // AddMediaWithReader creates a media resource from an io.Reader and adds it to the cache.
-func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target string, reader io.Reader, size int64) *parts.MediaResource {
-	resource := parts.NewMediaResourceFromReader(fileName, contentType, target, reader, size)
+func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target string, reader io.Reader, size int64) *media.MediaResource {
+	resource := media.NewMediaResourceFromReader(fileName, contentType, target, reader, size)
 	resource.SetRID(rID)
 	m.AddMedia(resource)
 	return resource
@@ -158,7 +158,7 @@ func (m *MediaManager) AddMediaWithReader(rID, fileName, contentType, target str
 // AddMediaAuto infers the MIME type and generates an auto-incremented rID.
 // If identical content already exists (based on hash), the existing resource is
 // returned (deduplication). Returns the generated rID and the MediaResource.
-func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *parts.MediaResource) {
+func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *media.MediaResource) {
 	// Compute content hash.
 	contentHash := computeHash(data)
 
@@ -178,7 +178,7 @@ func (m *MediaManager) AddMediaAuto(fileName string, data []byte) (string, *part
 	target := "ppt/media/" + fileName
 
 	// Create and register the resource.
-	resource := parts.NewMediaResourceFromBytes(fileName, contentType, target, data)
+	resource := media.NewMediaResourceFromBytes(fileName, contentType, target, data)
 	resource.SetRID(rID)
 	resource.SetHash(contentHash)
 
@@ -254,7 +254,7 @@ func (m *MediaManager) RemoveMedia(rID string) bool {
 		return false
 	}
 
-	resource := val.(*parts.MediaResource)
+	resource := val.(*media.MediaResource)
 
 	// Remove secondary indexes.
 	if resource.FileName() != "" {
@@ -290,7 +290,7 @@ func (m *MediaManager) Clear() {
 // ============================================================================
 
 // GetMedia returns the media resource for the given rID.
-func (m *MediaManager) GetMedia(rID string) *parts.MediaResource {
+func (m *MediaManager) GetMedia(rID string) *media.MediaResource {
 	if rID == "" {
 		return nil
 	}
@@ -299,11 +299,11 @@ func (m *MediaManager) GetMedia(rID string) *parts.MediaResource {
 	if !ok {
 		return nil
 	}
-	return val.(*parts.MediaResource)
+	return val.(*media.MediaResource)
 }
 
 // GetMediaByFileName returns the media resource for the given file name.
-func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource {
+func (m *MediaManager) GetMediaByFileName(fileName string) *media.MediaResource {
 	if fileName == "" {
 		return nil
 	}
@@ -317,7 +317,7 @@ func (m *MediaManager) GetMediaByFileName(fileName string) *parts.MediaResource 
 }
 
 // GetMediaByTarget returns the media resource for the given target path.
-func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource {
+func (m *MediaManager) GetMediaByTarget(target string) *media.MediaResource {
 	if target == "" {
 		return nil
 	}
@@ -331,7 +331,7 @@ func (m *MediaManager) GetMediaByTarget(target string) *parts.MediaResource {
 }
 
 // GetMediaByHash returns the media resource for the given content hash (for deduplication).
-func (m *MediaManager) GetMediaByHash(hash string) *parts.MediaResource {
+func (m *MediaManager) GetMediaByHash(hash string) *media.MediaResource {
 	if hash == "" {
 		return nil
 	}
@@ -361,20 +361,20 @@ func (m *MediaManager) HasMediaByFileName(fileName string) bool {
 // ============================================================================
 
 // AllMedia returns all media resources as a new slice (thread-safe).
-func (m *MediaManager) AllMedia() []*parts.MediaResource {
-	result := make([]*parts.MediaResource, 0, m.Count())
+func (m *MediaManager) AllMedia() []*media.MediaResource {
+	result := make([]*media.MediaResource, 0, m.Count())
 	m.byRID.Range(func(key, value interface{}) bool {
-		result = append(result, value.(*parts.MediaResource))
+		result = append(result, value.(*media.MediaResource))
 		return true
 	})
 	return result
 }
 
 // AllMediaByType returns all media resources of the specified type.
-func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaResource {
-	result := make([]*parts.MediaResource, 0)
+func (m *MediaManager) AllMediaByType(mediaType media.MediaType) []*media.MediaResource {
+	result := make([]*media.MediaResource, 0)
 	m.byRID.Range(func(key, value interface{}) bool {
-		res := value.(*parts.MediaResource)
+		res := value.(*media.MediaResource)
 		if res.MediaType() == mediaType {
 			result = append(result, res)
 		}
@@ -384,18 +384,18 @@ func (m *MediaManager) AllMediaByType(mediaType parts.MediaType) []*parts.MediaR
 }
 
 // AllImages returns all image resources.
-func (m *MediaManager) AllImages() []*parts.MediaResource {
-	return m.AllMediaByType(parts.MediaTypeImage)
+func (m *MediaManager) AllImages() []*media.MediaResource {
+	return m.AllMediaByType(media.MediaTypeImage)
 }
 
 // AllAudio returns all audio resources.
-func (m *MediaManager) AllAudio() []*parts.MediaResource {
-	return m.AllMediaByType(parts.MediaTypeAudio)
+func (m *MediaManager) AllAudio() []*media.MediaResource {
+	return m.AllMediaByType(media.MediaTypeAudio)
 }
 
 // AllVideo returns all video resources.
-func (m *MediaManager) AllVideo() []*parts.MediaResource {
-	return m.AllMediaByType(parts.MediaTypeVideo)
+func (m *MediaManager) AllVideo() []*media.MediaResource {
+	return m.AllMediaByType(media.MediaTypeVideo)
 }
 
 // ============================================================================
@@ -408,10 +408,10 @@ func (m *MediaManager) Count() int64 {
 }
 
 // CountByType returns the number of media resources of the specified type.
-func (m *MediaManager) CountByType(mediaType parts.MediaType) int64 {
+func (m *MediaManager) CountByType(mediaType media.MediaType) int64 {
 	var count int64
 	m.byRID.Range(func(key, value interface{}) bool {
-		if value.(*parts.MediaResource).MediaType() == mediaType {
+		if value.(*media.MediaResource).MediaType() == mediaType {
 			count++
 		}
 		return true
@@ -421,17 +421,17 @@ func (m *MediaManager) CountByType(mediaType parts.MediaType) int64 {
 
 // CountImages returns the number of image resources.
 func (m *MediaManager) CountImages() int64 {
-	return m.CountByType(parts.MediaTypeImage)
+	return m.CountByType(media.MediaTypeImage)
 }
 
 // CountAudio returns the number of audio resources.
 func (m *MediaManager) CountAudio() int64 {
-	return m.CountByType(parts.MediaTypeAudio)
+	return m.CountByType(media.MediaTypeAudio)
 }
 
 // CountVideo returns the number of video resources.
 func (m *MediaManager) CountVideo() int64 {
-	return m.CountByType(parts.MediaTypeVideo)
+	return m.CountByType(media.MediaTypeVideo)
 }
 
 // ============================================================================
@@ -497,7 +497,7 @@ func (m *MediaManager) ListTargets() []string {
 //
 //	// The final ZIP contains a single image1.png; both slides reference it
 //	// via their own local rIds.
-func (m *MediaManager) AddMediaForSlide(slideIndex int, data []byte, fileName string) (string, *parts.MediaResource) {
+func (m *MediaManager) AddMediaForSlide(slideIndex int, data []byte, fileName string) (string, *media.MediaResource) {
 	// 1. Compute content hash.
 	contentHash := computeHash(data)
 
@@ -515,10 +515,10 @@ func (m *MediaManager) AddMediaForSlide(slideIndex int, data []byte, fileName st
 
 // getOrCreateGlobalMedia returns the existing global media resource for the given
 // hash, or creates a new one.
-func (m *MediaManager) getOrCreateGlobalMedia(contentHash string, data []byte, fileName string) (*parts.MediaResource, bool) {
+func (m *MediaManager) getOrCreateGlobalMedia(contentHash string, data []byte, fileName string) (*media.MediaResource, bool) {
 	// Fast path: already exists.
 	if val, ok := m.globalMedia.Load(contentHash); ok {
-		return val.(*parts.MediaResource), true
+		return val.(*media.MediaResource), true
 	}
 
 	// Slow path: create under lock.
@@ -527,7 +527,7 @@ func (m *MediaManager) getOrCreateGlobalMedia(contentHash string, data []byte, f
 
 	// Double-checked locking.
 	if val, ok := m.globalMedia.Load(contentHash); ok {
-		return val.(*parts.MediaResource), true
+		return val.(*media.MediaResource), true
 	}
 
 	// Generate a media file name (image1.png, image2.png, …).
@@ -542,7 +542,7 @@ func (m *MediaManager) getOrCreateGlobalMedia(contentHash string, data []byte, f
 	target := "ppt/media/" + mediaFileName
 
 	// Create the resource.
-	resource := parts.NewMediaResourceFromBytes(mediaFileName, contentType, target, data)
+	resource := media.NewMediaResourceFromBytes(mediaFileName, contentType, target, data)
 	resource.SetHash(contentHash)
 
 	// Store in the global media pool.
@@ -583,18 +583,18 @@ func (m *MediaManager) GetSlideMediaIndex(slideIndex int) *SlideMediaIndex {
 }
 
 // GetGlobalMediaByHash returns the global media resource for the given hash.
-func (m *MediaManager) GetGlobalMediaByHash(hash string) *parts.MediaResource {
+func (m *MediaManager) GetGlobalMediaByHash(hash string) *media.MediaResource {
 	if val, ok := m.globalMedia.Load(hash); ok {
-		return val.(*parts.MediaResource)
+		return val.(*media.MediaResource)
 	}
 	return nil
 }
 
 // AllGlobalMedia returns all deduplicated global media resources.
-func (m *MediaManager) AllGlobalMedia() []*parts.MediaResource {
-	result := make([]*parts.MediaResource, 0)
+func (m *MediaManager) AllGlobalMedia() []*media.MediaResource {
+	result := make([]*media.MediaResource, 0)
 	m.globalMedia.Range(func(key, value any) bool {
-		result = append(result, value.(*parts.MediaResource))
+		result = append(result, value.(*media.MediaResource))
 		return true
 	})
 	return result
@@ -626,7 +626,7 @@ func (m *MediaManager) SlideCount() int64 {
 
 // getOrCreateLocalRID returns the existing slide-local rId for the given hash,
 // or generates a new one.
-func (smi *SlideMediaIndex) getOrCreateLocalRID(contentHash string, resource *parts.MediaResource) (string, bool) {
+func (smi *SlideMediaIndex) getOrCreateLocalRID(contentHash string, resource *media.MediaResource) (string, bool) {
 	// Check whether this slide already references the media.
 	if val, ok := smi.hashToLocal.Load(contentHash); ok {
 		return val.(string), true
@@ -728,7 +728,7 @@ func (m *MediaManager) GetDeduplicationStats() DeduplicationStats {
 
 	// Compute bytes saved.
 	m.globalMedia.Range(func(key, value any) bool {
-		res := value.(*parts.MediaResource)
+		res := value.(*media.MediaResource)
 		// Count how many slides reference this media resource.
 		refCount := int64(0)
 		m.slideRelations.Range(func(k, v any) bool {

@@ -52,20 +52,28 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 3. P3 — raw OOXML / encoding/xml types are isolated to internal/ooxml.
-#    Public layers (pptx, scene) must not import encoding/xml.
+# 3. P3 — raw OOXML / encoding/xml types are isolated to the OOXML + OPC
+#    layers. Only internal/ooxml (wire types) and internal/opc (OPC plumbing:
+#    content-types, relationships) may import encoding/xml; nothing above the
+#    internal wall (pptx, scene, …) may. Test files are exempt.
 # ---------------------------------------------------------------------------
-if [ -d pptx ] || [ -d scene ]; then
-	offenders=$(go_files \
-		| { grep -zlE '^(pptx|scene)/' || true; } \
-		| xargs -0 grep -lE '"encoding/xml"' 2>/dev/null || true)
-	if [ -z "$offenders" ]; then
-		pass "no encoding/xml import in pptx/ or scene/ (P3)"
-	else
-		fail "encoding/xml imported outside internal/ooxml: $(echo "$offenders" | tr '\n' ' ')"
-	fi
+offenders=$(go_files \
+	| { grep -zvE '^internal/(ooxml|opc)/' || true; } \
+	| { grep -zvE '_test\.go$' || true; } \
+	| xargs -0 grep -lE '"encoding/xml"' 2>/dev/null || true)
+if [ -z "$offenders" ]; then
+	pass "encoding/xml confined to internal/ooxml and internal/opc (P3)"
 else
-	skip "P3 isolation check" "pptx/ and scene/ not yet present"
+	fail "encoding/xml imported outside the OOXML/OPC layers (P3): $(echo "$offenders" | tr '\n' ' ')"
+fi
+
+# ---------------------------------------------------------------------------
+# 3b. The old top-level opc/ and parts/ packages are fully relocated.
+# ---------------------------------------------------------------------------
+if [ -d opc ] || [ -d parts ]; then
+	fail "old opc/ or parts/ package directories still present (Phase 01 relocates them)"
+else
+	pass "opc/ and parts/ relocated under internal/"
 fi
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-package parts
+package slide
 
 // ============================================================================
 // Core data structures for PPT slide masters and layouts

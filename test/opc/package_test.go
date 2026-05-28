@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 func TestPackage_New(t *testing.T) {

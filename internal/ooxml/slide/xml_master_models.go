@@ -1,4 +1,4 @@
-package parts
+package slide
 
 import "encoding/xml"
 

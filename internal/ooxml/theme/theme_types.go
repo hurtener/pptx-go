@@ -1,4 +1,4 @@
-package parts
+package theme
 
 // ============================================================================
 // Theme XML struct type definitions — corresponds to /ppt/theme/themeN.xml

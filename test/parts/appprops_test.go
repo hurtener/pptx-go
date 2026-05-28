@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/core"
 )
 
 // validAppXML is a minimal app.xml as produced by PowerPoint natively.
@@ -48,7 +48,7 @@ const validAppXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 // 1. Round-trip and mutation test.
 func TestAppProperties_RoundTripAndMutate(t *testing.T) {
-	appProps := &parts.XMLAppProps{}
+	appProps := &core.XMLAppProps{}
 	err := xml.Unmarshal([]byte(validAppXML), appProps)
 	if err != nil {
 		t.Fatalf("parsing valid app.xml failed: %v", err)
@@ -94,10 +94,10 @@ func TestAppProperties_RoundTripAndMutate(t *testing.T) {
 
 // 2. Namespace and root element test.
 func TestAppProperties_Namespaces(t *testing.T) {
-	appProps := &parts.XMLAppProps{
+	appProps := &core.XMLAppProps{
 		Application: "Go-pptx Engine",
-		XmlnsProp:   parts.NamespaceExtendedProperties,
-		XmlnsVt:     parts.NamespaceDocPropsVTypes,
+		XmlnsProp:   core.NamespaceExtendedProperties,
+		XmlnsVt:     core.NamespaceDocPropsVTypes,
 	}
 
 	outputBytes, err := xml.Marshal(appProps)
@@ -123,7 +123,7 @@ func TestAppProperties_Namespaces(t *testing.T) {
 // 3. Omitempty tag suppression test.
 func TestAppProperties_Omitempty(t *testing.T) {
 	// Struct with only Application set; all other fields remain zero.
-	appProps := &parts.XMLAppProps{
+	appProps := &core.XMLAppProps{
 		Application: "Go-pptx Engine",
 	}
 

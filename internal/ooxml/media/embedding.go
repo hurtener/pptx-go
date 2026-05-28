@@ -1,4 +1,4 @@
-package parts
+package media
 
 // ============================================================================
 // EmbeddingPart - embedded object part
@@ -15,7 +15,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // EmbeddingType identifies the kind of embedded object.

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hurtener/pptx-go/opc"
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
+	"github.com/hurtener/pptx-go/internal/opc"
 )
 
 // ============================================================================
@@ -86,8 +86,8 @@ func (etm *EmbeddedTemplateManager) createMinimalTemplate() *opc.Package {
 	pkg := opc.NewPackage()
 
 	// create presentation.xml
-	presPart := parts.NewPresentationPart()
-	presPart.SetSlideSize(parts.SlideSize{Cx: 12192000, Cy: 6858000}) // 16:9 (13.333" x 7.5")
+	presPart := presentation.NewPresentationPart()
+	presPart.SetSlideSize(presentation.SlideSize{Cx: 12192000, Cy: 6858000}) // 16:9 (13.333" x 7.5")
 
 	presURI := opc.NewPackURI("/ppt/presentation.xml")
 	presBlob, _ := presPart.ToXML()
@@ -104,8 +104,8 @@ func (etm *EmbeddedTemplateManager) createStandardTemplate() *opc.Package {
 	pkg := opc.NewPackage()
 
 	// create presentation.xml
-	presPart := parts.NewPresentationPart()
-	presPart.SetSlideSize(parts.SlideSize{Cx: 9144000, Cy: 6858000}) // 4:3 (10" x 7.5")
+	presPart := presentation.NewPresentationPart()
+	presPart.SetSlideSize(presentation.SlideSize{Cx: 9144000, Cy: 6858000}) // 4:3 (10" x 7.5")
 
 	presURI := opc.NewPackURI("/ppt/presentation.xml")
 	presBlob, _ := presPart.ToXML()

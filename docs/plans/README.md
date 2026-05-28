@@ -171,6 +171,7 @@ the end of Wave 7.
 
 **Subsystem:** internal/opc, internal/ooxml
 **RFC sections:** §6
+**Plan:** `docs/plans/phase-01-opc-ooxml-reorg.md`
 **Deps:** Phase 00.
 **What lands:**
 - Move upstream `opc/` → `internal/opc/` (rename only; no behavior change).

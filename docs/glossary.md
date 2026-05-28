@@ -234,6 +234,15 @@ An OOXML logical content unit inside the OPC package: a slide, a master,
 the theme, an image, the core props XML. Identified by a pack URI.
 `internal/opc.Part` is the Go model.
 
+## Part family
+
+An OOXML part grouping that owns one `internal/ooxml` subpackage:
+`presentation`, `slide`, `theme`, `core`, `chart`, `relations`, `media`,
+`drawing`. Families stay independent — a subpackage imports another only
+via shared helpers in the `internal/ooxml` root package (namespace URIs,
+`StripNamespacePrefixes`), so a spec bump in one family is localized
+(RFC §6.2).
+
 ## Per-node rendering policy
 
 The decision per scene IR node type about whether the node renders as

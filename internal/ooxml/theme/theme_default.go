@@ -1,4 +1,4 @@
-package parts
+package theme
 
 // ============================================================================
 // Default theme template - Office Theme

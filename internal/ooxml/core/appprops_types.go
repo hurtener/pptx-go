@@ -1,4 +1,4 @@
-package parts
+package core
 
 // ============================================================================
 // App Properties XML type definitions - corresponds to /docProps/app.xml

@@ -1,7 +1,9 @@
-package parts
+package relations
 
 import (
 	"encoding/xml"
+
+	"github.com/hurtener/pptx-go/internal/ooxml"
 )
 
 // ============================================================================
@@ -156,7 +158,7 @@ func (rs *XMLRelationships) ToXML() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte(XMLDeclaration), output...), nil
+	return append([]byte(ooxml.XMLDeclaration), output...), nil
 }
 
 // FromXML deserializes a relationships collection from XML bytes.

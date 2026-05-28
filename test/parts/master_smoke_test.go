@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 )
 
 // ============================================================================
@@ -32,7 +32,7 @@ func TestParseMasterFromFile(t *testing.T) {
 				t.Fatalf("reading file failed: %v", err)
 			}
 
-			master, err := parts.ParseMaster(xmlData)
+			master, err := slide.ParseMaster(xmlData)
 			if err != nil {
 				t.Fatalf("ParseMaster returned an error: %v", err)
 			}
@@ -59,7 +59,7 @@ func TestParseMaster_BackgroundAndPlaceholders(t *testing.T) {
 		t.Fatalf("reading file failed: %v", err)
 	}
 
-	master, err := parts.ParseMaster(xmlData)
+	master, err := slide.ParseMaster(xmlData)
 	if err != nil {
 		t.Fatalf("ParseMaster returned an error: %v", err)
 	}
@@ -80,11 +80,11 @@ func TestParseMaster_BackgroundAndPlaceholders(t *testing.T) {
 	hasDatePh, hasFooterPh, hasSlideNumPh := false, false, false
 	for _, ph := range placeholders {
 		switch ph.Type() {
-		case parts.PlaceholderTypeDateTime:
+		case slide.PlaceholderTypeDateTime:
 			hasDatePh = true
-		case parts.PlaceholderTypeFooter:
+		case slide.PlaceholderTypeFooter:
 			hasFooterPh = true
-		case parts.PlaceholderTypeSlideNumber:
+		case slide.PlaceholderTypeSlideNumber:
 			hasSlideNumPh = true
 		}
 	}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hurtener/pptx-go/parts"
+	slidex "github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/pptx"
 )
 
@@ -348,7 +348,7 @@ type mockComponent struct {
 func (m *mockComponent) Render(ctx *pptx.SlideContext) error {
 	m.rendered = true
 	// Append a bare XSp to the context.
-	ctx.AppendShape(&parts.XSp{})
+	ctx.AppendShape(&slidex.XSp{})
 	return nil
 }
 
@@ -380,7 +380,7 @@ type mockComponentWithName struct {
 // Render implements the Component interface.
 func (m *mockComponentWithName) Render(ctx *pptx.SlideContext) error {
 	m.rendered = true
-	ctx.AppendShape(&parts.XSp{})
+	ctx.AppendShape(&slidex.XSp{})
 	return nil
 }
 
@@ -460,7 +460,7 @@ type mockComponentWithSize struct {
 
 // Render implements the Component interface.
 func (m *mockComponentWithSize) Render(ctx *pptx.SlideContext) error {
-	ctx.AppendShape(&parts.XSp{})
+	ctx.AppendShape(&slidex.XSp{})
 	return nil
 }
 
@@ -527,7 +527,7 @@ type mockComponentWithID struct {
 func (m *mockComponentWithID) Render(ctx *pptx.SlideContext) error {
 	m.rendered = true
 	m.shapeID = ctx.NextShapeID()
-	ctx.AppendShape(&parts.XSp{})
+	ctx.AppendShape(&slidex.XSp{})
 	return nil
 }
 
