@@ -272,8 +272,12 @@ type Slide struct {
 	// mediaManager is shared with the owning Presentation.
 	mediaManager *MediaManager
 
-	// index is the zero-based slide index.
+	// index is the zero-based slide index (position in the deck).
 	index int
+
+	// num is the slide's file number (slideN.xml). Stable across reordering, so
+	// dependent parts (e.g. notesSlideN.xml) keep a consistent name.
+	num int
 
 	// notesText is the speaker-notes text (D-022); hasNotes marks the slide as
 	// carrying notes, so empty notes can be distinguished from "no notes".

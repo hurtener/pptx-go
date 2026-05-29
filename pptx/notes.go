@@ -82,9 +82,10 @@ func (p *Presentation) ensureNotesMaster() {
 }
 
 // syncNotesSlide creates (or refreshes) the notesSlide part for a slide and
-// wires the slide→notesSlide relationship.
+// wires the slide→notesSlide relationship. The notesSlide is named after the
+// slide's stable file number so it survives slide reordering.
 func (p *Presentation) syncNotesSlide(s *Slide) {
-	n := s.index + 1
+	n := s.num
 	uri := opc.NewPackURI(fmt.Sprintf("/ppt/notesSlides/notesSlide%d.xml", n))
 	blob := []byte(buildNotesSlideXML(s.notesText))
 

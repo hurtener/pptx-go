@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -234,7 +235,164 @@ func (p *Presentation) loadPresentationPart() error {
 	// Synchronize the slide counter.
 	p.slideCounter = int32(p.presentationPart.SlideCount())
 
+	// Rebuild the high-level slide and section models from the package so an
+	// opened deck can be inspected, edited, and re-saved losslessly (G6).
+	if err := p.repopulateSlides(); err != nil {
+		return err
+	}
+	p.repopulateSections()
+	p.seedMediaCounter()
+
 	return nil
+}
+
+// seedMediaCounter advances the media manager's file counter past any imageN
+// parts already in the package, so images added to an opened deck get fresh
+// names instead of colliding with existing media.
+func (p *Presentation) seedMediaCounter() {
+	var max int64
+	for _, part := range p.pkg.AllParts() {
+		uri := part.PartURI().URI()
+		if !strings.HasPrefix(uri, "/ppt/media/image") {
+			continue
+		}
+		base := path.Base(uri)
+		name := strings.TrimSuffix(base, path.Ext(base)) // imageN
+		var n int64
+		if _, err := fmt.Sscanf(name, "image%d", &n); err == nil && n > max {
+			max = n
+		}
+	}
+	p.mediaManager.SeedFileCounter(max)
+}
+
+// repopulateSlides rebuilds p.slides from the package after an Open, in
+// sldIdLst order. Each slide part is parsed back into a slide.SlidePart, its
+// relationships are loaded so its rId counter is initialized (future image/
+// notes adds won't collide), its layout id is recovered, and its shape-id
+// allocator is advanced past the existing shapes. Caller holds p.mu (or is a
+// constructor before the value is shared).
+func (p *Presentation) repopulateSlides() error {
+	presPart := p.pkg.GetPartByRelType(opc.RelTypeOfficeDocument)
+	if presPart == nil {
+		return nil
+	}
+
+	n := int(p.presentationPart.SlideCount())
+	p.slides = make([]*Slide, 0, n)
+	maxNum := 0
+	for i := 0; i < n; i++ {
+		relID, err := p.presentationPart.SlideRelID(i)
+		if err != nil || relID == "" {
+			continue
+		}
+		rel := presPart.Relationships().Get(relID)
+		if rel == nil {
+			continue // dangling reference — skip rather than fail
+		}
+		slideURI := rel.TargetURI()
+		opcPart := p.pkg.GetPart(slideURI)
+		if opcPart == nil {
+			continue
+		}
+
+		sp := slide.NewSlidePartWithURI(slideURI)
+		if err := sp.FromXML(opcPart.Blob()); err != nil {
+			return fmt.Errorf("parse slide %s: %w", slideURI.URI(), err)
+		}
+		// Load the slide's relationships so the rId counter resumes past the
+		// existing rIds, and recover the layout id.
+		if rb, relErr := opcPart.RelationshipsBlob(); relErr == nil && rb != nil {
+			_ = sp.Relationships().FromXML(rb)
+			if lr := sp.Relationships().GetByType(opc.RelTypeSlideLayout); len(lr) > 0 {
+				sp.SetLayoutRId(lr[0].RID())
+			}
+		}
+		sp.SetShapeIDStart(maxShapeID(sp) + 1)
+
+		num := slideNumFromURI(slideURI.URI())
+		if num > maxNum {
+			maxNum = num
+		}
+		s := &Slide{
+			presentation: p,
+			part:         sp,
+			builder:      NewSlideBuilder(sp),
+			mediaManager: p.mediaManager,
+			index:        len(p.slides),
+			num:          num,
+		}
+		s.shapeIDCounter.Store(1)
+		p.slides = append(p.slides, s)
+	}
+
+	// Ensure new slides get a unique file number even after removals.
+	if int(p.slideCounter) < maxNum {
+		p.slideCounter = int32(maxNum)
+	}
+	return nil
+}
+
+// repopulateSections rebuilds p.sections from the parsed presentation part,
+// mapping each section's slide IDs back to slide indices.
+func (p *Presentation) repopulateSections() {
+	parsed := p.presentationPart.Sections()
+	if len(parsed) == 0 {
+		return
+	}
+	ids := p.presentationPart.SlideIDs()
+	idToIndex := make(map[uint32]int, len(ids))
+	for i, id := range ids {
+		idToIndex[id] = i
+	}
+	p.sections = nil
+	for _, se := range parsed {
+		sec := &Section{name: se.Name}
+		for _, sid := range se.SlideIDs {
+			if idx, ok := idToIndex[sid]; ok {
+				sec.slideIndexes = append(sec.slideIndexes, idx)
+			}
+		}
+		p.sections = append(p.sections, sec)
+	}
+}
+
+// maxShapeID returns the largest shape (cNvPr) id used in the slide's shape
+// tree, or 1 (the reserved root id) when there are no shapes.
+func maxShapeID(sp *slide.SlidePart) uint32 {
+	var max uint32 = 1
+	for _, child := range sp.SpTree().Children {
+		id := 0
+		switch c := child.(type) {
+		case *slide.XSp:
+			if c.NonVisual.CNvPr != nil {
+				id = c.NonVisual.CNvPr.ID
+			}
+		case *slide.XPicture:
+			if c.NonVisual.CNvPr != nil {
+				id = c.NonVisual.CNvPr.ID
+			}
+		case *slide.XGraphicFrame:
+			if c.NonVisual.CNvPr != nil {
+				id = c.NonVisual.CNvPr.ID
+			}
+		}
+		if id > 0 && uint32(id) > max {
+			max = uint32(id)
+		}
+	}
+	return max
+}
+
+// slideNumFromURI extracts N from a /ppt/slides/slideN.xml pack URI (0 if it
+// doesn't match the convention).
+func slideNumFromURI(uri string) int {
+	base := path.Base(uri)
+	var n int
+	if _, err := fmt.Sscanf(base, "slide%d.xml", &n); err == nil {
+		return n
+	}
+	return 0
 }
 
 // ============================================================================
@@ -297,6 +455,7 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 		builder:      NewSlideBuilder(slidePart),
 		mediaManager: p.mediaManager,
 		index:        len(p.slides),
+		num:          slideNum,
 	}
 	// Initialize the atomic counter (OOXML spec: shapeId starts at 2; 1 is
 	// reserved for the root node).
@@ -341,8 +500,9 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	// Wire presentation→slide and slide→layout relationships.
 	slideRId := p.relateSlide(slidePart, slidePartOPC)
 
-	// Register with PresentationPart.
-	_ = p.presentationPart.AddSlide(slideRId, slidePart)
+	// Register with PresentationPart at the same position, so the emitted
+	// sldIdLst order matches the builder's slide order.
+	_ = p.presentationPart.InsertSlide(index, slideRId)
 
 	// Build the high-level object.
 	s := &Slide{
@@ -351,6 +511,7 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 		builder:      NewSlideBuilder(slidePart),
 		mediaManager: p.mediaManager,
 		index:        index,
+		num:          slideNum,
 	}
 	// Initialize the atomic counter (OOXML spec: shapeId starts at 2; 1 is
 	// reserved for the root node).
@@ -391,8 +552,23 @@ func (p *Presentation) RemoveSlide(index int) error {
 	// Get the slide to remove.
 	s := p.slides[index]
 
-	// Remove the part from the package.
+	// Capture the presentation→slide relationship id before mutating the model
+	// so we can drop the now-orphaned relationship (else it dangles and fails
+	// conformance).
+	slideRId, _ := p.presentationPart.SlideRelID(index)
+
+	// Remove the slide part from the package.
 	_ = p.pkg.RemovePart(s.part.PartURI())
+
+	// Drop the presentation→slide relationship.
+	if slideRId != "" {
+		if presPart := p.pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml")); presPart != nil {
+			_ = presPart.RemoveRelationship(slideRId)
+		}
+	}
+
+	// Remove the slide's notes part, if any (RemovePart is a no-op when absent).
+	_ = p.pkg.RemovePart(opc.NewPackURI(fmt.Sprintf("/ppt/notesSlides/notesSlide%d.xml", s.num)))
 
 	// Remove from presentation.xml.
 	_ = p.presentationPart.RemoveSlide(index)
@@ -403,6 +579,12 @@ func (p *Presentation) RemoveSlide(index int) error {
 	// Update indexes for subsequent slides.
 	for i := index; i < len(p.slides); i++ {
 		p.slides[i].index = i
+	}
+
+	// Keep section membership consistent: drop the removed index and shift
+	// higher indexes down.
+	for _, sec := range p.sections {
+		sec.removeSlideIndex(index)
 	}
 
 	return nil
@@ -713,14 +895,37 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		if err := newSlidePart.FromXML(slideData); err != nil {
 			return nil, err
 		}
+		// Carry the slide's relationships (layout/image/notes) onto the clone so
+		// its rId counter resumes correctly and the layout id is preserved.
+		if clonedPart := newPkg.GetPart(s.part.PartURI()); clonedPart != nil {
+			if rb, relErr := clonedPart.RelationshipsBlob(); relErr == nil && rb != nil {
+				_ = newSlidePart.Relationships().FromXML(rb)
+				if lr := newSlidePart.Relationships().GetByType(opc.RelTypeSlideLayout); len(lr) > 0 {
+					newSlidePart.SetLayoutRId(lr[0].RID())
+				}
+			}
+		}
+		newSlidePart.SetShapeIDStart(maxShapeID(newSlidePart) + 1)
 
-		newPres.slides[i] = &Slide{
+		ns := &Slide{
 			presentation: newPres,
 			part:         newSlidePart,
 			builder:      NewSlideBuilder(newSlidePart),
 			mediaManager: newPres.mediaManager,
 			index:        i,
+			num:          s.num,
+			notesText:    s.notesText,
+			hasNotes:     s.hasNotes,
 		}
+		ns.shapeIDCounter.Store(1)
+		newPres.slides[i] = ns
+	}
+
+	// Deep-copy the section groupings.
+	for _, sec := range p.sections {
+		idxCopy := make([]int, len(sec.slideIndexes))
+		copy(idxCopy, sec.slideIndexes)
+		newPres.sections = append(newPres.sections, &Section{name: sec.name, slideIndexes: idxCopy})
 	}
 
 	return newPres, nil

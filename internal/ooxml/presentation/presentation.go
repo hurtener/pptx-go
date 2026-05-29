@@ -197,6 +197,35 @@ func (p *PresentationPart) AddSlide(layoutRId string, slidePart *slide.SlidePart
 	return nil
 }
 
+// InsertSlide inserts a slide at the given index, allocating a new slide ID and
+// recording its presentation→slide relationship id at the same position, so the
+// emitted <p:sldIdLst> order matches the builder's slide order.
+func (p *PresentationPart) InsertSlide(index int, rId string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if index < 0 || index > len(p.slideIDs) {
+		return fmt.Errorf("slide index out of range: %d", index)
+	}
+
+	slideID := p.allocateSlideID()
+	p.slideIDs = append(p.slideIDs[:index], append([]uint32{slideID}, p.slideIDs[index:]...)...)
+	p.slideLayoutIDs = append(p.slideLayoutIDs[:index], append([]string{rId}, p.slideLayoutIDs[index:]...)...)
+	atomic.AddInt32(&p.slideCount, 1)
+	return nil
+}
+
+// SlideRelID returns the presentation→slide relationship id recorded for the
+// slide at the given index (the value <p:sldId r:id> carries).
+func (p *PresentationPart) SlideRelID(index int) (string, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if index < 0 || index >= len(p.slideLayoutIDs) {
+		return "", fmt.Errorf("slide index out of range: %d", index)
+	}
+	return p.slideLayoutIDs[index], nil
+}
+
 // RemoveSlide removes the slide at the given index.
 func (p *PresentationPart) RemoveSlide(index int) error {
 	p.mu.Lock()

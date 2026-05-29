@@ -69,6 +69,24 @@ func (sec *Section) Include(s *Slide) {
 	sec.slideIndexes = append(sec.slideIndexes, s.index)
 }
 
+// removeSlideIndex drops a removed slide's index from the section and shifts
+// every higher index down by one, keeping membership consistent after
+// RemoveSlide.
+func (sec *Section) removeSlideIndex(removed int) {
+	kept := sec.slideIndexes[:0]
+	for _, idx := range sec.slideIndexes {
+		switch {
+		case idx == removed:
+			// drop it
+		case idx > removed:
+			kept = append(kept, idx-1)
+		default:
+			kept = append(kept, idx)
+		}
+	}
+	sec.slideIndexes = kept
+}
+
 // syncSections resolves the builder's sections into presentation-part section
 // entries (slide indexes → slide IDs) and records them for emission. It runs
 // before syncPresentationPart. Callers hold p.mu.
