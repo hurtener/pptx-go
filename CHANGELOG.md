@@ -50,6 +50,12 @@ changes.
   external relationship.
 - Speaker notes are now rich text: `Slide.SpeakerNotes()` returns a `TextFrame`,
   with `Slide.SetSpeakerNotes(text)` as a plain-text convenience.
+- `scene.Render` now composes the text-heavy leaf nodes — `hero`, `prose`,
+  `heading`, `list`, `divider`, `quote`, `callout`, `chip`, `arrow`,
+  `code_block`, and `section_divider` — onto the builder with a deterministic
+  top-level layout, populating `Stats`. Text sizes are rendered verbatim from
+  the theme (no boosting). Container and other leaf nodes are not yet rendered
+  and surface a `LayoutWarning`.
 
 ### Fixed
 

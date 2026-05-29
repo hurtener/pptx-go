@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/hurtener/pptx-go/pptx"
@@ -96,11 +97,13 @@ func WithLogger(l *slog.Logger) RenderOption {
 	return func(c *renderConfig) { c.logger = l }
 }
 
-// Render composes a Scene onto pres and returns render Stats (RFC §10.1).
+// Render composes a Scene onto pres and returns render Stats (RFC §10.1). It
+// applies the scene's theme (if any), validates (Stage 1), then lays out and
+// composes each slide's nodes via the builder (P1). Render is deterministic
+// given the same scene + theme.
 //
-// It currently validates the scene (Stage 1) and returns a zero Stats without
-// emitting shapes — rendering lands in later phases. The signature and
-// validation contract are stable.
+// V1 renders the text-heavy leaf nodes (Phase 06); container and asset nodes
+// not yet implemented surface a LayoutWarning and are skipped.
 func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, error) {
 	var cfg renderConfig
 	for _, opt := range opts {
@@ -111,7 +114,14 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	if err := ValidateScene(s); err != nil {
 		return Stats{}, err
 	}
-	// No-op stub: emission lands in Phase 06+.
-	_ = pres
-	return Stats{}, nil
+	if s.Theme != nil {
+		pres.SetTheme(s.Theme)
+	}
+
+	r := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: context.Background()}
+	for i := range s.Slides {
+		r.renderSlide(&s.Slides[i])
+		r.stats.Slides++
+	}
+	return r.stats, nil
 }
