@@ -70,6 +70,10 @@ type Presentation struct {
 	// fontSource resolves font bytes for EmbedFont (nil = no source). D-019.
 	fontSource FontSource
 
+	// theme is the active theme driving token resolution (default
+	// DefaultTheme). Set via WithTheme or SetTheme.
+	theme *Theme
+
 	// fontCounter generates embedded font part names (font1.fntdata, …).
 	fontCounter int32
 
@@ -81,16 +85,26 @@ type Presentation struct {
 // Constructors
 // ============================================================================
 
-// New creates a blank presentation using the default template (16:9 widescreen).
-func New() *Presentation {
+// New creates a blank presentation. With no options it is a 16:9 widescreen
+// deck themed with DefaultTheme; pass options (WithFormat, WithFontSource,
+// WithTheme) to configure it (RFC §8.1).
+func New(opts ...Option) *Presentation {
 	pres := &Presentation{
 		pkg:              opc.NewPackage(),
 		presentationPart: presentation.NewPresentationPart(),
 		slides:           make([]*Slide, 0),
 		mediaManager:     NewMediaManager(),
 		masterManager:    NewMasterManager(),
+		theme:            DefaultTheme(),
 		slideCounter:     0,
 		relCounter:       0,
+	}
+
+	// Apply caller options (format, font source, theme) before any emission.
+	for _, opt := range opts {
+		if opt != nil {
+			opt(pres)
+		}
 	}
 
 	// Initialize the package structure.
@@ -542,6 +556,27 @@ func (p *Presentation) MasterCache() *MasterCache {
 	return p.masterCache
 }
 
+// Theme returns the active theme (never nil; DefaultTheme by default).
+func (p *Presentation) Theme() *Theme {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.theme == nil {
+		return DefaultTheme()
+	}
+	return p.theme
+}
+
+// SetTheme sets the active theme used for token resolution. A nil theme is
+// ignored.
+func (p *Presentation) SetTheme(t *Theme) {
+	if t == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.theme = t
+}
+
 // SetSlideSize sets the slide dimensions (in EMU).
 func (p *Presentation) SetSlideSize(cx, cy int) {
 	p.mu.Lock()
@@ -592,6 +627,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		mediaManager:  NewMediaManager(),
 		masterManager: p.masterManager,
 		masterCache:   p.masterCache,
+		theme:         p.theme,
 		slideCounter:  p.slideCounter,
 		relCounter:    p.relCounter,
 	}

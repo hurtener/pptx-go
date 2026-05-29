@@ -61,8 +61,14 @@ else
 	fail "A2: full-deck conformance gate" "TestConformance_BuilderOutput failed"
 fi
 
-# 6. A3/B/C: EMU Box API, Fill/Line/Color interface, media/sections/notes.
-skip "A3: EMU Box API + New(opts) + WithFormat" "A3 not yet landed"
+# 6. A3: EMU coordinates (no px scaling) + New(opts) + WithFormat + Theme.
+if go test ./test/pptx/ -run 'New_DefaultFormat|WithFormat|WithTheme|WithFontSource' >/dev/null 2>&1; then
+	ok "A3: EMU coords + New(opts)/WithFormat/WithTheme/WithFontSource"
+else
+	fail "A3: EMU Box API + options" "go test ./test/pptx/ (options set) failed"
+fi
+
+# B/C: later chunks.
 skip "B: Color interface + Fill/Line + AddShape" "Chunk B not yet landed"
 skip "C: media / sections / notes / streaming" "Chunk C not yet landed"
 

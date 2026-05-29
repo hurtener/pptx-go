@@ -118,10 +118,15 @@ pixels. Chunk A, in verifiable steps:
   the LibreOffice job asserts a 2-page render (poppler `pdfinfo`), and the
   manual PowerPoint check is queued for the maintainer
   (`docs/validation/POWERPOINT-CHECKS.md`).
-- **A3 — EMU `Box` API + options.** Shapes take EMU `Box` (not pixels);
-  `New(opts ...Option)`, `WithFormat(Slides16x9|Slides4x3)`, `WithFontSource`
-  (Option form; `SetFontSource` kept as a deprecated alias),
-  `Theme()`/`SetTheme()`.
+- **A3 — EMU coordinates + options (done).** The builder path no longer scales
+  inputs by 9525 — `Slide.AddTextBox`/`AddAutoShape`/`AddRectangle`/`AddPicture`/
+  `AddTable` now take EMU directly (`pptx.In`/`Cm`/`Pt`/`Px`/`Box` compute them),
+  fixing the off-canvas coordinates. `New(opts ...Option)` with
+  `WithFormat(Slides16x9|Slides4x3)`, `WithFontSource` (Option form;
+  `SetFontSource` kept as a deprecated alias) and `WithTheme`; `Theme()`/
+  `SetTheme()` accessors (default `DefaultTheme`). `PxToEMU` is deprecated in
+  favour of `pptx.Px`. The Box-native `AddShape(geom ShapeGeometry, box Box)`
+  with fills/lines is **Chunk B**.
 - **A4 — `internal/render/hygiene.go`** — always-on repair-prompt pass on
   every write (D-020); `docs/design/HYGIENE.md` trigger list.
 
@@ -259,6 +264,14 @@ notes round-trip; hygiene pass present.
   layout, theme); `[Content_Types].xml` and `_rels/.rels` are package
   structures (not in the part collection), already validated by the
   content-type-coverage and relationship-resolution checks.
+- **A3 — builder coordinates are EMU, not a new `Box`-typed signature.** The
+  inherited `Slide.Add*` methods keep their `(x, y, cx, cy int, …)` shape but
+  now interpret the ints as EMU (the px→EMU scaling is dropped). The Box-native
+  shape API the plan envisions (`AddShape(geom, box Box)`) belongs to Chunk B,
+  which reshapes the shape surface with geometry/fill/line; introducing a
+  parallel Box signature in A3 would be churn B immediately reworks. The
+  px-based `SlideViewport`/boundary-check helpers are a separate placement
+  utility and stay px.
 
 ## 17. Sign-off
 
