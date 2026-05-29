@@ -121,6 +121,40 @@ func TestSlideRoundTrip(t *testing.T) {
 	}
 }
 
+// TestPictureMediaRoundTrip proves a picture's alt text (cNvPr/@descr) and crop
+// (srcRect) survive ToXML → FromXML (Chunk C; G6).
+func TestPictureMediaRoundTrip(t *testing.T) {
+	pic := shapePicture(2, "rId2")
+	pic.NonVisual.CNvPr.Descr = "Acme logo"
+	pic.BlipFill.SrcRect = &XSrcRect{L: 10000, T: 20000, R: 10000, B: 20000}
+
+	src := NewSlidePart(1)
+	src.AppendShapeChild(pic)
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	dst := NewSlidePart(1)
+	if err := dst.FromXML(data); err != nil {
+		t.Fatalf("FromXML: %v", err)
+	}
+
+	got, ok := dst.SpTree().Children[0].(*XPicture)
+	if !ok {
+		t.Fatalf("child[0] type = %T, want *XPicture", dst.SpTree().Children[0])
+	}
+	if got.NonVisual.CNvPr.Descr != "Acme logo" {
+		t.Errorf("alt text not preserved: %q", got.NonVisual.CNvPr.Descr)
+	}
+	if got.BlipFill.SrcRect == nil {
+		t.Fatalf("srcRect not preserved")
+	}
+	if sr := got.BlipFill.SrcRect; sr.L != 10000 || sr.T != 20000 || sr.R != 10000 || sr.B != 20000 {
+		t.Errorf("srcRect not preserved: %+v", sr)
+	}
+}
+
 // TestShapeFillRoundTrip proves a shape's solid fill (with alpha) and outline
 // survive ToXML → FromXML (Chunk B; G6).
 func TestShapeFillRoundTrip(t *testing.T) {

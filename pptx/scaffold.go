@@ -3,6 +3,7 @@ package pptx
 import (
 	"strings"
 
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
 )
 
@@ -56,10 +57,12 @@ func (p *Presentation) seedScaffold() {
 
 // relateSlide adds the presentation→slide and slide→layout relationships for a
 // freshly created slide part, returning the presentation-relative relationship
-// id that <p:sldId> must carry.
-func (p *Presentation) relateSlide(slidePartOPC *opc.Part) string {
-	// slide → layout.
-	_, _ = slidePartOPC.AddRelationship(opc.RelTypeSlideLayout, "../slideLayouts/slideLayout1.xml", false)
+// id that <p:sldId> must carry. The slide→layout relationship is added to the
+// slide part's own relationship set (its single rId namespace, shared with image
+// and notes relationships); syncSlides mirrors that set onto the package part.
+func (p *Presentation) relateSlide(slidePart *slide.SlidePart, slidePartOPC *opc.Part) string {
+	// slide → layout (allocated in the slide's rId namespace).
+	_, _ = slidePart.Relationships().AddNew(opc.RelTypeSlideLayout, "../slideLayouts/slideLayout1.xml", false)
 
 	// presentation → slide.
 	presPart := p.pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))

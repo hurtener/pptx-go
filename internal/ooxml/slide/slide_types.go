@@ -171,10 +171,12 @@ type nvGrpSpPr struct {
 	CNvGrpSpPr *XNvGrpSpPr `xml:"cNvGrpSpPr"`
 }
 
-// XNvCxnSpPr holds non-visual connector shape properties.
+// XNvCxnSpPr holds non-visual connector shape properties. Descr carries the
+// alt text (the cNvPr/@descr attribute) when set.
 type XNvCxnSpPr struct {
-	ID   int    `xml:"id,attr"`
-	Name string `xml:"name,attr,omitempty"`
+	ID    int    `xml:"id,attr"`
+	Name  string `xml:"name,attr,omitempty"`
+	Descr string `xml:"descr,attr,omitempty"`
 }
 
 // XNvGrpSpPr holds non-visual group shape properties.
@@ -367,11 +369,22 @@ type XNvPicPr struct {
 	CNvPr *XNvPr `xml:"cNvPr,omitempty"`
 }
 
-// XBlipFillProperties holds picture fill properties.
+// XBlipFillProperties holds picture fill properties. Field order matches
+// CT_BlipFillProperties: blip, srcRect, then the fill mode (stretch).
 type XBlipFillProperties struct {
 	XMLName struct{}            `xml:"blipFill"`
 	Blip    *XBlip              `xml:"blip,omitempty"`
+	SrcRect *XSrcRect           `xml:"srcRect,omitempty"`
 	Stretch *XStretchProperties `xml:"stretch,omitempty"`
+}
+
+// XSrcRect is the source-rectangle crop (<a:srcRect l= t= r= b=/>). Each edge
+// is expressed in thousandths of a percent of the image dimension (0..100000).
+type XSrcRect struct {
+	L int `xml:"l,attr,omitempty"`
+	T int `xml:"t,attr,omitempty"`
+	R int `xml:"r,attr,omitempty"`
+	B int `xml:"b,attr,omitempty"`
 }
 
 // XBlip holds a picture reference.

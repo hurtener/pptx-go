@@ -3,6 +3,7 @@ package presentation
 import (
 	"encoding/xml"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -53,7 +54,19 @@ type PresentationPart struct {
 	// Embedded fonts (<p:embeddedFontLst>) recorded via AddEmbeddedFont.
 	embeddedFonts []EmbeddedFontEntry
 
+	// Sections (<p14:sectionLst> in extLst). Emitted last, after the core
+	// CT_Presentation children (D-021, RFC §8.7).
+	sections []SectionEntry
+
 	mu sync.RWMutex
+}
+
+// SectionEntry is one named slide grouping: a display name, a unique {GUID}
+// id, and the slide IDs (the sldId/@id values) it contains in order.
+type SectionEntry struct {
+	Name     string
+	ID       string // braced GUID, e.g. {00000000-0000-0000-0000-000000000001}
+	SlideIDs []uint32
 }
 
 // NewPresentationPart creates a new presentation part.
@@ -137,6 +150,31 @@ func (p *PresentationPart) AddSlideMaster(rId string) {
 	p.slideMasterIDs = append(p.slideMasterIDs, rId)
 }
 
+// SetNotesMaster records the notes-master relationship ID, emitted in
+// <p:notesMasterIdLst> (D-022).
+func (p *PresentationPart) SetNotesMaster(rId string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.notesMasterID = rId
+}
+
+// SetSections sets the slide-grouping sections emitted in extLst (D-021). A nil
+// or empty slice emits no section list.
+func (p *PresentationPart) SetSections(secs []SectionEntry) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.sections = secs
+}
+
+// Sections returns the parsed/assigned sections.
+func (p *PresentationPart) Sections() []SectionEntry {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	out := make([]SectionEntry, len(p.sections))
+	copy(out, p.sections)
+	return out
+}
+
 // allocateSlideID atomically allocates a new slide ID.
 func (p *PresentationPart) allocateSlideID() uint32 {
 	return atomic.AddUint32(&p.slideIDNext, 1)
@@ -201,7 +239,53 @@ type XPresentation struct {
 
 	// Embedded font list (<p:embeddedFontLst>)
 	EmbeddedFontLst *XEmbeddedFontList `xml:"embeddedFontLst,omitempty"`
+
+	// Extension list (last child). Only populated on read: the section list
+	// lives under a p14: namespace that the single-table RestoreNamespaces pass
+	// can't emit (the local name "sldId" collides with the top-level slide
+	// list), so it is injected as a literal fragment on write and parsed back
+	// here on read.
+	ExtLst *XExtLst `xml:"extLst,omitempty"`
 }
+
+// XExtLst is the presentation extension list (read-side capture).
+type XExtLst struct {
+	Exts []XExt `xml:"ext"`
+}
+
+// XExt is one extension; only the section list is recognized.
+type XExt struct {
+	URI        string       `xml:"uri,attr"`
+	SectionLst *XSectionLst `xml:"sectionLst,omitempty"`
+}
+
+// XSectionLst is the p14 section list (prefix stripped on read).
+type XSectionLst struct {
+	Sections []XSection `xml:"section"`
+}
+
+// XSection is one named section grouping a set of slide IDs.
+type XSection struct {
+	Name     string           `xml:"name,attr"`
+	ID       string           `xml:"id,attr"`
+	SldIdLst XSectionSldIdLst `xml:"sldIdLst"`
+}
+
+// XSectionSldIdLst is a section's slide-id list.
+type XSectionSldIdLst struct {
+	SldIds []XSectionSldId `xml:"sldId"`
+}
+
+// XSectionSldId references a slide by its sldId/@id value.
+type XSectionSldId struct {
+	ID uint32 `xml:"id,attr"`
+}
+
+// SectionLstExtURI is the registered extension URI for the p14 section list.
+const SectionLstExtURI = "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"
+
+// p14Namespace is the PowerPoint 2010 main namespace carrying the section list.
+const p14Namespace = "http://schemas.microsoft.com/office/powerpoint/2010/main"
 
 // XCompatibility holds compatibility settings.
 type XCompatibility struct {
@@ -290,6 +374,14 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 		}
 	}
 
+	// Build notes-master ID list (single entry; D-022). Its @id is also an
+	// ST_SlideMasterId (>= 2147483648).
+	if p.notesMasterID != "" {
+		xp.NotesMasterIdLst = &XSldMasterIdLst{
+			SldMasterIds: []XSldMasterId{{Id: 2147483648, RId: p.notesMasterID}},
+		}
+	}
+
 	// Build the embedded font list.
 	xp.EmbeddedFontLst = buildEmbeddedFontList(p.embeddedFonts)
 
@@ -304,7 +396,60 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("restore presentation namespaces: %w", err)
 	}
+	// Inject the section list (extLst) as a literal p14 fragment — the
+	// single-table namespace pass can't emit it (D-021).
+	restored = injectSectionLst(restored, p.sections)
 	return append([]byte(ooxml.XMLDeclaration), restored...), nil
+}
+
+// injectSectionLst appends the p14 section-list extension as the last child of
+// <p:presentation>. It returns data unchanged when there are no sections.
+func injectSectionLst(data []byte, secs []SectionEntry) []byte {
+	if len(secs) == 0 {
+		return data
+	}
+	const close = "</p:presentation>"
+	idx := strings.LastIndex(string(data), close)
+	if idx < 0 {
+		return data
+	}
+
+	var b strings.Builder
+	b.WriteString(`<p:extLst><p:ext uri="`)
+	b.WriteString(SectionLstExtURI)
+	b.WriteString(`"><p14:sectionLst xmlns:p14="`)
+	b.WriteString(p14Namespace)
+	b.WriteString(`">`)
+	for _, s := range secs {
+		b.WriteString(`<p14:section name="`)
+		b.WriteString(escapeXMLAttr(s.Name))
+		b.WriteString(`" id="`)
+		b.WriteString(s.ID)
+		b.WriteString(`"><p14:sldIdLst>`)
+		for _, id := range s.SlideIDs {
+			fmt.Fprintf(&b, `<p14:sldId id="%d"/>`, id)
+		}
+		b.WriteString(`</p14:sldIdLst></p14:section>`)
+	}
+	b.WriteString(`</p14:sectionLst></p:ext></p:extLst>`)
+
+	out := make([]byte, 0, len(data)+b.Len())
+	out = append(out, data[:idx]...)
+	out = append(out, b.String()...)
+	out = append(out, data[idx:]...)
+	return out
+}
+
+// escapeXMLAttr escapes the five XML metacharacters for an attribute value.
+func escapeXMLAttr(s string) string {
+	r := strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+		`"`, "&quot;",
+		"'", "&apos;",
+	)
+	return r.Replace(s)
 }
 
 // FromXML deserializes a PresentationPart from XML.
@@ -357,6 +502,29 @@ func (p *PresentationPart) FromXML(data []byte) error {
 	if xp.SldMasterIdLst != nil {
 		for _, masterId := range xp.SldMasterIdLst.SldMasterIds {
 			p.slideMasterIDs = append(p.slideMasterIDs, masterId.RId)
+		}
+	}
+
+	// Parse notes-master list (single entry by convention).
+	p.notesMasterID = ""
+	if xp.NotesMasterIdLst != nil && len(xp.NotesMasterIdLst.SldMasterIds) > 0 {
+		p.notesMasterID = xp.NotesMasterIdLst.SldMasterIds[0].RId
+	}
+
+	// Parse section list from extLst (D-021).
+	p.sections = nil
+	if xp.ExtLst != nil {
+		for _, ext := range xp.ExtLst.Exts {
+			if ext.SectionLst == nil {
+				continue
+			}
+			for _, xs := range ext.SectionLst.Sections {
+				se := SectionEntry{Name: xs.Name, ID: xs.ID}
+				for _, sid := range xs.SldIdLst.SldIds {
+					se.SlideIDs = append(se.SlideIDs, sid.ID)
+				}
+				p.sections = append(p.sections, se)
+			}
 		}
 	}
 

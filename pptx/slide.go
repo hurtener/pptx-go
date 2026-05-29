@@ -2,7 +2,10 @@
 package pptx
 
 import (
-	"io"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/slide"
@@ -272,6 +275,11 @@ type Slide struct {
 	// index is the zero-based slide index.
 	index int
 
+	// notesText is the speaker-notes text (D-022); hasNotes marks the slide as
+	// carrying notes, so empty notes can be distinguished from "no notes".
+	notesText string
+	hasNotes  bool
+
 	// shapeIDCounter is a lock-free atomic counter for allocating unique shape IDs.
 	shapeIDCounter atomic.Uint32
 }
@@ -409,38 +417,23 @@ func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPicture {
 	)
 }
 
-// AddPictureFromBytes adds a picture from raw bytes.
-// Media resource addition and relationship ID assignment are handled automatically.
+// AddPictureFromBytes adds a picture from raw bytes. The media bytes are
+// deduplicated across the deck and written to the package once; the slide
+// receives its own image relationship. The extension of fileName selects the
+// stored media extension (defaulting to .png).
 func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []byte) (*slide.XPicture, error) {
-	// Add the media resource.
-	_, resource := s.mediaManager.AddMediaAuto(fileName, data)
-	if resource == nil {
-		return nil, nil
-	}
-
-	// Get the target URI.
-	targetURI := resource.Target()
-
-	// Add the relationship to the slide.
-	slideRID := s.builder.AddImage(targetURI)
-
-	// Add the picture shape.
-	return s.builder.AddPicture(
-		x, y,
-		cx, cy,
-		slideRID,
-	), nil
+	ext := strings.ToLower(filepath.Ext(fileName))
+	rID := s.addImagePart(data, ext)
+	return s.builder.AddPicture(x, y, cx, cy, rID), nil
 }
 
 // AddPictureFromFile adds a picture from a file path.
 func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*slide.XPicture, error) {
-	// Read the file.
-	data, err := io.ReadAll(nil) // TODO: actually read the file
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read image file %q: %w", path, err)
 	}
-
-	return s.AddPictureFromBytes(x, y, cx, cy, path, data)
+	return s.AddPictureFromBytes(x, y, cx, cy, filepath.Base(path), data)
 }
 
 // ============================================================================
