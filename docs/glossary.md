@@ -202,6 +202,16 @@ native PPTX shape paths (NOT as raster). Referenced by name from IR nodes
 that accept an icon (`card`, `flow` steps, `header_pill`). Caller-supplied
 icons go through the same translator (`scene.WithIconExtension`).
 
+## ImageSource
+
+`pptx.ImageSource` — sealed interface for image input to `Slide.AddImage`,
+constructed with `pptx.ImageFile(path)`, `pptx.ImageBytes(data, mime)`, or
+`pptx.ImageReader(r, mime)` (the §4.4 interface + factory + driver seam). The
+bytes are verified against a known image signature (PNG/JPEG/GIF/BMP/WebP) —
+mismatched or malformed input is rejected — but pixels are never parsed (§7).
+Identical bytes across a deck are written once (dedup). (D-022 sibling; `RFC
+§8.6`.)
+
 ## IR
 
 Intermediate representation. In pptx-go, "the scene IR" is the typed Go

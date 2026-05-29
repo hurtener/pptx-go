@@ -104,6 +104,21 @@ func NewMediaManager() *MediaManager {
 	return &MediaManager{}
 }
 
+// SeedFileCounter advances the media file-name counter to at least n, so a deck
+// opened with existing imageN parts allocates fresh names for newly added media
+// instead of colliding with them.
+func (m *MediaManager) SeedFileCounter(n int64) {
+	for {
+		cur := atomic.LoadInt64(&m.mediaFileID)
+		if n <= cur {
+			return
+		}
+		if atomic.CompareAndSwapInt64(&m.mediaFileID, cur, n) {
+			return
+		}
+	}
+}
+
 // ============================================================================
 // Write methods
 // ============================================================================

@@ -27,6 +27,36 @@ changes.
 - A new presentation is a complete, valid deck out of the box: `New()` emits a
   slide master, a blank slide layout, and a theme, with all relationships
   wired, so the file opens in PowerPoint without a repair prompt.
+- Images: `Slide.AddImage(src, box)` with an `ImageSource` (`ImageFile`,
+  `ImageBytes`, `ImageReader`); the returned handle's `SetAltText`, `SetCrop`,
+  and `SetFit` adjust the picture. Image bytes are verified against a known
+  signature and rejected if malformed or mismatched; identical bytes are
+  embedded once.
+- Slide grouping: `Presentation.AddSection(name)`, `Section.Include(slide)`, and
+  `Presentation.Sections()` — sections appear in PowerPoint's slide sorter and
+  round-trip.
+- Speaker notes: `Slide.SpeakerNotes(text)` attaches notes to a slide (emitted
+  as a notes page with a notes master) and round-trips.
+- Streaming I/O: `pptx.OpenStream(path)` and `Presentation.SaveStream(path)`
+  read and write decks through the streaming package without buffering the
+  whole file.
+
+### Fixed
+
+- `Slide.AddPictureFromFile` and `AddPictureFromBytes` now embed the image
+  bytes and wire the relationship correctly (previously the file path read was
+  a stub and image relationships were not emitted).
+- The streaming reader now preserves the package-level relationship, so a deck
+  opened with `OpenStream` re-saves into a valid file.
+- Opening a deck (`Open`/`NewFromBytes`/`NewFromFile`/`OpenStream`) now rebuilds
+  its slide and section models, so an opened presentation can be read, edited,
+  and re-saved losslessly. Previously `Slides()` returned nothing and sections
+  were dropped on re-save.
+- `AddSlideAt` now inserts the slide at the requested position in the emitted
+  slide list (previously it was appended, so the on-disk order didn't match).
+- `RemoveSlide` now drops the slide's presentation relationship and notes part,
+  so removing a slide no longer leaves a dangling relationship.
+- Images added to a reopened deck no longer collide with existing media names.
 
 ### Changed
 
