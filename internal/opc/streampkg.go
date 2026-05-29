@@ -190,7 +190,7 @@ func (p *StreamPackage) loadRelationships() error {
 			return err
 		}
 
-		if sourceURI.IsPackageRels() {
+		if relURI.IsPackageRels() {
 			p.relationships = rels
 		} else {
 			part := p.parts[sourceURI.URI()]
