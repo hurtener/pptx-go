@@ -303,14 +303,21 @@ via shared helpers in the `internal/ooxml` root package (namespace URIs,
 `StripNamespacePrefixes`), so a spec bump in one family is localized
 (RFC §6.2).
 
+## NodeKind
+
+The discriminator for a scene `SlideNode` (`scene.NodeKind`): a typed
+constant (`KindHero`, `KindCard`, …) with an IR name via `String()`.
+Used by validation and rendering to switch on a node's concrete type.
+
 ## Per-node rendering policy
 
 The decision per scene IR node type about whether the node renders as
 native PPTX shapes (most nodes) or as a `pic` shape with caller-
 supplied bytes (nodes whose IR carries an `asset_id` field: `image`,
 `chart`, `decoration` of `asset_ref` kind, `code_block`). Intrinsic
-to the node type — not a runtime enum, not a per-deck toggle. See
-`RFC §12`, D-018.
+to the node type — not a runtime enum, not a per-deck toggle. Encoded
+as `scene.Policy` / `scene.PolicyFor(kind)` and asserted against the
+node structs by `policy_test.go`. See `RFC §12`, D-018.
 
 ## Phase plan
 
@@ -424,6 +431,16 @@ A preset shape outline on the builder (`pptx.ShapeRect`, `ShapeEllipse`,
 `ShapeRoundRect`, …), carrying the OOXML preset-geometry (`prst`) name.
 Passed to `Slide.AddShape(geom, box, …)` with a `Box` (EMU) and optional
 `Fill`/`Line`.
+
+## SlideNode
+
+The sealed scene IR union (`scene.SlideNode`): every leaf and container
+node implements it. Closed to the `scene` package (an unexported marker)
+and discriminated by `NodeKind`. The catalog is `RFC §11.1` (leaves) and
+`§11.2` (containers): `Hero`, `Prose`, `Heading`, `List`, `Divider`,
+`Quote`, `Callout`, `Image`, `Chip`, `Arrow`, `CodeBlock`, `Chart`,
+`Table`, `Flow`, `Decoration`, `SectionDivider`, `TwoColumn`, `Grid`,
+`Card`, `CardSection`.
 
 ## SlideDocument
 

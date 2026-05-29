@@ -4,7 +4,7 @@
 **RFC sections:** §10.1, §10.4 (Stage 1), §10.6, §11, §12
 **Deps:** Phase 04 (the rich-text model the IR composes; `scene.RichText`
 mirrors `pptx`).
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -229,9 +229,9 @@ co-located (`scene/*_test.go`) so self-coverage is attributed.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages (scene banded).
-- [ ] `scripts/smoke/phase-05.sh` reports `OK ≥ 6` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entries added (if any).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages (scene banded at 80%, 84.6% actual).
+- [x] `scripts/smoke/phase-05.sh` reports `OK ≥ 6` and `FAIL = 0` (6 OK).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated (SlideNode, NodeKind, Policy).
+- [x] Decision entries added (none new — D-011/D-018/D-024 suffice).

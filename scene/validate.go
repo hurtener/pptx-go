@@ -1,0 +1,133 @@
+package scene
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Stage 1 validation (RFC §10.4): structural correctness — the union is
+// well-formed and field-level constraints hold. Stage 2 (token + asset
+// resolution against the active theme/resolver) runs at render time in a later
+// phase. Stage 1 returns a joined error so a caller sees every problem at once.
+
+// ValidateScene runs Stage 1 structural validation over a scene.
+func ValidateScene(s Scene) error {
+	var errs []error
+	for i := range s.Slides {
+		sl := &s.Slides[i]
+		where := sl.ID
+		if where == "" {
+			where = fmt.Sprintf("#%d", i)
+		}
+		for j, n := range sl.Nodes {
+			if n == nil {
+				errs = append(errs, fmt.Errorf("slide %s node %d: nil node", where, j))
+				continue
+			}
+			if err := validateNode(n); err != nil {
+				errs = append(errs, fmt.Errorf("slide %s node %d (%s): %w", where, j, n.NodeKind(), err))
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// validateNode checks one node's structural constraints, recursing into
+// container children.
+func validateNode(n SlideNode) error {
+	switch v := n.(type) {
+	case Heading:
+		if v.Level < 1 || v.Level > 6 {
+			return fmt.Errorf("heading level %d out of range 1..6", v.Level)
+		}
+	case List:
+		if v.Kind < ListBullet || v.Kind > ListChecklist {
+			return fmt.Errorf("invalid list kind %d", v.Kind)
+		}
+		if len(v.Items) == 0 {
+			return errors.New("list has no items")
+		}
+	case Callout:
+		if v.Kind < CalloutNote || v.Kind > CalloutImportant {
+			return fmt.Errorf("invalid callout kind %d", v.Kind)
+		}
+	case Image:
+		if v.AssetID == "" {
+			return errors.New("image requires an asset id")
+		}
+	case Chart:
+		if v.AssetID == "" {
+			return errors.New("chart requires an asset id")
+		}
+	case CodeBlock:
+		if v.AssetID == "" {
+			return errors.New("code_block requires an asset id")
+		}
+	case Decoration:
+		switch v.Kind {
+		case DecorationPreset:
+			if v.Preset == "" {
+				return errors.New("preset decoration requires a preset name")
+			}
+		case DecorationAsset:
+			if v.AssetID == "" {
+				return errors.New("asset decoration requires an asset id")
+			}
+		default:
+			return fmt.Errorf("invalid decoration kind %d", v.Kind)
+		}
+	case Flow:
+		if len(v.Steps) == 0 {
+			return errors.New("flow has no steps")
+		}
+	case Table:
+		width := len(v.Headers)
+		if width == 0 {
+			return errors.New("table has no header columns")
+		}
+		for r, row := range v.Rows {
+			if len(row) != width {
+				return fmt.Errorf("table row %d has %d cells, want %d (header width)", r, len(row), width)
+			}
+		}
+	case TwoColumn:
+		if len(v.Left) == 0 || len(v.Right) == 0 {
+			return errors.New("two_column requires non-empty left and right")
+		}
+		return validateChildren(append(append([]SlideNode{}, v.Left...), v.Right...))
+	case Grid:
+		if v.Columns < 2 || v.Columns > 4 {
+			return fmt.Errorf("grid columns %d out of range 2..4", v.Columns)
+		}
+		if len(v.Ratio) != 0 && len(v.Ratio) != v.Columns {
+			return fmt.Errorf("grid ratio length %d does not match columns %d", len(v.Ratio), v.Columns)
+		}
+		if len(v.Cells) == 0 {
+			return errors.New("grid has no cells")
+		}
+		return validateChildren(v.Cells)
+	case Card:
+		return validateChildren(v.Body)
+	case CardSection:
+		if len(v.Body) == 0 {
+			return errors.New("card_section has no body")
+		}
+		return validateChildren(v.Body)
+	}
+	return nil
+}
+
+// validateChildren validates each child node (and reports nil children).
+func validateChildren(children []SlideNode) error {
+	var errs []error
+	for i, c := range children {
+		if c == nil {
+			errs = append(errs, fmt.Errorf("child %d: nil node", i))
+			continue
+		}
+		if err := validateNode(c); err != nil {
+			errs = append(errs, fmt.Errorf("child %d (%s): %w", i, c.NodeKind(), err))
+		}
+	}
+	return errors.Join(errs...)
+}
