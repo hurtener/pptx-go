@@ -50,6 +50,18 @@ with `bleed_*`.
 A scene IR node that's not a container — a `Leaf`. The catalog of leaves
 is documented in `RFC-001-pptx-go.md §11.1`.
 
+## Alignment
+
+A paragraph's horizontal alignment on the builder (`pptx.AlignLeft`,
+`AlignCenter`, `AlignRight`, `AlignJustify`). Set via `Paragraph.Align` or
+`ParagraphOpts.Align`; maps to the OOXML `algn` attribute. (RFC §8.4.)
+
+## AutoFitMode
+
+A `TextFrame`'s text-fit behavior (`pptx.AutoFitNone`, `AutoFitNormal`
+[shrink font], `AutoFitShape` [grow shape]). Set via `TextFrame.AutoFit`.
+(RFC §8.4.)
+
 ## Box
 
 `pptx.Box{X, Y, W, H int64}` — a rectangle in EMU coordinates. The
@@ -311,6 +323,18 @@ binding. See `CLAUDE.md §16`.
 The local gate (`make preflight`) that runs build + per-phase smoke +
 drift-audit. The pre-commit hook and CI enforce it. Non-negotiable.
 
+## BulletKind
+
+A paragraph bullet style on the builder (`pptx.BulletNone`, `BulletDisc`,
+`BulletNumber`, `BulletCheckbox`). Set via `Paragraph.Bullet`; emits the
+OOXML `buChar`/`buAutoNum`/`buNone` with a hanging indent. (RFC §8.4.)
+
+## Paragraph
+
+A line block within a `TextFrame` (`pptx.Paragraph`): alignment, indent
+level, an optional bullet, and an ordered sequence of `Run`s and breaks.
+Created via `TextFrame.AddParagraph`. (RFC §8.4.)
+
 ## Presentation
 
 `pptx.Presentation` — the top-level builder type. Owns slides, sections,
@@ -351,6 +375,19 @@ when conflicts arise (`CLAUDE.md §2`).
 `[]TextRun` — pptx-go's text model. Each run carries plain text + an
 inline style + an optional `TextColorRole` token. Same model in `pptx`
 (builder) and `scene` (renderer).
+
+## Run
+
+A styled text span within a `Paragraph` (`pptx.Run`), created via
+`Paragraph.AddRun(text, RunStyle)`. The builder analogue of a scene
+`TextRun`. (RFC §8.4/§9.)
+
+## RunStyle
+
+The token-typed styling of a `Run` (`pptx.RunStyle`): a `TypeRole`
+(typography), a `Color` (token or literal), and bold/italic/underline/
+strike/baseline/code flags. Tokens resolve against the active theme when
+the run is added. (RFC §8.4; D-013 for `Code`.)
 
 ## Round-trip fidelity
 
@@ -456,6 +493,13 @@ plus the major/minor font faces. See `RFC-001-pptx-go.md §7`,
 A semantic text color role (`primary`, `secondary`, `tertiary`, `inverse`,
 `muted`, `accent`, `accent_alt`, `success`, `warning`, `error`). Applied
 to inline `TextRun`s.
+
+## TextFrame
+
+A shape-level rich-text container on the builder (`pptx.TextFrame`):
+auto-fit, vertical anchor, margins, and an ordered list of `Paragraph`s.
+Created via `Slide.AddTextFrame`; also backs `Slide.SpeakerNotes`. The
+`pptx` half of the shared rich-text model (RFC §8.4/§9).
 
 ## TextRun
 

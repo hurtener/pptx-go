@@ -64,6 +64,82 @@ func (xst *XSpTree) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
 
+// Runs returns the paragraph's text runs in document order (breaks excluded).
+func (p *XTextParagraph) Runs() []*XTextRun {
+	var out []*XTextRun
+	for _, c := range p.Content {
+		if r, ok := c.(*XTextRun); ok {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// MarshalXML serializes a paragraph: an optional <a:pPr> then its ordered run
+// and break children. A single field cannot interleave <a:r> and <a:br> in
+// document order, so the content is encoded element-by-element.
+func (p *XTextParagraph) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start = xml.StartElement{Name: xml.Name{Local: "p"}}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	if p.Pr != nil {
+		if err := e.Encode(p.Pr); err != nil {
+			return err
+		}
+	}
+	for _, c := range p.Content {
+		if err := e.Encode(c); err != nil {
+			return err
+		}
+	}
+	return e.EncodeToken(xml.EndElement{Name: start.Name})
+}
+
+// UnmarshalXML reconstructs a paragraph, preserving run/break order. Names are
+// bare because FromXML strips namespace prefixes before decoding.
+func (p *XTextParagraph) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	p.Pr = nil
+	p.Content = p.Content[:0]
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "pPr":
+				var pr XParaProps
+				if err := d.DecodeElement(&pr, &t); err != nil {
+					return err
+				}
+				p.Pr = &pr
+			case "r":
+				var r XTextRun
+				if err := d.DecodeElement(&r, &t); err != nil {
+					return err
+				}
+				p.Content = append(p.Content, &r)
+			case "br":
+				var b XTextBreak
+				if err := d.DecodeElement(&b, &t); err != nil {
+					return err
+				}
+				p.Content = append(p.Content, &b)
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			if t.Name.Local == start.Name.Local {
+				return nil
+			}
+		}
+	}
+}
+
 // UnmarshalXML reconstructs the shape tree from its child elements, preserving
 // order. Names are bare here because FromXML strips namespace prefixes before
 // decoding.

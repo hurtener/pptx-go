@@ -21,8 +21,11 @@ skip() { printf 'SKIP: %s — %s\n' "$1" "$2"; SKIP=$((SKIP + 1)); }
 # otherwise runs it and reports OK/FAIL. A pattern matching zero tests would
 # otherwise make `go test -run` exit 0 — a false OK.
 run_check() {
-	local desc="$1" pkg="$2" pat="$3"
-	if ! go test "$pkg" -list "$pat" 2>/dev/null | grep -qE '^Test'; then
+	local desc="$1" pkg="$2" pat="$3" found
+	# Capture the listing fully (no early-closing `grep -q`, which would SIGPIPE
+	# `go test` and trip `pipefail` into a false "not landed").
+	found="$(go test "$pkg" -list "$pat" 2>/dev/null | grep -E '^Test' || true)"
+	if [ -z "$found" ]; then
 		skip "$desc" "not yet landed"
 	elif go test "$pkg" -run "$pat" >/dev/null 2>&1; then
 		ok "$desc"

@@ -64,11 +64,7 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
 			BodyPr:   &slide.XBodyPr{},
 			LstStyle: &slide.XTextParagraphList{},
 			Paragraphs: []slide.XTextParagraph{
-				{
-					TextRuns: []slide.XTextRun{
-						{Text: text},
-					},
-				},
+				{Content: []any{&slide.XTextRun{Text: text}}},
 			},
 		},
 	}
@@ -155,7 +151,7 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 					BodyPr:   &slide.XBodyPr{},
 					LstStyle: &slide.XTextParagraphList{},
 					Paragraphs: []slide.XTextParagraph{
-						{TextRuns: []slide.XTextRun{{Text: ""}}},
+						{Content: []any{&slide.XTextRun{Text: ""}}},
 					},
 				},
 			}
@@ -201,7 +197,14 @@ func (b *SlideBuilder) SetTableCellText(gf *slide.XGraphicFrame, row, col int, t
 	if row < 0 || row >= len(table.Rows) || col < 0 || col >= len(table.Rows[row].Cells) {
 		return
 	}
-	table.Rows[row].Cells[col].TextBody.Paragraphs[0].TextRuns[0].Text = text
+	para := &table.Rows[row].Cells[col].TextBody.Paragraphs[0]
+	if len(para.Content) == 0 {
+		para.Content = []any{&slide.XTextRun{Text: text}}
+		return
+	}
+	if run, ok := para.Content[0].(*slide.XTextRun); ok {
+		run.Text = text
+	}
 }
 
 // GetOrAddPicture adds an image to the slide by URI and returns its XPicture.

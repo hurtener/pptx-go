@@ -40,6 +40,12 @@ changes.
 - Streaming I/O: `pptx.OpenStream(path)` and `Presentation.SaveStream(path)`
   read and write decks through the streaming package without buffering the
   whole file.
+- Rich text: `Slide.AddTextFrame(box)` returns a `TextFrame` with
+  `AddParagraph`/`AutoFit`/`Anchor`/`Margins`; `Paragraph` with
+  `AddRun`/`AddBreak`/`Align`/`Indent`/`Bullet`; and a token-typed `RunStyle`
+  (type role, color, bold/italic/underline/strike/baseline). Bullets support
+  disc, numbered, and checklist styles; run colors resolve against the active
+  theme.
 
 ### Fixed
 
