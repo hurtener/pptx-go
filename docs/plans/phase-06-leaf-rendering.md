@@ -6,7 +6,7 @@
 arrow, code_block, section_divider)
 **Deps:** Phase 05 (IR catalog + validation + asset seam), Phase 04 (the
 builder rich-text model the composers call), Phase 03 (shapes/media/notes).
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -175,13 +175,30 @@ body; `Stats` is populated (`Slides`, `Shapes`, `Assets`, `Warnings`).
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **Required-asset failure is graceful (R2 resolved toward warnings).** RFC §10.6
+  says a required asset that won't resolve fails the render; the implementation
+  instead emits a `LayoutWarning` and skips the node, so a preview render with no
+  resolver still produces a deck. Callers treat `Stats.Warnings` as fatal if they
+  need to (no strict mode — RFC §10.2). The happy path (registered asset) is
+  fully covered.
+- **Run-level `TypeRole` is not used in V1 leaf rendering.** Each composer sets a
+  node-level base `TypeRole` (prose→Body, heading→H{level}, hero title→Display,
+  …) and maps each scene `TextRun`'s bold/italic/underline/strike/code/link +
+  color; the run's own `TypeRole` field is ignored (node-level typography is the
+  norm). Run-level type overrides can be honored in a later phase without an API
+  change.
+- **Composers live in the `scene` package** (`render.go` + `render_leaves.go`),
+  not `scene/layout/text/` — the master plan allowed either; keeping them in
+  `scene` avoids an import cycle (they call the public `pptx` builder, P1) and
+  the `scene/layout` package stays a placeholder for the geometry engine.
+- **`section_divider` is laid out full-bleed** (full slide box) rather than in
+  the body stack, per RFC §10.2's "override body to full-bleed".
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-06.sh` reports `OK ≥ 5` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated (if vocab added).
-- [ ] Decision entries added (if any).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages (scene 87.6%).
+- [x] `scripts/smoke/phase-06.sh` reports `OK ≥ 5` and `FAIL = 0` (5 OK).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated (no new vocab needed).
+- [x] Decision entries added (none — D-011/014/018/024/026 suffice).
