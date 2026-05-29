@@ -758,4 +758,37 @@ layer SKIPs rather than failing.
 
 ---
 
+## D-032 — One OOXML emission path: xml.Marshal + a RestoreNamespaces write pass
+
+**Date:** 2026-05-28
+**Status:** Settled
+**Context:** Investigating the builder spine (Phase 03) revealed the inherited
+emission is broken in several ways with one architectural root cause: Go's
+`encoding/xml` cannot cleanly emit namespace-prefixed names, so the upstream
+took two divergent, separately-broken approaches. `presentation.xml`/theme/
+core serialize via `xml.Marshal` and come out **without any namespaces**
+(`<presentation>` not `<p:presentation xmlns:p=…>`); slides use a
+**hand-rolled `XMLWriter`** that writes element attributes as **text**
+(`<p:cNvPr>1 name="Layout"</p:cNvPr>` instead of `<p:cNvPr id="1"
+name="Layout"/>`). The read path already normalizes the inverse with
+`StripNamespacePrefixes`.
+**Decision:** Unify all OOXML emission on a single path: serialize every part
+with stdlib `xml.Marshal` using **bare** element/attribute names (which
+serializes attributes correctly), then run one shared **`RestoreNamespaces`**
+write pass that adds the canonical `p:`/`a:`/`r:` prefixes and `xmlns`
+declarations per part — the exact inverse of `StripNamespacePrefixes`. The
+hand-rolled slide `XMLWriter` is **deleted**. Read continues to strip;
+write restores. Both directions live in `internal/ooxml` as two symmetric,
+golden-tested functions.
+**Consequences:** One correct emission path replaces two broken ones; the
+`<p:cNvPr>`-attributes-as-text bug and the missing-presentation-namespaces
+bug are both fixed at the root, as is `rid`→`r:id`. The `RestoreNamespaces`
+pass needs a per-element prefix map (bounded; OOXML's prefix conventions are
+fixed) and is verified by goldens plus the D-031 conformance/schema/
+LibreOffice gates. Relationship wiring (presentation→slide rIds) and
+seeding a complete master/layout/theme are separate builder fixes; the EMU
+`Box` API supersedes the upstream pixels-via-`PxToEMU` coordinate handling.
+
+---
+
 *Append new entries below this line.*

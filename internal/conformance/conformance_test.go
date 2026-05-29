@@ -28,9 +28,9 @@ func hasError(rep Report, substr string) bool {
 
 func TestValidCleanPackage(t *testing.T) {
 	pkg := opc.NewPackage()
-	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte("<theme/>"))
+	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte(`<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"/>`))
 	pres := mkPart(t, pkg, "/ppt/presentation.xml", opc.ContentTypePresentation,
-		[]byte(`<presentation><sldId rid="rId1"/></presentation>`))
+		[]byte(`<p:presentation xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\"><p:sldId rid="rId1"/></p:presentation>`))
 	if _, err := pres.AddRelationship(opc.RelTypeOfficeDocument, "theme/theme1.xml", false); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestUnresolvedRelTarget(t *testing.T) {
 
 func TestRequiredPartsMissing(t *testing.T) {
 	pkg := opc.NewPackage()
-	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte("<theme/>"))
+	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte(`<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"/>`))
 	rep := Validate(pkg, Options{RequiredParts: []string{"/ppt/presentation.xml"}})
 	if !hasError(rep, "required part is missing") {
 		t.Fatalf("expected required-part error, got:\n%s", rep)
@@ -93,7 +93,7 @@ func TestRequiredPartsMissing(t *testing.T) {
 
 func TestExternalRelationshipNotFlagged(t *testing.T) {
 	pkg := opc.NewPackage()
-	p := mkPart(t, pkg, "/ppt/slides/slide1.xml", opc.ContentTypeSlide, []byte("<sld/>"))
+	p := mkPart(t, pkg, "/ppt/slides/slide1.xml", opc.ContentTypeSlide, []byte(`<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\"/>`))
 	// An external hyperlink target must not be reported as a missing part.
 	if _, err := p.AddRelationship(opc.RelTypeHyperlink, "https://example.com", true); err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestExternalRelationshipNotFlagged(t *testing.T) {
 
 func TestValidateBytesRoundTrip(t *testing.T) {
 	pkg := opc.NewPackage()
-	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte("<theme/>"))
+	mkPart(t, pkg, "/ppt/theme/theme1.xml", opc.ContentTypeTheme, []byte(`<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"/>`))
 	var buf bytes.Buffer
 	if err := pkg.Save(&buf); err != nil {
 		t.Fatal(err)
@@ -121,6 +121,28 @@ func TestValidateBytesRoundTrip(t *testing.T) {
 	// And a corrupt byte slice errors.
 	if _, err := ValidateBytes([]byte("not a zip"), Options{}); err == nil {
 		t.Error("expected error opening non-zip bytes")
+	}
+}
+
+func TestMissingRootNamespaceFlagged(t *testing.T) {
+	pkg := opc.NewPackage()
+	// A presentation part with a bare (namespace-less) root — the inherited
+	// emission bug (D-032).
+	mkPart(t, pkg, "/ppt/presentation.xml", opc.ContentTypePresentation, []byte("<presentation/>"))
+	rep := Validate(pkg, Options{})
+	if !hasError(rep, "no XML namespace") {
+		t.Fatalf("expected root-namespace error, got:\n%s", rep)
+	}
+}
+
+func TestEmptyRelReferenceFlagged(t *testing.T) {
+	pkg := opc.NewPackage()
+	// sldId with an empty rid — the orphaned-slide bug (D-032).
+	mkPart(t, pkg, "/ppt/presentation.xml", opc.ContentTypePresentation,
+		[]byte(`<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldId rid=""/></p:presentation>`))
+	rep := Validate(pkg, Options{})
+	if !hasError(rep, "empty relationship reference") {
+		t.Fatalf("expected empty-rel-reference error, got:\n%s", rep)
 	}
 }
 
