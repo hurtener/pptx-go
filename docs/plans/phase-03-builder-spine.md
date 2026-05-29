@@ -320,6 +320,19 @@ notes round-trip; hygiene pass present.
   dropped the package `.rels` on open (it tested `IsPackageRels` on the source
   URI, not the rels URI), which would have made `OpenStream`→`SaveStream`
   output invalid. Corrected to match `opc.Package.loadRelationships`. (D-034.)
+- **C wiring pass — closed the read/edit/re-save seam (G6).** A post-Chunk-C
+  audit found `Open`/`NewFromBytes`/`NewFromFile`/`OpenStream` never rebuilt the
+  high-level slide model (`Slides()` returned empty) and re-saving an opened
+  deck dropped its sections. `loadPresentationPart` now repopulates slides
+  (parsing each slide part, loading its relationships so the rId counter
+  resumes, recovering the layout id, and advancing the shape-id allocator) and
+  sections (mapping slide IDs back to indexes), and seeds the media file
+  counter past existing `imageN` parts. Also: `AddSlideAt` now inserts into the
+  presentation part at the requested index (was append → wrong slide order);
+  `RemoveSlide` drops the orphaned presentation→slide relationship and the
+  slide's notes part (was a dangling, conformance-breaking relationship) and
+  shifts section membership; notesSlide parts are named after the slide's stable
+  file number rather than its position. Regression tests in `test/pptx`.
 
 ## 17. Sign-off
 

@@ -48,6 +48,15 @@ changes.
   a stub and image relationships were not emitted).
 - The streaming reader now preserves the package-level relationship, so a deck
   opened with `OpenStream` re-saves into a valid file.
+- Opening a deck (`Open`/`NewFromBytes`/`NewFromFile`/`OpenStream`) now rebuilds
+  its slide and section models, so an opened presentation can be read, edited,
+  and re-saved losslessly. Previously `Slides()` returned nothing and sections
+  were dropped on re-save.
+- `AddSlideAt` now inserts the slide at the requested position in the emitted
+  slide list (previously it was appended, so the on-disk order didn't match).
+- `RemoveSlide` now drops the slide's presentation relationship and notes part,
+  so removing a slide no longer leaves a dangling relationship.
+- Images added to a reopened deck no longer collide with existing media names.
 
 ### Changed
 
