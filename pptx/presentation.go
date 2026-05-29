@@ -96,6 +96,10 @@ func New() *Presentation {
 	// Initialize the package structure.
 	pres.initPackage()
 
+	// Seed a complete scaffold (master + blank layout + theme) so the deck is
+	// valid the moment it is created (Phase 03 A2; RFC §8.7).
+	pres.seedScaffold()
+
 	return pres
 }
 
@@ -258,12 +262,13 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	slidePartOPC := opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob)
 	_ = p.pkg.AddPart(slidePartOPC)
 
-	// Add the relationship to presentation.xml.
-	slideRelID := p.allocateRelID()
-	_ = slideRelID // relationship ID is managed internally by PresentationPart
+	// Wire presentation→slide and slide→layout relationships; the returned
+	// relationship id is what <p:sldId r:id="…"> must carry (Phase 03 A2).
+	slideRId := p.relateSlide(slidePartOPC)
 
-	// Register with PresentationPart (auto-assigns a slide ID).
-	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
+	// Register with PresentationPart (auto-assigns a slide ID; slideRId is the
+	// presentation→slide relationship that <p:sldId> references).
+	_ = p.presentationPart.AddSlide(slideRId, slidePart)
 
 	// Build the high-level Slide object.
 	s := &Slide{
@@ -310,10 +315,14 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 
 	// Add to package.
 	slideBlob, _ := slidePart.ToXML()
-	_ = p.pkg.AddPart(opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob))
+	slidePartOPC := opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob)
+	_ = p.pkg.AddPart(slidePartOPC)
+
+	// Wire presentation→slide and slide→layout relationships.
+	slideRId := p.relateSlide(slidePartOPC)
 
 	// Register with PresentationPart.
-	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
+	_ = p.presentationPart.AddSlide(slideRId, slidePart)
 
 	// Build the high-level object.
 	s := &Slide{

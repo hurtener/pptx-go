@@ -178,11 +178,20 @@ func (p *PresentationPart) RemoveSlide(index int) error {
 
 // XPresentation is the complete XML structure for presentation.xml.
 // Note: XML tags use unprefixed names because namespace prefixes are stripped before parsing.
+// Field order matches the CT_Presentation schema sequence — PowerPoint is
+// order-sensitive: sldMasterIdLst, notesMasterIdLst, sldIdLst, sldSz, notesSz,
+// embeddedFontLst.
 type XPresentation struct {
 	XMLName xml.Name `xml:"presentation"`
 
-	// Compatibility settings
-	Compatibility *XCompatibility `xml:"compatSpt,omitempty"`
+	// Master ID list (first child)
+	SldMasterIdLst *XSldMasterIdLst `xml:"sldMasterIdLst,omitempty"`
+
+	// Notes master ID list
+	NotesMasterIdLst *XSldMasterIdLst `xml:"notesMasterIdLst,omitempty"`
+
+	// Slide ID list
+	SldIdLst *XSldIdLst `xml:"sldIdLst,omitempty"`
 
 	// Slide size (required)
 	SldSz *XSldSz `xml:"sldSz"`
@@ -190,20 +199,8 @@ type XPresentation struct {
 	// Notes size
 	NotesSz *XSldSz `xml:"notesSz,omitempty"`
 
-	// Slide ID list (required)
-	SldIdLst *XSldIdLst `xml:"sldIdLst"`
-
-	// Master ID list
-	SldMasterIdLst *XSldMasterIdLst `xml:"sldMasterIdLst,omitempty"`
-
-	// Notes master ID list
-	NotesMasterIdLst *XSldMasterIdLst `xml:"notesMasterIdLst,omitempty"`
-
 	// Embedded font list (<p:embeddedFontLst>)
 	EmbeddedFontLst *XEmbeddedFontList `xml:"embeddedFontLst,omitempty"`
-
-	// Print settings
-	PrintSettings *XPrintSettings `xml:"printSettings,omitempty"`
 }
 
 // XCompatibility holds compatibility settings.
@@ -260,6 +257,9 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 			Cx: p.slideSize.Cx,
 			Cy: p.slideSize.Cy,
 		},
+		// Notes pages are portrait Letter by convention (CT_Presentation
+		// requires notesSz after sldSz when present).
+		NotesSz: &XSldSz{Cx: 6858000, Cy: 9144000},
 	}
 
 	// Build slide ID list.
@@ -280,10 +280,11 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 		xp.SldMasterIdLst = &XSldMasterIdLst{
 			SldMasterIds: make([]XSldMasterId, len(p.slideMasterIDs)),
 		}
-		// Master IDs start at 1.
+		// CT_SlideMasterIdListEntry/@id is ST_SlideMasterId: PowerPoint requires
+		// it to be >= 2147483648.
 		for i, rId := range p.slideMasterIDs {
 			xp.SldMasterIdLst.SldMasterIds[i] = XSldMasterId{
-				Id:  uint32(i + 1),
+				Id:  uint32(2147483648 + i),
 				RId: rId,
 			}
 		}

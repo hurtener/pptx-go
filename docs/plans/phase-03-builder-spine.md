@@ -107,12 +107,17 @@ pixels. Chunk A, in verifiable steps:
     (`slide_roundtrip_test.go`), a builder-facing structure test
     (`test/parts`), and the conformance gate (presentation + slides now carry a
     namespaced root; `cNvPr` attributes serialize as attributes, not text).
-- **A2 — wire relationships + seed a complete deck.** `AddSlide` allocates
-  real presentation→slide rIds and adds the relationships; `New()` seeds a
-  minimal `DefaultTheme` + master + layout with their rels. Turn on the
-  full-deck conformance gate (RequiredParts: presentation, ≥1 slide, master,
-  layout, theme, content-types, root rels) + verify via LibreOffice and a
-  manual PowerPoint check.
+- **A2 — wire relationships + seed a complete deck (done).** `AddSlide`
+  allocates a real presentation→slide rId and adds the relationship (plus a
+  slide→layout rel); `New()` seeds a master + blank layout + theme with their
+  rels (`pptx/scaffold.go` + `scaffold_assets.go`). `presentation.xml` is
+  reordered to the CT_Presentation sequence (sldMasterIdLst, sldIdLst, sldSz,
+  notesSz) with a valid `sldMasterId` id (≥ 2147483648). The full-deck
+  conformance gate is on (`TestConformance_BuilderOutput` asserts
+  `RequiredParts`: presentation, slide1, master, layout, theme; `rep.OK()`),
+  the LibreOffice job asserts a 2-page render (poppler `pdfinfo`), and the
+  manual PowerPoint check is queued for the maintainer
+  (`docs/validation/POWERPOINT-CHECKS.md`).
 - **A3 — EMU `Box` API + options.** Shapes take EMU `Box` (not pixels);
   `New(opts ...Option)`, `WithFormat(Slides16x9|Slides4x3)`, `WithFontSource`
   (Option form; `SetFontSource` kept as a deprecated alias),
@@ -241,6 +246,19 @@ notes round-trip; hygiene pass present.
   inputs by 9525 (off-canvas coordinates); this is A3's EMU `Box` API work and
   is out of scope for the emission rebuild. Conformance does not check
   coordinates, so the gate is unaffected.
+- **A2 — static scaffold theme instead of `DefaultTheme` emission.** The seeded
+  master/layout/theme are hand-authored, namespaced OOXML constants
+  (`scaffold_assets.go`), the lowest-risk path to a PowerPoint-valid deck now
+  (plan R3). Emitting `theme1.xml` from the `Theme` model (and fixing the theme
+  codec to emit `a:`-prefixed elements — it currently emits a bare-element
+  `<theme xmlns:a>` that is not in any deck) is deferred to **Chunk B**, which
+  owns Color/theme-swap; B replaces `scaffoldThemeXML` with token-driven
+  emission. The scaffold theme colors already mirror `DefaultTheme`.
+- **A2 — `RequiredParts` covers parts, not package structures.** The
+  conformance gate requires the five real parts (presentation, slide, master,
+  layout, theme); `[Content_Types].xml` and `_rels/.rels` are package
+  structures (not in the part collection), already validated by the
+  content-type-coverage and relationship-resolution checks.
 
 ## 17. Sign-off
 

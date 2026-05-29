@@ -53,9 +53,13 @@ else
 fi
 rm -f /tmp/pptx-go-smoke-03.pptx
 
-# 5. A2: New() emits a complete deck that passes the full conformance gate.
-#    SKIP until A2 wires presentation→slide rels and seeds master/layout/theme.
-skip "A2: New() passes the full-deck conformance gate" "A2 not yet landed (rels + master/layout/theme)"
+# 5. A2: New() emits a complete deck that passes the full conformance gate
+#    (presentation + slides + master + blank layout + theme, all wired).
+if go test ./test/integration/ -run Conformance_BuilderOutput >/dev/null 2>&1; then
+	ok "A2: New() passes the full-deck conformance gate"
+else
+	fail "A2: full-deck conformance gate" "TestConformance_BuilderOutput failed"
+fi
 
 # 6. A3/B/C: EMU Box API, Fill/Line/Color interface, media/sections/notes.
 skip "A3: EMU Box API + New(opts) + WithFormat" "A3 not yet landed"

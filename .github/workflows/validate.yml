@@ -27,7 +27,7 @@ jobs:
           cache: true
 
       - name: Install tooling
-        run: sudo apt-get update && sudo apt-get install -y libreoffice-impress libxml2-utils
+        run: sudo apt-get update && sudo apt-get install -y libreoffice-impress libxml2-utils poppler-utils
 
       - name: Emit reference deck
         run: go run ./_gen/genrefdeck test-output/reference.pptx
@@ -43,9 +43,14 @@ jobs:
             echo "FAIL: LibreOffice produced no PDF — the deck did not open cleanly"
             exit 1
           fi
-          echo "OK: LibreOffice opened and converted the reference deck"
-          # NOTE: this asserts a non-empty PDF. A calibrated content/page-count
-          # assertion (poppler pdfinfo) tightens here in Phase 03 Chunk A2,
-          # once the emission rebuild (D-032) produces a known-good deck to
-          # calibrate against — the current emission is the known-broken
-          # baseline (D-032).
+          # The emission rebuild (D-032, Chunk A1/A2) produces a known-good
+          # deck, so assert real rendered content rather than just a non-empty
+          # file: genrefdeck emits two slides, which must render to two PDF
+          # pages.
+          pages="$(pdfinfo test-output/reference.pdf | awk '/^Pages:/ {print $2}')"
+          echo "LibreOffice rendered ${pages:-0} page(s)"
+          if [ "${pages:-0}" -ne 2 ]; then
+            echo "FAIL: expected 2 PDF pages (genrefdeck emits 2 slides), got ${pages:-0}"
+            exit 1
+          fi
+          echo "OK: LibreOffice opened the reference deck and rendered 2 pages"
