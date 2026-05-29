@@ -11,6 +11,10 @@
     "github.com/hurtener/pptx-go/internal/conformance": {
       "min": 85,
       "reason": "validity-gate validator (D-031); codec-band coverage"
+    },
+    "github.com/hurtener/pptx-go/internal/render": {
+      "min": 80,
+      "reason": "builder-internal helpers (CLAUDE.md §11 — internal/render 80%)"
     }
   }
 }

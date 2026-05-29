@@ -72,8 +72,12 @@ fi
 skip "B: Color interface + Fill/Line + AddShape" "Chunk B not yet landed"
 skip "C: media / sections / notes / streaming" "Chunk C not yet landed"
 
-# 7. A4: always-on repair-prompt hygiene pass.
-skip "A4: repair-prompt hygiene pass on every write (D-020)" "A4 not yet landed"
+# 7. A4: always-on repair-prompt hygiene pass (D-020).
+if go test ./internal/render/ >/dev/null 2>&1 && [ -f docs/design/HYGIENE.md ]; then
+	ok "A4: repair-prompt hygiene pass on every write (D-020)"
+else
+	fail "A4: repair-prompt hygiene pass" "internal/render tests or HYGIENE.md missing"
+fi
 
 echo
 echo "phase-03 smoke: ${OK} OK, ${FAIL} FAIL, ${SKIP} SKIP"

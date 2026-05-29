@@ -127,8 +127,12 @@ pixels. Chunk A, in verifiable steps:
   `SetTheme()` accessors (default `DefaultTheme`). `PxToEMU` is deprecated in
   favour of `pptx.Px`. The Box-native `AddShape(geom ShapeGeometry, box Box)`
   with fills/lines is **Chunk B**.
-- **A4 — `internal/render/hygiene.go`** — always-on repair-prompt pass on
-  every write (D-020); `docs/design/HYGIENE.md` trigger list.
+- **A4 — `internal/render/hygiene.go` (done).** `render.Sanitize` runs
+  unconditionally on every emitted XML part across all write paths
+  (`applyHygiene` in `Save`/`Write`/`WriteToBytes`); no caller-facing switch
+  (D-020). V1 trigger list (`docs/design/HYGIENE.md`): H1 strip a leading
+  UTF-8 BOM, H2 drop empty `lang=""`. Conservative + idempotent; golden tests
+  assert it touches only triggers. `internal/render` banded at 80%.
 
 **Chunk B — Color/Fill/Line + shapes.**
 - Retire the upstream concrete `Color` struct in favour of the `Color`

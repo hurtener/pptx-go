@@ -6,12 +6,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
 	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
+	"github.com/hurtener/pptx-go/internal/render"
 )
 
 // ============================================================================
@@ -438,6 +440,9 @@ func (p *Presentation) Save(path string) error {
 		return err
 	}
 
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
+
 	// Write to file.
 	return p.pkg.SaveFile(path)
 }
@@ -458,6 +463,9 @@ func (p *Presentation) Write(w io.Writer) error {
 		return err
 	}
 
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
+
 	// Write to the writer.
 	return p.pkg.Save(w)
 }
@@ -476,6 +484,9 @@ func (p *Presentation) WriteToBytes() ([]byte, error) {
 	if err := p.syncPresentationPart(); err != nil {
 		return nil, err
 	}
+
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
 
 	// Write to a byte slice.
 	return p.pkg.SaveToBytes()
@@ -505,6 +516,19 @@ func (p *Presentation) syncSlides() error {
 	}
 
 	return nil
+}
+
+// applyHygiene runs the always-on repair-prompt hygiene pass (D-020) over every
+// XML part in the package, in place, just before serialization. It has no
+// caller-facing switch — emitting OOXML PowerPoint opens without a repair
+// prompt is correctness, not preference.
+func (p *Presentation) applyHygiene() {
+	for _, part := range p.pkg.AllParts() {
+		if !strings.Contains(part.ContentType(), "xml") {
+			continue
+		}
+		part.SetBlob(render.Sanitize(part.Blob()))
+	}
 }
 
 // syncPresentationPart serializes presentation.xml into the OPC package.
