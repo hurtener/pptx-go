@@ -58,6 +58,7 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
 				Offset: &slide.XOv2DrOffset{X: x, Y: y},
 				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
+			PresetGeom: &slide.XPresetGeometry{Prst: "rect", AvLst: &slide.XAvLst{}},
 		},
 		TextBody: &slide.XTextBody{
 			BodyPr:   &slide.XBodyPr{},
@@ -93,8 +94,8 @@ func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XS
 				Offset: &slide.XOv2DrOffset{X: x, Y: y},
 				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
+			PresetGeom: &slide.XPresetGeometry{Prst: presetID, AvLst: &slide.XAvLst{}},
 		},
-		ShapePreset: presetID,
 	}
 
 	b.slide.AppendShapeChild(sp)
@@ -117,7 +118,7 @@ func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPic
 			Blip: &slide.XBlip{
 				Embed: imageRId,
 			},
-			Stretch: &slide.XStretchProperties{},
+			Stretch: &slide.XStretchProperties{FillRect: &slide.XFillRectProperties{}},
 		},
 		ShapeProperties: &slide.XShapeProperties{
 			Transform2D: &slide.XTransform2D{
@@ -175,12 +176,15 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 			},
 			CNvGraphicFramePr: &slide.XNvGraphicFramePr{},
 		},
-		Graphic: &slide.XGraphic{
-			Table: &table,
-		},
 		Transform2D: &slide.XTransform2D{
 			Offset: &slide.XOv2DrOffset{X: x, Y: y},
 			Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
+		},
+		Graphic: &slide.XGraphic{
+			GraphicData: &slide.XGraphicData{
+				URI:   slide.TableGraphicDataURI,
+				Table: &table,
+			},
 		},
 	}
 
@@ -190,10 +194,10 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 
 // SetTableCellText sets the text of the cell at (row, col) in the given table.
 func (b *SlideBuilder) SetTableCellText(gf *slide.XGraphicFrame, row, col int, text string) {
-	if gf == nil || gf.Graphic == nil || gf.Graphic.Table == nil {
+	if gf == nil || gf.Graphic == nil || gf.Graphic.GraphicData == nil || gf.Graphic.GraphicData.Table == nil {
 		return
 	}
-	table := gf.Graphic.Table
+	table := gf.Graphic.GraphicData.Table
 	if row < 0 || row >= len(table.Rows) || col < 0 || col >= len(table.Rows[row].Cells) {
 		return
 	}

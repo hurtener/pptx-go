@@ -92,15 +92,21 @@ pixels. Chunk A, in verifiable steps:
     element→prefix table extracted from the writer; declares only the used
     prefixes on the root; golden-tested. Proven to fix namespaces +
     attributes when wired.
-  - **A1b — complete the structs + custom container marshaling.** The
-    inherited structs do *not* fully represent the OOXML the writer emits:
-    the heterogeneous, ordered `spTree` children are `xml:"-"` (so
-    `xml.Marshal` drops shapes) and shape geometry lives in
-    `XSp.ShapePreset string` (`xml:"-"`, never serialized). A1b adds a custom
-    `MarshalXML` for the heterogeneous containers (`spTree`, groups) and the
-    missing typed fields (e.g. `prstGeom`), so `xml.Marshal` emits complete
-    content; then rewires `ToXML` and deletes the writer. Verified by
-    round-trip goldens + the conformance gate.
+  - **A1b — complete the structs + custom container marshaling (done).** The
+    inherited structs did *not* fully represent the OOXML the writer emitted:
+    the heterogeneous, ordered `spTree` children were `xml:"-"` (so
+    `xml.Marshal` dropped shapes) and shape geometry lived in
+    `XSp.ShapePreset string` (`xml:"-"`, never serialized). A1b added a custom
+    `MarshalXML`/`UnmarshalXML` pair for `spTree` (`slide_marshal.go`) and the
+    missing typed fields (`prstGeom` via `XPresetGeometry`, `nvPr`,
+    `graphicData` via `XGraphicData`, `solidFill` via `XSolidFill`), reordered
+    the shape structs to the CT_* schema, rewired `SlidePart.ToXML` and
+    `PresentationPart.ToXML` onto `xml.Marshal` + `ooxml.RestoreNamespaces`,
+    and **deleted the ~700-line hand-rolled `XMLWriter`/`XMLWriterPool` and all
+    `WriteXML` methods**. Verified by a codec round-trip golden
+    (`slide_roundtrip_test.go`), a builder-facing structure test
+    (`test/parts`), and the conformance gate (presentation + slides now carry a
+    namespaced root; `cNvPr` attributes serialize as attributes, not text).
 - **A2 — wire relationships + seed a complete deck.** `AddSlide` allocates
   real presentation→slide rIds and adds the relationships; `New()` seeds a
   minimal `DefaultTheme` + master + layout with their rels. Turn on the
@@ -219,7 +225,22 @@ notes round-trip; hygiene pass present.
 
 ## 16. Plan deviations encountered during implementation
 
-- *(filled in per chunk during implementation)*
+- **A1b — `clrMapOvr` + `cSld` correctness.** The retired writer emitted an
+  invalid `<a:defRgbClrModel val="bg1"/>` inside `clrMapOvr` and wrote the
+  `spTree` directly under `<p:sld>` (no `<p:cSld>` wrapper). The rebuilt
+  emission emits the standard `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>`
+  and the required `<p:cSld>` envelope.
+- **A1b — table/graphicFrame namespace fidelity deferred.** A graphic frame's
+  transform is `<p:xfrm>` (PresentationML), but `RestoreNamespaces` keys on a
+  single element→prefix table that maps `xfrm`→`a` (correct for the far more
+  common shape `spPr` case). Tables are not a Phase 03 acceptance primitive and
+  appear in no gated deck, so `graphicFrame`/`tbl` emission is left best-effort
+  (parity with the old writer, which also emitted `a:xfrm`); full table
+  namespace fidelity lands when tables are formally shipped. No regression.
+- **A1b — `PxToEMU` left in place.** `AddShape`-path shapes still multiply EMU
+  inputs by 9525 (off-canvas coordinates); this is A3's EMU `Box` API work and
+  is out of scope for the emission rebuild. Conformance does not check
+  coordinates, so the gate is unaffected.
 
 ## 17. Sign-off
 

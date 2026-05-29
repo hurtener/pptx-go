@@ -89,8 +89,8 @@ func (r *RectangleComponent) Render(ctx *pptx.SlideContext) error {
 				Offset: &slidex.XOv2DrOffset{X: r.x, Y: r.y},
 				Extent: &slidex.XOv2DrExtent{Cx: r.cx, Cy: r.cy},
 			},
+			PresetGeom: &slidex.XPresetGeometry{Prst: "rect", AvLst: &slidex.XAvLst{}},
 		},
-		ShapePreset: "rect",
 	}
 
 	ctx.AppendShape(sp)

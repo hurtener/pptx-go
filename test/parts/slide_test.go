@@ -9,28 +9,19 @@ import (
 	"github.com/hurtener/pptx-go/pptx"
 )
 
-// writeSlideToXML is a helper that serializes an XSlide using XMLWriter.
-func writeSlideToXML(xs *slide.XSlide) ([]byte, error) {
-	xw := slide.NewXMLWriterBuffered(4096)
-	if err := xw.Declaration(); err != nil {
-		return nil, err
+// slidePartToXML builds a SlidePart whose shape tree is populated by fn and
+// returns the emitted slide XML (xml.Marshal + ooxml.RestoreNamespaces, D-032).
+func slidePartToXML(t *testing.T, fn func(b *pptx.SlideBuilder)) string {
+	t.Helper()
+	sp := slide.NewSlidePart(1)
+	if fn != nil {
+		fn(pptx.NewSlideBuilder(sp))
 	}
-	if err := xs.WriteXML(xw); err != nil {
-		return nil, err
+	data, err := sp.ToXML()
+	if err != nil {
+		t.Fatalf("SlidePart.ToXML: %v", err)
 	}
-	return xw.Bytes(), nil
-}
-
-// writeTextBodyToXML is a helper that serializes an XTextBody using XMLWriter.
-func writeTextBodyToXML(xtb *slide.XTextBody) ([]byte, error) {
-	xw := slide.NewXMLWriterBuffered(4096)
-	if err := xw.Declaration(); err != nil {
-		return nil, err
-	}
-	if err := xtb.WriteXML(xw); err != nil {
-		return nil, err
-	}
-	return xw.Bytes(), nil
+	return string(data)
 }
 
 // TestSlideBuilder_AddText tests the text-addition logic of the Slide Builder API.
@@ -344,89 +335,58 @@ func TestSlide_MarshalComponents(t *testing.T) {
 // TestSlide_MarshalFullPage is a full-slide serialization smoke test.
 // It verifies namespace declarations, which are critical for PowerPoint to open the file.
 func TestSlide_MarshalFullPage(t *testing.T) {
-	// Construct XSlide directly to test namespace serialization.
-	xslide := slide.XSlide{
-		XmlnsA:    "http://schemas.openxmlformats.org/drawingml/2006/main",
-		XmlnsR:    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-		XmlnsP:    "http://schemas.openxmlformats.org/presentationml/2006/main",
-		ClrMapOvr: &slide.XClrMapOvr{Accent1: "accent1"},
-		CSld: &slide.XCSld{
-			SpTree: slide.NewXSpTree(),
-		},
-	}
-
-	// Serialize using WriteXML (produces OOXML format with namespace prefixes).
-	data, err := writeSlideToXML(&xslide)
-	if err != nil {
-		t.Fatalf("WriteXML failed: %v", err)
-	}
-
-	xmlStr := string(data)
+	xmlStr := slidePartToXML(t, func(b *pptx.SlideBuilder) {
+		b.AddAutoShape(914400, 914400, 2743200, 1371600, "rect")
+	})
 	t.Logf("generated XML:\n%s", xmlStr)
 
-	// Key assertions: required namespace declarations must be present.
+	// Key assertions: the namespaces the shape tree actually uses (p: and a:)
+	// must be declared on the root. r: is only declared when a relationship
+	// attribute is present (e.g. a picture), so it is not required here.
 	requiredNamespaces := []string{
 		`xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"`,
 		`xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`,
-		`xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`,
 	}
-
 	for _, ns := range requiredNamespaces {
 		if !strings.Contains(xmlStr, ns) {
 			t.Errorf("missing required namespace declaration: %s", ns)
 		}
 	}
 
-	// Verify root element <p:sld>.
-	if !strings.Contains(xmlStr, "<p:sld") {
-		t.Error("missing root element <p:sld>")
-	}
-	if !strings.Contains(xmlStr, "</p:sld>") {
-		t.Error("missing root element closing tag </p:sld>")
-	}
-
-	// Verify shape tree <p:spTree>.
-	if !strings.Contains(xmlStr, "<p:spTree>") {
-		t.Error("missing shape tree element <p:spTree>")
-	}
-	if !strings.Contains(xmlStr, "</p:spTree>") {
-		t.Error("missing shape tree closing tag </p:spTree>")
+	// Verify the structural envelope: <p:sld><p:cSld><p:spTree>.
+	for _, want := range []string{"<p:sld", "</p:sld>", "<p:cSld>", "<p:spTree>", "</p:spTree>"} {
+		if !strings.Contains(xmlStr, want) {
+			t.Errorf("missing %q", want)
+		}
 	}
 
-	t.Logf("namespace and root element verification passed")
+	// The shape's preset geometry must serialize (regression: prstGeom was
+	// previously dropped via the xml:"-" tag).
+	if !strings.Contains(xmlStr, `<a:prstGeom prst="rect">`) {
+		t.Errorf("missing preset geometry <a:prstGeom prst=\"rect\">")
+	}
+
+	// Attributes must serialize as attributes, not as element text content
+	// (the retired hand-rolled writer emitted `<p:cNvPr>2 name="..."`).
+	if strings.Contains(xmlStr, `<p:cNvPr>2`) {
+		t.Errorf("cNvPr id leaked into element text instead of an attribute:\n%s", xmlStr)
+	}
+	if !strings.Contains(xmlStr, `id="2"`) {
+		t.Errorf("missing shape id attribute id=\"2\"")
+	}
 }
 
-// TestSlide_MarshalFullPage_WithContent tests full-slide serialization with content.
+// TestSlide_MarshalFullPage_WithContent tests full-slide serialization with text content.
 func TestSlide_MarshalFullPage_WithContent(t *testing.T) {
-	// Construct an XTextBody containing text.
-	textBody := slide.XTextBody{
-		Paragraphs: []slide.XTextParagraph{
-			{
-				TextRuns: []slide.XTextRun{
-					{Text: "Presentation Title"},
-				},
-			},
-		},
-	}
-
-	// Serialize using WriteXML (produces OOXML format with namespace prefixes).
-	data, err := writeTextBodyToXML(&textBody)
-	if err != nil {
-		t.Fatalf("WriteXML failed: %v", err)
-	}
-
-	xmlStr := string(data)
+	xmlStr := slidePartToXML(t, func(b *pptx.SlideBuilder) {
+		b.AddTextBox(914400, 914400, 4572000, 914400, "Presentation Title")
+	})
 	t.Logf("generated XML:\n%s", xmlStr)
 
-	// Verify text content.
 	if !strings.Contains(xmlStr, "Presentation Title") {
 		t.Error("missing text content: Presentation Title")
 	}
-
-	// Verify <a:t> tag.
 	if !strings.Contains(xmlStr, "<a:t>") {
 		t.Error("missing text tag <a:t>")
 	}
-
-	t.Logf("text content serialization verified")
 }

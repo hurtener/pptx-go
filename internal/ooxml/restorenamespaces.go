@@ -168,6 +168,7 @@ var elementNS = map[string]string{
 	"regular": "p", "bold": "p", "italic": "p", "boldItalic": "p",
 	"sld": "p", "sldLayout": "p", "sldMaster": "p",
 	"cSld": "p", "clrMap": "p", "clrMapOvr": "p", "bg": "p", "bgPr": "p", "bgRef": "p",
+	"masterClrMapping": "a", "overrideClrMapping": "a",
 	"spTree": "p", "nvGrpSpPr": "p", "grpSpPr": "p",
 	"sp": "p", "nvSpPr": "p", "cNvSpPr": "p", "cNvPr": "p", "nvPr": "p", "ph": "p",
 	"cNvGrpSpPr": "p", "spPr": "p", "txBody": "p",

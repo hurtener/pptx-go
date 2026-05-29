@@ -296,7 +296,14 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte(ooxml.XMLDeclaration), output...), nil
+	// Bare element names → canonical p:/r: prefixes + root namespace
+	// declarations (D-032); without this the root <presentation> carries no
+	// namespace and PowerPoint rejects the file.
+	restored, err := ooxml.RestoreNamespaces(output)
+	if err != nil {
+		return nil, fmt.Errorf("restore presentation namespaces: %w", err)
+	}
+	return append([]byte(ooxml.XMLDeclaration), restored...), nil
 }
 
 // FromXML deserializes a PresentationPart from XML.
