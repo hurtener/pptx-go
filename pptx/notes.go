@@ -2,8 +2,8 @@ package pptx
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
 )
 
@@ -20,16 +20,32 @@ const (
 	notesMasterURI = "/ppt/notesMasters/notesMaster1.xml"
 )
 
-// SpeakerNotes sets the slide's speaker-notes text (D-022). Passing an empty
-// string still marks the slide as having notes (an empty notes page). The
-// scene IR's SceneSlide.Notes maps directly to this.
-func (s *Slide) SpeakerNotes(text string) {
-	s.notesText = text
-	s.hasNotes = true
+// SpeakerNotes returns the slide's speaker-notes text frame, creating it on
+// first use (D-022, RFC §8.8). Author notes through the returned TextFrame just
+// like any other text. The scene IR's SceneSlide.Notes maps onto it.
+func (s *Slide) SpeakerNotes() *TextFrame {
+	if s.notes == nil {
+		s.notes = &TextFrame{
+			s: s,
+			body: &slide.XTextBody{
+				BodyPr:   &slide.XBodyPr{},
+				LstStyle: &slide.XTextParagraphList{},
+			},
+		}
+	}
+	return s.notes
+}
+
+// SetSpeakerNotes is a convenience that replaces the notes with a single
+// plain-text paragraph (themed body text).
+func (s *Slide) SetSpeakerNotes(text string) {
+	tf := s.SpeakerNotes()
+	tf.body.Paragraphs = nil
+	tf.AddParagraph(ParagraphOpts{}).AddRun(text, RunStyle{TypeRole: TypeBody})
 }
 
 // HasSpeakerNotes reports whether the slide carries speaker notes.
-func (s *Slide) HasSpeakerNotes() bool { return s.hasNotes }
+func (s *Slide) HasSpeakerNotes() bool { return s.notes != nil }
 
 // syncNotes materializes the notes parts for every slide carrying notes: a
 // shared notes master (created once, wired from presentation.xml) and a
@@ -40,7 +56,7 @@ func (s *Slide) HasSpeakerNotes() bool { return s.hasNotes }
 func (p *Presentation) syncNotes() error {
 	hasAny := false
 	for _, s := range p.slides {
-		if s.hasNotes {
+		if s.notes != nil {
 			hasAny = true
 			break
 		}
@@ -52,10 +68,12 @@ func (p *Presentation) syncNotes() error {
 	p.ensureNotesMaster()
 
 	for _, s := range p.slides {
-		if !s.hasNotes {
+		if s.notes == nil {
 			continue
 		}
-		p.syncNotesSlide(s)
+		if err := p.syncNotesSlide(s); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -84,10 +102,15 @@ func (p *Presentation) ensureNotesMaster() {
 // syncNotesSlide creates (or refreshes) the notesSlide part for a slide and
 // wires the slide→notesSlide relationship. The notesSlide is named after the
 // slide's stable file number so it survives slide reordering.
-func (p *Presentation) syncNotesSlide(s *Slide) {
+func (p *Presentation) syncNotesSlide(s *Slide) error {
 	n := s.num
 	uri := opc.NewPackURI(fmt.Sprintf("/ppt/notesSlides/notesSlide%d.xml", n))
-	blob := []byte(buildNotesSlideXML(s.notesText))
+
+	txBody, err := slide.MarshalTextBody(s.notes.body)
+	if err != nil {
+		return fmt.Errorf("serialize notes for slide %d: %w", n, err)
+	}
+	blob := []byte(buildNotesSlideXML(string(txBody)))
 
 	part := p.pkg.GetPart(uri)
 	if part == nil {
@@ -106,12 +129,13 @@ func (p *Presentation) syncNotesSlide(s *Slide) {
 	if s.part.Relationships().GetByTarget(target) == nil {
 		_, _ = s.part.Relationships().AddNew(opc.RelTypeNotesSlide, fmt.Sprintf("../notesSlides/notesSlide%d.xml", n), false)
 	}
+	return nil
 }
 
-// buildNotesSlideXML renders a minimal, valid notesSlide carrying text in its
-// body placeholder. It is hand-authored namespaced OOXML (the A2 scaffold
-// pattern); the text is XML-escaped.
-func buildNotesSlideXML(text string) string {
+// buildNotesSlideXML renders a minimal, valid notesSlide whose body placeholder
+// carries the given serialized <p:txBody> (from slide.MarshalTextBody). It is
+// hand-authored namespaced OOXML (the A2 scaffold pattern).
+func buildNotesSlideXML(txBody string) string {
 	return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
 <p:cSld>
@@ -121,22 +145,12 @@ func buildNotesSlideXML(text string) string {
 <p:sp>
 <p:nvSpPr><p:cNvPr id="2" name="Notes Placeholder 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr>
 <p:spPr/>
-<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>` + escapeXMLText(text) + `</a:t></a:r></a:p></p:txBody>
+` + txBody + `
 </p:sp>
 </p:spTree>
 </p:cSld>
 <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:notes>`
-}
-
-// escapeXMLText escapes the XML metacharacters that matter inside element text.
-func escapeXMLText(s string) string {
-	r := strings.NewReplacer(
-		"&", "&amp;",
-		"<", "&lt;",
-		">", "&gt;",
-	)
-	return r.Replace(s)
 }
 
 // scaffoldNotesMasterXML is /ppt/notesMasters/notesMaster1.xml — a minimal,

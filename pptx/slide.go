@@ -279,10 +279,9 @@ type Slide struct {
 	// dependent parts (e.g. notesSlideN.xml) keep a consistent name.
 	num int
 
-	// notesText is the speaker-notes text (D-022); hasNotes marks the slide as
-	// carrying notes, so empty notes can be distinguished from "no notes".
-	notesText string
-	hasNotes  bool
+	// notes is the speaker-notes rich-text frame (D-022), lazily created by
+	// SpeakerNotes; nil means the slide has no notes.
+	notes *TextFrame
 
 	// shapeIDCounter is a lock-free atomic counter for allocating unique shape IDs.
 	shapeIDCounter atomic.Uint32

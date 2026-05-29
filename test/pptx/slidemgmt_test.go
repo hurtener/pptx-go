@@ -132,7 +132,7 @@ func TestAddSlideAt_Order(t *testing.T) {
 func TestRemoveSlide_NoDanglingRel(t *testing.T) {
 	p := pptx.New()
 	s0 := p.AddSlide()
-	s0.SpeakerNotes("notes for slide 0")
+	s0.SetSpeakerNotes("notes for slide 0")
 	p.AddSlide()
 
 	if err := p.RemoveSlide(0); err != nil {

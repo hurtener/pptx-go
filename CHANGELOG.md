@@ -35,17 +35,21 @@ changes.
 - Slide grouping: `Presentation.AddSection(name)`, `Section.Include(slide)`, and
   `Presentation.Sections()` — sections appear in PowerPoint's slide sorter and
   round-trip.
-- Speaker notes: `Slide.SpeakerNotes(text)` attaches notes to a slide (emitted
-  as a notes page with a notes master) and round-trips.
+- Speaker notes attach to a slide (emitted as a notes page with a notes master)
+  and round-trip.
 - Streaming I/O: `pptx.OpenStream(path)` and `Presentation.SaveStream(path)`
   read and write decks through the streaming package without buffering the
   whole file.
 - Rich text: `Slide.AddTextFrame(box)` returns a `TextFrame` with
   `AddParagraph`/`AutoFit`/`Anchor`/`Margins`; `Paragraph` with
-  `AddRun`/`AddBreak`/`Align`/`Indent`/`Bullet`; and a token-typed `RunStyle`
-  (type role, color, bold/italic/underline/strike/baseline). Bullets support
-  disc, numbered, and checklist styles; run colors resolve against the active
-  theme.
+  `AddRun`/`AddBreak`/`AddHyperlink`/`Align`/`Indent`/`Bullet`; and a
+  token-typed `RunStyle` (type role, color, bold/italic/underline/strike/
+  baseline, inline code). Bullets support disc, numbered, and checklist styles;
+  run colors resolve against the active theme; inline code renders monospace
+  with a subtle themed tint; hyperlinked runs carry their URL through an
+  external relationship.
+- Speaker notes are now rich text: `Slide.SpeakerNotes()` returns a `TextFrame`,
+  with `Slide.SetSpeakerNotes(text)` as a plain-text convenience.
 
 ### Fixed
 

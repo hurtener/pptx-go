@@ -4,7 +4,7 @@
 **RFC sections:** §8.4, §8.8 (notes ← TextFrame), §9
 **Deps:** Phase 03 (builder spine — shapes, media, notes, the one-emission
 path D-032, and the token `Color` model D-033).
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -243,13 +243,35 @@ The `pptx` package coverage is measured by the external `test/pptx` suite
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **R3 simplified — no `xml:space="preserve"`.** DrawingML `<a:t>` preserves
+  whitespace by default (unlike WordprocessingML `<w:t>`), and Go's codec
+  round-trips run text verbatim, so the planned `xml:space` attribute was
+  unnecessary. Criterion 1's "round-trips losslessly" holds without it (a
+  round-trip golden asserts the trailing space on `"Hello "`).
+- **Bullets landed in Chunk A, not B.** The bullet wire types were ready with
+  the Chunk A codec restructure, so `Paragraph.Bullet` + `ParagraphOpts.Bullet`
+  shipped in A; only inline code, hyperlinks, and notes-as-`TextFrame` were
+  genuinely B work. Criterion 4 met in A.
+- **Text wire types restructured (codec change).** The inherited
+  `XTextParagraph`/`XTextProperties` put `lvl`/`algn` on the paragraph and
+  `solidFill`/`typeface` as a string attr — invalid OOXML. Chunk A moved them
+  to a `pPr` child, `solidFill`/`latin`/`highlight`/`hlinkClick` child elements,
+  ordered run/break content (custom marshaler), and `b`/`i` as `"1"`. The
+  `test/parts` serialization assertions were updated to the corrected shape
+  (legitimate codec-golden churn, §11).
+- **Inline code reuses existing tokens.** `RunStyle.Code` maps to `TypeMono` +
+  a `ColorSurfaceAlt` highlight rather than introducing a new theme token; the
+  THEME.md entry documents the composition (no new `ColorRole`).
+- **`SpeakerNotes` signature change** from Phase 03 C's `(text string)` to the
+  RFC §8.8 `() *TextFrame`, with `SetSpeakerNotes(text string)` kept as the
+  plain-text convenience. Both are in the same unreleased cycle (Phase 03 C is
+  PR #7), so no shipped surface breaks. (D-034 anticipated this.)
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-04.sh` reports `OK ≥ 7` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entries added (if any).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-04.sh` reports `OK ≥ 7` and `FAIL = 0` (7 OK / 0 FAIL).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated.
+- [x] Decision entries added (none new — D-034 anticipated the notes change).

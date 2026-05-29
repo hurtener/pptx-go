@@ -51,6 +51,13 @@ func (rs RunStyle) toProps(t *Theme) *slide.XTextProperties {
 		p.Latin = &slide.XLatinFont{Typeface: family}
 		set = true
 	}
+	if rs.Code {
+		// A subtle background tint sourced from the theme (D-013).
+		p.Highlight = &slide.XHighlight{
+			SrgbClr: srgbFrom(resolvedColor{rgb: normalizeHex(t.ResolveColor(ColorSurfaceAlt)), alpha: AlphaOpaque}),
+		}
+		set = true
+	}
 	if rs.Bold || spec.Bold() {
 		p.Bold = "1"
 		set = true

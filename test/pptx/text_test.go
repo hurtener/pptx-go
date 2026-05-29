@@ -137,6 +137,103 @@ func TestRunColor_ThemeSwap(t *testing.T) {
 	}
 }
 
+// TestInlineCode is acceptance criterion 2: an inline-code run renders with a
+// monospace typeface and a subtle background tint from the default theme (D-013).
+func TestInlineCode(t *testing.T) {
+	mono := pptx.DefaultTheme().ResolveType(pptx.TypeMono).Family
+	tint := string(pptx.DefaultTheme().ResolveColor(pptx.ColorSurfaceAlt))
+
+	p := pptx.New()
+	s := p.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(5), H: pptx.In(1)})
+	tf.AddParagraph(pptx.ParagraphOpts{}).AddRun("go test", pptx.RunStyle{TypeRole: pptx.TypeBody, Code: true})
+
+	data, _ := p.WriteToBytes()
+	xml := readZipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(xml, `typeface="`+mono+`"`) {
+		t.Errorf("inline code missing monospace typeface %q in:\n%s", mono, xml)
+	}
+	if !strings.Contains(xml, `<a:highlight><a:srgbClr val="`+strings.ToUpper(tint)+`"/></a:highlight>`) {
+		t.Errorf("inline code missing highlight tint %q in:\n%s", tint, xml)
+	}
+}
+
+// TestHyperlink is acceptance criterion 3: a hyperlinked run carries its URL
+// through the relationships layer and the deck stays conformant.
+func TestHyperlink(t *testing.T) {
+	const url = "https://example.com/path?q=1"
+	p := pptx.New()
+	s := p.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(5), H: pptx.In(1)})
+	tf.AddParagraph(pptx.ParagraphOpts{}).AddHyperlink("click me", url, pptx.RunStyle{TypeRole: pptx.TypeBody})
+
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	slideXML := readZipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slideXML, `<a:hlinkClick r:id="`) {
+		t.Errorf("missing hlinkClick in:\n%s", slideXML)
+	}
+	rels := readZipPart(t, data, "ppt/slides/_rels/slide1.xml.rels")
+	if !strings.Contains(rels, url) || !strings.Contains(rels, `TargetMode="External"`) {
+		t.Errorf("hyperlink relationship not external / missing URL:\n%s", rels)
+	}
+	rep, _ := conformance.ValidateBytes(data, conformance.Options{
+		RequiredParts: []string{"/ppt/presentation.xml", "/ppt/slides/slide1.xml"},
+	})
+	if !rep.OK() {
+		t.Fatalf("hyperlink deck failed conformance:\n%s", rep)
+	}
+}
+
+// TestNotesTextFrame_RoundTrip is acceptance criterion 6: SpeakerNotes() returns
+// a TextFrame; notes authored through it round-trip and stay conformant.
+func TestNotesTextFrame_RoundTrip(t *testing.T) {
+	p := pptx.New()
+	s := p.AddSlide()
+	notes := s.SpeakerNotes()
+	notes.AddParagraph(pptx.ParagraphOpts{}).AddRun("Point one", pptx.RunStyle{TypeRole: pptx.TypeBody, Bold: true})
+	notes.AddParagraph(pptx.ParagraphOpts{Bullet: pptx.BulletDisc}).AddRun("Point two", pptx.RunStyle{TypeRole: pptx.TypeBody})
+
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	notesXML := readZipPart(t, data, "ppt/notesSlides/notesSlide1.xml")
+	for _, want := range []string{`<a:t>Point one</a:t>`, `b="1"`, `<a:t>Point two</a:t>`, `<a:buChar`} {
+		if !strings.Contains(notesXML, want) {
+			t.Errorf("notesSlide1.xml missing %q in:\n%s", want, notesXML)
+		}
+	}
+	rep, _ := conformance.ValidateBytes(data, conformance.Options{
+		RequiredParts: []string{"/ppt/notesSlides/notesSlide1.xml", "/ppt/notesMasters/notesMaster1.xml"},
+	})
+	if !rep.OK() {
+		t.Fatalf("notes deck failed conformance:\n%s", rep)
+	}
+
+	// Survives Open round-trip.
+	r, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	if got := readZipPart(t, mustBytes(t, r), "ppt/notesSlides/notesSlide1.xml"); !strings.Contains(got, "Point one") {
+		t.Errorf("notes lost across Open round-trip:\n%s", got)
+	}
+}
+
+func mustBytes(t *testing.T, p *pptx.Presentation) []byte {
+	t.Helper()
+	b, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	return b
+}
+
 // findTextShape returns the first shape carrying a text body.
 func findTextShape(t *testing.T, part *slide.SlidePart) *slide.XSp {
 	t.Helper()

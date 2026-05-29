@@ -371,6 +371,22 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 	return append([]byte(ooxml.XMLDeclaration), restored...), nil
 }
 
+// MarshalTextBody serializes a text body to namespaced <p:txBody> XML (bare
+// marshal + RestoreNamespaces, D-032), with no XML declaration. It lets callers
+// embed a rich text body into a hand-authored part (e.g. a notes slide) without
+// reaching into the namespace machinery themselves (P3).
+func MarshalTextBody(body *XTextBody) ([]byte, error) {
+	bare, err := xml.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal text body: %w", err)
+	}
+	restored, err := ooxml.RestoreNamespaces(bare)
+	if err != nil {
+		return nil, fmt.Errorf("restore text body namespaces: %w", err)
+	}
+	return restored, nil
+}
+
 // FromXML deserializes a SlidePart from XML.
 func (s *SlidePart) FromXML(data []byte) error {
 	// Strip namespace prefixes for compatibility with Go's xml.Unmarshal.

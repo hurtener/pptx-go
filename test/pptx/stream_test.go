@@ -35,7 +35,7 @@ func TestSaveStream_Valid(t *testing.T) {
 	if _, err := s.AddImage(pptx.ImageBytes(pngBytes("stream"), "image/png"), imgBox); err != nil {
 		t.Fatalf("AddImage: %v", err)
 	}
-	s.SpeakerNotes("streamed notes")
+	s.SetSpeakerNotes("streamed notes")
 
 	out := filepath.Join(t.TempDir(), "stream.pptx")
 	if err := p.SaveStream(out); err != nil {
