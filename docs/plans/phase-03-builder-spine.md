@@ -148,10 +148,24 @@ pixels. Chunk A, in verifiable steps:
   Chunk C); the `Color`/`Fill`/`Line` interfaces are sealed so they extend
   without breaking callers.
 
-**Chunk C — media, sections, notes, streaming.**
-- `AddImage`/`ImageSource` (file/bytes/reader), alt text, crop, fit, dedup
-  (preserve `ResourceDedupPool`); `AddSection`/`Section`; `SpeakerNotes`;
-  `OpenStream`/`SaveStream`. Round-trip goldens each.
+**Chunk C — media, sections, notes, streaming (done; D-034).**
+- `AddImage(src, box)` + `ImageSource` (`ImageFile`/`ImageBytes`/`ImageReader`,
+  the §4.4 seam), alt text, crop, and a V1 `Fit` (`FitFill`/`FitNone` — aspect-
+  aware fits need pixel dimensions, forbidden by §7); content-type sniff +
+  verify with no pixel parsing; content-dedup via the upstream MediaManager.
+  Closed the A2 relationship seam: the slide owns its rels (layout + image +
+  notes in one `rId` namespace), `syncSlides` mirrors them onto the package
+  part, `syncMedia` writes the deduped bytes. Fixed the `AddPictureFromFile`
+  `io.ReadAll(nil)` stub.
+- `AddSection`/`Section.Include`/`Sections()` → a `p14:sectionLst` injected into
+  `presentation.xml`'s extLst (D-034), with read-back for round-trip.
+- `SpeakerNotes(text)` → a `notesSlide` part + hand-authored `notesMaster1.xml`,
+  wired via rels + `notesMasterIdLst`.
+- `OpenStream(path)`/`SaveStream(path)` over the `internal/opc` streaming
+  package, with the D-020 hygiene pass on the write path. Fixed a streaming
+  reader bug that dropped the package `.rels` on open.
+- Round-trip goldens: codec-level picture descr/srcRect; pptx-level media,
+  sections, notes, and streaming.
 
 ```text
 internal/render/hygiene.go         # NEW (A) — D-020 repair pass
@@ -280,6 +294,32 @@ notes round-trip; hygiene pass present.
   parallel Box signature in A3 would be churn B immediately reworks. The
   px-based `SlideViewport`/boundary-check helpers are a separate placement
   utility and stay px.
+- **C — `AddImage(src, box)` argument order follows the RFC example** (`src`
+  first), not the orientation note's `(box, src)`; this matches the RFC §8.6
+  snippet and the `AddShape(geom, box)` shape convention (the "what" precedes
+  the "where").
+- **C — `Fit` ships as `FitFill`/`FitNone` only.** PowerPoint stores no single
+  fit value and cover/contain math needs the image's pixel dimensions, which §7
+  forbids parsing. `FitFill` emits `<a:stretch>`, `FitNone` omits it; richer,
+  aspect-aware fits are deferred (caller-side `Box` sizing drives aspect —
+  D-026). (D-034.)
+- **C — speaker notes are a plain-text setter, not `*TextFrame`.** RFC §8.8
+  sketches `SpeakerNotes() *TextFrame`, but `TextFrame` is the rich-text model
+  (a later phase). V1 ships `SpeakerNotes(text string)`; the accessor evolves
+  with rich text. (D-034.)
+- **C — streaming uses the RFC §9 path-based signatures.** `OpenStream(path)` /
+  `SaveStream(path)` match the RFC exactly; CLAUDE.md §5's context-first
+  convention yields to the explicit RFC signature (RFC > this file, §2). A
+  context-aware streaming API would be an RFC change + superseding decision.
+  (D-034.)
+- **C — section list emitted as an injected `p14` fragment.** `RestoreNamespaces`
+  is single-table and can't emit both `p:sldId` and `p14:sldId`, so the section
+  list is built as a literal fragment and injected into `presentation.xml`; the
+  read path parses it back via prefix-stripped structs. (D-034.)
+- **C — fixed a pre-existing `internal/opc` streaming bug.** `StreamPackage`
+  dropped the package `.rels` on open (it tested `IsPackageRels` on the source
+  URI, not the rels URI), which would have made `OpenStream`→`SaveStream`
+  output invalid. Corrected to match `opc.Package.loadRelationships`. (D-034.)
 
 ## 17. Sign-off
 

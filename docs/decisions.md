@@ -820,4 +820,55 @@ theme, D-032/A2) remains a follow-up; resolution-to-`srgbClr` covers V1.
 
 ---
 
+## D-034 — Section list is an injected p14 fragment; the slide owns its rels
+
+**Date:** 2026-05-29
+**Status:** Settled
+**Context:** Phase 03 Chunk C adds media, sections, speaker notes, and
+streaming on top of the D-032 emission path (`xml.Marshal` bare names +
+`RestoreNamespaces`). Two structural problems surfaced. (1) PowerPoint stores
+slide sections under a `p14:sectionLst` whose `<p14:sldId>` shares the local
+name `sldId` with the top-level `<p:sldIdLst><p:sldId>`. `RestoreNamespaces`
+keys on a single element→prefix table (one local name → one prefix), so it
+cannot emit `p:sldId` and `p14:sldId` from the same name — and it declares
+namespaces only on the root, with no `p14`. (2) A2 left the slide's
+relationships split: `slide.SlidePart` carried image/media rels in its own
+`opc.Relationships`, while the package's `opc.Part` for the slide carried the
+layout rel separately — the two used independent `rId` namespaces (both
+starting at `rId1`) and the builder's image rels were never emitted.
+**Decision:**
+
+- **Sections** are emitted as a **literal `p14` XML fragment** injected as the
+  last child of `<p:presentation>` after `RestoreNamespaces` runs
+  (`injectSectionLst`), carrying its own `xmlns:p14` on `<p14:sectionLst>`.
+  The codec marshals no section structs (the `XExtLst`/`XSection` types exist
+  for the **read** path only; `StripNamespacePrefixes` makes them plain on
+  parse). Section GUIDs are derived deterministically from a counter so decks
+  stay byte-stable. Unassigned slides fall into a leading implicit "Default
+  Section" so the list spans every slide (PowerPoint requires it).
+- **Slide relationships** live canonically on `slide.SlidePart`'s relationship
+  set (a single `rId` namespace: layout `rId1`, then images/notes); the slide
+  layout rel moves there, and `syncSlides` **mirrors** that set onto the
+  package `opc.Part` (preserving `rId`s) so they are emitted. Media bytes are
+  written as package parts by `syncMedia`.
+- **Speaker notes** ship in V1 as a plain-text setter, `Slide.SpeakerNotes(text
+  string)`, not the `*TextFrame` accessor RFC §8.8 sketches — `TextFrame` is
+  the rich-text model (a later phase). The setter emits a `notesSlide` part
+  with a hand-authored `notesMaster1.xml` (the A2 scaffold pattern).
+- **Streaming** follows the RFC §9 path-based signatures `OpenStream(path)` /
+  `SaveStream(path)`. CLAUDE.md §5's context-first convention yields to the
+  explicit RFC signature here (RFC > CLAUDE.md, §2); a context-aware streaming
+  API would be an RFC change plus a superseding decision.
+
+**Consequences:** Sections round-trip (write injects, read parses into the
+presentation part). The relationship seam is closed: builder-added images and
+notes are emitted and resolve under the conformance gate. A pre-existing
+`internal/opc` streaming bug — package `.rels` dropped on open because
+`StreamPackage.loadRelationships` tested `IsPackageRels` on the source URI
+rather than the rels URI — is fixed so `OpenStream`→`SaveStream` stays valid.
+Notes-as-text and the streaming-signature choice are recorded as Phase 03
+plan deviations.
+
+---
+
 *Append new entries below this line.*
