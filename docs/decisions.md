@@ -791,4 +791,33 @@ seeding a complete master/layout/theme are separate builder fixes; the EMU
 
 ---
 
+## D-033 — Color is a sealed interface; the RGB type is the literal
+
+**Date:** 2026-05-29
+**Status:** Settled
+**Context:** D-012/D-030 deferred turning `Color` into an interface (token vs
+literal) to Phase 03. Phase 02 had already shipped the token model — an `RGB`
+string type, `ColorRole`/`TextColorRole`, and `Theme.ResolveColor`. The
+inherited `pptx.Color` *struct* (plus `ColorMap`, `ParseColor`, named presets)
+was a separate, parallel color system wired to nothing in the builder or theme.
+A naïve `pptx.RGB(...)` literal constructor would have collided with the
+existing `RGB` type.
+**Decision:** `Color` is a **sealed interface** (`resolve(*Theme) resolvedColor`,
+unexported). The existing `RGB` string type **implements** it, so
+`pptx.RGB("2563EB")` is both a value and a literal fill color — no naming
+collision, no second constructor. `pptx.RGBA` adds alpha; `pptx.TokenColor`
+(surface) and `pptx.TokenTextColor` (text) are tokens that resolve against the
+**active theme at apply time**, which is the theme-swap mechanism (P2). The
+inherited concrete `Color` struct, `ColorMap`, `ParseColor`, presets, and the
+`Slide.ValidateColor`/`ResolveColor(string)` helpers are **retired**. `Fill`
+(`SolidFill`/`NoFill`) and `Line` are likewise sealed and theme-resolving.
+**Consequences:** One color model, owned by the theme. Tokens are honoured at
+write time, not baked, so a theme swap re-colors the same builder input. Sealed
+interfaces keep callers from supplying a color/fill the codec can't emit.
+Gradient/pattern/picture fills are not yet implemented (picture fills arrive
+with media). The token→`theme1.xml` *emission* (replacing the static scaffold
+theme, D-032/A2) remains a follow-up; resolution-to-`srgbClr` covers V1.
+
+---
+
 *Append new entries below this line.*

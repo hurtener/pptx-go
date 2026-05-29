@@ -82,6 +82,15 @@ A scene IR leaf representing a data chart. V1 disposition: image-shape
 (caller-rendered bytes). V2 disposition: native `c:chart` parts. See
 `RFC-001-pptx-go.md §15`.
 
+## Color (interface)
+
+A sealed builder interface for a write-time-resolved color: either a literal
+RGB (`pptx.RGB`, `pptx.RGBA`) or a theme token (`pptx.TokenColor`,
+`pptx.TokenTextColor`). A token resolves against the active `Theme` when
+applied, so a theme swap re-renders the same input in the new palette (P2;
+D-012, D-030, D-033). The interface is sealed — callers cannot supply a color
+type the codec can't emit.
+
 ## ColorRole
 
 A semantic color role (e.g. `canvas`, `surface`, `accent`, `accent_warm`,
@@ -142,6 +151,12 @@ helpers (`pptx.Pt`, `pptx.Cm`, `pptx.In`, `pptx.Px`).
 A small label rendered above a heading or card body (e.g. "01 · TRAZABILIDAD"
 in pengui-slides reference decks). Plain `RichText`. Not a distinct IR node;
 a field on `Hero`, `Card`, `CardSection`.
+
+## Fill
+
+A shape's interior fill (builder). V1 ships `pptx.SolidFill(Color)` and
+`pptx.NoFill()`; a fill resolves its `Color` against the active `Theme` when
+applied. Gradient, pattern and picture (blip) fills are tracked for later.
 
 ## Flow node
 
@@ -221,6 +236,11 @@ A V1.x `strict` mode upgrades warnings to errors.
 
 A scene IR node that doesn't contain children. Listed in
 `RFC-001-pptx-go.md §11.1`. Opposite of `Container`.
+
+## Line
+
+A shape's outline (builder): width (EMU), `Color`, and optional preset dash.
+Like `Fill`, its color resolves against the active `Theme`.
 
 ## Mirror (file mirroring)
 
@@ -350,6 +370,13 @@ A scene IR leaf node representing a slide whose content is a single
 full-bleed chapter break (label + optional ornament). **Distinct from
 `PptxSection`** (the OOXML slide-grouping primitive). A
 `section_divider` slide can be inside a `PptxSection` or not.
+
+## ShapeGeometry
+
+A preset shape outline on the builder (`pptx.ShapeRect`, `ShapeEllipse`,
+`ShapeRoundRect`, …), carrying the OOXML preset-geometry (`prst`) name.
+Passed to `Slide.AddShape(geom, box, …)` with a `Box` (EMU) and optional
+`Fill`/`Line`.
 
 ## SlideDocument
 

@@ -525,20 +525,6 @@ func EMUToPx(emu int) int {
 }
 
 // ============================================================================
-// Color helpers
-// ============================================================================
-
-// ValidateColor validates a color string.
-func (s *Slide) ValidateColor(color string) ColorValidationResult {
-	return ValidateColor(color)
-}
-
-// ResolveColor resolves a color string (name, hex, RGB, or scheme color).
-func (s *Slide) ResolveColor(color string) Color {
-	return DefaultColorMap().Resolve(color)
-}
-
-// ============================================================================
 // Layout management
 // ============================================================================
 

@@ -121,6 +121,53 @@ func TestSlideRoundTrip(t *testing.T) {
 	}
 }
 
+// TestShapeFillRoundTrip proves a shape's solid fill (with alpha) and outline
+// survive ToXML → FromXML (Chunk B; G6).
+func TestShapeFillRoundTrip(t *testing.T) {
+	rect := shapeRect(2)
+	rect.ShapeProperties.SolidFill = &XSolidFill{
+		SrgbClr: &XSrgbClr{Val: "FF0000", Alpha: &XAlpha{Val: 50000}},
+	}
+	rect.ShapeProperties.Line = &XLineProperties{
+		Width:     25400,
+		SolidFill: &XSolidFill{SrgbClr: &XSrgbClr{Val: "0000FF"}},
+		PrstDash:  &XPrstDash{Val: "dash"},
+	}
+
+	src := NewSlidePart(1)
+	src.AppendShapeChild(rect)
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	dst := NewSlidePart(1)
+	if err := dst.FromXML(data); err != nil {
+		t.Fatalf("FromXML: %v", err)
+	}
+
+	got, ok := dst.SpTree().Children[0].(*XSp)
+	if !ok {
+		t.Fatalf("child[0] type = %T, want *XSp", dst.SpTree().Children[0])
+	}
+	sp := got.ShapeProperties
+	if sp.SolidFill == nil || sp.SolidFill.SrgbClr == nil || sp.SolidFill.SrgbClr.Val != "FF0000" {
+		t.Fatalf("solid fill color not preserved: %+v", sp.SolidFill)
+	}
+	if sp.SolidFill.SrgbClr.Alpha == nil || sp.SolidFill.SrgbClr.Alpha.Val != 50000 {
+		t.Errorf("fill alpha not preserved: %+v", sp.SolidFill.SrgbClr.Alpha)
+	}
+	if sp.Line == nil || sp.Line.Width != 25400 {
+		t.Fatalf("line width not preserved: %+v", sp.Line)
+	}
+	if sp.Line.SolidFill == nil || sp.Line.SolidFill.SrgbClr.Val != "0000FF" {
+		t.Errorf("line color not preserved: %+v", sp.Line.SolidFill)
+	}
+	if sp.Line.PrstDash == nil || sp.Line.PrstDash.Val != "dash" {
+		t.Errorf("line dash not preserved: %+v", sp.Line.PrstDash)
+	}
+}
+
 // TestSlideToXMLStructure pins the key structural properties of the emitted
 // slide XML: a namespaced root, the cSld envelope, attributes serialized as
 // attributes (not element text — the bug that motivated D-032), and the

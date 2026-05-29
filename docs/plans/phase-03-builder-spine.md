@@ -134,15 +134,19 @@ pixels. Chunk A, in verifiable steps:
   UTF-8 BOM, H2 drop empty `lang=""`. Conservative + idempotent; golden tests
   assert it touches only triggers. `internal/render` banded at 80%.
 
-**Chunk B — Color/Fill/Line + shapes.**
-- Retire the upstream concrete `Color` struct in favour of the `Color`
-  interface (`tokenColor` resolves at write time against the active theme;
-  `literalColor` carries an RGB). `pptx.TokenColor(role)` / `pptx.RGB(...)`.
-  Upstream `Color`-struct call sites migrate; deprecated aliases where a
-  drop-in isn't possible.
-- `Fill` interface (`SolidFill`/`GradientFill`/`PatternFill`/`BlipFill`/
-  `NoFill`), `Line`, `AddShape(geom ShapeGeometry, box Box)` with preset
-  geometry constants. Round-trip goldens; theme-swap proven end-to-end.
+**Chunk B — Color/Fill/Line + shapes (done; D-033).**
+- The upstream concrete `Color` struct (with `ColorMap`/`ParseColor`/presets)
+  is retired in favour of a **sealed `Color` interface**. The Phase-02 `RGB`
+  type implements it (`pptx.RGB(...)` is the literal), `pptx.RGBA` adds alpha,
+  and `pptx.TokenColor`/`TokenTextColor` are tokens that resolve against the
+  active theme at apply time.
+- `Fill` interface with `SolidFill(Color)` and `NoFill()`; `Line` (width/color/
+  dash); `AddShape(geom ShapeGeometry, box Box, …WithFill/WithLine)` with preset
+  geometry constants, returning an opaque `*Shape`. Round-trip goldens (codec)
+  + theme-swap proven end-to-end (acceptance criterion 7) in `test/pptx`.
+- Gradient/pattern/picture fills are deferred (picture fills land with media,
+  Chunk C); the `Color`/`Fill`/`Line` interfaces are sealed so they extend
+  without breaking callers.
 
 **Chunk C — media, sections, notes, streaming.**
 - `AddImage`/`ImageSource` (file/bytes/reader), alt text, crop, fit, dedup

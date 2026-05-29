@@ -68,8 +68,13 @@ else
 	fail "A3: EMU Box API + options" "go test ./test/pptx/ (options set) failed"
 fi
 
-# B/C: later chunks.
-skip "B: Color interface + Fill/Line + AddShape" "Chunk B not yet landed"
+# B: Color interface + Fill/Line + AddShape + theme-swap (D-033).
+if go test ./test/pptx/ -run 'AddShape' >/dev/null 2>&1 &&
+	go test ./internal/ooxml/slide/ -run 'FillRoundTrip' >/dev/null 2>&1; then
+	ok "B: Color interface + Fill/Line + AddShape + theme-swap (D-033)"
+else
+	fail "B: Color/Fill/Line + AddShape" "shape/fill or fill round-trip tests failed"
+fi
 skip "C: media / sections / notes / streaming" "Chunk C not yet landed"
 
 # 7. A4: always-on repair-prompt hygiene pass (D-020).

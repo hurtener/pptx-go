@@ -215,14 +215,19 @@ type XOv2DrExtent struct {
 }
 
 // XShapeProperties holds shape properties. Fields are ordered to match the
-// CT_ShapeProperties schema: xfrm, geometry, fill, line.
+// CT_ShapeProperties schema: xfrm, geometry, fill, line. At most one of
+// SolidFill / NoFill is set.
 type XShapeProperties struct {
 	XMLName     struct{}         `xml:"spPr"`
 	Transform2D *XTransform2D    `xml:"xfrm,omitempty"`
 	PresetGeom  *XPresetGeometry `xml:"prstGeom,omitempty"`
 	SolidFill   *XSolidFill      `xml:"solidFill,omitempty"`
+	NoFill      *XNoFill         `xml:"noFill,omitempty"`
 	Line        *XLineProperties `xml:"ln,omitempty"`
 }
+
+// XNoFill is the empty <a:noFill/> element (an explicit "no fill").
+type XNoFill struct{}
 
 // XPresetGeometry is a preset shape geometry (<a:prstGeom prst="rect">…</a:prstGeom>).
 type XPresetGeometry struct {
@@ -239,9 +244,15 @@ type XSolidFill struct {
 	SchemeClr *XSchemeClr `xml:"schemeClr,omitempty"`
 }
 
-// XSrgbClr holds an RGB color value.
+// XSrgbClr holds an RGB color value with an optional alpha child.
 type XSrgbClr struct {
-	Val string `xml:"val,attr"`
+	Val   string  `xml:"val,attr"`
+	Alpha *XAlpha `xml:"alpha,omitempty"`
+}
+
+// XAlpha is the opacity child <a:alpha val="0..100000"/>.
+type XAlpha struct {
+	Val int `xml:"val,attr"`
 }
 
 // XSchemeClr holds a theme color value.
@@ -249,10 +260,17 @@ type XSchemeClr struct {
 	Val string `xml:"val,attr"`
 }
 
-// XLineProperties holds line properties.
+// XLineProperties holds line properties (CT_LineProperties order: fill,
+// prstDash).
 type XLineProperties struct {
 	Width     int         `xml:"w,attr,omitempty"`
 	SolidFill *XSolidFill `xml:"solidFill,omitempty"`
+	PrstDash  *XPrstDash  `xml:"prstDash,omitempty"`
+}
+
+// XPrstDash is a preset line dash style (<a:prstDash val="dash"/>).
+type XPrstDash struct {
+	Val string `xml:"val,attr"`
 }
 
 // XEmptyElem is a placeholder for required-but-empty OOXML elements (e.g.

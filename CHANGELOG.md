@@ -19,6 +19,11 @@ changes.
 - `pptx.New` now accepts options: `WithFormat(Slides16x9 | Slides4x3)`,
   `WithFontSource`, and `WithTheme`. Added `Presentation.Theme()` and
   `SetTheme`.
+- Token-aware color and shapes: a `Color` interface with `RGB`/`RGBA` literals
+  and `TokenColor`/`TokenTextColor` theme tokens (tokens resolve against the
+  active theme, so a theme swap recolors the same input); `Fill`
+  (`SolidFill`/`NoFill`), `Line`, and `Slide.AddShape(geom, box, WithFill/
+  WithLine)` with preset `ShapeGeometry` constants.
 - A new presentation is a complete, valid deck out of the box: `New()` emits a
   slide master, a blank slide layout, and a theme, with all relationships
   wired, so the file opens in PowerPoint without a repair prompt.
@@ -39,5 +44,12 @@ changes.
 
 - `Presentation.SetFontSource` — pass `pptx.WithFontSource` to `pptx.New`.
 - `pptx.PxToEMU` — use `pptx.Px`, which returns a typed `EMU`.
+
+### Removed
+
+- The inherited concrete `Color` struct and its ecosystem (`ColorMap`,
+  `ParseColor`, named `Color*` presets, `RGBColor`/`SchemeColor`,
+  `Slide.ValidateColor`/`ResolveColor(string)`), superseded by the `Color`
+  interface (`RGB`/`RGBA`, `TokenColor`/`TokenTextColor`).
 
 [Unreleased]: https://github.com/hurtener/pptx-go/commits/main
