@@ -88,6 +88,19 @@ pixels. Chunk A, in verifiable steps:
   `StripNamespacePrefixes`); **delete the hand-rolled slide `XMLWriter`**.
   Fixes the missing namespaces, the attributes-as-text bug, and `rid`→`r:id`
   at the root. Golden-tested.
+  - **A1a — `RestoreNamespaces`** (done): the write-side inverse, with the
+    element→prefix table extracted from the writer; declares only the used
+    prefixes on the root; golden-tested. Proven to fix namespaces +
+    attributes when wired.
+  - **A1b — complete the structs + custom container marshaling.** The
+    inherited structs do *not* fully represent the OOXML the writer emits:
+    the heterogeneous, ordered `spTree` children are `xml:"-"` (so
+    `xml.Marshal` drops shapes) and shape geometry lives in
+    `XSp.ShapePreset string` (`xml:"-"`, never serialized). A1b adds a custom
+    `MarshalXML` for the heterogeneous containers (`spTree`, groups) and the
+    missing typed fields (e.g. `prstGeom`), so `xml.Marshal` emits complete
+    content; then rewires `ToXML` and deletes the writer. Verified by
+    round-trip goldens + the conformance gate.
 - **A2 — wire relationships + seed a complete deck.** `AddSlide` allocates
   real presentation→slide rIds and adds the relationships; `New()` seeds a
   minimal `DefaultTheme` + master + layout with their rels. Turn on the

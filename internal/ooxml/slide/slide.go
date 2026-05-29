@@ -369,7 +369,12 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 		},
 	}
 
-	// Serialize using the shared XMLWriterPool.
+	// NOTE (Phase 03 A1, D-032): emission moves to xml.Marshal +
+	// ooxml.RestoreNamespaces, deleting this hand-rolled writer. That requires
+	// first completing the structs to fully represent the OOXML the writer
+	// emits today (shape geometry prstGeom, the heterogeneous spTree children
+	// via a custom MarshalXML, etc.) — tracked as the remainder of A1. Until
+	// then this keeps emitting via the writer to avoid regressing shape output.
 	xw := globalXMLWriterPool.Get()
 	defer globalXMLWriterPool.Put(xw)
 
