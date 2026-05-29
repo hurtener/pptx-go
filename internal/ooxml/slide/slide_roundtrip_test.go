@@ -38,7 +38,7 @@ func shapeTextBox(id int, text string) *XSp {
 		TextBody: &XTextBody{
 			BodyPr:     &XBodyPr{},
 			LstStyle:   &XTextParagraphList{},
-			Paragraphs: []XTextParagraph{{TextRuns: []XTextRun{{Text: text}}}},
+			Paragraphs: []XTextParagraph{{Content: []any{&XTextRun{Text: text}}}},
 		},
 	}
 }
@@ -108,7 +108,11 @@ func TestSlideRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatalf("child[1] type = %T, want *XSp", children[1])
 	}
-	if got := tb.TextBody.Paragraphs[0].TextRuns[0].Text; got != "Hello round-trip" {
+	run, ok := tb.TextBody.Paragraphs[0].Content[0].(*XTextRun)
+	if !ok {
+		t.Fatalf("paragraph content[0] type = %T, want *XTextRun", tb.TextBody.Paragraphs[0].Content[0])
+	}
+	if got := run.Text; got != "Hello round-trip" {
 		t.Errorf("text run = %q, want %q", got, "Hello round-trip")
 	}
 
@@ -152,6 +156,89 @@ func TestPictureMediaRoundTrip(t *testing.T) {
 	}
 	if sr := got.BlipFill.SrcRect; sr.L != 10000 || sr.T != 20000 || sr.R != 10000 || sr.B != 20000 {
 		t.Errorf("srcRect not preserved: %+v", sr)
+	}
+}
+
+// TestTextRoundTrip proves a styled paragraph (pPr + runs with character
+// properties + a line break, in order) survives ToXML → FromXML (Phase 04; G6).
+func TestTextRoundTrip(t *testing.T) {
+	sp := &XSp{
+		NonVisual: XNonVisualDrawingShape{
+			CNvPr:   &XNvCxnSpPr{ID: 2, Name: "TextFrame"},
+			CNvSpPr: &XNvSpPr{},
+		},
+		ShapeProperties: &XShapeProperties{
+			Transform2D: &XTransform2D{
+				Offset: &XOv2DrOffset{X: 0, Y: 0},
+				Extent: &XOv2DrExtent{Cx: 100, Cy: 100},
+			},
+			PresetGeom: &XPresetGeometry{Prst: "rect", AvLst: &XAvLst{}},
+		},
+		TextBody: &XTextBody{
+			BodyPr:   &XBodyPr{Anchor: "ctr"},
+			LstStyle: &XTextParagraphList{},
+			Paragraphs: []XTextParagraph{
+				{
+					Pr: &XParaProps{Level: 1, Alignment: "ctr"},
+					Content: []any{
+						&XTextRun{
+							TextProperties: &XTextProperties{
+								FontSize:  1800,
+								Bold:      "1",
+								Underline: "sng",
+								Strike:    "sngStrike",
+								Latin:     &XLatinFont{Typeface: "Arial"},
+								SolidFill: &XSolidFill{SrgbClr: &XSrgbClr{Val: "2563EB"}},
+							},
+							Text: "Hello ",
+						},
+						&XTextBreak{},
+						&XTextRun{Text: "world"},
+					},
+				},
+			},
+		},
+	}
+
+	src := NewSlidePart(1)
+	src.AppendShapeChild(sp)
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	dst := NewSlidePart(1)
+	if err := dst.FromXML(data); err != nil {
+		t.Fatalf("FromXML: %v", err)
+	}
+
+	got, ok := dst.SpTree().Children[0].(*XSp)
+	if !ok {
+		t.Fatalf("child[0] type = %T, want *XSp", dst.SpTree().Children[0])
+	}
+	para := got.TextBody.Paragraphs[0]
+	if para.Pr == nil || para.Pr.Level != 1 || para.Pr.Alignment != "ctr" {
+		t.Errorf("paragraph props not preserved: %+v", para.Pr)
+	}
+	if len(para.Content) != 3 {
+		t.Fatalf("paragraph content count = %d, want 3 (run, br, run)", len(para.Content))
+	}
+	if _, isBreak := para.Content[1].(*XTextBreak); !isBreak {
+		t.Errorf("content[1] type = %T, want *XTextBreak", para.Content[1])
+	}
+	r0 := para.Runs()[0]
+	rp := r0.TextProperties
+	if rp == nil || rp.FontSize != 1800 || rp.Bold != "1" || rp.Underline != "sng" || rp.Strike != "sngStrike" {
+		t.Errorf("run0 props not preserved: %+v", rp)
+	}
+	if rp.Latin == nil || rp.Latin.Typeface != "Arial" {
+		t.Errorf("run0 latin font not preserved: %+v", rp.Latin)
+	}
+	if rp.SolidFill == nil || rp.SolidFill.SrgbClr == nil || rp.SolidFill.SrgbClr.Val != "2563EB" {
+		t.Errorf("run0 color not preserved: %+v", rp.SolidFill)
+	}
+	if r0.Text != "Hello " {
+		t.Errorf("run0 text = %q, want %q (whitespace must be preserved)", r0.Text, "Hello ")
 	}
 }
 

@@ -17,7 +17,7 @@ func TestSpeakerNotes_RoundTrip(t *testing.T) {
 	p := pptx.New()
 	s := p.AddSlide()
 	s.AddRectangle(914400, 914400, 2743200, 1371600)
-	s.SpeakerNotes(notes)
+	s.SetSpeakerNotes(notes)
 
 	data, err := p.WriteToBytes()
 	if err != nil {

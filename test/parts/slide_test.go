@@ -55,11 +55,11 @@ func TestSlideBuilder_AddText(t *testing.T) {
 	}
 
 	para := textBody.Paragraphs[0]
-	if len(para.TextRuns) == 0 {
-		t.Fatal("Paragraph.TextRuns length is 0")
+	if len(para.Runs()) == 0 {
+		t.Fatal("Paragraph.Runs() length is 0")
 	}
 
-	run := para.TextRuns[0]
+	run := para.Runs()[0]
 	if run.Text != testText {
 		t.Errorf("Text = %q, want %q", run.Text, testText)
 	}
@@ -96,12 +96,12 @@ func TestSlideBuilder_AddTextBox_Multiple(t *testing.T) {
 			continue
 		}
 		para := sp.TextBody.Paragraphs[0]
-		if len(para.TextRuns) == 0 {
+		if len(para.Runs()) == 0 {
 			t.Errorf("shape #%d has no text runs", i+1)
 			continue
 		}
-		if para.TextRuns[0].Text != texts[i] {
-			t.Errorf("shape #%d text = %q, want %q", i+1, para.TextRuns[0].Text, texts[i])
+		if para.Runs()[0].Text != texts[i] {
+			t.Errorf("shape #%d text = %q, want %q", i+1, para.Runs()[0].Text, texts[i])
 		}
 	}
 
@@ -163,9 +163,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 		// Construct a minimal XTextParagraph with a single XTextRun containing "Hello".
 		// Leave all optional fields at their zero values.
 		para := slide.XTextParagraph{
-			TextRuns: []slide.XTextRun{
-				{Text: "Hello"},
-			},
+			Content: []any{&slide.XTextRun{Text: "Hello"}},
 		}
 
 		// Serialize with xml.Marshal.
@@ -229,7 +227,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 			Text: "Styled",
 			TextProperties: &slide.XTextProperties{
 				FontSize: 2400, // 24pt
-				Bold:     true,
+				Bold:     "1",
 			},
 		}
 
@@ -245,12 +243,12 @@ func TestSlide_MarshalComponents(t *testing.T) {
 		if !strings.Contains(xmlStr, `sz="2400"`) {
 			t.Error("should contain sz=\"2400\" attribute")
 		}
-		// Note: Go's xml package serializes bool as "true"/"false".
-		if !strings.Contains(xmlStr, `b="true"`) {
-			t.Error("should contain b=\"true\" attribute")
+		// Bold is emitted as b="1" (what PowerPoint writes).
+		if !strings.Contains(xmlStr, `b="1"`) {
+			t.Error("should contain b=\"1\" attribute")
 		}
 
-		// Unset attributes (Italic, Underline, FontFace, Color) must not appear.
+		// Unset attributes/children must not appear.
 		unexpectedAttrs := []string{"i=", "u=", "typeface=", "solidFill"}
 		for _, attr := range unexpectedAttrs {
 			if strings.Contains(xmlStr, attr) {
@@ -262,11 +260,8 @@ func TestSlide_MarshalComponents(t *testing.T) {
 	// Test XTextParagraph with attributes — verify omitempty applies to attributes too.
 	t.Run("XTextParagraph_WithAttributes", func(t *testing.T) {
 		para := slide.XTextParagraph{
-			Level:     1,     // set attribute
-			Alignment: "ctr", // center alignment
-			TextRuns: []slide.XTextRun{
-				{Text: "Centered"},
-			},
+			Pr:      &slide.XParaProps{Level: 1, Alignment: "ctr"},
+			Content: []any{&slide.XTextRun{Text: "Centered"}},
 		}
 
 		data, err := xml.Marshal(&para)
@@ -309,7 +304,7 @@ func TestSlide_MarshalComponents(t *testing.T) {
 			},
 			TextBody: &slide.XTextBody{
 				Paragraphs: []slide.XTextParagraph{
-					{TextRuns: []slide.XTextRun{{Text: "Test"}}},
+					{Content: []any{&slide.XTextRun{Text: "Test"}}},
 				},
 			},
 		}

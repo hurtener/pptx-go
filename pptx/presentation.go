@@ -914,9 +914,9 @@ func (p *Presentation) Clone() (*Presentation, error) {
 			mediaManager: newPres.mediaManager,
 			index:        i,
 			num:          s.num,
-			notesText:    s.notesText,
-			hasNotes:     s.hasNotes,
 		}
+		// The cloned notes part (if any) survives in the cloned package; a
+		// fresh notes frame is rebuilt lazily only if the caller edits notes.
 		ns.shapeIDCounter.Store(1)
 		newPres.slides[i] = ns
 	}

@@ -36,6 +36,12 @@ in the new visual language.
 `TypeDisplay`, `TypeH1`–`TypeH5`, `TypeBody`, `TypeBodySmall`, `TypeCaption`,
 `TypeMono`, `TypeCode`.
 
+A rich-text `Run`'s typography comes from its `RunStyle.TypeRole` (size +
+family). **Inline code** (`RunStyle.Code = true`, D-013) is not a new token —
+it composes existing ones: the run's family switches to `TypeMono` and a subtle
+background tint is drawn from `ColorSurfaceAlt`. Swap either token and inline
+code re-renders accordingly.
+
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.

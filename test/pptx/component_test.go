@@ -50,11 +50,7 @@ func (t *TextComponent) Render(ctx *pptx.SlideContext) error {
 			BodyPr:   &slidex.XBodyPr{},
 			LstStyle: &slidex.XTextParagraphList{},
 			Paragraphs: []slidex.XTextParagraph{
-				{
-					TextRuns: []slidex.XTextRun{
-						{Text: t.text},
-					},
-				},
+				{Content: []any{&slidex.XTextRun{Text: t.text}}},
 			},
 		},
 	}

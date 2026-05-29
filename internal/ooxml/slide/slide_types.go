@@ -310,41 +310,113 @@ type XTextBody struct {
 	Paragraphs []XTextParagraph    `xml:"p"`
 }
 
-// XBodyPr holds body properties.
+// XBodyPr holds body properties (CT_TextBodyProperties). Margins are EMU
+// pointers so an unset margin omits the attribute; at most one autofit child is
+// set.
 type XBodyPr struct {
-	Wrap      string `xml:"wrap,attr,omitempty"`
-	Rotation  int    `xml:"rot,attr,omitempty"`
-	Vertical  string `xml:"vert,attr,omitempty"`
-	Anchor    string `xml:"anchor,attr,omitempty"`
-	AnchorCtr bool   `xml:"anchorCtr,attr,omitempty"`
+	Wrap        string        `xml:"wrap,attr,omitempty"`
+	Rotation    int           `xml:"rot,attr,omitempty"`
+	Vertical    string        `xml:"vert,attr,omitempty"`
+	Anchor      string        `xml:"anchor,attr,omitempty"`
+	AnchorCtr   bool          `xml:"anchorCtr,attr,omitempty"`
+	LIns        *int          `xml:"lIns,attr,omitempty"`
+	TIns        *int          `xml:"tIns,attr,omitempty"`
+	RIns        *int          `xml:"rIns,attr,omitempty"`
+	BIns        *int          `xml:"bIns,attr,omitempty"`
+	NoAutofit   *XEmptyElem   `xml:"noAutofit,omitempty"`
+	NormAutofit *XNormAutofit `xml:"normAutofit,omitempty"`
+	SpAutoFit   *XEmptyElem   `xml:"spAutoFit,omitempty"`
+}
+
+// XNormAutofit is <a:normAutofit> — shrink-to-fit; the scale attributes are
+// optional (PowerPoint recomputes them).
+type XNormAutofit struct {
+	FontScale      int `xml:"fontScale,attr,omitempty"`
+	LnSpcReduction int `xml:"lnSpcReduction,attr,omitempty"`
 }
 
 // XTextParagraphList holds a text paragraph list.
 type XTextParagraphList struct {
 }
 
-// XTextParagraph represents a text paragraph.
+// XTextParagraph represents a text paragraph (CT_TextParagraph): an optional
+// <a:pPr> followed by an ordered run of <a:r>/<a:br> children. The ordering is
+// preserved by a custom marshaler (see slide_marshal.go), since Go's struct
+// tags can't interleave two element types.
 type XTextParagraph struct {
-	Level     int        `xml:"lvl,attr,omitempty"`
-	Indent    int        `xml:"indent,attr,omitempty"`
-	Alignment string     `xml:"algn,attr,omitempty"`
-	TextRuns  []XTextRun `xml:"r"`
+	Pr      *XParaProps `xml:"pPr,omitempty"`
+	Content []any       `xml:"-"` // *XTextRun | *XTextBreak, in document order
 }
 
-// XTextRun represents a text run.
+// XParaProps is <a:pPr>: indent/level/alignment plus an optional bullet. At
+// most one bullet child is set (Chunk B fills these).
+type XParaProps struct {
+	XMLName   struct{}    `xml:"pPr"`
+	MarL      int         `xml:"marL,attr,omitempty"`
+	Indent    int         `xml:"indent,attr,omitempty"`
+	Level     int         `xml:"lvl,attr,omitempty"`
+	Alignment string      `xml:"algn,attr,omitempty"`
+	BuNone    *XEmptyElem `xml:"buNone,omitempty"`
+	BuChar    *XBuChar    `xml:"buChar,omitempty"`
+	BuAutoNum *XBuAutoNum `xml:"buAutoNum,omitempty"`
+}
+
+// XBuChar is a character bullet (<a:buChar char="•"/>).
+type XBuChar struct {
+	Char string `xml:"char,attr"`
+}
+
+// XBuAutoNum is an auto-numbered bullet (<a:buAutoNum type="arabicPeriod"/>).
+type XBuAutoNum struct {
+	Type string `xml:"type,attr"`
+}
+
+// XTextRun represents a regular text run (CT_RegularTextRun): <a:rPr> then
+// <a:t>.
 type XTextRun struct {
-	Text           string           `xml:"t,omitempty"`
+	XMLName        struct{}         `xml:"r"`
+	TextProperties *XTextProperties `xml:"rPr,omitempty"`
+	Text           string           `xml:"t"`
+}
+
+// XTextBreak is a line break (<a:br>) with optional run properties.
+type XTextBreak struct {
+	XMLName        struct{}         `xml:"br"`
 	TextProperties *XTextProperties `xml:"rPr,omitempty"`
 }
 
-// XTextProperties holds text run properties.
+// XTextProperties holds run character properties (CT_TextCharacterProperties):
+// attributes then ordered children (fill, highlight, latin font, hyperlink).
+// Bold/Italic are emitted as "1" (what PowerPoint writes) when set.
 type XTextProperties struct {
-	FontSize  int    `xml:"sz,attr,omitempty"`
-	Bold      bool   `xml:"b,attr,omitempty"`
-	Italic    bool   `xml:"i,attr,omitempty"`
-	Underline string `xml:"u,attr,omitempty"`
-	FontFace  string `xml:"typeface,attr,omitempty"`
-	Color     string `xml:"solidFill,omitempty"`
+	XMLName    struct{}     `xml:"rPr"`
+	FontSize   int          `xml:"sz,attr,omitempty"`
+	Bold       string       `xml:"b,attr,omitempty"`        // "1" when bold
+	Italic     string       `xml:"i,attr,omitempty"`        // "1" when italic
+	Underline  string       `xml:"u,attr,omitempty"`        // none/sng/dbl/…
+	Strike     string       `xml:"strike,attr,omitempty"`   // noStrike/sngStrike/dblStrike
+	Baseline   int          `xml:"baseline,attr,omitempty"` // ST_Percentage (1000 = 1%)
+	SolidFill  *XSolidFill  `xml:"solidFill,omitempty"`
+	Highlight  *XHighlight  `xml:"highlight,omitempty"`
+	Latin      *XLatinFont  `xml:"latin,omitempty"`
+	HlinkClick *XHlinkClick `xml:"hlinkClick,omitempty"`
+}
+
+// XHighlight is the run highlight (<a:highlight><a:srgbClr/></a:highlight>) —
+// the subtle background tint of inline code (D-013).
+type XHighlight struct {
+	SrgbClr *XSrgbClr `xml:"srgbClr,omitempty"`
+}
+
+// XLatinFont is the Latin typeface (<a:latin typeface="…"/>).
+type XLatinFont struct {
+	Typeface string `xml:"typeface,attr"`
+}
+
+// XHlinkClick is a click hyperlink (<a:hlinkClick r:id="…"/>); the relationship
+// id is emitted as r:id by RestoreNamespaces (rid→r:id).
+type XHlinkClick struct {
+	RID string `xml:"rid,attr"`
 }
 
 // XPicture represents a picture shape.
