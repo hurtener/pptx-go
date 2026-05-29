@@ -53,12 +53,13 @@ fi
 
 # ---------------------------------------------------------------------------
 # 3. P3 — raw OOXML / encoding/xml types are isolated to the OOXML + OPC
-#    layers. Only internal/ooxml (wire types) and internal/opc (OPC plumbing:
-#    content-types, relationships) may import encoding/xml; nothing above the
-#    internal wall (pptx, scene, …) may. Test files are exempt.
+#    layers (and the conformance validator, which parses XML to check it).
+#    Only internal/ooxml (wire types), internal/opc (OPC plumbing), and
+#    internal/conformance (validity tooling) may import encoding/xml; nothing
+#    above the internal wall (pptx, scene, …) may. Test files are exempt.
 # ---------------------------------------------------------------------------
 offenders=$(go_files \
-	| { grep -zvE '^internal/(ooxml|opc)/' || true; } \
+	| { grep -zvE '^internal/(ooxml|opc|conformance)/' || true; } \
 	| { grep -zvE '_test\.go$' || true; } \
 	| xargs -0 grep -lE '"encoding/xml"' 2>/dev/null || true)
 if [ -z "$offenders" ]; then

@@ -12,6 +12,7 @@ package conformance
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"regexp"
 	"sort"
@@ -84,6 +85,26 @@ func (r Report) String() string {
 // rIDPattern matches a relationship-ID attribute value (e.g. "rId5").
 var rIDPattern = regexp.MustCompile(`"(rId\d+)"`)
 
+// emptyRelPattern matches a relationship-reference attribute with an empty
+// value (e.g. rid="", r:id="", r:embed="") — an unresolved reference.
+var emptyRelPattern = regexp.MustCompile(`\b(r:id|rid|r:embed|embed|r:link|link)=""`)
+
+// rootNamespaced reports whether the first element of an XML blob carries an
+// XML namespace (a declared xmlns or a namespaced name). Returns ok=false
+// when the blob is not parseable as XML or has no elements.
+func rootNamespaced(blob []byte) (namespaced bool, ok bool) {
+	dec := xml.NewDecoder(bytes.NewReader(blob))
+	for {
+		tok, err := dec.Token()
+		if err != nil { // includes io.EOF
+			return false, false
+		}
+		if se, isStart := tok.(xml.StartElement); isStart {
+			return se.Name.Space != "", true
+		}
+	}
+}
+
 // Validate runs the structural checks against an open package.
 func Validate(pkg *opc.Package, opts Options) Report {
 	var rep Report
@@ -129,6 +150,17 @@ func Validate(pkg *opc.Package, opts Options) Report {
 					tref = t.URI()
 				}
 				add(SeverityError, uri, fmt.Sprintf("relationship %s targets a part not in the package (%s)", rel.RID(), tref))
+			}
+		}
+
+		// 5. XML parts must have a namespaced root, and must not carry
+		//    empty relationship references.
+		if strings.Contains(part.ContentType(), "xml") {
+			if ns, ok := rootNamespaced(part.Blob()); ok && !ns {
+				add(SeverityError, uri, "root element has no XML namespace (PowerPoint requires e.g. xmlns:p on <p:presentation>)")
+			}
+			if loc := emptyRelPattern.FindString(string(part.Blob())); loc != "" {
+				add(SeverityError, uri, fmt.Sprintf("empty relationship reference (%s) — the target is not wired", loc))
 			}
 		}
 

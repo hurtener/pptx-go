@@ -44,3 +44,8 @@ jobs:
             exit 1
           fi
           echo "OK: LibreOffice opened and converted the reference deck"
+          # NOTE: this asserts a non-empty PDF. A calibrated content/page-count
+          # assertion (poppler pdfinfo) tightens here in Phase 03 Chunk A2,
+          # once the emission rebuild (D-032) produces a known-good deck to
+          # calibrate against — the current emission is the known-broken
+          # baseline (D-032).
