@@ -88,28 +88,65 @@ pixels. Chunk A, in verifiable steps:
   `StripNamespacePrefixes`); **delete the hand-rolled slide `XMLWriter`**.
   Fixes the missing namespaces, the attributes-as-text bug, and `rid`→`r:id`
   at the root. Golden-tested.
-- **A2 — wire relationships + seed a complete deck.** `AddSlide` allocates
-  real presentation→slide rIds and adds the relationships; `New()` seeds a
-  minimal `DefaultTheme` + master + layout with their rels. Turn on the
-  full-deck conformance gate (RequiredParts: presentation, ≥1 slide, master,
-  layout, theme, content-types, root rels) + verify via LibreOffice and a
-  manual PowerPoint check.
-- **A3 — EMU `Box` API + options.** Shapes take EMU `Box` (not pixels);
-  `New(opts ...Option)`, `WithFormat(Slides16x9|Slides4x3)`, `WithFontSource`
-  (Option form; `SetFontSource` kept as a deprecated alias),
-  `Theme()`/`SetTheme()`.
-- **A4 — `internal/render/hygiene.go`** — always-on repair-prompt pass on
-  every write (D-020); `docs/design/HYGIENE.md` trigger list.
+  - **A1a — `RestoreNamespaces`** (done): the write-side inverse, with the
+    element→prefix table extracted from the writer; declares only the used
+    prefixes on the root; golden-tested. Proven to fix namespaces +
+    attributes when wired.
+  - **A1b — complete the structs + custom container marshaling (done).** The
+    inherited structs did *not* fully represent the OOXML the writer emitted:
+    the heterogeneous, ordered `spTree` children were `xml:"-"` (so
+    `xml.Marshal` dropped shapes) and shape geometry lived in
+    `XSp.ShapePreset string` (`xml:"-"`, never serialized). A1b added a custom
+    `MarshalXML`/`UnmarshalXML` pair for `spTree` (`slide_marshal.go`) and the
+    missing typed fields (`prstGeom` via `XPresetGeometry`, `nvPr`,
+    `graphicData` via `XGraphicData`, `solidFill` via `XSolidFill`), reordered
+    the shape structs to the CT_* schema, rewired `SlidePart.ToXML` and
+    `PresentationPart.ToXML` onto `xml.Marshal` + `ooxml.RestoreNamespaces`,
+    and **deleted the ~700-line hand-rolled `XMLWriter`/`XMLWriterPool` and all
+    `WriteXML` methods**. Verified by a codec round-trip golden
+    (`slide_roundtrip_test.go`), a builder-facing structure test
+    (`test/parts`), and the conformance gate (presentation + slides now carry a
+    namespaced root; `cNvPr` attributes serialize as attributes, not text).
+- **A2 — wire relationships + seed a complete deck (done).** `AddSlide`
+  allocates a real presentation→slide rId and adds the relationship (plus a
+  slide→layout rel); `New()` seeds a master + blank layout + theme with their
+  rels (`pptx/scaffold.go` + `scaffold_assets.go`). `presentation.xml` is
+  reordered to the CT_Presentation sequence (sldMasterIdLst, sldIdLst, sldSz,
+  notesSz) with a valid `sldMasterId` id (≥ 2147483648). The full-deck
+  conformance gate is on (`TestConformance_BuilderOutput` asserts
+  `RequiredParts`: presentation, slide1, master, layout, theme; `rep.OK()`),
+  the LibreOffice job asserts a 2-page render (poppler `pdfinfo`), and the
+  manual PowerPoint check is queued for the maintainer
+  (`docs/validation/POWERPOINT-CHECKS.md`).
+- **A3 — EMU coordinates + options (done).** The builder path no longer scales
+  inputs by 9525 — `Slide.AddTextBox`/`AddAutoShape`/`AddRectangle`/`AddPicture`/
+  `AddTable` now take EMU directly (`pptx.In`/`Cm`/`Pt`/`Px`/`Box` compute them),
+  fixing the off-canvas coordinates. `New(opts ...Option)` with
+  `WithFormat(Slides16x9|Slides4x3)`, `WithFontSource` (Option form;
+  `SetFontSource` kept as a deprecated alias) and `WithTheme`; `Theme()`/
+  `SetTheme()` accessors (default `DefaultTheme`). `PxToEMU` is deprecated in
+  favour of `pptx.Px`. The Box-native `AddShape(geom ShapeGeometry, box Box)`
+  with fills/lines is **Chunk B**.
+- **A4 — `internal/render/hygiene.go` (done).** `render.Sanitize` runs
+  unconditionally on every emitted XML part across all write paths
+  (`applyHygiene` in `Save`/`Write`/`WriteToBytes`); no caller-facing switch
+  (D-020). V1 trigger list (`docs/design/HYGIENE.md`): H1 strip a leading
+  UTF-8 BOM, H2 drop empty `lang=""`. Conservative + idempotent; golden tests
+  assert it touches only triggers. `internal/render` banded at 80%.
 
-**Chunk B — Color/Fill/Line + shapes.**
-- Retire the upstream concrete `Color` struct in favour of the `Color`
-  interface (`tokenColor` resolves at write time against the active theme;
-  `literalColor` carries an RGB). `pptx.TokenColor(role)` / `pptx.RGB(...)`.
-  Upstream `Color`-struct call sites migrate; deprecated aliases where a
-  drop-in isn't possible.
-- `Fill` interface (`SolidFill`/`GradientFill`/`PatternFill`/`BlipFill`/
-  `NoFill`), `Line`, `AddShape(geom ShapeGeometry, box Box)` with preset
-  geometry constants. Round-trip goldens; theme-swap proven end-to-end.
+**Chunk B — Color/Fill/Line + shapes (done; D-033).**
+- The upstream concrete `Color` struct (with `ColorMap`/`ParseColor`/presets)
+  is retired in favour of a **sealed `Color` interface**. The Phase-02 `RGB`
+  type implements it (`pptx.RGB(...)` is the literal), `pptx.RGBA` adds alpha,
+  and `pptx.TokenColor`/`TokenTextColor` are tokens that resolve against the
+  active theme at apply time.
+- `Fill` interface with `SolidFill(Color)` and `NoFill()`; `Line` (width/color/
+  dash); `AddShape(geom ShapeGeometry, box Box, …WithFill/WithLine)` with preset
+  geometry constants, returning an opaque `*Shape`. Round-trip goldens (codec)
+  + theme-swap proven end-to-end (acceptance criterion 7) in `test/pptx`.
+- Gradient/pattern/picture fills are deferred (picture fills land with media,
+  Chunk C); the `Color`/`Fill`/`Line` interfaces are sealed so they extend
+  without breaking callers.
 
 **Chunk C — media, sections, notes, streaming.**
 - `AddImage`/`ImageSource` (file/bytes/reader), alt text, crop, fit, dedup
@@ -206,7 +243,43 @@ notes round-trip; hygiene pass present.
 
 ## 16. Plan deviations encountered during implementation
 
-- *(filled in per chunk during implementation)*
+- **A1b — `clrMapOvr` + `cSld` correctness.** The retired writer emitted an
+  invalid `<a:defRgbClrModel val="bg1"/>` inside `clrMapOvr` and wrote the
+  `spTree` directly under `<p:sld>` (no `<p:cSld>` wrapper). The rebuilt
+  emission emits the standard `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>`
+  and the required `<p:cSld>` envelope.
+- **A1b — table/graphicFrame namespace fidelity deferred.** A graphic frame's
+  transform is `<p:xfrm>` (PresentationML), but `RestoreNamespaces` keys on a
+  single element→prefix table that maps `xfrm`→`a` (correct for the far more
+  common shape `spPr` case). Tables are not a Phase 03 acceptance primitive and
+  appear in no gated deck, so `graphicFrame`/`tbl` emission is left best-effort
+  (parity with the old writer, which also emitted `a:xfrm`); full table
+  namespace fidelity lands when tables are formally shipped. No regression.
+- **A1b — `PxToEMU` left in place.** `AddShape`-path shapes still multiply EMU
+  inputs by 9525 (off-canvas coordinates); this is A3's EMU `Box` API work and
+  is out of scope for the emission rebuild. Conformance does not check
+  coordinates, so the gate is unaffected.
+- **A2 — static scaffold theme instead of `DefaultTheme` emission.** The seeded
+  master/layout/theme are hand-authored, namespaced OOXML constants
+  (`scaffold_assets.go`), the lowest-risk path to a PowerPoint-valid deck now
+  (plan R3). Emitting `theme1.xml` from the `Theme` model (and fixing the theme
+  codec to emit `a:`-prefixed elements — it currently emits a bare-element
+  `<theme xmlns:a>` that is not in any deck) is deferred to **Chunk B**, which
+  owns Color/theme-swap; B replaces `scaffoldThemeXML` with token-driven
+  emission. The scaffold theme colors already mirror `DefaultTheme`.
+- **A2 — `RequiredParts` covers parts, not package structures.** The
+  conformance gate requires the five real parts (presentation, slide, master,
+  layout, theme); `[Content_Types].xml` and `_rels/.rels` are package
+  structures (not in the part collection), already validated by the
+  content-type-coverage and relationship-resolution checks.
+- **A3 — builder coordinates are EMU, not a new `Box`-typed signature.** The
+  inherited `Slide.Add*` methods keep their `(x, y, cx, cy int, …)` shape but
+  now interpret the ints as EMU (the px→EMU scaling is dropped). The Box-native
+  shape API the plan envisions (`AddShape(geom, box Box)`) belongs to Chunk B,
+  which reshapes the shape surface with geometry/fill/line; introducing a
+  parallel Box signature in A3 would be churn B immediately reworks. The
+  px-based `SlideViewport`/boundary-check helpers are a separate placement
+  utility and stay px.
 
 ## 17. Sign-off
 

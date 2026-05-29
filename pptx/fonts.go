@@ -26,9 +26,10 @@ type FontSource interface {
 	Resolve(name, style string, weight int) ([]byte, error)
 }
 
-// SetFontSource registers the FontSource used by EmbedFont. (The functional
-// pptx.WithFontSource(...) option lands with the builder's option plumbing in
-// the Phase 03 spine; this setter is the V1 registration path.)
+// SetFontSource registers the FontSource used by EmbedFont.
+//
+// Deprecated: pass pptx.WithFontSource(src) to pptx.New instead — that is the
+// documented registration path. This setter remains for post-construction use.
 func (p *Presentation) SetFontSource(src FontSource) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

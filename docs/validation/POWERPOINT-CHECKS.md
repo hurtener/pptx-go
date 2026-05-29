@@ -34,4 +34,4 @@ prevent exactly this).
 
 | Date | Wave | Deck | PowerPoint version | Repair prompt? | Notes |
 |---|---|---|---|---|---|
-| _(pending)_ | Wave 1 | reference.pptx | — | — | first check lands with the Phase 03 builder |
+| _(pending — maintainer)_ | Wave 1 | reference.pptx (Phase 03 A2) | — | — | First complete deck: `New()` seeds master + blank layout + theme and wires every relationship (presentation→master/slide, slide→layout, master→layout/theme); passes OPC conformance + the LibreOffice 2-page render. Awaiting the maintainer's desktop-PowerPoint open (no repair prompt expected). |

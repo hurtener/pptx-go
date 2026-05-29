@@ -1,7 +1,6 @@
 package slide
 
 import (
-	"io"
 	"sync"
 
 	"github.com/hurtener/pptx-go/internal/opc"
@@ -111,15 +110,16 @@ const (
 )
 
 // XSlide is the XML structure for a slide.
+//
+// It is serialized with bare (unprefixed) element names via encoding/xml and
+// then run through ooxml.RestoreNamespaces, which re-applies the canonical
+// p:/a:/r: prefixes and declares the used namespaces on the root (D-032). The
+// codec therefore carries no xmlns:* fields — RestoreNamespaces owns them.
 type XSlide struct {
 	XMLName struct{} `xml:"sld"`
 
-	XmlnsA string `xml:"xmlns:a,attr"`
-	XmlnsR string `xml:"xmlns:r,attr"`
-	XmlnsP string `xml:"xmlns:p,attr"`
-
 	CSld      *XCSld      `xml:"cSld"`
-	ClrMapOvr *XClrMapOvr `xml:"clrMapOvr"`
+	ClrMapOvr *XClrMapOvr `xml:"clrMapOvr,omitempty"`
 }
 
 // XCSld holds common slide data.
@@ -146,10 +146,15 @@ type XClrMap struct {
 	LastClr string `xml:"lastClr,attr,omitempty"`
 }
 
-// XClrMapOvr holds the color map override.
+// XClrMapOvr holds the color map override. A slide that inherits its master's
+// color mapping emits <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>.
 type XClrMapOvr struct {
-	Accent1 string `xml:"accent1,attr,omitempty"`
+	MasterClrMapping *XMasterClrMapping `xml:"masterClrMapping,omitempty"`
 }
+
+// XMasterClrMapping is the empty <a:masterClrMapping/> element signalling that
+// the slide uses the master's color map unchanged.
+type XMasterClrMapping struct{}
 
 // XSpTree is the shape tree.
 type XSpTree struct {
@@ -209,23 +214,45 @@ type XOv2DrExtent struct {
 	Cy int `xml:"cy,attr"`
 }
 
-// XShapeProperties holds shape properties.
+// XShapeProperties holds shape properties. Fields are ordered to match the
+// CT_ShapeProperties schema: xfrm, geometry, fill, line. At most one of
+// SolidFill / NoFill is set.
 type XShapeProperties struct {
 	XMLName     struct{}         `xml:"spPr"`
 	Transform2D *XTransform2D    `xml:"xfrm,omitempty"`
-	PresetFill  *XPresetFill     `xml:"noFill|a:solidFill|a:gradFill|a:blipFill|a:pattFill|a:grpFill,omitempty"`
+	PresetGeom  *XPresetGeometry `xml:"prstGeom,omitempty"`
+	SolidFill   *XSolidFill      `xml:"solidFill,omitempty"`
+	NoFill      *XNoFill         `xml:"noFill,omitempty"`
 	Line        *XLineProperties `xml:"ln,omitempty"`
 }
 
-// XPresetFill holds preset fill properties.
-type XPresetFill struct {
+// XNoFill is the empty <a:noFill/> element (an explicit "no fill").
+type XNoFill struct{}
+
+// XPresetGeometry is a preset shape geometry (<a:prstGeom prst="rect">…</a:prstGeom>).
+type XPresetGeometry struct {
+	Prst  string  `xml:"prst,attr"`
+	AvLst *XAvLst `xml:"avLst"`
+}
+
+// XAvLst is the (empty) adjust-value list of a preset geometry.
+type XAvLst struct{}
+
+// XSolidFill holds a solid fill color (RGB or scheme).
+type XSolidFill struct {
 	SrgbClr   *XSrgbClr   `xml:"srgbClr,omitempty"`
 	SchemeClr *XSchemeClr `xml:"schemeClr,omitempty"`
 }
 
-// XSrgbClr holds an RGB color value.
+// XSrgbClr holds an RGB color value with an optional alpha child.
 type XSrgbClr struct {
-	Val string `xml:"val,attr"`
+	Val   string  `xml:"val,attr"`
+	Alpha *XAlpha `xml:"alpha,omitempty"`
+}
+
+// XAlpha is the opacity child <a:alpha val="0..100000"/>.
+type XAlpha struct {
+	Val int `xml:"val,attr"`
 }
 
 // XSchemeClr holds a theme color value.
@@ -233,26 +260,39 @@ type XSchemeClr struct {
 	Val string `xml:"val,attr"`
 }
 
-// XLineProperties holds line properties.
+// XLineProperties holds line properties (CT_LineProperties order: fill,
+// prstDash).
 type XLineProperties struct {
-	Width     int          `xml:"w,attr,omitempty"`
-	SolidFill *XPresetFill `xml:"solidFill,omitempty"`
+	Width     int         `xml:"w,attr,omitempty"`
+	SolidFill *XSolidFill `xml:"solidFill,omitempty"`
+	PrstDash  *XPrstDash  `xml:"prstDash,omitempty"`
 }
 
-// XSp represents a shape.
+// XPrstDash is a preset line dash style (<a:prstDash val="dash"/>).
+type XPrstDash struct {
+	Val string `xml:"val,attr"`
+}
+
+// XEmptyElem is a placeholder for required-but-empty OOXML elements (e.g.
+// <p:nvPr/>). As a value field (not a pointer) it always serializes, which the
+// schema requires for these mandatory children.
+type XEmptyElem struct{}
+
+// XSp represents a shape. Field order matches CT_Shape: nvSpPr, spPr, txBody.
 type XSp struct {
 	XMLName struct{} `xml:"sp"`
 
 	NonVisual       XNonVisualDrawingShape `xml:"nvSpPr"`
 	ShapeProperties *XShapeProperties      `xml:"spPr,omitempty"`
-	ShapePreset     string                 `xml:"-"`
 	TextBody        *XTextBody             `xml:"txBody,omitempty"`
 }
 
-// XNonVisualDrawingShape holds non-visual drawing properties for a shape.
+// XNonVisualDrawingShape holds non-visual drawing properties for a shape
+// (CT_ShapeNonVisual: cNvPr, cNvSpPr, nvPr).
 type XNonVisualDrawingShape struct {
 	CNvPr   *XNvCxnSpPr `xml:"cNvPr"`
 	CNvSpPr *XNvSpPr    `xml:"cNvSpPr"`
+	NvPr    XEmptyElem  `xml:"nvPr"`
 }
 
 // XNvSpPr holds non-visual shape properties.
@@ -314,10 +354,12 @@ type XPicture struct {
 	ShapeProperties *XShapeProperties    `xml:"spPr,omitempty"`
 }
 
-// XNonVisualDrawingPic holds non-visual drawing properties for a picture.
+// XNonVisualDrawingPic holds non-visual drawing properties for a picture
+// (CT_PictureNonVisual: cNvPr, cNvPicPr, nvPr).
 type XNonVisualDrawingPic struct {
 	CNvPr    *XNvCxnSpPr `xml:"cNvPr"`
 	CNvPicPr *XNvPicPr   `xml:"cNvPicPr"`
+	NvPr     XEmptyElem  `xml:"nvPr"`
 }
 
 // XNvPicPr holds non-visual picture properties.
@@ -352,19 +394,22 @@ type XStretchProperties struct {
 type XFillRectProperties struct {
 }
 
-// XGraphicFrame represents a graphic frame.
+// XGraphicFrame represents a graphic frame. Field order matches
+// CT_GraphicalObjectFrame: nvGraphicFramePr, xfrm, graphic.
 type XGraphicFrame struct {
 	XMLName struct{} `xml:"graphicFrame"`
 
 	NonVisual   XNonVisualGraphicFrame `xml:"nvGraphicFramePr"`
-	Graphic     *XGraphic              `xml:"graphic,omitempty"`
 	Transform2D *XTransform2D          `xml:"xfrm,omitempty"`
+	Graphic     *XGraphic              `xml:"graphic,omitempty"`
 }
 
-// XNonVisualGraphicFrame holds non-visual properties for a graphic frame.
+// XNonVisualGraphicFrame holds non-visual properties for a graphic frame
+// (CT_GraphicalObjectFrameNonVisual: cNvPr, cNvGraphicFramePr, nvPr).
 type XNonVisualGraphicFrame struct {
 	CNvPr             *XNvCxnSpPr        `xml:"cNvPr"`
 	CNvGraphicFramePr *XNvGraphicFramePr `xml:"cNvGraphicFramePr"`
+	NvPr              XEmptyElem         `xml:"nvPr"`
 }
 
 // XNvGraphicFramePr holds non-visual graphic frame properties.
@@ -372,10 +417,21 @@ type XNvGraphicFramePr struct {
 	CNvPr *XNvPr `xml:"cNvPr,omitempty"`
 }
 
-// XGraphic represents a graphic element.
+// XGraphic represents an <a:graphic> element.
 type XGraphic struct {
-	Table *XTable `xml:"graphicData>a:tbl,omitempty"`
+	XMLName     struct{}      `xml:"graphic"`
+	GraphicData *XGraphicData `xml:"graphicData,omitempty"`
 }
+
+// XGraphicData wraps the typed graphic payload (a table, in V1) with its
+// schema URI.
+type XGraphicData struct {
+	URI   string  `xml:"uri,attr"`
+	Table *XTable `xml:"tbl,omitempty"`
+}
+
+// TableGraphicDataURI is the graphicData URI for DrawingML tables.
+const TableGraphicDataURI = "http://schemas.openxmlformats.org/drawingml/2006/table"
 
 // XTableGrid represents a table grid.
 type XTableGrid struct {
@@ -408,25 +464,4 @@ type XTableCell struct {
 	RowSpan  int        `xml:"rowSpan,attr,omitempty"`
 	Vertical string     `xml:"anchor,attr,omitempty"`
 	TextBody *XTextBody `xml:"txBody,omitempty"`
-}
-
-// ============================================================================
-// XMLWriter type definitions
-// ============================================================================
-
-// XMLWriter is a helper for efficient streaming XML generation.
-// Supports namespace prefix caching, attribute buffering, and indentation control.
-type XMLWriter struct {
-	w          io.Writer
-	buf        []byte
-	indent     int
-	indentStr  string
-	useIndent  bool
-	autoFlush  bool
-	nsPrefixes map[string]string // namespace prefix cache
-}
-
-// XMLWriterPool is an object pool of XMLWriter instances to reduce allocations.
-type XMLWriterPool struct {
-	pool sync.Pool
 }

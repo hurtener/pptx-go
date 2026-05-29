@@ -21,27 +21,22 @@ import (
 //  3. Automatic media-resource management
 //
 // Units:
-//   - All position and size parameters default to px (pixels, based on 96 DPI).
-//   - Values are converted internally to EMU (English Metric Units).
-//   - 1 px = 9525 EMU (914400 / 96); this ratio is fixed.
+//   - Position and size parameters on the content-addition methods are EMU
+//     (English Metric Units, OOXML's canonical integer length, 1 inch =
+//     914400 EMU). Compute them with the pptx converters — pptx.In, pptx.Cm,
+//     pptx.Pt, pptx.Px — or a pptx.Box.
 //   - The coordinate origin (0, 0) is the top-left corner of the slide.
-//
-// Notes:
-//   - px coordinates may be negative; placing elements outside the canvas
+//   - Coordinates may be negative; placing elements outside the canvas
 //     boundary is legal in the drawing model.
-//   - The slide size does not affect the coordinate system; callers are
-//     responsible for adjusting coordinates to fit the chosen size.
+//
+// (The SlideViewport / boundary-check helpers below remain px-based; they are
+// a placement utility, not the shape-emission path.)
 //
 // Example:
 //
 //	s := pres.AddSlide()
-//	s.AddTextBox(100, 100, 500, 50, "Hello World")  // units: px
-//	s.AddPicture(100, 200, 300, 200, "image.png")    // units: px
-//
-// Standard slide sizes (px):
-//   - 16:9  widescreen: 1280 x 720
-//   - 4:3   standard:   960 x 720
-//   - 16:10 wide:       1280 x 800
+//	s.AddTextBox(int(pptx.In(1)), int(pptx.In(1)), int(pptx.In(5)), int(pptx.In(0.5)), "Hello World")
+//	s.AddRectangle(914400, 914400, 2743200, 1371600) // 1in, 1in, 3in, 1.5in
 //
 // ============================================================================
 
@@ -356,30 +351,30 @@ func (s *Slide) NewContext() *SlideContext {
 }
 
 // ============================================================================
-// Text methods - default unit: px
+// Text methods - default unit: EMU
 // ============================================================================
 
 // AddTextBox adds a text box to the slide.
-// x, y are the position (px); cx, cy are the size (px); text is the content.
+// x, y are the position (EMU); cx, cy are the size (EMU); text is the content.
 func (s *Slide) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
 	return s.builder.AddTextBox(
-		PxToEMU(x), PxToEMU(y),
-		PxToEMU(cx), PxToEMU(cy),
+		x, y,
+		cx, cy,
 		text,
 	)
 }
 
 // ============================================================================
-// Shape methods - default unit: px
+// Shape methods - default unit: EMU
 // ============================================================================
 
 // AddAutoShape adds an auto shape to the slide.
-// x, y are the position (px); cx, cy are the size (px).
+// x, y are the position (EMU); cx, cy are the size (EMU).
 // presetID is the preset shape type (e.g. "rectangle", "ellipse", "roundRect").
 func (s *Slide) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XSp {
 	return s.builder.AddAutoShape(
-		PxToEMU(x), PxToEMU(y),
-		PxToEMU(cx), PxToEMU(cy),
+		x, y,
+		cx, cy,
 		presetID,
 	)
 }
@@ -400,16 +395,16 @@ func (s *Slide) AddRoundRect(x, y, cx, cy int) *slide.XSp {
 }
 
 // ============================================================================
-// Picture methods - default unit: px
+// Picture methods - default unit: EMU
 // ============================================================================
 
 // AddPicture adds a picture to the slide.
-// x, y are the position (px); cx, cy are the size (px).
+// x, y are the position (EMU); cx, cy are the size (EMU).
 // imageRId is the relationship ID of the image.
 func (s *Slide) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPicture {
 	return s.builder.AddPicture(
-		PxToEMU(x), PxToEMU(y),
-		PxToEMU(cx), PxToEMU(cy),
+		x, y,
+		cx, cy,
 		imageRId,
 	)
 }
@@ -431,8 +426,8 @@ func (s *Slide) AddPictureFromBytes(x, y, cx, cy int, fileName string, data []by
 
 	// Add the picture shape.
 	return s.builder.AddPicture(
-		PxToEMU(x), PxToEMU(y),
-		PxToEMU(cx), PxToEMU(cy),
+		x, y,
+		cx, cy,
 		slideRID,
 	), nil
 }
@@ -449,16 +444,16 @@ func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*slide.XPictu
 }
 
 // ============================================================================
-// Table methods - default unit: px
+// Table methods - default unit: EMU
 // ============================================================================
 
 // AddTable adds a table to the slide.
-// x, y are the position (px); cx, cy are the size (px).
+// x, y are the position (EMU); cx, cy are the size (EMU).
 // rows and cols specify the table dimensions.
 func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFrame {
 	return s.builder.AddTable(
-		PxToEMU(x), PxToEMU(y),
-		PxToEMU(cx), PxToEMU(cy),
+		x, y,
+		cx, cy,
 		rows, cols,
 	)
 }
@@ -498,7 +493,7 @@ func (s *Slide) GetImageRId(targetURI string) string {
 }
 
 // ============================================================================
-// Slide size - default unit: px
+// Slide size - default unit: EMU
 // ============================================================================
 
 // SlideSize returns the slide dimensions in pixels.
@@ -517,6 +512,9 @@ func (s *Slide) SlideSizeEMU() (cx, cy int) {
 // ============================================================================
 
 // PxToEMU converts pixels to EMU (at 96 DPI).
+//
+// Deprecated: shape methods now take EMU directly; use pptx.Px (which returns a
+// typed EMU) to convert pixel coordinates.
 func PxToEMU(px int) int {
 	return int(utils.PixelsToEMU(float64(px)))
 }
@@ -524,20 +522,6 @@ func PxToEMU(px int) int {
 // EMUToPx converts EMU to pixels (at 96 DPI).
 func EMUToPx(emu int) int {
 	return int(utils.EMUToPixels(int64(emu)))
-}
-
-// ============================================================================
-// Color helpers
-// ============================================================================
-
-// ValidateColor validates a color string.
-func (s *Slide) ValidateColor(color string) ColorValidationResult {
-	return ValidateColor(color)
-}
-
-// ResolveColor resolves a color string (name, hex, RGB, or scheme color).
-func (s *Slide) ResolveColor(color string) Color {
-	return DefaultColorMap().Resolve(color)
 }
 
 // ============================================================================

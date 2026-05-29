@@ -23,8 +23,20 @@ func main() {
 
 	pres := pptx.New()
 	s := pres.AddSlide()
-	s.AddRectangle(914400, 914400, 2743200, 1371600)
-	s.AddTextBox(914400, 2743200, 6858000, 914400, "pptx-go reference deck")
+	// A themed, filled & outlined shape (token fill resolves against the theme)
+	// plus a translucent accent — exercises the Color/Fill/Line surface.
+	s.AddShape(
+		pptx.ShapeRoundRect,
+		pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(3), H: pptx.In(1.5)},
+		pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))),
+		pptx.WithLine(pptx.Line{Width: pptx.Pt(1.5), Color: pptx.RGB("111827")}),
+	)
+	s.AddShape(
+		pptx.ShapeEllipse,
+		pptx.Box{X: pptx.In(4.5), Y: pptx.In(1), W: pptx.In(2), H: pptx.In(2)},
+		pptx.WithFill(pptx.SolidFill(pptx.RGBA("2563EB", 40000))),
+	)
+	s.AddTextBox(int(pptx.In(1)), int(pptx.In(3)), int(pptx.In(7.5)), int(pptx.In(1)), "pptx-go reference deck")
 	pres.AddSlide()
 
 	if err := pres.Save(out); err != nil {

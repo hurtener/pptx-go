@@ -6,12 +6,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
 	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
+	"github.com/hurtener/pptx-go/internal/render"
 )
 
 // ============================================================================
@@ -70,6 +72,10 @@ type Presentation struct {
 	// fontSource resolves font bytes for EmbedFont (nil = no source). D-019.
 	fontSource FontSource
 
+	// theme is the active theme driving token resolution (default
+	// DefaultTheme). Set via WithTheme or SetTheme.
+	theme *Theme
+
 	// fontCounter generates embedded font part names (font1.fntdata, …).
 	fontCounter int32
 
@@ -81,20 +87,34 @@ type Presentation struct {
 // Constructors
 // ============================================================================
 
-// New creates a blank presentation using the default template (16:9 widescreen).
-func New() *Presentation {
+// New creates a blank presentation. With no options it is a 16:9 widescreen
+// deck themed with DefaultTheme; pass options (WithFormat, WithFontSource,
+// WithTheme) to configure it (RFC §8.1).
+func New(opts ...Option) *Presentation {
 	pres := &Presentation{
 		pkg:              opc.NewPackage(),
 		presentationPart: presentation.NewPresentationPart(),
 		slides:           make([]*Slide, 0),
 		mediaManager:     NewMediaManager(),
 		masterManager:    NewMasterManager(),
+		theme:            DefaultTheme(),
 		slideCounter:     0,
 		relCounter:       0,
 	}
 
+	// Apply caller options (format, font source, theme) before any emission.
+	for _, opt := range opts {
+		if opt != nil {
+			opt(pres)
+		}
+	}
+
 	// Initialize the package structure.
 	pres.initPackage()
+
+	// Seed a complete scaffold (master + blank layout + theme) so the deck is
+	// valid the moment it is created (Phase 03 A2; RFC §8.7).
+	pres.seedScaffold()
 
 	return pres
 }
@@ -258,12 +278,13 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	slidePartOPC := opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob)
 	_ = p.pkg.AddPart(slidePartOPC)
 
-	// Add the relationship to presentation.xml.
-	slideRelID := p.allocateRelID()
-	_ = slideRelID // relationship ID is managed internally by PresentationPart
+	// Wire presentation→slide and slide→layout relationships; the returned
+	// relationship id is what <p:sldId r:id="…"> must carry (Phase 03 A2).
+	slideRId := p.relateSlide(slidePartOPC)
 
-	// Register with PresentationPart (auto-assigns a slide ID).
-	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
+	// Register with PresentationPart (auto-assigns a slide ID; slideRId is the
+	// presentation→slide relationship that <p:sldId> references).
+	_ = p.presentationPart.AddSlide(slideRId, slidePart)
 
 	// Build the high-level Slide object.
 	s := &Slide{
@@ -310,10 +331,14 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 
 	// Add to package.
 	slideBlob, _ := slidePart.ToXML()
-	_ = p.pkg.AddPart(opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob))
+	slidePartOPC := opc.NewPart(slideURI, opc.ContentTypeSlide, slideBlob)
+	_ = p.pkg.AddPart(slidePartOPC)
+
+	// Wire presentation→slide and slide→layout relationships.
+	slideRId := p.relateSlide(slidePartOPC)
 
 	// Register with PresentationPart.
-	_ = p.presentationPart.AddSlide(layoutRId, slidePart)
+	_ = p.presentationPart.AddSlide(slideRId, slidePart)
 
 	// Build the high-level object.
 	s := &Slide{
@@ -415,6 +440,9 @@ func (p *Presentation) Save(path string) error {
 		return err
 	}
 
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
+
 	// Write to file.
 	return p.pkg.SaveFile(path)
 }
@@ -435,6 +463,9 @@ func (p *Presentation) Write(w io.Writer) error {
 		return err
 	}
 
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
+
 	// Write to the writer.
 	return p.pkg.Save(w)
 }
@@ -453,6 +484,9 @@ func (p *Presentation) WriteToBytes() ([]byte, error) {
 	if err := p.syncPresentationPart(); err != nil {
 		return nil, err
 	}
+
+	// Repair-prompt hygiene on every emitted part (D-020).
+	p.applyHygiene()
 
 	// Write to a byte slice.
 	return p.pkg.SaveToBytes()
@@ -482,6 +516,19 @@ func (p *Presentation) syncSlides() error {
 	}
 
 	return nil
+}
+
+// applyHygiene runs the always-on repair-prompt hygiene pass (D-020) over every
+// XML part in the package, in place, just before serialization. It has no
+// caller-facing switch — emitting OOXML PowerPoint opens without a repair
+// prompt is correctness, not preference.
+func (p *Presentation) applyHygiene() {
+	for _, part := range p.pkg.AllParts() {
+		if !strings.Contains(part.ContentType(), "xml") {
+			continue
+		}
+		part.SetBlob(render.Sanitize(part.Blob()))
+	}
 }
 
 // syncPresentationPart serializes presentation.xml into the OPC package.
@@ -531,6 +578,27 @@ func (p *Presentation) MediaManager() *MediaManager {
 // MasterCache returns the master cache.
 func (p *Presentation) MasterCache() *MasterCache {
 	return p.masterCache
+}
+
+// Theme returns the active theme (never nil; DefaultTheme by default).
+func (p *Presentation) Theme() *Theme {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.theme == nil {
+		return DefaultTheme()
+	}
+	return p.theme
+}
+
+// SetTheme sets the active theme used for token resolution. A nil theme is
+// ignored.
+func (p *Presentation) SetTheme(t *Theme) {
+	if t == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.theme = t
 }
 
 // SetSlideSize sets the slide dimensions (in EMU).
@@ -583,6 +651,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		mediaManager:  NewMediaManager(),
 		masterManager: p.masterManager,
 		masterCache:   p.masterCache,
+		theme:         p.theme,
 		slideCounter:  p.slideCounter,
 		relCounter:    p.relCounter,
 	}

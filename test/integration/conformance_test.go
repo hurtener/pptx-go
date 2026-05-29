@@ -9,12 +9,8 @@ import (
 
 // TestConformance_BuilderOutput gates the structural soundness (OPC layer,
 // D-031) of decks the public builder emits: content-type coverage, resolved
-// relationships, no dangling rIds, valid pack URIs.
-//
-// RequiredParts (full-deck completeness: master/layout/theme/etc.) is NOT
-// asserted here — the builder is reorganized but not yet rewritten, so a
-// complete deck is a Phase 03 deliverable. Phase 03 turns the completeness
-// gate (and the xmllint/LibreOffice layers) on.
+// relationships, no dangling rIds, valid pack URIs, and — since Phase 03
+// Chunk A2 — full-deck completeness (master/layout/theme present and wired).
 func TestConformance_BuilderOutput(t *testing.T) {
 	pres := pptx.New()
 	s := pres.AddSlide()
@@ -27,25 +23,22 @@ func TestConformance_BuilderOutput(t *testing.T) {
 		t.Fatalf("WriteToBytes: %v", err)
 	}
 
-	rep, err := conformance.ValidateBytes(data, conformance.Options{})
+	// A complete deck (A2): presentation + slides + master + blank layout +
+	// theme, every relationship resolved and every root namespaced (D-032).
+	opts := conformance.Options{
+		RequiredParts: []string{
+			"/ppt/presentation.xml",
+			"/ppt/slides/slide1.xml",
+			"/ppt/slideMasters/slideMaster1.xml",
+			"/ppt/slideLayouts/slideLayout1.xml",
+			"/ppt/theme/theme1.xml",
+		},
+	}
+	rep, err := conformance.ValidateBytes(data, opts)
 	if err != nil {
 		t.Fatalf("ValidateBytes: %v", err)
 	}
-
-	// builderEmissionRebuilt flips to true with Phase 03 Chunk A1/A2, which
-	// rebuilds the emission (D-032) so New() output is conformant. Until then
-	// the hardened harness (D-031) detects the known-broken baseline — we log
-	// it loudly but do not fail CI, so the rebuild has a visible red→green
-	// target without blocking the harness PR.
-	const builderEmissionRebuilt = false
-	if builderEmissionRebuilt {
-		if !rep.OK() {
-			t.Fatalf("builder output failed OPC conformance:\n%s", rep)
-		}
-		return
+	if !rep.OK() {
+		t.Fatalf("builder output failed full-deck OPC conformance:\n%s", rep)
 	}
-	if rep.OK() {
-		t.Fatal("builder output is now conformant — set builderEmissionRebuilt = true to gate it")
-	}
-	t.Logf("KNOWN BASELINE (D-032; Chunk A1/A2 will fix), %d issue(s):\n%s", len(rep.Errors()), rep)
 }
