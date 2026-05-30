@@ -400,12 +400,14 @@ divider, quote, callout, chip, arrow, code_block, section_divider)
 **RFC sections:** §13
 **Deps:** Phase 02, Phase 03.
 **What lands:**
-- `pptx.LoadTheme(path)` — extract Theme from a `.pptx` template.
 - `pptx.FromTemplate(brand)` — option for `pptx.New` to seed
   presentation from a template (masters + theme + default layouts
   copied).
 - `pptx/master.go` — `Master`, `Layout`, `LayoutMap`.
 - `scene.WithTheme`, `scene.WithLayoutMap` — render options.
+- (`pptx.LoadTheme(path)` already shipped with Phase 02's theme work —
+  `pptx/themecodec.go`; Phase 09 consumes it. See
+  `docs/plans/phase-09-template-ingestion.md` §5.)
 **Acceptance criteria:**
 - Loading a PowerPoint-emitted template's theme produces a `Theme`
   whose `Resolve(ColorAccent)` returns the template's accent.
