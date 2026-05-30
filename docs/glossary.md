@@ -451,6 +451,13 @@ inside `scene.Render`. Listed here only to disambiguate: a pengui-slides
 "SlideDocument" maps to pptx-go's "Scene + Stats + emitted shapes",
 not to a single pptx-go type.
 
+## SlideTiming
+
+An entry in `Stats.Timings`: the `SlideID` plus the wall-clock `Duration`
+spent composing that slide, in scene order. Lets callers spot render
+imbalance across a deck (D-015). Never serialized into the PPTX, so it
+does not affect render idempotency.
+
 ## slog
 
 `log/slog` — Go's structured logging stdlib package. pptx-go accepts an
@@ -561,6 +568,13 @@ Per-slide theme overrides are V2; per-scene variant is V1.
 
 A grouping of phases sharing a milestone. See `docs/plans/README.md` for
 the V1 wave structure.
+
+## WithWorkers
+
+The `scene.RenderOption` that sets how many slides compose concurrently
+(D-015). Default `runtime.GOMAXPROCS(0)`; `1` forces sequential. Output
+stays byte-identical regardless: slides are created in scene order and any
+slide that may register media composes sequentially (D-035, D-036).
 
 ---
 

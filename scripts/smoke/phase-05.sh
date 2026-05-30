@@ -51,6 +51,10 @@ run_check "Render stub returns zero Stats on empty scene" ./scene/ 'RenderStub|E
 run_check "URIAssetResolver resolves asset:// ids" ./scene/ 'URIAssetResolver'
 # 6. Per-node policy ⇔ struct assertion.
 run_check "per-node policy matches the node structs" ./scene/ 'Policy'
+# 7. WithWorkers + parallel render is byte-identical to sequential (D-015, RFC §10.1).
+run_check "parallel render is deterministic (WithWorkers, D-015)" ./scene/ 'Deterministic|WithWorkers'
+# 8. A shared Theme is safe for concurrent render reuse (-race).
+run_check "shared Theme safe under concurrent render" ./scene/ 'ConcurrentThemeReuse'
 
 echo
 echo "phase-05 smoke: ${OK} OK, ${FAIL} FAIL, ${SKIP} SKIP"
