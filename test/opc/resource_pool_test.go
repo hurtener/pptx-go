@@ -225,83 +225,52 @@ func TestPackage_Clone_SmartCloning(t *testing.T) {
 	t.Log("Package Clone smart cloning test passed")
 }
 
-// TestZipEntry_Timestamp verifies ZIP entry timestamps are set correctly.
-// Checks:
-// 1. Timestamps are not zero (works around Windows Explorer MS-DOS time bug).
-// 2. Timestamps are close to the current time (within a few seconds).
-// 3. Timestamps can be correctly converted to Beijing time (UTC+8).
+// TestZipEntry_Timestamp verifies ZIP entry timestamps are deterministic.
+// Every entry carries a fixed, valid MS-DOS timestamp (not zero, not the wall
+// clock), so saving the same package twice yields byte-identical output — the
+// idempotency RFC §10.1 requires. A wall-clock stamp would break that.
 func TestZipEntry_Timestamp(t *testing.T) {
-	// record time before creation (in Beijing timezone)
-	beijingLoc, _ := time.LoadLocation("Asia/Shanghai")
-	beforeCreate := time.Now().In(beijingLoc)
+	// The fixed stamp the OPC writer applies (the 1980 MS-DOS/ZIP epoch).
+	wantModTime := time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// create a simple Package
 	pkg := opc.NewPackage()
-
-	// add a part
-	slideURI := opc.NewPackURI("/ppt/slides/slide1.xml")
-	pkg.CreatePart(slideURI, opc.ContentTypeSlide, []byte("<slide/>"))
-
-	// add relationship
+	pkg.CreatePart(opc.NewPackURI("/ppt/slides/slide1.xml"), opc.ContentTypeSlide, []byte("<slide/>"))
 	pkg.AddRelationship(opc.RelTypeOfficeDocument, "/ppt/presentation.xml", false)
 
-	// save to bytes
 	data, err := pkg.SaveToBytes()
 	if err != nil {
 		t.Fatalf("SaveToBytes failed: %v", err)
 	}
 
-	// record time after creation
-	afterCreate := time.Now().In(beijingLoc)
-
-	// read the ZIP and check timestamps
 	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		t.Fatalf("Failed to read ZIP: %v", err)
 	}
 
-	// check each file's timestamp
 	for _, file := range reader.File {
 		modTime := file.Modified
-
-		// 1. timestamp must not be zero
 		if modTime.IsZero() {
-			t.Errorf("File %s has zero modification time", file.Name)
+			t.Errorf("File %s has zero modification time (Windows Explorer bug risk)", file.Name)
 			continue
 		}
-
-		// 2. timestamp must be between beforeCreate and afterCreate (allow 1s tolerance)
-		modTimeUTC := modTime.UTC()
-		beforeUTC := beforeCreate.UTC()
-		afterUTC := afterCreate.UTC()
-
-		if modTimeUTC.Before(beforeUTC.Add(-1 * time.Second)) {
-			t.Errorf("File %s modification time %v is before creation time %v",
-				file.Name, modTimeUTC, beforeUTC)
+		// Valid MS-DOS time: the format cannot represent instants before 1980.
+		if modTime.UTC().Year() < 1980 {
+			t.Errorf("File %s modification time %v predates the MS-DOS epoch", file.Name, modTime.UTC())
 		}
-		if modTimeUTC.After(afterUTC.Add(1 * time.Second)) {
-			t.Errorf("File %s modification time %v is after creation time %v",
-				file.Name, modTimeUTC, afterUTC)
+		if !modTime.UTC().Equal(wantModTime) {
+			t.Errorf("File %s modification time = %v, want fixed %v (must be deterministic)",
+				file.Name, modTime.UTC(), wantModTime)
 		}
-
-		// 3. convert to Beijing time and verify
-		modTimeBeijing := modTime.In(beijingLoc)
-
-		// verify Beijing offset is 8 hours from UTC (or adjusted for DST)
-		_, beijingOffset := modTimeBeijing.Zone()
-		expectedOffset := 8 * 60 * 60 // 8 hours in seconds
-		if beijingOffset != expectedOffset {
-			t.Logf("Warning: Beijing offset is %d seconds, expected %d (may vary by DST)",
-				beijingOffset, expectedOffset)
-		}
-
-		t.Logf("File: %s", file.Name)
-		t.Logf("  UTC Time:   %v", modTimeUTC.Format("2006-01-02 15:04:05 MST"))
-		t.Logf("  Beijing:    %v", modTimeBeijing.Format("2006-01-02 15:04:05 MST"))
-		t.Logf("  Unix:       %d", modTime.Unix())
 	}
 
-	t.Log("ZIP entry timestamp test passed")
+	// Idempotency: a second save of the same package is byte-identical.
+	data2, err := pkg.SaveToBytes()
+	if err != nil {
+		t.Fatalf("second SaveToBytes failed: %v", err)
+	}
+	if !bytes.Equal(data, data2) {
+		t.Errorf("saving the same package twice is not byte-identical (%d vs %d bytes)", len(data), len(data2))
+	}
 }
 
 // TestZipEntry_TimestampNotZero specifically tests that timestamps are never zero.

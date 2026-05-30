@@ -4,9 +4,13 @@ package pptx
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
+	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -605,14 +609,35 @@ func (m *MediaManager) GetGlobalMediaByHash(hash string) *media.MediaResource {
 	return nil
 }
 
-// AllGlobalMedia returns all deduplicated global media resources.
+// AllGlobalMedia returns all deduplicated global media resources, ordered by
+// target path. The order is stable so callers that materialize the parts (e.g.
+// syncMedia) add them to the package deterministically — without it, ranging the
+// underlying sync.Map yields a different package (and ZIP) layout each save,
+// breaking the byte-identical idempotency RFC §10.1 requires.
 func (m *MediaManager) AllGlobalMedia() []*media.MediaResource {
 	result := make([]*media.MediaResource, 0)
 	m.globalMedia.Range(func(key, value any) bool {
 		result = append(result, value.(*media.MediaResource))
 		return true
 	})
+	sort.Slice(result, func(i, j int) bool {
+		return mediaFileOrder(result[i].Target()) < mediaFileOrder(result[j].Target())
+	})
 	return result
+}
+
+// mediaFileOrder maps a media target like "ppt/media/image12.png" to its numeric
+// creation index (12) so AllGlobalMedia orders parts image1, image2, … image10,
+// … (natural creation order) rather than lexicographically. Non-conforming
+// targets sort last by their string, deterministically.
+func mediaFileOrder(target string) int {
+	base := path.Base(target)
+	name := strings.TrimSuffix(base, path.Ext(base)) // imageN
+	var n int
+	if _, err := fmt.Sscanf(name, "image%d", &n); err == nil {
+		return n
+	}
+	return 1 << 30
 }
 
 // GlobalMediaCount returns the number of deduplicated global media resources.

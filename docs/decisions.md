@@ -871,4 +871,62 @@ plan deviations.
 
 ---
 
+## D-035 — Byte-identical saves: fixed ZIP epoch + stable map serialization
+
+**Date:** 2026-05-30
+**Status:** Settled
+**Context:** RFC §10.1 makes byte-identical render output a hard requirement
+(pengui-slides snapshot-tests on the bytes). The Wave 2 checkpoint, while
+landing D-015's parallel renderer, found that requirement was already violated
+on `main` — independent of concurrency. Three `internal/opc` save paths
+stamped every ZIP entry with `time.Now()`; `ContentTypes.ToXML` ranged its
+`defaults`/`overrides` maps; and `MediaManager.AllGlobalMedia` ranged a
+`sync.Map`, so `syncMedia` added media parts (and thus ZIP entries) in random
+order. Saving the same presentation twice produced different bytes.
+**Decision:** Saves are deterministic.
+
+- Every ZIP entry is stamped with a **fixed timestamp**, the 1980-01-01
+  MS-DOS/ZIP epoch (`opc.fixedZipModTime`), not the wall clock. 1980 is the
+  earliest the MS-DOS format represents, so it stays a *valid* time — keeping
+  the Windows Explorer workaround the previous `time.Now()` stamp intended.
+- `ContentTypes.ToXML` emits defaults and overrides **sorted** (by extension /
+  part name).
+- `MediaManager.AllGlobalMedia` returns resources in **media-file-number
+  order** (`image1`, `image2`, …), so part materialization is stable.
+
+**Consequences:** `scene.Render` (and any builder save) is byte-identical
+across runs, satisfying RFC §10.1 and making D-015's parallel renderer safely
+testable for idempotency. The OPC layer owns determinism, so it holds for every
+caller, not just the scene renderer. The fixed media-numbering relies on global
+media being created in deterministic order — see D-036.
+
+---
+
+## D-036 — V1 degrades every asset-resolution failure to a warning
+
+**Date:** 2026-05-30
+**Status:** Settled
+**Context:** RFC §10.6 distinguishes optional asset failures (surface a
+`LayoutWarning`) from *required* assets (the render fails). Phase 06 shipped
+all asset failures as warnings and documented the deviation, but it was never
+reconciled with the RFC. The V1 IR carries no "required" designation on any
+asset-bearing node (`code_block` is the only shipped one), so the required-
+failure branch is unreachable today; pptx-go is an engine, and "this asset is
+mandatory" is a caller policy (D-026).
+**Decision:** In V1, every unresolved asset degrades to a `LayoutWarning` and
+the node is skipped; there is no render-fatal asset path and no `strict` render
+mode. A future "required asset" mechanism (an IR field plus the fatal branch)
+is the trigger to revisit RFC §10.6 — at which point it lands with a superseding
+decision. The byte-identical guarantee (D-035) further requires that any slide
+which *may* register global media composes in deterministic scene order; the
+renderer enforces this by scheduling asset-bearing slides sequentially while
+media-free slides fan out across the D-015 worker pool.
+**Consequences:** RFC §10.6's required-asset sentence is documented as
+not-yet-exercised rather than silently contradicted. Callers that need a missing
+asset to be fatal inspect `Stats.Warnings` themselves (RFC §10.2). When the
+image node lands (Phase 11) it inherits this rule and the sequential-scheduling
+constraint.
+
+---
+
 *Append new entries below this line.*
