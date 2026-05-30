@@ -18,6 +18,11 @@ import (
 
 const (
 	notesMasterURI = "/ppt/notesMasters/notesMaster1.xml"
+	// notesThemeURI is the notes master's own theme part. PowerPoint requires
+	// each master to reference a distinct theme part — sharing the slide
+	// master's theme1.xml repairs the deck (it splits off a theme2.xml on
+	// open), so we seed one ourselves.
+	notesThemeURI = "/ppt/theme/theme2.xml"
 )
 
 // SpeakerNotes returns the slide's speaker-notes text frame, creating it on
@@ -86,9 +91,15 @@ func (p *Presentation) ensureNotesMaster() {
 		return
 	}
 
+	// Seed the notes master's own theme part (theme2.xml). PowerPoint repairs a
+	// deck whose notes master shares the slide master's theme1.xml, so the notes
+	// master gets a distinct theme part of its own (same visual theme content).
+	if p.pkg.GetPart(opc.NewPackURI(notesThemeURI)) == nil {
+		_ = p.pkg.AddPart(opc.NewPart(opc.NewPackURI(notesThemeURI), opc.ContentTypeTheme, []byte(scaffoldThemeXML)))
+	}
+
 	part := opc.NewPart(uri, opc.ContentTypeNotesMaster, []byte(scaffoldNotesMasterXML))
-	// The notes master references the deck theme (reusing theme1).
-	_, _ = part.AddRelationship(opc.RelTypeTheme, "../theme/theme1.xml", false)
+	_, _ = part.AddRelationship(opc.RelTypeTheme, "../theme/theme2.xml", false)
 	_ = p.pkg.AddPart(part)
 
 	presPart := p.pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))

@@ -1,7 +1,9 @@
 package pptx
 
 import (
+	"encoding/binary"
 	"fmt"
+	"hash/fnv"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
 )
@@ -149,9 +151,37 @@ func (p *Presentation) syncSections() {
 	p.presentationPart.SetSections(entries)
 }
 
-// sectionGUID builds a deterministic, unique braced GUID for section n. Section
-// GUIDs only need to be unique within the file; deriving them from a counter
-// keeps emitted decks byte-stable for golden tests.
+// sectionGUID builds a deterministic, file-unique braced GUID for section n.
+//
+// PowerPoint rejects the nil GUID ({00000000-0000-0000-0000-000000000000}) and
+// repairs a deck whose section list contains one — and the implicit default
+// section is section 0, so a plain counter emitted exactly that. We instead
+// derive 16 pseudo-random bytes from n with FNV-1a and stamp the RFC-4122
+// version (4) and variant (10xx) bits, producing a well-formed v4-shaped GUID.
+// The derivation is deterministic, so emitted decks stay byte-stable for golden
+// tests; section GUIDs only need to be unique within the file, which distinct n
+// values guarantee.
 func sectionGUID(n int) string {
-	return fmt.Sprintf("{00000000-0000-0000-0000-%012X}", n)
+	var b [16]byte
+	lo := fnv64(uint64(n) + 0x9E3779B97F4A7C15) // golden-ratio offset avoids n=0 → 0
+	hi := fnv64(lo)
+	binary.BigEndian.PutUint64(b[0:8], lo)
+	binary.BigEndian.PutUint64(b[8:16], hi)
+	b[6] = (b[6] & 0x0F) | 0x40 // version 4
+	b[8] = (b[8] & 0x3F) | 0x80 // variant 10xx
+	return fmt.Sprintf("{%08X-%04X-%04X-%04X-%012X}",
+		binary.BigEndian.Uint32(b[0:4]),
+		binary.BigEndian.Uint16(b[4:6]),
+		binary.BigEndian.Uint16(b[6:8]),
+		binary.BigEndian.Uint16(b[8:10]),
+		b[10:16])
+}
+
+// fnv64 hashes a uint64 with FNV-1a — a deterministic byte mixer for sectionGUID.
+func fnv64(v uint64) uint64 {
+	h := fnv.New64a()
+	var buf [8]byte
+	binary.BigEndian.PutUint64(buf[:], v)
+	_, _ = h.Write(buf[:])
+	return h.Sum64()
 }

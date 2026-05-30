@@ -1,6 +1,7 @@
 package pptx_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -89,5 +90,47 @@ func TestSections_DefaultCoversUnassigned(t *testing.T) {
 	}
 	if secs[0].Name != pptx.DefaultSectionName || len(secs[0].SlideIDs) != 1 {
 		t.Errorf("leading default section = %+v, want %q with 1 slide", secs[0], pptx.DefaultSectionName)
+	}
+}
+
+// guidRe matches a well-formed RFC-4122 v4-shaped braced GUID with the version
+// nibble (4) and variant nibble (8-b) in their canonical positions.
+var guidRe = regexp.MustCompile(`^\{[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\}$`)
+
+const nilGUID = "{00000000-0000-0000-0000-000000000000}"
+
+// TestSections_GUIDsAreValid proves every emitted section GUID is well-formed
+// and non-nil. PowerPoint repairs a deck whose section list carries the nil
+// GUID — which the implicit default section (section 0) used to emit — so this
+// guards that regression: GUIDs are v4-shaped, non-nil, and unique.
+func TestSections_GUIDsAreValid(t *testing.T) {
+	p := pptx.New()
+	p.AddSlide() // unassigned → forces the implicit default section (was nil GUID)
+	body := p.AddSection("Body")
+	body.Include(p.AddSlide())
+
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	pres := readZipPart(t, data, "ppt/presentation.xml")
+
+	ids := regexp.MustCompile(`<p14:section name="[^"]*" id="([^"]*)"`).FindAllStringSubmatch(pres, -1)
+	if len(ids) != 2 {
+		t.Fatalf("expected 2 section GUIDs, found %d in:\n%s", len(ids), pres)
+	}
+	seen := map[string]bool{}
+	for _, m := range ids {
+		id := m[1]
+		if id == nilGUID {
+			t.Errorf("section emitted the nil GUID (PowerPoint repairs this): %s", id)
+		}
+		if !guidRe.MatchString(id) {
+			t.Errorf("section GUID is not a well-formed v4 GUID: %s", id)
+		}
+		if seen[id] {
+			t.Errorf("duplicate section GUID: %s", id)
+		}
+		seen[id] = true
 	}
 }

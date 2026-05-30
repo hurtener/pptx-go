@@ -79,3 +79,38 @@ func TestSpeakerNotes_None(t *testing.T) {
 		t.Errorf("notes parts emitted for a deck with no speaker notes")
 	}
 }
+
+// TestNotesMaster_OwnTheme proves the notes master references its own distinct
+// theme part (theme2.xml), not the slide master's theme1.xml. PowerPoint repairs
+// a deck whose notes master shares the slide master's theme — it splits off a
+// theme2.xml on open — so we seed it ourselves. This guards that regression.
+func TestNotesMaster_OwnTheme(t *testing.T) {
+	p := pptx.New()
+	s := p.AddSlide()
+	s.SetSpeakerNotes("notes drive the notes master + its theme")
+
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	// A distinct notes theme part exists alongside the slide master's theme1.
+	names := partNames(t, data)
+	if !names["ppt/theme/theme1.xml"] || !names["ppt/theme/theme2.xml"] {
+		t.Fatalf("expected both theme1.xml and theme2.xml, got: %v", names)
+	}
+
+	// The notes master relates to theme2, not theme1.
+	rels := readZipPart(t, data, "ppt/notesMasters/_rels/notesMaster1.xml.rels")
+	if !strings.Contains(rels, "../theme/theme2.xml") {
+		t.Errorf("notes master does not reference its own theme2.xml:\n%s", rels)
+	}
+	if strings.Contains(rels, "../theme/theme1.xml") {
+		t.Errorf("notes master still shares the slide master's theme1.xml (PowerPoint repairs this):\n%s", rels)
+	}
+
+	// theme2.xml carries the theme content type (the package adds the override).
+	if ct := readZipPart(t, data, "[Content_Types].xml"); !strings.Contains(ct, `PartName="/ppt/theme/theme2.xml"`) {
+		t.Errorf("theme2.xml missing its content-type override:\n%s", ct)
+	}
+}

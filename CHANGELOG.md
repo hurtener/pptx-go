@@ -88,6 +88,12 @@ changes.
   `<p:txBody>` — a PresentationML element inside the `a:`-namespaced table —
   which made PowerPoint prompt to repair the file). Speaker-notes text bodies no
   longer carry redundant `xmlns` declarations.
+- Decks with sections or speaker notes no longer prompt PowerPoint to repair.
+  Section GUIDs are now well-formed, non-nil v4-shaped values — the implicit
+  "Default Section" emitted the nil GUID (`{00000000-…-000000000000}`), which
+  PowerPoint rejects. The notes master now references its own theme part
+  (`theme2.xml`) instead of sharing the slide master's `theme1.xml`; PowerPoint
+  repaired the shared-theme case by splitting off a `theme2.xml` itself.
 
 ### Changed
 
