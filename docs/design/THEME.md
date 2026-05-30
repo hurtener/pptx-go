@@ -46,6 +46,11 @@ code re-renders accordingly.
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.
 - Radius: `RadiusNone`, `RadiusSM`, `RadiusMD`, `RadiusLG`, `RadiusFull`.
+  Consumed by `Slide.AddShape(ShapeRoundRect, box, WithRadius(role))`: the
+  absolute radius token resolves against the active theme and is converted to
+  the OOXML `roundRect` adjust (a fraction of the shorter side, capped at the
+  50% full-capsule). `RadiusFull` yields a pill; the option is ignored on
+  non-`roundRect` geometries.
 - Elevation: `ElevationFlat`, `ElevationRaised`, `ElevationElevated`.
 
 ## Default theme

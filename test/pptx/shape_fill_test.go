@@ -106,3 +106,76 @@ func TestShape_Box(t *testing.T) {
 		t.Errorf("Shape.Box() = %+v, want %+v", got, unitBox)
 	}
 }
+
+// TestAddShape_Radius_Full proves WithRadius(RadiusFull) on a roundRect emits a
+// full-capsule adjust guide (50% of the shorter side = the maximum).
+func TestAddShape_Radius_Full(t *testing.T) {
+	xml := slideXMLWithShape(t, pptx.New(), func(s *pptx.Slide) {
+		s.AddShape(pptx.ShapeRoundRect,
+			pptx.Box{X: 0, Y: 0, W: pptx.In(4), H: pptx.In(0.5)},
+			pptx.WithRadius(pptx.RadiusFull))
+	})
+	if !strings.Contains(xml, `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 50000"/></a:avLst>`) {
+		t.Errorf("RadiusFull did not emit a full-capsule adjust guide in:\n%s", xml)
+	}
+}
+
+// TestAddShape_Radius_Ignored proves WithRadius is a no-op on a non-roundRect
+// geometry (a sharp rect can't carry a corner radius).
+func TestAddShape_Radius_Ignored(t *testing.T) {
+	xml := slideXMLWithShape(t, pptx.New(), func(s *pptx.Slide) {
+		s.AddShape(pptx.ShapeRect, unitBox, pptx.WithRadius(pptx.RadiusFull))
+	})
+	if strings.Contains(xml, `name="adj"`) {
+		t.Errorf("WithRadius leaked an adjust guide onto a sharp rect:\n%s", xml)
+	}
+}
+
+// TestAddShape_Radius_TokenSwap proves the corner radius is token-driven: the
+// same builder input re-rounds against the active theme's Radii (P2).
+func TestAddShape_Radius_TokenSwap(t *testing.T) {
+	render := func(md pptx.EMU) string {
+		th := pptx.DefaultTheme()
+		th.Radii[pptx.RadiusMD] = md
+		// A 2in-square box: adj = radius/min(W,H) * 100000 = radius/1828800 * 100000.
+		return slideXMLWithShape(t, pptx.New(pptx.WithTheme(th)), func(s *pptx.Slide) {
+			s.AddShape(pptx.ShapeRoundRect,
+				pptx.Box{X: 0, Y: 0, W: pptx.In(2), H: pptx.In(2)},
+				pptx.WithRadius(pptx.RadiusMD))
+		})
+	}
+	// pptx.In(2) = 1828800 EMU. radius 182880 (0.2in) → adj 10000; 457200 (0.5in) → 25000.
+	if a := render(182880); !strings.Contains(a, `fmla="val 10000"`) {
+		t.Errorf("RadiusMD=0.2in did not resolve to adj 10000:\n%s", a)
+	}
+	if b := render(457200); !strings.Contains(b, `fmla="val 25000"`) {
+		t.Errorf("RadiusMD=0.5in did not resolve to adj 25000:\n%s", b)
+	}
+}
+
+// TestAddShape_Radius_RoundTrip proves the corner radius survives a write →
+// Open → write cycle losslessly (G6): the adjust guide is parsed back and
+// re-emitted unchanged.
+func TestAddShape_Radius_RoundTrip(t *testing.T) {
+	p := pptx.New()
+	s := p.AddSlide()
+	s.AddShape(pptx.ShapeRoundRect,
+		pptx.Box{X: 0, Y: 0, W: pptx.In(3), H: pptx.In(1)},
+		pptx.WithRadius(pptx.RadiusFull))
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	reopened, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	data2, err := reopened.WriteToBytes()
+	if err != nil {
+		t.Fatalf("re-WriteToBytes: %v", err)
+	}
+	if got := readZipPart(t, data2, "ppt/slides/slide1.xml"); !strings.Contains(got, `<a:gd name="adj" fmla="val 50000"/>`) {
+		t.Errorf("corner radius lost across Open round-trip:\n%s", got)
+	}
+}

@@ -237,8 +237,20 @@ type XPresetGeometry struct {
 	AvLst *XAvLst `xml:"avLst"`
 }
 
-// XAvLst is the (empty) adjust-value list of a preset geometry.
-type XAvLst struct{}
+// XAvLst is the adjust-value list of a preset geometry. It is empty for most
+// presets; shapes with an adjust handle (e.g. roundRect's corner radius) carry
+// one or more guides. The slice is omitempty so an empty list still marshals as
+// <a:avLst></a:avLst>, matching prior output.
+type XAvLst struct {
+	Gd []XShapeGuide `xml:"gd,omitempty"`
+}
+
+// XShapeGuide is one adjust guide (<a:gd name="adj" fmla="val 50000"/>): a named
+// value that drives a preset geometry's adjustable parameter.
+type XShapeGuide struct {
+	Name string `xml:"name,attr"`
+	Fmla string `xml:"fmla,attr"`
+}
 
 // XSolidFill holds a solid fill color (RGB or scheme).
 type XSolidFill struct {
