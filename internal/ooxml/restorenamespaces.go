@@ -193,7 +193,7 @@ var elementNS = map[string]string{
 	"presentation": "p", "sldSz": "p", "notesSz": "p",
 	"sldIdLst": "p", "sldId": "p",
 	"sldMasterIdLst": "p", "sldMasterId": "p",
-	"notesMasterIdLst": "p", "sldLayoutIdLst": "p", "sldLayoutId": "p",
+	"notesMasterId": "p", "notesMasterIdLst": "p", "sldLayoutIdLst": "p", "sldLayoutId": "p",
 	"embeddedFontLst": "p", "embeddedFont": "p",
 	"regular": "p", "bold": "p", "italic": "p", "boldItalic": "p",
 	"sld": "p", "sldLayout": "p", "sldMaster": "p",
