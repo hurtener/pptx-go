@@ -286,6 +286,35 @@ func TestTableXfrm(t *testing.T) {
 	}
 }
 
+// TestTableCellTxBodyNamespace proves a table cell's text body emits as
+// <a:txBody> (DrawingML, inside the <a:tc>) while a shape's stays <p:txBody>
+// (PresentationML) — the context-sensitive namespace fix. A p:txBody inside a
+// table makes PowerPoint repair the file.
+func TestTableCellTxBodyNamespace(t *testing.T) {
+	tbl := &XTable{
+		Grid: &XTableGrid{GridCols: []XTableColumn{{W: 100}}},
+		Rows: []XTableRow{{H: 50, Cells: []XTableCell{tableCell("cell")}}},
+	}
+	src := NewSlidePart(1)
+	src.AppendShapeChild(shapeTextBox(2, "shape text"))
+	src.AppendShapeChild(tableFrame(tbl))
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	xml := string(data)
+	if !strings.Contains(xml, "<a:tc><a:txBody>") {
+		t.Errorf("table cell text body is not <a:txBody>:\n%s", xml)
+	}
+	if strings.Contains(xml, "<a:tc><p:txBody") {
+		t.Errorf("table cell emitted a <p:txBody> (PowerPoint would repair):\n%s", xml)
+	}
+	if !strings.Contains(xml, "<p:txBody>") {
+		t.Errorf("shape text body should stay <p:txBody>:\n%s", xml)
+	}
+}
+
 // TestTableMergeRoundTrip proves merged-cell spans and continuation flags
 // survive ToXML → FromXML (Phase 08; G6).
 func TestTableMergeRoundTrip(t *testing.T) {
