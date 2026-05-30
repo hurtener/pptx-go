@@ -32,7 +32,13 @@ jobs:
       - name: Emit reference deck
         run: go run ./_gen/genrefdeck test-output/reference.pptx
 
-      - name: Schema validation (xmllint)
+      - name: Schema validation (xmllint, full-surface showcase)
+        # No deck argument → validate-schema.sh emits the showcase deck, which
+        # exercises every part type (shapes, text, images, sections, notes,
+        # tables, scene) against the vendored ISO/IEC 29500 transitional XSDs.
+        run: ./scripts/validate-schema.sh
+
+      - name: Schema validation (reference deck)
         run: ./scripts/validate-schema.sh test-output/reference.pptx
 
       - name: LibreOffice open-proxy

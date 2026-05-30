@@ -254,8 +254,9 @@ type XPresentation struct {
 	// Master ID list (first child)
 	SldMasterIdLst *XSldMasterIdLst `xml:"sldMasterIdLst,omitempty"`
 
-	// Notes master ID list
-	NotesMasterIdLst *XSldMasterIdLst `xml:"notesMasterIdLst,omitempty"`
+	// Notes master ID list (CT_NotesMasterIdList — entries are notesMasterId
+	// with only an r:id, NOT sldMasterId).
+	NotesMasterIdLst *XNotesMasterIdLst `xml:"notesMasterIdLst,omitempty"`
 
 	// Slide ID list
 	SldIdLst *XSldIdLst `xml:"sldIdLst,omitempty"`
@@ -349,6 +350,17 @@ type XSldMasterId struct {
 	RId string `xml:"rid,attr"`
 }
 
+// XNotesMasterIdLst is <p:notesMasterIdLst> (CT_NotesMasterIdList).
+type XNotesMasterIdLst struct {
+	NotesMasterIds []XNotesMasterId `xml:"notesMasterId"`
+}
+
+// XNotesMasterId is <p:notesMasterId r:id="…"/> — note it carries only r:id, no
+// id attribute (unlike sldMasterId).
+type XNotesMasterId struct {
+	RId string `xml:"rid,attr"`
+}
+
 // XPrintSettings holds print settings.
 type XPrintSettings struct {
 	OutputOptions *XOutputOptions `xml:"outputOptions,omitempty"`
@@ -403,11 +415,11 @@ func (p *PresentationPart) ToXML() ([]byte, error) {
 		}
 	}
 
-	// Build notes-master ID list (single entry; D-022). Its @id is also an
-	// ST_SlideMasterId (>= 2147483648).
+	// Build notes-master ID list (single entry; D-022). CT_NotesMasterIdListEntry
+	// carries only r:id (no id attribute).
 	if p.notesMasterID != "" {
-		xp.NotesMasterIdLst = &XSldMasterIdLst{
-			SldMasterIds: []XSldMasterId{{Id: 2147483648, RId: p.notesMasterID}},
+		xp.NotesMasterIdLst = &XNotesMasterIdLst{
+			NotesMasterIds: []XNotesMasterId{{RId: p.notesMasterID}},
 		}
 	}
 
@@ -536,8 +548,8 @@ func (p *PresentationPart) FromXML(data []byte) error {
 
 	// Parse notes-master list (single entry by convention).
 	p.notesMasterID = ""
-	if xp.NotesMasterIdLst != nil && len(xp.NotesMasterIdLst.SldMasterIds) > 0 {
-		p.notesMasterID = xp.NotesMasterIdLst.SldMasterIds[0].RId
+	if xp.NotesMasterIdLst != nil && len(xp.NotesMasterIdLst.NotesMasterIds) > 0 {
+		p.notesMasterID = xp.NotesMasterIdLst.NotesMasterIds[0].RId
 	}
 
 	// Parse section list from extLst (D-021).

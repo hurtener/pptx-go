@@ -48,6 +48,13 @@ func TestSpeakerNotes_RoundTrip(t *testing.T) {
 	if pres := readZipPart(t, data, "ppt/presentation.xml"); !strings.Contains(pres, "<p:notesMasterIdLst>") {
 		t.Errorf("presentation.xml missing notesMasterIdLst:\n%s", pres)
 	}
+	// CT_NotesMasterIdList entries are <p:notesMasterId r:id="…"/> with NO id
+	// attribute — not <p:sldMasterId> (a schema violation PowerPoint repairs).
+	if pres := readZipPart(t, data, "ppt/presentation.xml"); !strings.Contains(pres, "<p:notesMasterId r:id=") {
+		t.Errorf("notesMasterIdLst entry is not <p:notesMasterId r:id=…>:\n%s", pres)
+	} else if i := strings.Index(pres, "<p:notesMasterIdLst>"); i >= 0 && strings.Contains(pres[i:strings.Index(pres, "</p:notesMasterIdLst>")], "sldMasterId") {
+		t.Errorf("notesMasterIdLst contains a sldMasterId (wrong element):\n%s", pres)
+	}
 	if rels := readZipPart(t, data, "ppt/slides/_rels/slide1.xml.rels"); !strings.Contains(rels, "../notesSlides/notesSlide1.xml") {
 		t.Errorf("slide1 rels missing the notesSlide relationship:\n%s", rels)
 	}

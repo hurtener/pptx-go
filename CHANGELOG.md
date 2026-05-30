@@ -84,10 +84,13 @@ changes.
 - `RemoveSlide` now drops the slide's presentation relationship and notes part,
   so removing a slide no longer leaves a dangling relationship.
 - Images added to a reopened deck no longer collide with existing media names.
-- Table cells now emit the DrawingML `<a:txBody>` (they were emitting
-  `<p:txBody>` — a PresentationML element inside the `a:`-namespaced table —
-  which made PowerPoint prompt to repair the file). Speaker-notes text bodies no
-  longer carry redundant `xmlns` declarations.
+- Generated decks no longer trigger PowerPoint's "repair" prompt. Two schema
+  violations were emitted: a table cell used `<p:txBody>` (must be the DrawingML
+  `<a:txBody>` inside the `a:`-namespaced table), and the notes-master list used
+  `<p:sldMasterId>` (must be `<p:notesMasterId>`, with only `r:id`). Both are now
+  correct, and the schema-validity layer (ISO/IEC 29500 XSDs) is vendored and
+  active in CI so this class of bug is caught automatically. Speaker-notes text
+  bodies also no longer carry redundant `xmlns` declarations.
 
 ### Changed
 
