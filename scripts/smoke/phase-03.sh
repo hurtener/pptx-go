@@ -75,6 +75,12 @@ if go test ./test/pptx/ -run 'AddShape' >/dev/null 2>&1 &&
 else
 	fail "B: Color/Fill/Line + AddShape" "shape/fill or fill round-trip tests failed"
 fi
+# B2: shape corner radius from a theme token (WithRadius → roundRect adjust).
+if go test ./test/pptx/ -run 'AddShape_Radius' >/dev/null 2>&1; then
+	ok "B2: WithRadius corner-radius token on roundRect (capsule + round-trip)"
+else
+	fail "B2: WithRadius corner radius" "AddShape_Radius tests failed"
+fi
 # C: media / sections / speaker notes / streaming (RFC §8.6–8.8, §17.2).
 if go test ./test/pptx/ -run 'AddImage|Sections|SpeakerNotes|SaveStream|OpenStream' >/dev/null 2>&1 &&
 	go test ./internal/ooxml/slide/ -run 'PictureMediaRoundTrip' >/dev/null 2>&1; then

@@ -67,6 +67,12 @@ changes.
   fills. `scene.Render` composes the `table` node (with an optional `Caption`
   above it).
 - Graphic frames now emit the correct PresentationML `<p:xfrm>` transform.
+- Shape corner radius: `Slide.AddShape(ShapeRoundRect, box, WithRadius(role))`
+  rounds a rectangle's corners from a theme radius token (`RadiusNone`…
+  `RadiusFull`). The absolute radius resolves against the active theme and is
+  converted to OOXML's `roundRect` adjust at write time, so a theme swap
+  re-rounds the same input (P2); `RadiusFull` yields a full capsule (pill). The
+  option is ignored on non-`roundRect` geometries.
 
 ### Fixed
 
