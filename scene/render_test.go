@@ -183,11 +183,12 @@ func TestRenderRoundTrip(t *testing.T) {
 	}
 }
 
-// TestRender_UnimplementedNodeWarns proves a not-yet-rendered node (e.g. a
-// container) warns and is skipped rather than failing the render.
+// TestRender_UnimplementedNodeWarns proves a not-yet-rendered node (e.g. an
+// image, which lands in a later phase) warns and is skipped rather than failing
+// the render.
 func TestRender_UnimplementedNodeWarns(t *testing.T) {
 	sc := scene.Scene{Slides: []scene.SceneSlide{{
-		ID: "s", Nodes: []scene.SlideNode{scene.Grid{Columns: 2, Cells: []scene.SlideNode{scene.Prose{}}}},
+		ID: "s", Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://x"}},
 	}}}
 	pres := pptx.New()
 	stats, err := scene.Render(pres, sc)

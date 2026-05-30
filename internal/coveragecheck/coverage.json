@@ -19,6 +19,10 @@
     "github.com/hurtener/pptx-go/scene": {
       "min": 80,
       "reason": "new scene package (CLAUDE.md §11 — new scene packages 80%)"
+    },
+    "github.com/hurtener/pptx-go/scene/layout": {
+      "min": 80,
+      "reason": "new scene package — geometry engine (CLAUDE.md §11 — 80%)"
     }
   }
 }

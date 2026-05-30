@@ -105,6 +105,9 @@ func validateNode(n SlideNode) error {
 		if len(v.Cells) == 0 {
 			return errors.New("grid has no cells")
 		}
+		if len(v.Cells)%v.Columns != 0 {
+			return fmt.Errorf("grid cell count %d is not a multiple of columns %d (a partial last row)", len(v.Cells), v.Columns)
+		}
 		return validateChildren(v.Cells)
 	case Card:
 		return validateChildren(v.Body)

@@ -33,7 +33,7 @@ func TestValidateScene_AcceptsValid(t *testing.T) {
 		scene.TwoColumn{Ratio: scene.Ratio12, Left: []scene.SlideNode{scene.Prose{}}, Right: []scene.SlideNode{scene.Prose{}}},
 		scene.Grid{Columns: 3, Ratio: []int{1, 1, 2}, Cells: []scene.SlideNode{scene.Prose{}, scene.Prose{}, scene.Prose{}}},
 		scene.Card{Header: "C", Body: []scene.SlideNode{scene.Prose{}}},
-		scene.CardSection{Header: "S", Body: []scene.SlideNode{scene.Grid{Columns: 2, Cells: []scene.SlideNode{scene.Prose{}}}}},
+		scene.CardSection{Header: "S", Body: []scene.SlideNode{scene.Grid{Columns: 2, Cells: []scene.SlideNode{scene.Prose{}, scene.Prose{}}}}},
 	}
 	if err := scene.ValidateScene(sceneWith(valid...)); err != nil {
 		t.Fatalf("valid catalog rejected: %v", err)
