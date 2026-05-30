@@ -91,6 +91,11 @@ changes.
   correct, and the schema-validity layer (ISO/IEC 29500 XSDs) is vendored and
   active in CI so this class of bug is caught automatically. Speaker-notes text
   bodies also no longer carry redundant `xmlns` declarations.
+- `New()` now seeds the presentation-level parts PowerPoint expects —
+  `presProps.xml`, `viewProps.xml`, `tableStyles.xml`, and `docProps/core.xml` +
+  `app.xml` — with their relationships and content types. A deck missing these
+  opened but prompted to "repair" (notably `tableStyles.xml`, which a table's
+  `tableStyleId` references).
 - Decks with sections or speaker notes no longer prompt PowerPoint to repair.
   Section GUIDs are now well-formed, non-nil v4-shaped values — the implicit
   "Default Section" emitted the nil GUID (`{00000000-…-000000000000}`), which

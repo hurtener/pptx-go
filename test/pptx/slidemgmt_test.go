@@ -118,11 +118,12 @@ func TestAddSlideAt_Order(t *testing.T) {
 	data, _ := p.WriteToBytes()
 	pres := readZipPart(t, data, "ppt/presentation.xml")
 	lst := pres[strings.Index(pres, "<p:sldIdLst>"):strings.Index(pres, "</p:sldIdLst>")]
-	// slide2.xml is wired as rId3 (the inserted slide); it must appear before
-	// slide1's rId2.
-	i3, i2 := strings.Index(lst, `r:id="rId3"`), strings.Index(lst, `r:id="rId2"`)
-	if i3 < 0 || i2 < 0 || i3 > i2 {
-		t.Errorf("inserted slide not first in sldIdLst: %s", lst)
+	// The inserted slide is created second, so it has the higher slide id (258);
+	// after inserting at index 0 it must appear before the original (257). This
+	// is robust to how many auxiliary relationships precede the slide rIds.
+	iIns, iOrig := strings.Index(lst, `id="258"`), strings.Index(lst, `id="257"`)
+	if iIns < 0 || iOrig < 0 || iIns > iOrig {
+		t.Errorf("inserted slide (id 258) not first in sldIdLst: %s", lst)
 	}
 }
 
