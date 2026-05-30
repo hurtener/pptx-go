@@ -90,6 +90,33 @@ const scaffoldSlideMasterXML = `<?xml version="1.0" encoding="UTF-8" standalone=
 </p:txStyles>
 </p:sldMaster>`
 
+// PowerPoint expects a small set of presentation-level parts; a deck missing
+// them opens but prompts to "repair". These are minimal, valid, hand-authored
+// parts seeded by New() and wired from presentation.xml / the package rels.
+
+// scaffoldPresPropsXML is /ppt/presProps.xml (CT_PresentationProperties; all
+// children optional).
+const scaffoldPresPropsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`
+
+// scaffoldViewPropsXML is /ppt/viewProps.xml (CT_ViewProperties).
+const scaffoldViewPropsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`
+
+// scaffoldTableStylesXML is /ppt/tableStyles.xml. The def attribute is the
+// default table-style GUID (the built-in "No Style, Table Grid" — matches the
+// id pptx.Table emits). An empty list defers to PowerPoint's built-in styles.
+const scaffoldTableStylesXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5940675A-B579-460E-94D1-54222C63F5DA}"/>`
+
+// scaffoldCorePropsXML is /docProps/core.xml (OPC core properties).
+const scaffoldCorePropsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`
+
+// scaffoldAppPropsXML is /docProps/app.xml (extended properties).
+const scaffoldAppPropsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>pptx-go</Application></Properties>`
+
 // scaffoldSlideLayoutXML is /ppt/slideLayouts/slideLayout1.xml — a blank layout
 // that inherits the master's color map. Its relationship to the master is wired
 // by the package.

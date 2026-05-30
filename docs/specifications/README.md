@@ -8,27 +8,31 @@ relevant snapshot and the codec goldens in the same PR.
 
 The schema-conformance layer (`scripts/validate-schema.sh`, run in CI)
 validates emitted part XML against the **transitional** profile schemas with
-`xmllint`. The schemas are **not yet vendored** — until they are, the layer
-SKIPs.
+`xmllint`. The schemas are **vendored** under
+`docs/specifications/ooxml-transitional/` (the layer validates, no longer SKIPs).
 
-To vendor them:
+Pinned edition:
 
-1. Obtain the ECMA-376 (1st edition / ISO 29500 transitional) XSD bundle from
-   the ECMA-376 download (Part 4 / the `OfficeOpenXML-XMLSchema-Transitional`
-   set).
-2. Place the schema files under `docs/specifications/ooxml-transitional/`,
-   named by convention so the validator can find them:
-   - `pml.xsd` — PresentationML (presentation.xml, slides, masters, layouts)
-   - `dml.xsd` — DrawingML (theme, shapes)
-   - `sml.xsd`, `wml.xsd` — Spreadsheet/Word (not used by pptx-go)
-   - plus the shared imports the above reference (`shared-*.xsd`, etc.).
-3. Pin the edition + date here:
+| Schema set | Edition | Date pinned |
+|---|---|---|
+| ISO/IEC 29500-4 transitional | ISO/IEC 29500-4:2016 | 2026-05-30 |
 
-   | Schema set | Edition | Date pinned |
-   |---|---|---|
-   | ISO/IEC 29500 transitional | _(fill in)_ | _(fill in)_ |
+The validator maps part types to top-level schemas:
+- `pml.xsd` — PresentationML: `presentation.xml`, slides, masters, layouts,
+  notes masters, notes slides.
+- `dml-main.xsd` — DrawingML: `theme*.xml`.
+- the `shared-*.xsd` / `dml-*.xsd` / `vml-*.xsd` / `sml.xsd` / `wml.xsd` /
+  `xml.xsd` files are the imports those reference (kept so imports resolve).
 
-4. Run `scripts/validate-schema.sh` — it will switch from SKIP to validating.
+`scripts/validate-schema.sh` (no argument) emits the full-surface showcase deck
+(`_gen/genshowcase`) and validates every part — this catches namespace/ordering/
+element bugs the structural OPC gate (`internal/conformance`, layer 1) cannot.
+Two real PowerPoint "repair" bugs were found this way: a table cell emitting
+`<p:txBody>` (must be `<a:txBody>`) and a `<p:sldMasterId>` inside the notes-
+master list (must be `<p:notesMasterId>`).
+
+To re-pin after a spec re-read: replace the `.xsd` files, update the table
+above, and re-run the validator (D-017).
 
 Schema validation is a layer, not the whole story: PowerPoint is both
 stricter and looser than the schema in places. Known divergences are

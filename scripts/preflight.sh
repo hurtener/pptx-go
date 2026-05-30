@@ -42,6 +42,12 @@ if ! ./scripts/drift-audit.sh; then
 fi
 
 echo
+echo "==> schema validation (D-031 layer 2; SKIPs without xmllint/schemas)"
+if ! ./scripts/validate-schema.sh; then
+	status=1
+fi
+
+echo
 if [ "$status" -eq 0 ]; then
 	echo "preflight: PASS"
 else
