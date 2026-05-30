@@ -36,13 +36,20 @@ vs strict profile edge cases at the OPC layer)*
 
 ### internal/ooxml — OOXML codec layer
 
-*(no briefs yet — candidates: chart wire-format survey for V2, table XML
-shape, theme XML compatibility across PowerPoint versions)*
+- `01-master-layout-theme-ingestion.md` — theme1.xml color/font scheme +
+  master/layout inheritance, and the read paths template ingestion depends on.
+
+*(candidates: chart wire-format survey for V2, table XML shape, theme XML
+compatibility across PowerPoint versions)*
 
 ### pptx — Layer 1 builder
 
-*(no briefs yet — candidates: rich-text auto-fit modes in OOXML
-practice, table merged-cell semantics, master/layout inheritance)*
+- `01-master-layout-theme-ingestion.md` — `LoadTheme`/`FromTemplate` strategy:
+  copy template parts wholesale, extract the `Theme`, map `LayoutKind` to
+  named layouts.
+
+*(candidates: rich-text auto-fit modes in OOXML practice, table merged-cell
+semantics)*
 
 ### scene — Layer 2 renderer
 
@@ -52,8 +59,11 @@ compatibility with pengui-slides v4)*
 
 ### Theme & tokens
 
-*(no briefs yet — candidates: PowerPoint theme XML semantics, token
-taxonomy comparison with design systems (Tailwind, Radix, Material))*
+- `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
+  `clrMap` indirection, and font scheme map onto pptx-go's token roles.
+
+*(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
+Material))*
 
 ### Curated assets (icons, ornaments, frames)
 
