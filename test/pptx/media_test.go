@@ -81,6 +81,9 @@ func TestAddImage_RoundTrip(t *testing.T) {
 		`r:embed="rId2"`,
 		`descr="Acme logo"`,
 		`<a:srcRect`,
+		// A picture needs a geometry or renderers (Quick Look, Keynote,
+		// LibreOffice) draw nothing — the blip has no region to fill.
+		`<a:prstGeom prst="rect">`,
 	} {
 		if !strings.Contains(slideXML, want) {
 			t.Errorf("slide1.xml missing %q in:\n%s", want, slideXML)
