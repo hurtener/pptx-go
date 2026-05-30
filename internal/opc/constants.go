@@ -16,6 +16,9 @@ const (
 	ContentTypeHandoutMaster  = "application/vnd.openxmlformats-officedocument.presentationml.handoutMaster+xml"
 	ContentTypeNotesMaster    = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"
 	ContentTypePresentationML = "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
+	ContentTypePresProps      = "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"
+	ContentTypeViewProps      = "application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"
+	ContentTypeTableStyles    = "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"
 
 	// Theme and styles
 	ContentTypeTheme         = "application/vnd.openxmlformats-officedocument.theme+xml"
@@ -86,6 +89,11 @@ const (
 	// Theme relationships
 	RelTypeTheme         = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
 	RelTypeThemeOverride = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride"
+
+	// Presentation auxiliary parts
+	RelTypePresProps   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps"
+	RelTypeViewProps   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps"
+	RelTypeTableStyles = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles"
 
 	// Media relationships
 	RelTypeImage = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"

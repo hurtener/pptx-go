@@ -56,8 +56,11 @@ check pml.xsd \
 	"$work"/ppt/slideMasters/*.xml \
 	"$work"/ppt/slideLayouts/*.xml \
 	"$work"/ppt/notesMasters/*.xml \
-	"$work"/ppt/notesSlides/*.xml
-check dml-main.xsd "$work"/ppt/theme/theme*.xml
+	"$work"/ppt/notesSlides/*.xml \
+	"$work"/ppt/presProps.xml \
+	"$work"/ppt/viewProps.xml
+check dml-main.xsd "$work"/ppt/theme/theme*.xml "$work"/ppt/tableStyles.xml
+check shared-documentPropertiesExtended.xsd "$work"/docProps/app.xml
 
 if [ "$status" -eq 0 ]; then
 	echo "OK: emitted parts validate against the vendored transitional schemas"

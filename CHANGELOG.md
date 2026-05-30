@@ -91,6 +91,11 @@ changes.
   correct, and the schema-validity layer (ISO/IEC 29500 XSDs) is vendored and
   active in CI so this class of bug is caught automatically. Speaker-notes text
   bodies also no longer carry redundant `xmlns` declarations.
+- `New()` now seeds the presentation-level parts PowerPoint expects —
+  `presProps.xml`, `viewProps.xml`, `tableStyles.xml`, and `docProps/core.xml` +
+  `app.xml` — with their relationships and content types. A deck missing these
+  opened but prompted to "repair" (notably `tableStyles.xml`, which a table's
+  `tableStyleId` references).
 
 ### Changed
 

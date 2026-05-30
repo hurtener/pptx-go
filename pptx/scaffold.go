@@ -53,6 +53,29 @@ func (p *Presentation) seedScaffold() {
 		masterRel, _ := presPart.AddRelationship(opc.RelTypeSlideMaster, "slideMasters/slideMaster1.xml", false)
 		p.presentationPart.AddSlideMaster(masterRel.RID())
 	}
+
+	// 5. Presentation auxiliary parts. PowerPoint expects presProps, viewProps
+	//    and tableStyles (a table references a tableStyleId); a deck missing them
+	//    opens but prompts to "repair". Related from presentation.xml.
+	p.seedPart(opc.NewPackURI("/ppt/presProps.xml"), opc.ContentTypePresProps, scaffoldPresPropsXML)
+	p.seedPart(opc.NewPackURI("/ppt/viewProps.xml"), opc.ContentTypeViewProps, scaffoldViewPropsXML)
+	p.seedPart(opc.NewPackURI("/ppt/tableStyles.xml"), opc.ContentTypeTableStyles, scaffoldTableStylesXML)
+	if presPart != nil {
+		_, _ = presPart.AddRelationship(opc.RelTypePresProps, "presProps.xml", false)
+		_, _ = presPart.AddRelationship(opc.RelTypeViewProps, "viewProps.xml", false)
+		_, _ = presPart.AddRelationship(opc.RelTypeTableStyles, "tableStyles.xml", false)
+	}
+
+	// 6. Document properties (core + app), related from the package.
+	p.seedPart(opc.NewPackURI("/docProps/core.xml"), opc.ContentTypeCoreProperties, scaffoldCorePropsXML)
+	p.seedPart(opc.NewPackURI("/docProps/app.xml"), opc.ContentTypeExtendedProperties, scaffoldAppPropsXML)
+	_, _ = p.pkg.AddRelationship(opc.RelTypeCoreProperties, "docProps/core.xml", false)
+	_, _ = p.pkg.AddRelationship(opc.RelTypeExtendedProperties, "docProps/app.xml", false)
+}
+
+// seedPart adds a hand-authored scaffold part to the package.
+func (p *Presentation) seedPart(uri *opc.PackURI, contentType, xml string) {
+	_ = p.pkg.AddPart(opc.NewPart(uri, contentType, []byte(xml)))
 }
 
 // relateSlide adds the presentation→slide and slide→layout relationships for a

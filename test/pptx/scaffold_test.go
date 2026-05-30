@@ -61,6 +61,12 @@ func TestScaffold_CompleteDeck(t *testing.T) {
 		"ppt/slides/slide1.xml",
 		"ppt/slides/_rels/slide1.xml.rels",
 		"ppt/slides/slide2.xml",
+		// Auxiliary parts PowerPoint expects (a deck without them repairs).
+		"ppt/presProps.xml",
+		"ppt/viewProps.xml",
+		"ppt/tableStyles.xml",
+		"docProps/core.xml",
+		"docProps/app.xml",
 	} {
 		if readZipPart(t, data, name) == "" {
 			t.Errorf("missing or empty part: %s", name)
@@ -72,8 +78,10 @@ func TestScaffold_CompleteDeck(t *testing.T) {
 	for _, want := range []string{
 		"<p:sldMasterIdLst>",
 		`<p:sldMasterId id="2147483648" r:id="rId1"/>`,
-		`<p:sldId id="257" r:id="rId2"/>`,
-		`<p:sldId id="258" r:id="rId3"/>`,
+		// Each slide is wired to a non-empty r:id (exact value depends on how
+		// many auxiliary relationships precede it).
+		`<p:sldId id="257" r:id="rId`,
+		`<p:sldId id="258" r:id="rId`,
 		"<p:notesSz",
 	} {
 		if !strings.Contains(pres1, want) {
