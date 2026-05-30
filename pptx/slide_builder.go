@@ -121,6 +121,10 @@ func (b *SlideBuilder) AddPicture(x, y, cx, cy int, imageRId string) *slide.XPic
 				Offset: &slide.XOv2DrOffset{X: x, Y: y},
 				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
+			// A picture needs a geometry to define the region the blip fills;
+			// without it many renderers (Quick Look, Keynote, LibreOffice) draw
+			// nothing. PowerPoint always emits <a:prstGeom prst="rect">.
+			PresetGeom: &slide.XPresetGeometry{Prst: "rect", AvLst: &slide.XAvLst{}},
 		},
 	}
 

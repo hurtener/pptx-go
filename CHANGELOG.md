@@ -94,6 +94,10 @@ changes.
   PowerPoint rejects. The notes master now references its own theme part
   (`theme2.xml`) instead of sharing the slide master's `theme1.xml`; PowerPoint
   repaired the shared-theme case by splitting off a `theme2.xml` itself.
+- Embedded images now carry a shape geometry (`<a:prstGeom prst="rect">`).
+  Without it the picture had no region for the blip to fill, so renderers other
+  than PowerPoint (macOS Quick Look, Keynote, LibreOffice) drew nothing — the
+  image bytes were embedded and wired correctly but appeared blank.
 
 ### Changed
 
