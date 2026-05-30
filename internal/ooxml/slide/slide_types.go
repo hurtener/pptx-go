@@ -518,17 +518,31 @@ type XGraphicData struct {
 // TableGraphicDataURI is the graphicData URI for DrawingML tables.
 const TableGraphicDataURI = "http://schemas.openxmlformats.org/drawingml/2006/table"
 
+// XTable represents a table (CT_Table: tblPr?, tblGrid, tr+).
+type XTable struct {
+	XMLName struct{}    `xml:"tbl"`
+	Pr      *XTablePr   `xml:"tblPr,omitempty"`
+	Grid    *XTableGrid `xml:"tblGrid,omitempty"`
+	Rows    []XTableRow `xml:"tr"`
+}
+
+// XTablePr is <a:tblPr>: header/banding intent flags (emitted as "1") plus a
+// built-in table-style id (a GUID PowerPoint resolves without a style part).
+type XTablePr struct {
+	XMLName      struct{} `xml:"tblPr"`
+	FirstRow     string   `xml:"firstRow,attr,omitempty"`
+	LastRow      string   `xml:"lastRow,attr,omitempty"`
+	FirstCol     string   `xml:"firstCol,attr,omitempty"`
+	LastCol      string   `xml:"lastCol,attr,omitempty"`
+	BandRow      string   `xml:"bandRow,attr,omitempty"`
+	BandCol      string   `xml:"bandCol,attr,omitempty"`
+	TableStyleID string   `xml:"tableStyleId,omitempty"`
+}
+
 // XTableGrid represents a table grid.
 type XTableGrid struct {
 	XMLName  struct{}       `xml:"tblGrid"`
 	GridCols []XTableColumn `xml:"gridCol"`
-}
-
-// XTable represents a table.
-type XTable struct {
-	XMLName struct{}    `xml:"tbl"`
-	Grid    *XTableGrid `xml:"tblGrid,omitempty"`
-	Rows    []XTableRow `xml:"tr"`
 }
 
 // XTableColumn represents a table column.
@@ -536,17 +550,37 @@ type XTableColumn struct {
 	W int `xml:"w,attr"`
 }
 
-// XTableRow represents a table row.
+// XTableRow represents a table row (CT_TableRow requires the h attribute).
 type XTableRow struct {
-	GridSpan int          `xml:"gridSpan,attr,omitempty"`
-	Cells    []XTableCell `xml:"tc"`
+	XMLName struct{}     `xml:"tr"`
+	H       int          `xml:"h,attr"`
+	Cells   []XTableCell `xml:"tc"`
 }
 
-// XTableCell represents a table cell.
+// XTableCell represents a table cell (CT_TableCell: txBody?, tcPr?). gridSpan/
+// rowSpan mark a merge anchor; hMerge/vMerge ("1") mark the covered cells.
 type XTableCell struct {
-	XMLName  struct{}   `xml:"tc"`
-	GridSpan int        `xml:"gridSpan,attr,omitempty"`
-	RowSpan  int        `xml:"rowSpan,attr,omitempty"`
-	Vertical string     `xml:"anchor,attr,omitempty"`
-	TextBody *XTextBody `xml:"txBody,omitempty"`
+	XMLName  struct{}         `xml:"tc"`
+	GridSpan int              `xml:"gridSpan,attr,omitempty"`
+	RowSpan  int              `xml:"rowSpan,attr,omitempty"`
+	HMerge   string           `xml:"hMerge,attr,omitempty"`
+	VMerge   string           `xml:"vMerge,attr,omitempty"`
+	TextBody *XTextBody       `xml:"txBody,omitempty"`
+	Pr       *XTableCellProps `xml:"tcPr,omitempty"`
+}
+
+// XTableCellProps is <a:tcPr>: margins + anchor, per-edge borders, and a fill.
+type XTableCellProps struct {
+	XMLName   struct{}         `xml:"tcPr"`
+	MarL      int              `xml:"marL,attr,omitempty"`
+	MarR      int              `xml:"marR,attr,omitempty"`
+	MarT      int              `xml:"marT,attr,omitempty"`
+	MarB      int              `xml:"marB,attr,omitempty"`
+	Anchor    string           `xml:"anchor,attr,omitempty"`
+	LnL       *XLineProperties `xml:"lnL,omitempty"`
+	LnR       *XLineProperties `xml:"lnR,omitempty"`
+	LnT       *XLineProperties `xml:"lnT,omitempty"`
+	LnB       *XLineProperties `xml:"lnB,omitempty"`
+	NoFill    *XNoFill         `xml:"noFill,omitempty"`
+	SolidFill *XSolidFill      `xml:"solidFill,omitempty"`
 }

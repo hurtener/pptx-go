@@ -120,6 +120,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderTwoColumn(ps, box, v, slideID)
 	case Grid:
 		r.renderGrid(ps, box, v, slideID)
+	case Table:
+		r.renderTable(ps, box, v, slideID)
 	default:
 		// image/chart/decoration/table/flow + card/card_section are later phases.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
@@ -199,6 +201,16 @@ func preferredHeight(n SlideNode) pptx.EMU {
 		return pptx.In(0.6)
 	case CodeBlock:
 		return pptx.In(2.6)
+	case Table:
+		rows := len(v.Rows)
+		if len(v.Headers) > 0 {
+			rows++
+		}
+		h := pptx.In(0.4) * pptx.EMU(rows)
+		if v.Caption != "" {
+			h += pptx.In(0.4)
+		}
+		return h
 	case TwoColumn:
 		return maxEMU(nodesHeight(v.Left), nodesHeight(v.Right))
 	case Grid:

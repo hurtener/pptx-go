@@ -150,6 +150,13 @@ func (s *Slide) AddTextFrame(box Box) *TextFrame {
 	return &TextFrame{s: s, body: sp.TextBody}
 }
 
+// Clear removes all paragraphs from the frame and returns it (e.g. to refill a
+// table cell's default body).
+func (tf *TextFrame) Clear() *TextFrame {
+	tf.body.Paragraphs = nil
+	return tf
+}
+
 // AddParagraph appends a paragraph and returns it.
 func (tf *TextFrame) AddParagraph(opts ParagraphOpts) *Paragraph {
 	tf.body.Paragraphs = append(tf.body.Paragraphs, slide.XTextParagraph{})

@@ -96,16 +96,16 @@ func TestAddTable(t *testing.T) {
 	pres := pptx.New()
 	slide := pres.AddSlide()
 
-	// Add table.
-	table := slide.AddTable(100, 100, 500, 300, 3, 4)
+	// Add table (Box-based API; RFC §8.5).
+	table := slide.AddTable(pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(5), H: pptx.In(3)}, 3, 4)
 	if table == nil {
 		t.Fatal("AddTable() returned nil")
 	}
 
 	// Set cell text.
-	slide.SetTableCellText(table, 0, 0, "Header 1")
-	slide.SetTableCellText(table, 0, 1, "Header 2")
-	slide.SetTableCellText(table, 1, 0, "Data 1")
+	table.Cell(0, 0).SetText("Header 1")
+	table.Cell(0, 1).SetText("Header 2")
+	table.Cell(1, 0).SetText("Data 1")
 }
 
 // TestGetSlide tests retrieving slides by index.
