@@ -54,8 +54,12 @@ changes.
   `heading`, `list`, `divider`, `quote`, `callout`, `chip`, `arrow`,
   `code_block`, and `section_divider` — onto the builder with a deterministic
   top-level layout, populating `Stats`. Text sizes are rendered verbatim from
-  the theme (no boosting). Container and other leaf nodes are not yet rendered
-  and surface a `LayoutWarning`.
+  the theme (no boosting). Other leaf nodes not yet rendered surface a
+  `LayoutWarning`.
+- `scene.Render` composes the `two_column` and `grid` containers: a `scene/layout`
+  geometry engine subdivides each container into ratio/column slots and renders
+  each child into its slot (nesting composes). A `grid` whose cell count is not a
+  multiple of its column count is now a validation error.
 
 ### Fixed
 

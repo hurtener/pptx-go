@@ -41,7 +41,7 @@ func (r *renderer) renderSlide(sl *SceneSlide) {
 		r.addRichText(ps, p, sl.Notes, pptx.TypeBody)
 	}
 
-	for _, pl := range r.layout(sl.Nodes) {
+	for _, pl := range r.layout(sl.Nodes, sl.ID) {
 		r.renderNode(ps, pl.box, pl.node, sl.ID)
 	}
 }
@@ -57,26 +57,36 @@ func (r *renderer) bodyRegion() pptx.Box {
 	}
 }
 
-// layout assigns each top-level node a slot: a vertical stack in IR order
-// within the body region, separated by a SpaceMD gap. A section_divider takes
-// the full slide. Overflow past the body is allowed (a warning is recorded).
-func (r *renderer) layout(nodes []SlideNode) []placement {
-	body := r.bodyRegion()
-	gap := r.theme.ResolveSpace(pptx.SpaceMD)
-	out := make([]placement, 0, len(nodes))
-	y := body.Y
+// layout assigns each top-level node a slot. section_divider takes the full
+// slide; every other node stacks vertically in the body region (in IR order).
+func (r *renderer) layout(nodes []SlideNode, slideID string) []placement {
+	cx, cy := r.pres.SlideSize()
+	var out []placement
+	var stacked []SlideNode
 	for _, n := range nodes {
 		if _, ok := n.(SectionDivider); ok {
-			cx, cy := r.pres.SlideSize()
 			out = append(out, placement{n, pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}})
 			continue
 		}
+		stacked = append(stacked, n)
+	}
+	return append(out, r.stackIn(r.bodyRegion(), stacked, slideID)...)
+}
+
+// stackIn places nodes top-to-bottom within box (full box width, per-node
+// preferred height, SpaceMD gap). Shared by the body layout and container
+// columns. Overflow past the box records a LayoutWarning.
+func (r *renderer) stackIn(box pptx.Box, nodes []SlideNode, slideID string) []placement {
+	gap := r.theme.ResolveSpace(pptx.SpaceMD)
+	out := make([]placement, 0, len(nodes))
+	y := box.Y
+	for _, n := range nodes {
 		h := preferredHeight(n)
-		out = append(out, placement{n, pptx.Box{X: body.X, Y: y, W: body.W, H: h}})
+		out = append(out, placement{n, pptx.Box{X: box.X, Y: y, W: box.W, H: h}})
 		y += h + gap
 	}
-	if y > body.Bottom() {
-		r.warn("", "body content overflows the slide; consider fewer/smaller nodes")
+	if len(nodes) > 0 && y-gap > box.Bottom() {
+		r.warn(slideID, "content overflows its region")
 	}
 	return out
 }
@@ -106,8 +116,12 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderCodeBlock(ps, box, v, slideID)
 	case SectionDivider:
 		r.renderSectionDivider(ps, box, v)
+	case TwoColumn:
+		r.renderTwoColumn(ps, box, v, slideID)
+	case Grid:
+		r.renderGrid(ps, box, v, slideID)
 	default:
-		// image/chart/decoration/table/flow + containers are later phases.
+		// image/chart/decoration/table/flow + card/card_section are later phases.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
 }
@@ -185,7 +199,49 @@ func preferredHeight(n SlideNode) pptx.EMU {
 		return pptx.In(0.6)
 	case CodeBlock:
 		return pptx.In(2.6)
+	case TwoColumn:
+		return maxEMU(nodesHeight(v.Left), nodesHeight(v.Right))
+	case Grid:
+		cols := v.Columns
+		if cols < 1 {
+			cols = 1
+		}
+		rows := (len(v.Cells) + cols - 1) / cols
+		if rows < 1 {
+			rows = 1
+		}
+		var maxCell pptx.EMU
+		for _, c := range v.Cells {
+			if h := preferredHeight(c); h > maxCell {
+				maxCell = h
+			}
+		}
+		return pptx.EMU(rows)*maxCell + estGap*pptx.EMU(rows-1)
 	default:
 		return pptx.In(1.0)
 	}
+}
+
+// estGap is a fixed gap estimate used only for sizing nested containers (the
+// actual gap at render time comes from the theme).
+const estGap = pptx.EMU(137160) // ~0.15"
+
+// nodesHeight estimates the stacked height of a node list (for container slot
+// sizing).
+func nodesHeight(nodes []SlideNode) pptx.EMU {
+	var sum pptx.EMU
+	for i, n := range nodes {
+		if i > 0 {
+			sum += estGap
+		}
+		sum += preferredHeight(n)
+	}
+	return sum
+}
+
+func maxEMU(a, b pptx.EMU) pptx.EMU {
+	if a > b {
+		return a
+	}
+	return b
 }

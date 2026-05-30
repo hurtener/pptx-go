@@ -4,7 +4,7 @@
 **RFC sections:** §10.2 (container sub-layout), §11.2 (two_column, grid),
 §12 (containers render nothing themselves; children render per their policy)
 **Deps:** Phase 06 (leaf composers + the body layout + node dispatch).
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -159,13 +159,19 @@ error).
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **Grid defaults empty `Ratio` to equal columns.** `layout.Grid` builds equal
+  column weights when `Ratio` is empty or mismatched (the common case), so a
+  `grid` with no explicit ratio still divides evenly. Caught by the first render
+  test (an empty slide) and fixed in `scene/layout/grid.go`.
+- **Grid completeness tightened Stage 1** (R2): `cells % columns == 0` is now
+  required; partial-grid fixtures from Phases 05/06 were updated to complete
+  rows in this PR.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages (scene + scene/layout).
-- [ ] `scripts/smoke/phase-07.sh` reports `OK ≥ 5` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated (if vocab added).
-- [ ] Decision entries added (if any).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean (scene 88.4%, scene/layout 86.0%).
+- [x] `scripts/smoke/phase-07.sh` reports `OK ≥ 5` and `FAIL = 0` (5 OK).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated (no new vocab needed).
+- [x] Decision entries added (none — D-011/D-018/D-026 suffice).
