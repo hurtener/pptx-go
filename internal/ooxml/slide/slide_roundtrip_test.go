@@ -242,6 +242,106 @@ func TestTextRoundTrip(t *testing.T) {
 	}
 }
 
+// tableCell builds a minimal cell carrying one text run.
+func tableCell(text string) XTableCell {
+	return XTableCell{TextBody: &XTextBody{
+		BodyPr:     &XBodyPr{},
+		LstStyle:   &XTextParagraphList{},
+		Paragraphs: []XTextParagraph{{Content: []any{&XTextRun{Text: text}}}},
+	}}
+}
+
+// tableFrame builds a graphic frame wrapping the given table.
+func tableFrame(tbl *XTable) *XGraphicFrame {
+	return &XGraphicFrame{
+		NonVisual: XNonVisualGraphicFrame{
+			CNvPr:             &XNvCxnSpPr{ID: 2, Name: "Table"},
+			CNvGraphicFramePr: &XNvGraphicFramePr{},
+		},
+		Transform2D: &XTransform2D{Offset: &XOv2DrOffset{X: 0, Y: 0}, Extent: &XOv2DrExtent{Cx: 100, Cy: 100}},
+		Graphic:     &XGraphic{GraphicData: &XGraphicData{URI: TableGraphicDataURI, Table: tbl}},
+	}
+}
+
+// TestTableXfrm proves a graphic frame emits a PresentationML <p:xfrm>
+// transform (not <a:xfrm>) — the Phase 03 deferral, now fixed (Phase 08).
+func TestTableXfrm(t *testing.T) {
+	tbl := &XTable{
+		Grid: &XTableGrid{GridCols: []XTableColumn{{W: 100}}},
+		Rows: []XTableRow{{H: 50, Cells: []XTableCell{tableCell("a")}}},
+	}
+	src := NewSlidePart(1)
+	src.AppendShapeChild(tableFrame(tbl))
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	xml := string(data)
+	if !strings.Contains(xml, "<p:xfrm>") {
+		t.Errorf("graphic frame transform is not <p:xfrm>:\n%s", xml)
+	}
+	if strings.Contains(xml, "<a:xfrm>") {
+		t.Errorf("graphic frame emitted <a:xfrm> (should be p:xfrm):\n%s", xml)
+	}
+}
+
+// TestTableMergeRoundTrip proves merged-cell spans and continuation flags
+// survive ToXML → FromXML (Phase 08; G6).
+func TestTableMergeRoundTrip(t *testing.T) {
+	tbl := &XTable{
+		Pr:   &XTablePr{FirstRow: "1", BandRow: "1", TableStyleID: "{GUID}"},
+		Grid: &XTableGrid{GridCols: []XTableColumn{{W: 100}, {W: 100}}},
+		Rows: []XTableRow{
+			{H: 50, Cells: []XTableCell{
+				func() XTableCell { c := tableCell("span"); c.GridSpan = 2; return c }(),
+				func() XTableCell { c := tableCell(""); c.HMerge = "1"; return c }(),
+			}},
+			{H: 50, Cells: []XTableCell{
+				func() XTableCell {
+					c := tableCell("filled")
+					c.Pr = &XTableCellProps{SolidFill: &XSolidFill{SrgbClr: &XSrgbClr{Val: "F1F3F5"}}}
+					return c
+				}(),
+				tableCell("plain"),
+			}},
+		},
+	}
+	src := NewSlidePart(1)
+	src.AppendShapeChild(tableFrame(tbl))
+
+	data, err := src.ToXML()
+	if err != nil {
+		t.Fatalf("ToXML: %v", err)
+	}
+	dst := NewSlidePart(1)
+	if err := dst.FromXML(data); err != nil {
+		t.Fatalf("FromXML: %v", err)
+	}
+
+	gf, ok := dst.SpTree().Children[0].(*XGraphicFrame)
+	if !ok {
+		t.Fatalf("child[0] type = %T, want *XGraphicFrame", dst.SpTree().Children[0])
+	}
+	got := gf.Graphic.GraphicData.Table
+	if got.Pr == nil || got.Pr.FirstRow != "1" || got.Pr.BandRow != "1" {
+		t.Errorf("tblPr not preserved: %+v", got.Pr)
+	}
+	if got.Rows[0].Cells[0].GridSpan != 2 {
+		t.Errorf("gridSpan not preserved: %d", got.Rows[0].Cells[0].GridSpan)
+	}
+	if got.Rows[0].Cells[1].HMerge != "1" {
+		t.Errorf("hMerge not preserved: %q", got.Rows[0].Cells[1].HMerge)
+	}
+	if got.Rows[0].H != 50 {
+		t.Errorf("row height not preserved: %d", got.Rows[0].H)
+	}
+	fill := got.Rows[1].Cells[0].Pr
+	if fill == nil || fill.SolidFill == nil || fill.SolidFill.SrgbClr.Val != "F1F3F5" {
+		t.Errorf("cell fill not preserved: %+v", fill)
+	}
+}
+
 // TestShapeFillRoundTrip proves a shape's solid fill (with alpha) and outline
 // survive ToXML → FromXML (Chunk B; G6).
 func TestShapeFillRoundTrip(t *testing.T) {

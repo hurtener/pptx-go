@@ -505,6 +505,15 @@ new visual language. A `Theme` holds five per-role value maps —
 plus the major/minor font faces. See `RFC-001-pptx-go.md §7`,
 `docs/design/THEME.md`.
 
+## Table (builder)
+
+`pptx.Table` / `pptx.Cell` — the builder's native table API
+(`Slide.AddTable(box, rows, cols)`). Supports header rows, banding, merged
+cells (`Cell.MergeRight`/`MergeDown`), per-cell fills/borders, and rich-text
+cells (`Cell.TextFrame`). Renders as an OOXML `tbl` in a graphic frame.
+**Distinct from** the scene IR's `Table` node, which the scene renderer
+composes onto this builder (with an optional caption above). (RFC §8.5.)
+
 ## TextColorRole
 
 A semantic text color role (`primary`, `secondary`, `tertiary`, `inverse`,

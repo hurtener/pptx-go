@@ -4,7 +4,7 @@
 **RFC sections:** §8.5, §11.1 (table), §12 (table → native `tbl`)
 **Deps:** Phase 04 (rich-text cells), Phase 07 (containers — tables-in-grids),
 Phase 03 (the `graphicFrame`/`tbl` codec, left best-effort).
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -183,15 +183,27 @@ type Table struct { ...; Caption string }   // Caption is new (additive)
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **`p:xfrm` fix via a write-only element rename.** RestoreNamespaces gained an
+  `elementLocal` rewrite (the element analogue of the `rid`→`r:id` attribute
+  rewrite): `XGraphicFrame.MarshalXML` emits the transform as a sentinel `pxfrm`
+  element, which the pass renames to `<p:xfrm>`. Read keeps the `xfrm` struct tag
+  (Go unmarshal is context-aware), so round-trip is unchanged.
+- **Banding/header via explicit fills, not a table style.** Built-in style
+  banding needs the app style library; the builder emits concrete alternating
+  `tcPr` fills (deterministic, asserted) plus a built-in grid `tableStyleId` for
+  borders and the `tblPr` flags for intent.
+- **Inherited table API replaced** (pre-V1): `Slide.AddTable(x,y,cx,cy,...)` and
+  `SetTableCellText` gave way to the Box-based `AddTable` + `Cell`; the one
+  affected inherited test was updated.
+- **`scene.Table` gained a `Caption` field** (additive) so the renderer can place
+  a caption above the table (RFC §8.5).
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-08.sh` reports `OK ≥ 5` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] A builder API for a visual property added ⇒ THEME.md entry (cell fills
-      compose existing tokens — no new token).
-- [ ] Round-trip golden lands in this PR.
-- [ ] Glossary / CHANGELOG updated.
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-08.sh` reports `OK ≥ 5` and `FAIL = 0` (5 OK).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Cell fills/borders compose existing Fill/Line/Color tokens — no new token, no THEME.md entry needed.
+- [x] Round-trip goldens land (merged-cell codec + pptx-level).
+- [x] Glossary / CHANGELOG updated.

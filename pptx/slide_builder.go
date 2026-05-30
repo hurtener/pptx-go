@@ -141,6 +141,9 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 		gridCols[i] = slide.XTableColumn{W: cellW}
 	}
 
+	// compute per-row height
+	rowH := cy / rows
+
 	// build the table rows
 	tableRows := make([]slide.XTableRow, rows)
 	for r := range tableRows {
@@ -156,7 +159,7 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 				},
 			}
 		}
-		tableRows[r] = slide.XTableRow{GridSpan: 1, Cells: cells}
+		tableRows[r] = slide.XTableRow{H: rowH, Cells: cells}
 	}
 
 	table := slide.XTable{

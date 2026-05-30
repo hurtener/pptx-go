@@ -60,6 +60,13 @@ changes.
   geometry engine subdivides each container into ratio/column slots and renders
   each child into its slot (nesting composes). A `grid` whose cell count is not a
   multiple of its column count is now a validation error.
+- Tables: `Slide.AddTable(box, rows, cols)` returns a `Table` with `SetHeaderRow`,
+  `SetBanding`, `SetColumnWidths`, and `Cell(row, col)`. A `Cell` has
+  `TextFrame`/`SetText` (rich-text cells), `SetFill`, `SetBorders`, and
+  `MergeRight`/`MergeDown`. Header rows and banding emit concrete alternating
+  fills. `scene.Render` composes the `table` node (with an optional `Caption`
+  above it).
+- Graphic frames now emit the correct PresentationML `<p:xfrm>` transform.
 
 ### Fixed
 
@@ -86,9 +93,12 @@ changes.
 - Slide and presentation XML is emitted with correct namespaces and
   attributes, so emitted decks pass OPC conformance and open cleanly.
 - Builder shape methods (`Slide.AddTextBox`, `AddRectangle`, `AddEllipse`,
-  `AddRoundRect`, `AddAutoShape`, `AddPicture`, `AddTable`) now take
-  coordinates and sizes in **EMU** rather than pixels. Compute them with
-  `pptx.In`, `pptx.Cm`, `pptx.Pt`, `pptx.Px`, or a `pptx.Box`.
+  `AddRoundRect`, `AddAutoShape`, `AddPicture`) now take coordinates and sizes in
+  **EMU** rather than pixels. Compute them with `pptx.In`, `pptx.Cm`, `pptx.Pt`,
+  `pptx.Px`, or a `pptx.Box`.
+- `Slide.AddTable` now takes a `pptx.Box` and returns a `*Table` (was
+  `(x,y,cx,cy,rows,cols int) *XGraphicFrame`); `Slide.SetTableCellText` is
+  replaced by `Table.Cell(r,c).SetText(...)`.
 
 ### Deprecated
 

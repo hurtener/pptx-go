@@ -64,6 +64,27 @@ func (xst *XSpTree) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(xml.EndElement{Name: start.Name})
 }
 
+// xGraphicFrameOut is the write shape of <p:graphicFrame>. Its transform is
+// emitted under the sentinel local name "pxfrm" so RestoreNamespaces renames it
+// to <p:xfrm> — the graphic frame's PresentationML transform, distinct from a
+// shape's <a:xfrm>. (Read keeps XGraphicFrame's "xfrm" tag; Go's unmarshal is
+// context-aware, so round-trip is unaffected.)
+type xGraphicFrameOut struct {
+	XMLName     struct{}               `xml:"graphicFrame"`
+	NonVisual   XNonVisualGraphicFrame `xml:"nvGraphicFramePr"`
+	Transform2D *XTransform2D          `xml:"pxfrm,omitempty"`
+	Graphic     *XGraphic              `xml:"graphic,omitempty"`
+}
+
+// MarshalXML serializes a graphic frame with a PresentationML p:xfrm transform.
+func (gf *XGraphicFrame) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
+	return e.Encode(xGraphicFrameOut{
+		NonVisual:   gf.NonVisual,
+		Transform2D: gf.Transform2D,
+		Graphic:     gf.Graphic,
+	})
+}
+
 // Runs returns the paragraph's text runs in document order (breaks excluded).
 func (p *XTextParagraph) Runs() []*XTextRun {
 	var out []*XTextRun

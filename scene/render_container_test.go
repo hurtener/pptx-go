@@ -91,3 +91,40 @@ func TestRenderContainer_Nesting(t *testing.T) {
 		}
 	}
 }
+
+// TestRenderTable is acceptance criterion 3: a scene table with a caption
+// renders the tbl plus a caption text shape above it, conformantly.
+func TestRenderTable(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "tbl",
+		Nodes: []scene.SlideNode{scene.Table{
+			Caption: "Quarterly results",
+			Headers: []scene.RichText{rt("Metric"), rt("Q1"), rt("Q2")},
+			Rows: [][]scene.RichText{
+				{rt("Revenue"), rt("10"), rt("12")},
+				{rt("Margin"), rt("30%"), rt("33%")},
+			},
+		}},
+	}}}
+
+	data, stats := render(t, sc)
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, "<a:tbl>") {
+		t.Errorf("scene table did not emit a tbl:\n%s", slide)
+	}
+	if !strings.Contains(slide, "<a:t>Quarterly results</a:t>") {
+		t.Errorf("table caption missing:\n%s", slide)
+	}
+	if !strings.Contains(slide, "<a:t>Revenue</a:t>") {
+		t.Errorf("table body cell missing:\n%s", slide)
+	}
+	// caption shape + table graphic frame.
+	if stats.Shapes < 2 {
+		t.Errorf("Stats.Shapes = %d, want >= 2 (caption + table)", stats.Shapes)
+	}
+
+	rep, _ := conformance.ValidateBytes(data, conformance.Options{RequiredParts: []string{"/ppt/slides/slide1.xml"}})
+	if !rep.OK() {
+		t.Fatalf("scene table deck failed conformance:\n%s", rep)
+	}
+}

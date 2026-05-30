@@ -54,7 +54,7 @@ func RestoreNamespaces(data []byte) ([]byte, error) {
 	for i := 0; i < len(toks); i++ {
 		switch t := toks[i].(type) {
 		case xml.StartElement:
-			name := prefixed(elementPrefix(t.Name.Local), t.Name.Local)
+			name := prefixed(elementPrefix(t.Name.Local), elementLocal(t.Name.Local))
 			b.WriteByte('<')
 			b.WriteString(name)
 			if depth == 0 {
@@ -82,7 +82,7 @@ func RestoreNamespaces(data []byte) ([]byte, error) {
 			depth++
 		case xml.EndElement:
 			b.WriteString("</")
-			b.WriteString(prefixed(elementPrefix(t.Name.Local), t.Name.Local))
+			b.WriteString(prefixed(elementPrefix(t.Name.Local), elementLocal(t.Name.Local)))
 			b.WriteByte('>')
 			depth--
 		case xml.CharData:
@@ -101,6 +101,18 @@ func prefixed(prefix, local string) string {
 		return local
 	}
 	return prefix + ":" + local
+}
+
+// elementLocal rewrites a sentinel element local name to its real output name
+// (the element analogue of attrLocal). "pxfrm" lets the graphic frame's
+// transform emit as <p:xfrm> while a shape's transform stays <a:xfrm> — the two
+// share the local name "xfrm" but need different prefixes, which the
+// context-free pass can't otherwise distinguish.
+func elementLocal(name string) string {
+	if name == "pxfrm" {
+		return "xfrm"
+	}
+	return name
 }
 
 // attrLocal maps a stripped relationship-attribute name to its local part
@@ -174,6 +186,7 @@ var elementNS = map[string]string{
 	"cNvGrpSpPr": "p", "spPr": "p", "txBody": "p",
 	"pic": "p", "nvPicPr": "p", "cNvPicPr": "p", "blipFill": "p",
 	"graphicFrame": "p", "nvGraphicFramePr": "p", "cNvGraphicFramePr": "p",
+	"pxfrm":         "p", // graphic-frame transform → p:xfrm (see elementLocal)
 	"printSettings": "p", "compatSpt": "p",
 
 	// DrawingML (a:)
@@ -189,5 +202,6 @@ var elementNS = map[string]string{
 	"blip": "a", "stretch": "a", "fillRect": "a", "tile": "a", "srcRect": "a",
 	"graphic": "a", "graphicData": "a",
 	"tbl": "a", "tblPr": "a", "tblGrid": "a", "gridCol": "a", "tr": "a", "tc": "a",
+	"tcPr": "a", "tableStyleId": "a", "lnL": "a", "lnR": "a", "lnT": "a", "lnB": "a",
 	"buChar": "a", "buAutoNum": "a", "buNone": "a", "defRPr": "a", "defRgbClrModel": "a",
 }

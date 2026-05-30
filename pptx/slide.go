@@ -440,26 +440,6 @@ func (s *Slide) AddPictureFromFile(x, y, cx, cy int, path string) (*slide.XPictu
 }
 
 // ============================================================================
-// Table methods - default unit: EMU
-// ============================================================================
-
-// AddTable adds a table to the slide.
-// x, y are the position (EMU); cx, cy are the size (EMU).
-// rows and cols specify the table dimensions.
-func (s *Slide) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFrame {
-	return s.builder.AddTable(
-		x, y,
-		cx, cy,
-		rows, cols,
-	)
-}
-
-// SetTableCellText sets the text content of a table cell.
-func (s *Slide) SetTableCellText(gf *slide.XGraphicFrame, row, col int, text string) {
-	s.builder.SetTableCellText(gf, row, col, text)
-}
-
-// ============================================================================
 // Relationship management
 // ============================================================================
 

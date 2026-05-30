@@ -266,11 +266,13 @@ type Chart struct {
 
 func (Chart) NodeKind() NodeKind { return KindChart }
 
-// Table is headered tabular data; every cell is RichText.
+// Table is headered tabular data; every cell is RichText. A non-empty Caption
+// renders as a separate text shape above the table.
 type Table struct {
 	node
 	Headers []RichText
 	Rows    [][]RichText
+	Caption string
 }
 
 func (Table) NodeKind() NodeKind { return KindTable }
