@@ -51,10 +51,11 @@ func RestoreNamespaces(data []byte) ([]byte, error) {
 
 	var b bytes.Buffer
 	depth := 0
+	var parents []string // open element local names, for context-sensitive prefixing
 	for i := 0; i < len(toks); i++ {
 		switch t := toks[i].(type) {
 		case xml.StartElement:
-			name := prefixed(elementPrefix(t.Name.Local), elementLocal(t.Name.Local))
+			name := prefixed(prefixFor(t.Name.Local, parents), elementLocal(t.Name.Local))
 			b.WriteByte('<')
 			b.WriteString(name)
 			if depth == 0 {
@@ -70,7 +71,8 @@ func RestoreNamespaces(data []byte) ([]byte, error) {
 				an := prefixed(attrPrefix(a.Name.Local), attrLocal(a.Name.Local))
 				fmt.Fprintf(&b, ` %s="%s"`, an, escapeAttr(a.Value))
 			}
-			// Self-close when the next token closes this element with no content.
+			// Self-close when the next token closes this element with no content
+			// (no child → nothing pushed onto the parent stack).
 			if i+1 < len(toks) {
 				if ee, ok := toks[i+1].(xml.EndElement); ok && ee.Name.Local == t.Name.Local {
 					b.WriteString("/>")
@@ -79,10 +81,14 @@ func RestoreNamespaces(data []byte) ([]byte, error) {
 				}
 			}
 			b.WriteByte('>')
+			parents = append(parents, t.Name.Local)
 			depth++
 		case xml.EndElement:
+			if len(parents) > 0 {
+				parents = parents[:len(parents)-1] // pop before prefixing so the parent is the new top
+			}
 			b.WriteString("</")
-			b.WriteString(prefixed(elementPrefix(t.Name.Local), elementLocal(t.Name.Local)))
+			b.WriteString(prefixed(prefixFor(t.Name.Local, parents), elementLocal(t.Name.Local)))
 			b.WriteByte('>')
 			depth--
 		case xml.CharData:
@@ -101,6 +107,18 @@ func prefixed(prefix, local string) string {
 		return local
 	}
 	return prefix + ":" + local
+}
+
+// prefixFor returns an element's prefix, accounting for the few elements whose
+// namespace depends on context. "txBody" is <a:txBody> inside a table cell
+// (<a:tc>) but <p:txBody> inside a shape — the same local name, different
+// namespace by parent (the context-free table would otherwise emit p:txBody in
+// a cell, which PowerPoint rejects).
+func prefixFor(local string, parents []string) string {
+	if local == "txBody" && len(parents) > 0 && parents[len(parents)-1] == "tc" {
+		return "a"
+	}
+	return elementPrefix(local)
 }
 
 // elementLocal rewrites a sentinel element local name to its real output name

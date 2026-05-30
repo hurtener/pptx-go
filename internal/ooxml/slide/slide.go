@@ -3,6 +3,7 @@ package slide
 import (
 	"encoding/xml"
 	"fmt"
+	"regexp"
 
 	"github.com/hurtener/pptx-go/internal/ooxml"
 	"github.com/hurtener/pptx-go/internal/ooxml/relations"
@@ -371,10 +372,15 @@ func (s *SlidePart) ToXML() ([]byte, error) {
 	return append([]byte(ooxml.XMLDeclaration), restored...), nil
 }
 
+// xmlnsDecl matches an xmlns:<prefix>="<uri>" declaration.
+var xmlnsDecl = regexp.MustCompile(` xmlns:[A-Za-z0-9]+="[^"]*"`)
+
 // MarshalTextBody serializes a text body to namespaced <p:txBody> XML (bare
 // marshal + RestoreNamespaces, D-032), with no XML declaration. It lets callers
 // embed a rich text body into a hand-authored part (e.g. a notes slide) without
-// reaching into the namespace machinery themselves (P3).
+// reaching into the namespace machinery themselves (P3). The root xmlns
+// declarations RestoreNamespaces adds are stripped, since the embedding parent
+// already declares the prefixes.
 func MarshalTextBody(body *XTextBody) ([]byte, error) {
 	bare, err := xml.Marshal(body)
 	if err != nil {
@@ -384,7 +390,7 @@ func MarshalTextBody(body *XTextBody) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("restore text body namespaces: %w", err)
 	}
-	return restored, nil
+	return xmlnsDecl.ReplaceAll(restored, nil), nil
 }
 
 // FromXML deserializes a SlidePart from XML.

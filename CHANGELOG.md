@@ -84,6 +84,10 @@ changes.
 - `RemoveSlide` now drops the slide's presentation relationship and notes part,
   so removing a slide no longer leaves a dangling relationship.
 - Images added to a reopened deck no longer collide with existing media names.
+- Table cells now emit the DrawingML `<a:txBody>` (they were emitting
+  `<p:txBody>` — a PresentationML element inside the `a:`-namespaced table —
+  which made PowerPoint prompt to repair the file). Speaker-notes text bodies no
+  longer carry redundant `xmlns` declarations.
 
 ### Changed
 
