@@ -73,8 +73,19 @@ changes.
   converted to OOXML's `roundRect` adjust at write time, so a theme swap
   re-rounds the same input (P2); `RadiusFull` yields a full capsule (pill). The
   option is ignored on non-`roundRect` geometries.
+- `scene.Render` composes slides concurrently across a worker pool
+  (`runtime.GOMAXPROCS(0)` by default, configurable with
+  `scene.WithWorkers(n)`); output is byte-identical regardless of worker count.
+  `Stats.Timings` now reports per-slide composition time (`SlideTiming`) in
+  scene order.
 
 ### Fixed
+
+- Saving a presentation is now deterministic: the same presentation written
+  twice produces byte-identical bytes. ZIP entries carry a fixed timestamp
+  instead of the wall clock, and the content-types and embedded-media parts are
+  emitted in a stable order (previously each save differed, breaking
+  snapshot-based tests).
 
 - `Slide.AddPictureFromFile` and `AddPictureFromBytes` now embed the image
   bytes and wire the relationship correctly (previously the file path read was

@@ -3,6 +3,7 @@ package scene
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hurtener/pptx-go/pptx"
 )
@@ -28,13 +29,39 @@ type placement struct {
 	box  pptx.Box
 }
 
+// slideResult is one slide's composition outcome, merged into Stats in scene
+// order so the aggregate stays deterministic regardless of worker scheduling.
+type slideResult struct {
+	shapes   int
+	assets   int
+	warnings []LayoutWarning
+	dur      time.Duration
+}
+
 // bodyMargin is the uniform inset from the slide edge to the body region.
 var bodyMargin = pptx.In(0.5)
 
-// renderSlide adds a slide, lays out its top-level nodes, and composes them.
-func (r *renderer) renderSlide(sl *SceneSlide) {
-	ps := r.pres.AddSlide()
+// composeOne composes one already-created slide using a fresh per-slide renderer
+// (its own Stats), so concurrent slides never share mutable render state. The
+// returned slideResult is merged by the caller in scene order. ps and sl must
+// belong to the same scene index.
+func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide) slideResult {
+	sr := &renderer{pres: base.pres, cfg: base.cfg, theme: base.theme, ctx: base.ctx}
+	start := time.Now()
+	sr.composeSlide(ps, sl)
+	return slideResult{
+		shapes:   sr.stats.Shapes,
+		assets:   sr.stats.Assets,
+		warnings: sr.stats.Warnings,
+		dur:      time.Since(start),
+	}
+}
 
+// composeSlide lays out a slide's top-level nodes and composes them onto ps
+// (notes first). It mutates only ps and the renderer's own Stats; the only
+// presentation-shared touch is the global media manager, which is concurrency-
+// safe — and slides that reach it are scheduled sequentially (see Render).
+func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 	if len(sl.Notes) > 0 {
 		nf := ps.SpeakerNotes()
 		p := nf.AddParagraph(pptx.ParagraphOpts{})
@@ -43,6 +70,39 @@ func (r *renderer) renderSlide(sl *SceneSlide) {
 
 	for _, pl := range r.layout(sl.Nodes, sl.ID) {
 		r.renderNode(ps, pl.box, pl.node, sl.ID)
+	}
+}
+
+// slideUsesAssets reports whether composing sl may register global media. Such
+// slides render sequentially in scene order so media part numbering stays
+// deterministic (RFC §10.1 byte-identical requirement); see Render.
+func slideUsesAssets(sl *SceneSlide) bool { return nodesUseAssets(sl.Nodes) }
+
+func nodesUseAssets(nodes []SlideNode) bool {
+	for _, n := range nodes {
+		if nodeUsesAssets(n) {
+			return true
+		}
+	}
+	return false
+}
+
+// nodeUsesAssets classifies a node as asset-bearing (it or a descendant may
+// register media). It is conservative: an unrecognized node is assumed to use
+// assets so it renders sequentially — a new node type can never silently break
+// idempotency, only forgo parallelism until it is classified here.
+func nodeUsesAssets(n SlideNode) bool {
+	switch v := n.(type) {
+	case CodeBlock:
+		return true
+	case TwoColumn:
+		return nodesUseAssets(v.Left) || nodesUseAssets(v.Right)
+	case Grid:
+		return nodesUseAssets(v.Cells)
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, SectionDivider, Table:
+		return false
+	default:
+		return true
 	}
 }
 

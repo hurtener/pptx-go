@@ -3,6 +3,7 @@ package opc
 import (
 	"encoding/xml"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -163,17 +164,29 @@ func (ct *ContentTypes) ToXML() ([]byte, error) {
 		Xmlns: NamespaceOPCPackage,
 	}
 
-	for ext, ctType := range ct.defaults {
+	// Emit defaults and overrides in a stable (sorted) order so saving the same
+	// package twice yields byte-identical XML — the idempotency RFC §10.1 requires.
+	defExts := make([]string, 0, len(ct.defaults))
+	for ext := range ct.defaults {
+		defExts = append(defExts, ext)
+	}
+	sort.Strings(defExts)
+	for _, ext := range defExts {
 		xct.Defaults = append(xct.Defaults, XDefault{
 			Extension:   strings.TrimPrefix(ext, "."),
-			ContentType: ctType,
+			ContentType: ct.defaults[ext],
 		})
 	}
 
-	for uri, ctType := range ct.overrides {
+	ovURIs := make([]string, 0, len(ct.overrides))
+	for uri := range ct.overrides {
+		ovURIs = append(ovURIs, uri)
+	}
+	sort.Strings(ovURIs)
+	for _, uri := range ovURIs {
 		xct.Overrides = append(xct.Overrides, XOverride{
 			PartName:    uri,
-			ContentType: ctType,
+			ContentType: ct.overrides[uri],
 		})
 	}
 

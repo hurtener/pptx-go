@@ -7,7 +7,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-	"time"
 )
 
 // ===== Data source interfaces and implementations =====
@@ -112,7 +111,7 @@ func (sw *StreamingZipWriter) createZipHeader(path string) *zip.FileHeader {
 
 	header := &zip.FileHeader{
 		Name:     path,
-		Modified: time.Now(), // Set current timestamp.
+		Modified: fixedZipModTime, // Fixed epoch → byte-identical saves (RFC §10.1).
 		Method:   zip.Deflate,
 	}
 
@@ -792,7 +791,7 @@ func (c *ConcurrentZipCollector) writePart(data *PartData) error {
 	// Use FileHeader to set correct timestamps.
 	header := &zip.FileHeader{
 		Name:     path,
-		Modified: time.Now(),
+		Modified: fixedZipModTime, // Fixed epoch → byte-identical saves (RFC §10.1).
 		Method:   zip.Deflate,
 	}
 	header.Flags |= 0x800 // UTF-8 file name flag

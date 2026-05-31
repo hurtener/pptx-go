@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+// fixedZipModTime is the modification time stamped on every ZIP entry. It is a
+// fixed, valid MS-DOS timestamp (the 1980 ZIP epoch) rather than time.Now(), so
+// that saving the same package twice produces byte-identical output — the
+// idempotency RFC §10.1 requires (pengui-slides snapshot-tests on render bytes).
+// 1980-01-01 is the earliest instant the MS-DOS/ZIP format can represent, which
+// also sidesteps the Windows Explorer time-parsing bug the previous time.Now()
+// stamp worked around.
+var fixedZipModTime = time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)
+
 // Package represents an OPC package (e.g. a PPTX file).
 type Package struct {
 	parts          *PartCollection
@@ -463,7 +472,7 @@ func createZipEntry(zipWriter *zip.Writer, path string, size int) (io.Writer, er
 		Name:               path,
 		UncompressedSize:   uint32(size),
 		UncompressedSize64: uint64(size),
-		Modified:           time.Now(), // Set current timestamp (works around a Windows Explorer MS-DOS time parsing bug).
+		Modified:           fixedZipModTime, // Fixed epoch → byte-identical saves (RFC §10.1).
 	}
 
 	// 3. Set compression method (Deflate for text, Store for already-compressed data).
