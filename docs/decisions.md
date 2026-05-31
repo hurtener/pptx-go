@@ -929,4 +929,46 @@ constraint.
 
 ---
 
+## D-037 — Template ingestion clones the template package and strips slides
+
+**Date:** 2026-05-31
+**Status:** Settled
+**Context:** Phase 09 seeds a presentation from a brand kit (RFC §13.1).
+Brief 01 (F3) noted that a template's identity is a relationship chain
+(slide→layout→master→theme) plus placeholder geometry and backgrounds the
+semantic `Theme` does not capture, and recommended copying the template's parts
+wholesale rather than reconstructing them. Hand-grafting those parts into a
+freshly scaffolded package risks the PowerPoint "repair" class of bug (orphaned
+or double-wired relationships — the PR #13 lesson).
+**Decision:** `pptx.FromTemplate(brand *Presentation)` is a `New` option that
+adopts the brand kit by **cloning its OPC package and stripping any slides**,
+rather than grafting parts into the scaffold. Cloning preserves the template's
+already-valid relationship graph, theme, masters, layouts, and auxiliary parts
+verbatim; `clearTemplateSlides` then removes slide parts + their
+presentation→slide relationships + `sldIdLst` entries so the new deck starts
+empty. The brand's theme (extracted on its open) and its read-only master/layout
+registry are adopted. Adoption falls back to the default scaffold on any failure,
+so `New` never yields a broken deck.
+
+Two supporting changes land with it:
+- **Opening a deck extracts its theme + masters.** `loadPresentationPart` now
+  sets the presentation's theme from `theme1.xml` and builds a `Master`/`Layout`
+  registry, so an opened deck can act as a brand kit (`brand.Theme()`,
+  `brand.Masters()`). Both are best-effort: a missing theme keeps `DefaultTheme`,
+  an unparseable master contributes nothing (brief 01 F6 — permissive reader).
+- **`FromTemplate` takes a `*Presentation`, per RFC §13.1**, not the
+  `TemplateSource` the phase plan drafted. The caller opens the kit
+  (`OpenStream`/`NewFromFile`) — which can return an error — then `New` adopts
+  the in-memory value, so `New` needs no error return. (Plan deviation, recorded
+  in the Phase 09 plan §16.)
+
+**Consequences:** Ingestion is robust by construction — no manual rewiring — and
+deterministic (the clone + our fixed-epoch save, D-035, keep `FromTemplate`
+output byte-identical). A slide added to a seeded deck relates to the template's
+named layout (the `slideLayout1.xml` default still exists in the clone). Multi-
+master rel-precise layout grouping is approximated (unclaimed layouts attach to
+the first master); rich per-placeholder targeting from the IR is deferred.
+
+---
+
 *Append new entries below this line.*

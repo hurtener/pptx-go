@@ -78,14 +78,22 @@ func (p *Presentation) seedPart(uri *opc.PackURI, contentType, xml string) {
 	_ = p.pkg.AddPart(opc.NewPart(uri, contentType, []byte(xml)))
 }
 
+// defaultSlideLayoutURI is the layout a slide relates to when no named layout
+// resolves: the scaffold's blank layout (also present in any ingested template,
+// which keeps its own slideLayout1.xml).
+const defaultSlideLayoutURI = slideLayoutURI
+
 // relateSlide adds the presentation→slide and slide→layout relationships for a
 // freshly created slide part, returning the presentation-relative relationship
-// id that <p:sldId> must carry. The slide→layout relationship is added to the
-// slide part's own relationship set (its single rId namespace, shared with image
-// and notes relationships); syncSlides mirrors that set onto the package part.
-func (p *Presentation) relateSlide(slidePart *slide.SlidePart, slidePartOPC *opc.Part) string {
+// id that <p:sldId> must carry. layoutURI is the absolute pack URI of the target
+// layout (empty → the default blank layout). The slide→layout relationship is
+// added to the slide part's own relationship set (its single rId namespace,
+// shared with image and notes relationships); syncSlides mirrors that set onto
+// the package part.
+func (p *Presentation) relateSlide(slidePart *slide.SlidePart, slidePartOPC *opc.Part, layoutURI string) string {
 	// slide → layout (allocated in the slide's rId namespace).
-	_, _ = slidePart.Relationships().AddNew(opc.RelTypeSlideLayout, "../slideLayouts/slideLayout1.xml", false)
+	lrel, _ := slidePart.Relationships().AddNew(opc.RelTypeSlideLayout, slideRelTarget(layoutURI), false)
+	slidePart.SetLayoutRId(lrel.RID())
 
 	// presentation → slide.
 	presPart := p.pkg.GetPart(opc.NewPackURI("/ppt/presentation.xml"))
@@ -95,4 +103,14 @@ func (p *Presentation) relateSlide(slidePart *slide.SlidePart, slidePartOPC *opc
 	target := strings.TrimPrefix(slidePartOPC.PartURI().URI(), "/ppt/")
 	rel, _ := presPart.AddRelationship(opc.RelTypeSlide, target, false)
 	return rel.RID()
+}
+
+// slideRelTarget converts an absolute layout pack URI (e.g.
+// /ppt/slideLayouts/slideLayout3.xml) to a slide→layout relationship target,
+// relative to a slide in /ppt/slides/ (e.g. ../slideLayouts/slideLayout3.xml).
+func slideRelTarget(layoutURI string) string {
+	if layoutURI == "" {
+		layoutURI = defaultSlideLayoutURI
+	}
+	return "../" + strings.TrimPrefix(layoutURI, "/ppt/")
 }

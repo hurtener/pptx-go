@@ -69,6 +69,13 @@ builder's universal placement primitive. Distinct from `LayoutSlot`,
 which is the higher-level abstract region assigned by the scene's layout
 engine.
 
+## Brand kit
+
+A `.pptx` template carrying a populated theme + ≥1 master with layouts, used
+to seed a presentation's visual identity (RFC §13.4). pptx-go *consumes* brand
+kits (opens one, adopts its theme + masters via `FromTemplate`); authoring a
+hand-editable template is V1.x. See `Master`, `FromTemplate`.
+
 ## Builder
 
 The `pptx` package's public API. Layer 1 of the library. Theme-aware,
@@ -207,6 +214,13 @@ A curated device/browser bezel (browser / phone / desktop / laptop)
 rendered as native PPTX shapes wrapping an inner image. Applied via the
 `Image.Frame` field. See `RFC-001-pptx-go.md §14.3`.
 
+## FromTemplate
+
+`pptx.FromTemplate(brand *Presentation)` — a `New` option that seeds a
+presentation from a `Brand kit`: it clones the brand's package (theme,
+masters, layouts, auxiliary parts) and strips slides, so the new deck inherits
+the brand's identity and starts empty (RFC §13.1, D-037).
+
 ## Icon
 
 A curated lucide-style glyph in the `assets/icons/` registry. Rendered as
@@ -236,11 +250,26 @@ a strict superset of pengui-slides v4's IR (`RFC-001-pptx-go.md §21`).
 top). The `scene` layout engine processes background decorations before
 body nodes and foreground decorations after.
 
+## Layout
+
+`pptx.Layout` — a read-only view of one slide layout in a template (its name
+and the master it belongs to). Built when a deck is opened or seeded with
+`FromTemplate`; exposed via `Master.Layouts()`. OOXML-free (P3). See `Master`,
+`RFC-001-pptx-go.md §13.2`.
+
 ## LayoutKind
 
 A scene-level enum naming the slide's structural intent (`cover`,
 `title-content`, `two-column`, `card-grid`, `full-bleed`, …). Maps to the
 template's named master layouts via a `LayoutMap`.
+
+## LayoutMap
+
+`scene.LayoutMap` — a `map[LayoutKind]string` that resolves each slide's
+`LayoutKind` to a named layout in the active template (RFC §13.2). Passed via
+`scene.WithLayoutMap`; `scene.DefaultLayoutMap` maps to PowerPoint's standard
+layout names. A name the template lacks falls back to the blank layout and
+records a `LayoutWarning` (never an error — D-026).
 
 ## LayoutSlot
 
@@ -263,6 +292,13 @@ A scene IR node that doesn't contain children. Listed in
 
 A shape's outline (builder): width (EMU), `Color`, and optional preset dash.
 Like `Fill`, its color resolves against the active `Theme`.
+
+## Master
+
+`pptx.Master` — a read-only view of one slide master and the `Layout`s it
+owns, surfaced by `Presentation.Masters()` for a deck opened from a file or
+seeded with `FromTemplate`. OOXML-free (P3); the XML wire types stay in
+`internal/ooxml`. See `RFC-001-pptx-go.md §13.2`.
 
 ## Mirror (file mirroring)
 

@@ -3,7 +3,7 @@
 **Subsystem:** pptx (template) + internal/ooxml
 **RFC sections:** §13 (§13.1–§13.4), §7.3 (theme source #2), §8.7 (masters/layouts)
 **Deps:** Phase 02 (theme + tokens), Phase 03 (builder spine, scaffold), Phase 05 (scene RenderOption surface)
-**Status:** Draft
+**Status:** Done
 
 ---
 
@@ -139,16 +139,13 @@ No user-facing skill/doc-site updates: Phase 20 hasn't established them yet
 
 ## 9. Public API surface
 
+As shipped (supersedes the `TemplateSource` draft — see §16, D-037):
+
 ```go
 // pptx
-type TemplateSource interface{ /* sealed; constructed via the helpers below */ }
-func TemplateFile(path string) TemplateSource
-func TemplateBytes(b []byte) TemplateSource
-func TemplateReader(r io.Reader) TemplateSource
+func FromTemplate(brand *Presentation) Option   // New() option: adopt brand theme + masters + layouts
 
-func FromTemplate(src TemplateSource) Option   // New() option: seed theme + masters + layouts
-
-type Master struct{ /* … */ }                  // read wrapper over internal master data (P3)
+type Master struct{ /* … */ }                   // read wrapper over internal master data (P3)
 func (m *Master) Name() string
 func (m *Master) Layouts() []*Layout
 func (m *Master) Layout(name string) (*Layout, bool)
@@ -156,13 +153,14 @@ func (m *Master) Layout(name string) (*Layout, bool)
 type Layout struct{ /* … */ }
 func (l *Layout) Name() string
 
-func (p *Presentation) Masters() []*Master      // RFC §13.1 brand.Masters()
+func (p *Presentation) Masters() []*Master       // RFC §13.1 brand.Masters()
+func (p *Presentation) HasLayout(name string) bool
 
 // scene
-type LayoutMap map[LayoutKind]string            // LayoutKind → template layout name
-func WithTheme(t *pptx.Theme) RenderOption       // apply a brand theme at render time (RFC §13.1/§13.3)
-func WithLayoutMap(m LayoutMap) RenderOption      // map scene layout intents to template layouts
-func DefaultLayoutMap() LayoutMap                 // LayoutKind → PowerPoint standard layout
+type LayoutMap map[LayoutKind]string             // LayoutKind → template layout name
+func WithTheme(t *pptx.Theme) RenderOption        // apply a brand theme at render time (RFC §13.1/§13.3)
+func WithLayoutMap(m LayoutMap) RenderOption       // map scene layout intents to template layouts
+func DefaultLayoutMap() LayoutMap                  // LayoutKind → PowerPoint standard layout
 ```
 
 `pptx.LoadTheme(path)` / `LoadThemeFromBytes` are **already public** (Phase 02);
@@ -257,16 +255,42 @@ surface lands) verifies each criterion:
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **`FromTemplate` takes a `*Presentation`, not a `TemplateSource`.** RFC §13.1
+  shows `pptx.New(pptx.FromTemplate(brand))` where `brand` is an opened deck, and
+  `New` returns no error — so adopting an already-valid in-memory presentation
+  is cleaner than a path/bytes source that would force `New` to surface an open
+  error. The drafted `TemplateSource`/`TemplateFile`/`Bytes`/`Reader` were not
+  added (RFC > plan, §2). Filed as D-037. §9's surface is superseded accordingly.
+- **Ingestion clones the template package and strips slides** (D-037) rather than
+  grafting parts into the scaffold — robust by construction, dissolving risk R2.
+- **`LayoutMap` lives in `scene`, not `pptx/master.go`.** It keys on
+  `scene.LayoutKind`, and `pptx` must not import `scene` (P1); `scene.LayoutMap`
+  + `scene.DefaultLayoutMap` are the home. `pptx/master.go` holds `Master`/
+  `Layout` only.
+- **Opening any deck now extracts its theme + master registry**
+  (`loadPresentationPart`), not just templates — required so `brand.Theme()` /
+  `brand.Masters()` work on an opened kit (RFC §13.1). Best-effort (brief 01 F6).
+- **Internal parser fixed to capture the layout name + type.** `ParseLayout`
+  discarded `cSld@name` (always `""`) and the `sldLayout@type`; both are now
+  extracted, which is what makes name-based layout selection possible. (A pre-
+  existing gap the survey missed.)
+- **Test fixture is hermetic, not a committed PowerPoint binary.** Criterion 1 is
+  asserted against a brand `theme1.xml` derived from the conformant scaffold
+  theme — which is PowerPoint-shaped (`sysClr` `dk1`/`lt1`, brief 01 F1) — with a
+  custom accent + fonts patched in, plus an injected named layout. This exercises
+  the `sysClr` fallback and a non-default named layout without depending on an
+  opaque binary or the bare-name `ThemeXML()` writer (whose standalone output
+  isn't namespace-conformant; a separate, out-of-scope issue).
+- **No new theme token**, so `docs/design/THEME.md` is unchanged.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-09.sh` reports `OK ≥ 6` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entry added (wholesale part-copy ingestion).
-- [ ] Master-plan Phase 09 entry corrected (LoadTheme shipped in Phase 02).
-- [ ] (Phase 20+) Docs site updated for user-facing surface changes — inert.
-- [ ] (Phase 20+) Affected agent skill(s) updated — inert.
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-09.sh` reports `OK ≥ 6` and `FAIL = 0` (6 OK, 0 FAIL).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated (Brand kit, FromTemplate, Master, Layout, LayoutMap).
+- [x] Decision entry added (D-037 — clone + strip ingestion).
+- [x] Master-plan Phase 09 entry corrected (LoadTheme shipped in Phase 02).
+- [x] (Phase 20+) Docs site updated for user-facing surface changes — inert.
+- [x] (Phase 20+) Affected agent skill(s) updated — inert.

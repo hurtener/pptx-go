@@ -239,6 +239,9 @@ type XMLGroupShape struct {
 // Corresponds to XML: <p:cSld>...</p:cSld>
 // Contains background and shape tree.
 type XMLCommonSlideData struct {
+	// Name is the cSld@name attribute — a slide layout's display name in the
+	// PowerPoint layout picker (e.g. "Title Slide", "Title and Content").
+	Name   string         `xml:"name,attr,omitempty"`
 	Bg     *XMLBackground `xml:"bg,omitempty"`
 	SpTree *XMLShapeTree  `xml:"spTree"`
 }
@@ -253,6 +256,10 @@ type XMLSlideLayout struct {
 	XmlnsA string `xml:"xmlns:a,attr,omitempty"`
 	XmlnsR string `xml:"xmlns:r,attr,omitempty"`
 	XmlnsP string `xml:"xmlns:p,attr,omitempty"`
+
+	// Type is the sldLayout@type attribute (e.g. "title", "obj", "twoObj",
+	// "blank", "secHead"). Empty when the layout omits it.
+	Type string `xml:"type,attr,omitempty"`
 
 	CSld *XMLCommonSlideData `xml:"cSld"`
 }

@@ -78,9 +78,20 @@ changes.
   `scene.WithWorkers(n)`); output is byte-identical regardless of worker count.
   `Stats.Timings` now reports per-slide composition time (`SlideTiming`) in
   scene order.
+- Template ingestion (brand kits): an opened deck exposes its theme via
+  `Theme()` and its slide masters/layouts via `Masters()` (`Master`/`Layout`),
+  and `pptx.New(pptx.FromTemplate(brand))` seeds a new presentation from a
+  template — adopting its theme, masters, and layouts (the template's parts are
+  cloned and its slides stripped). On the scene side, `scene.WithTheme(theme)`
+  renders against a brand theme and `scene.WithLayoutMap(m)` maps each slide's
+  `LayoutKind` to a named template layout (`scene.DefaultLayoutMap` covers
+  PowerPoint's standard names); an unknown layout falls back to the blank layout
+  with a `LayoutWarning`.
 
 ### Fixed
 
+- Slide layouts read from a deck now carry their name and type (the layout
+  parser previously discarded both), so layouts can be selected by name.
 - Saving a presentation is now deterministic: the same presentation written
   twice produces byte-identical bytes. ZIP entries carry a fixed timestamp
   instead of the wall clock, and the content-types and embedded-media parts are
