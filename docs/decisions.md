@@ -1065,4 +1065,57 @@ so the master-plan Phase 11 block is understood as superseded by this entry.
 
 ---
 
+## D-040 — Phase 12: icon engine + ~16 starter set (≈60 deferred); no arcs; AddIcon takes SVG bytes
+
+**Date:** 2026-06-01
+**Status:** Settled
+**Context:** D-005 commits V1 to a curated lucide-subset of ≈60 icons rendered as
+native PPTX shape paths via an SVG→OOXML translator (single path, solid fill, no
+gradients). Phase 12 must build the engine that capability needs — none of it
+existed: custom path geometry (`a:custGeom`) wire types, the SVG translator, a
+builder API to place a path glyph, and the icon registry. Two implementation
+questions D-005 left open needed settling: how many icons ship in this phase
+(hand-authoring ≈60 quality single-path glyphs is a large, error-prone content
+task — and lucide's real icons are stroke-based multi-element, so they cannot be
+copied; the curated set is lucide-*style*, authored as filled single paths), and
+how far the SVG subset extends.
+**Decision:**
+1. **Ship the full icon engine + a ~16-icon starter set; defer the ≈60 target.**
+   The engine (wire types + translator + `AddIcon` + registry + extension seam +
+   registration-time validation) lands complete and at quality. The curated set
+   is a hand-authored starter set (~18 single-path filled glyphs: arrows,
+   chevrons, check, x, plus, minus, square, circle, dot, triangle, diamond,
+   star). Growing toward D-005's ≈60 is a **content follow-up** — each addition
+   is one validated `.svg` file, no code change; `icons.Names()` reports exactly
+   what ships (no silent truncation). (Confirmed with the maintainer.)
+2. **The translator subset excludes elliptical arcs (`A`/`a`).** SVG→`a:arcTo`
+   conversion is lossy and wide; curved glyphs are authored with cubic/quadratic
+   Béziers (a circle is four cubics). Supported: `M L H V C S Q T Z` (absolute +
+   relative); `S`/`T` expand to `C`/`Q` by reflecting the previous control point.
+   An arc — or any element/fill outside the subset — fails translation, i.e. at
+   **registration**, never silently at render.
+3. **The builder API is `Slide.AddIcon(svg []byte, box, opts…) (*Shape, error)`
+   plus `pptx.ValidateIcon(svg) error`** — SVG bytes in, an opaque `*Shape` out;
+   the `custGeom` OOXML wire types stay in `internal/ooxml` (P3). `scene` never
+   reaches under `pptx`: `scene.WithIconExtension` / `scene.ValidateIcon`
+   delegate to `pptx.ValidateIcon` (P1). The default fill is the accent token
+   (P2); a caller `WithFill` overrides the color.
+
+**Consequences:** pptx-go gains custom path geometry — reusable beyond icons
+(future vector shapes). The icon registry mirrors the frames seam (D-038) with
+one difference: an icon extension is **validated at registration** (its SVG is
+translated up front), not merely name-checked at render, per D-005. The starter
+set is usable immediately; the ≈60 target is tracked content work, not an engine
+gap. Icon *placement* by IR nodes (`card`, `flow`, `header_pill`) arrives with
+those nodes (Phases 14–15) — Phase 12 ships the engine + registry they consume.
+
+One seam note: `internal/render` now imports `encoding/xml` to parse the SVG
+*input* (an XML dialect). This does not weaken P3 — `internal/render` defines and
+exposes **no** OOXML wire types (those stay in `internal/ooxml`, which it imports
+and produces); nothing above the internal wall (`pptx`, `scene`) touches
+`encoding/xml`. The `drift-audit.sh` P3 allowlist is extended from
+`{ooxml, opc, conformance}` to add `render`, with this rationale in the script.
+
+---
+
 *Append new entries below this line.*

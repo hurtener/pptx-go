@@ -31,6 +31,14 @@
     "github.com/hurtener/pptx-go/assets/frames": {
       "min": 80,
       "reason": "curated frame shape recipes; scene-adjacent composer (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/scene/icons": {
+      "min": 80,
+      "reason": "new scene package — icon registry (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/assets/icons": {
+      "min": 80,
+      "reason": "curated icon SVG embed + registry helpers (CLAUDE.md §11 — 80%)"
     }
   }
 }

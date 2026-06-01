@@ -62,6 +62,11 @@ func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide) slideResult {
 // presentation-shared touch is the global media manager, which is concurrency-
 // safe — and slides that reach it are scheduled sequentially (see Render).
 func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
+	// Theme variant selection (RFC §13.3) is not yet implemented; surface a
+	// non-default request rather than silently rendering with the active theme.
+	if sl.Variant != VariantLight {
+		r.warn(sl.ID, fmt.Sprintf("theme variant %q requested but variant selection is not yet implemented; rendered with the active theme", sl.Variant))
+	}
 	if len(sl.Notes) > 0 {
 		nf := ps.SpeakerNotes()
 		p := nf.AddParagraph(pptx.ParagraphOpts{})

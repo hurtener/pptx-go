@@ -210,6 +210,8 @@ var elementNS = map[string]string{
 	// DrawingML (a:)
 	"xfrm": "a", "off": "a", "ext": "a",
 	"prstGeom": "a", "custGeom": "a", "avLst": "a", "gd": "a", "rect": "a",
+	"gdLst": "a", "pathLst": "a", "path": "a", "pt": "a",
+	"moveTo": "a", "lnTo": "a", "cubicBezTo": "a", "quadBezTo": "a", "close": "a",
 	"solidFill": "a", "noFill": "a", "gradFill": "a", "pattFill": "a", "grpFill": "a",
 	"srgbClr": "a", "schemeClr": "a", "sysClr": "a", "scrgbClr": "a", "prstClr": "a",
 	"gs": "a", "gsLst": "a", "lin": "a", "alpha": "a", "lumMod": "a", "lumOff": "a",

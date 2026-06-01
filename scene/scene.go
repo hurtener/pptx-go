@@ -29,8 +29,9 @@ const (
 	LayoutBlank
 )
 
-// Variant selects a theme variant for a slide (RFC §10.1). Per-slide overrides
-// are V2; a per-scene variant is V1.
+// Variant selects a named theme variant for a slide (RFC §13.3). Variant
+// selection is not yet implemented: a non-default Variant currently renders with
+// the active theme and surfaces a LayoutWarning (it is not silently dropped).
 type Variant int
 
 const (
@@ -38,6 +39,18 @@ const (
 	VariantDark
 	VariantPrint
 )
+
+// String returns the variant's name.
+func (v Variant) String() string {
+	switch v {
+	case VariantDark:
+		return "dark"
+	case VariantPrint:
+		return "print"
+	default:
+		return "light"
+	}
+}
 
 // Metadata is deck-level core metadata.
 type Metadata struct {
@@ -103,6 +116,12 @@ type frameExtension struct {
 	recipe FrameRecipe
 }
 
+// iconExtension is a caller icon SVG registered for one render.
+type iconExtension struct {
+	name string
+	svg  []byte
+}
+
 // renderConfig accumulates RenderOptions.
 type renderConfig struct {
 	resolver  AssetResolver
@@ -112,6 +131,8 @@ type renderConfig struct {
 	layoutMap LayoutMap
 	frameExt  []frameExtension
 	frames    *frames.Registry // built in Render: curated ∪ frameExt
+	iconExt   []iconExtension
+	ctx       context.Context
 }
 
 // RenderOption configures a Render call.
@@ -124,9 +145,18 @@ func WithAssetResolver(r AssetResolver) RenderOption {
 }
 
 // WithLogger injects a structured logger for render diagnostics (no logger =
-// no logs; D-016).
+// no logs; D-016). When set, Render emits a render-boundary summary and a Warn
+// event for every LayoutWarning (RFC §18); the handler's performance is the
+// caller's concern (slog calls are synchronous).
 func WithLogger(l *slog.Logger) RenderOption {
 	return func(c *renderConfig) { c.logger = l }
+}
+
+// WithContext sets the context Render uses: the AssetResolver receives it, and
+// Render honors cancellation between slides (returning ctx.Err()). The default
+// is context.Background(). (CLAUDE.md §5 — honor cancellation on I/O.)
+func WithContext(ctx context.Context) RenderOption {
+	return func(c *renderConfig) { c.ctx = ctx }
 }
 
 // WithWorkers sets the number of slides composed concurrently (D-015). The
@@ -164,6 +194,26 @@ func WithFrameExtension(name string, recipe FrameRecipe) RenderOption {
 		}
 	}
 }
+
+// WithIconExtension registers a caller icon under name for this render (RFC
+// §14.1/§14.4, D-005). The SVG is validated when the option is applied; an SVG
+// that violates the icon translator constraints (single path, solid fill, no
+// gradients, no elliptical arcs) fails the render with a Stage-1 error — at
+// registration, not at compose. Registering a curated name overrides it for this
+// render only. A blank name or nil SVG is ignored. The icon is placed by the
+// nodes that accept one (card, flow) in later phases.
+func WithIconExtension(name string, svg []byte) RenderOption {
+	return func(c *renderConfig) {
+		if name != "" && svg != nil {
+			c.iconExt = append(c.iconExt, iconExtension{name: name, svg: svg})
+		}
+	}
+}
+
+// ValidateIcon reports whether svg satisfies the icon translator constraints,
+// so a caller can validate at its own registration point. It re-exports
+// pptx.ValidateIcon (scene never reaches under pptx — P1).
+func ValidateIcon(svg []byte) error { return pptx.ValidateIcon(svg) }
 
 // WithLayoutMap maps each slide's LayoutKind to a named layout in the active
 // template's master (RFC §13.2). A slide whose mapped layout the template
@@ -207,6 +257,16 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	if err := validateFrameRefs(s, cfg.frames); err != nil {
 		return Stats{}, err
 	}
+	// Validate caller icon extensions at registration (RFC §14.1, D-005): an SVG
+	// outside the translator subset fails here, before any slide composes — not
+	// silently at render. Curated icons are pre-validated by their build-time
+	// test. (The per-render icon registry is assembled by the consuming nodes in
+	// a later phase; Phase 12 ships the registry + the fail-fast check.)
+	for _, ext := range cfg.iconExt {
+		if err := pptx.ValidateIcon(ext.svg); err != nil {
+			return Stats{}, fmt.Errorf("scene: icon extension %q: %w", ext.name, err)
+		}
+	}
 	// Theme precedence: WithTheme option > Scene.Theme field > the presentation's
 	// existing theme (RFC §13.1/§13.3).
 	switch {
@@ -221,7 +281,15 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		workers = runtime.GOMAXPROCS(0)
 	}
 
-	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: context.Background()}
+	ctx := cfg.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if cfg.logger != nil {
+		cfg.logger.Debug("scene: render start", "slides", len(s.Slides), "workers", workers)
+	}
+
+	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: ctx}
 
 	// Phase 1: create every slide in scene order. AddSlide serializes on the
 	// presentation lock and appends in call order, so this fixes slide ordering
@@ -249,6 +317,9 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	results := make([]slideResult, len(s.Slides))
 	free := make([]int, 0, len(s.Slides))
 	for i := range s.Slides {
+		if err := ctx.Err(); err != nil { // honor cancellation between slides
+			return Stats{}, err
+		}
 		if workers > 1 && !slideUsesAssets(&s.Slides[i]) {
 			free = append(free, i)
 			continue
@@ -265,10 +336,16 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 			go func(i int) {
 				defer wg.Done()
 				defer func() { <-sem }()
+				if ctx.Err() != nil { // skip remaining work once canceled
+					return
+				}
 				results[i] = base.composeOne(slides[i], &s.Slides[i])
 			}(idx)
 		}
 		wg.Wait()
+		if err := ctx.Err(); err != nil {
+			return Stats{}, err
+		}
 	}
 
 	var stats Stats
@@ -281,6 +358,20 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		}
 		stats.Warnings = append(stats.Warnings, results[i].warnings...)
 		stats.Timings = append(stats.Timings, SlideTiming{SlideID: s.Slides[i].ID, Duration: results[i].dur})
+	}
+	if cfg.logger != nil {
+		// Warnings are logged here, post-aggregation, so order is deterministic
+		// (scene order) regardless of the parallel compose (RFC §18 — layout
+		// overflows, unresolved assets).
+		for _, w := range stats.Warnings {
+			cfg.logger.Warn("scene: layout warning", "slide", w.SlideID, "detail", w.Message)
+		}
+		cfg.logger.Info("scene: render complete",
+			"slides", stats.Slides,
+			"shapes", stats.Shapes,
+			"assets", stats.Assets,
+			"warnings", len(stats.Warnings),
+		)
 	}
 	return stats, nil
 }

@@ -71,9 +71,13 @@ Material))*
   (browser/phone/desktop/laptop) as native rounded-rect + ellipse shapes;
   the recipe→interior seam, token-only bezel color, and the enum-vs-named
   frame-reference reconciliation for §14.4 extension.
+- `03-svg-path-to-ooxml-translator.md` — rendering curated icons as native
+  `custGeom` path shapes: the supported SVG `d` subset (M/L/H/V/C/Q/Z, no
+  arcs), the viewBox→path coordinate mapping, registration-time constraint
+  validation, and why the set is lucide-*style* (filled single paths), not
+  lucide's stroke-based data.
 
-*(candidates: lucide-to-OOXML path translator constraints, preset ornament
-shape recipes survey)*
+*(candidates: preset ornament shape recipes survey)*
 
 ### Charts
 
