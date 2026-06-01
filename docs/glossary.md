@@ -152,6 +152,15 @@ source rectangle. `pptx.Crop` on the builder (`Image.SetCrop`); re-exported
 as `scene.Crop` and carried on the scene `image` node (D-039). Drives the
 OOXML `a:srcRect`. Pure mechanism — no pixel inspection (§7).
 
+## custGeom
+
+OOXML custom path geometry (`a:custGeom`): a shape outline expressed as a
+`pathLst` of `path` elements, each an ordered sequence of `moveTo` / `lnTo` /
+`cubicBezTo` / `quadBezTo` / `close` commands over the path's own `w×h`
+coordinate space (scaled to the shape extent). The wire form an `Icon`
+renders to, emitted by `Slide.AddIcon` and produced by the `SVG translator`.
+Distinct from preset geometry (`a:prstGeom`, a named `ShapeGeometry`).
+
 ## Decoration
 
 A scene IR leaf that places a curated `Ornament` or asset image at a slide
@@ -259,10 +268,14 @@ the brand's identity and starts empty (RFC §13.1, D-037).
 
 ## Icon
 
-A curated lucide-style glyph in the `assets/icons/` registry. Rendered as
-native PPTX shape paths (NOT as raster). Referenced by name from IR nodes
-that accept an icon (`card`, `flow` steps, `header_pill`). Caller-supplied
-icons go through the same translator (`scene.WithIconExtension`).
+A curated lucide-*style* glyph in the `assets/icons/` registry — authored as a
+single-path, solid-fill SVG (lucide's own icons are stroke-based multi-element,
+so the set is lucide-style, not lucide data; D-040). Rendered as native PPTX
+`custGeom` shape paths (NOT as raster) via the `SVG translator`, filled with the
+accent token. Referenced by name from IR nodes that accept an icon (`card`,
+`flow` steps, `header_pill`). Caller-supplied icons go through the same
+translator (`scene.WithIconExtension`); an SVG outside the subset fails at
+registration. V1 ships a starter set (~16), growing toward ≈60 (D-005, D-040).
 
 ## ImageSource
 
@@ -572,6 +585,16 @@ modes for large decks. The upstream's streaming primitives (in
 
 An RFC-level grouping of related code (OPC, OOXML, Builder, Scene
 renderer, Theme, Assets, Charts). Phase plans name their owning subsystem.
+
+## SVG translator
+
+`internal/render`'s converter from a single-path SVG to OOXML `custGeom`
+(`render.Translate`). It enforces the documented subset — exactly one filled
+`path`, commands `M L H V C S Q T Z` (absolute/relative; `S`/`T` reflect the
+previous control point), no gradients, **no elliptical arcs** — and rejects
+anything outside it at registration (D-005, D-040). Drives `Slide.AddIcon` /
+`pptx.ValidateIcon`. The SVG's fill color is discarded; the icon fills with a
+theme token.
 
 ## Theme
 
