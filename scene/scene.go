@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hurtener/pptx-go/pptx"
+	"github.com/hurtener/pptx-go/scene/frames"
 )
 
 // The scene entrypoint (RFC §10.1). A Scene is a theme + ordered slides + deck
@@ -90,6 +91,18 @@ type Stats struct {
 	Timings  []SlideTiming
 }
 
+// FrameRecipe draws a device frame's bezel into a region and returns the
+// interior Box the renderer inserts an image into, plus the number of bezel
+// shapes emitted. It composes the public pptx builder only (P1). Register one
+// under a name with WithFrameExtension (RFC §14.4, D-038).
+type FrameRecipe = frames.Recipe
+
+// frameExtension is a caller frame registered for one render.
+type frameExtension struct {
+	name   string
+	recipe FrameRecipe
+}
+
 // renderConfig accumulates RenderOptions.
 type renderConfig struct {
 	resolver  AssetResolver
@@ -97,6 +110,8 @@ type renderConfig struct {
 	workers   int
 	theme     *pptx.Theme
 	layoutMap LayoutMap
+	frameExt  []frameExtension
+	frames    *frames.Registry // built in Render: curated ∪ frameExt
 }
 
 // RenderOption configures a Render call.
@@ -135,6 +150,21 @@ func WithTheme(t *pptx.Theme) RenderOption {
 	}
 }
 
+// WithFrameExtension registers a caller frame recipe under name for this render
+// (RFC §14.4, D-038). The name joins the closed curated set {browser, phone,
+// desktop, laptop}; registering a curated name overrides that frame for this
+// render only. Extensions are per-render, not global state — concurrent renders
+// with different extensions do not interfere. An Image whose resolved frame
+// name is neither curated nor registered fails Stage-1 validation. A blank name
+// or nil recipe is ignored.
+func WithFrameExtension(name string, recipe FrameRecipe) RenderOption {
+	return func(c *renderConfig) {
+		if name != "" && recipe != nil {
+			c.frameExt = append(c.frameExt, frameExtension{name: name, recipe: recipe})
+		}
+	}
+}
+
 // WithLayoutMap maps each slide's LayoutKind to a named layout in the active
 // template's master (RFC §13.2). A slide whose mapped layout the template
 // defines is related to it; an unmapped kind, or a name the template lacks,
@@ -164,6 +194,17 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		}
 	}
 	if err := ValidateScene(s); err != nil {
+		return Stats{}, err
+	}
+	// Build the per-render frame registry (curated ∪ extensions) and run the
+	// registry-aware half of Stage-1 validation: an Image's resolved frame name
+	// must be curated or registered (RFC §14.4, D-038). The registry is built
+	// here, before composition, and is read-only during the parallel compose.
+	cfg.frames = frames.Curated()
+	for _, ext := range cfg.frameExt {
+		cfg.frames = cfg.frames.With(ext.name, ext.recipe)
+	}
+	if err := validateFrameRefs(s, cfg.frames); err != nil {
 		return Stats{}, err
 	}
 	// Theme precedence: WithTheme option > Scene.Theme field > the presentation's
