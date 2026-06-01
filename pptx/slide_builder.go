@@ -98,6 +98,31 @@ func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XS
 	return sp
 }
 
+// AddCustomShape adds a shape with custom path geometry (an icon glyph).
+// x, y, cx, cy are the position and size in EMU; geom is the translated
+// <a:custGeom>. The caller applies fill/line to the returned shape's properties.
+func (b *SlideBuilder) AddCustomShape(x, y, cx, cy int, geom *slide.XCustomGeometry) *slide.XSp {
+	sp := &slide.XSp{
+		NonVisual: slide.XNonVisualDrawingShape{
+			CNvPr: &slide.XNvCxnSpPr{
+				ID:   int(b.slide.AllocateShapeID()),
+				Name: fmt.Sprintf("Icon %d", b.slide.CurrentShapeID()),
+			},
+			CNvSpPr: &slide.XNvSpPr{},
+		},
+		ShapeProperties: &slide.XShapeProperties{
+			Transform2D: &slide.XTransform2D{
+				Offset: &slide.XOv2DrOffset{X: x, Y: y},
+				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
+			},
+			CustomGeom: geom,
+		},
+	}
+
+	b.slide.AppendShapeChild(sp)
+	return sp
+}
+
 // AddPicture adds an image to the slide.
 // x, y, cx, cy are the position and size in EMU; imageRId is the image
 // relationship ID.

@@ -103,6 +103,12 @@ type frameExtension struct {
 	recipe FrameRecipe
 }
 
+// iconExtension is a caller icon SVG registered for one render.
+type iconExtension struct {
+	name string
+	svg  []byte
+}
+
 // renderConfig accumulates RenderOptions.
 type renderConfig struct {
 	resolver  AssetResolver
@@ -112,6 +118,7 @@ type renderConfig struct {
 	layoutMap LayoutMap
 	frameExt  []frameExtension
 	frames    *frames.Registry // built in Render: curated ∪ frameExt
+	iconExt   []iconExtension
 }
 
 // RenderOption configures a Render call.
@@ -165,6 +172,26 @@ func WithFrameExtension(name string, recipe FrameRecipe) RenderOption {
 	}
 }
 
+// WithIconExtension registers a caller icon under name for this render (RFC
+// §14.1/§14.4, D-005). The SVG is validated when the option is applied; an SVG
+// that violates the icon translator constraints (single path, solid fill, no
+// gradients, no elliptical arcs) fails the render with a Stage-1 error — at
+// registration, not at compose. Registering a curated name overrides it for this
+// render only. A blank name or nil SVG is ignored. The icon is placed by the
+// nodes that accept one (card, flow) in later phases.
+func WithIconExtension(name string, svg []byte) RenderOption {
+	return func(c *renderConfig) {
+		if name != "" && svg != nil {
+			c.iconExt = append(c.iconExt, iconExtension{name: name, svg: svg})
+		}
+	}
+}
+
+// ValidateIcon reports whether svg satisfies the icon translator constraints,
+// so a caller can validate at its own registration point. It re-exports
+// pptx.ValidateIcon (scene never reaches under pptx — P1).
+func ValidateIcon(svg []byte) error { return pptx.ValidateIcon(svg) }
+
 // WithLayoutMap maps each slide's LayoutKind to a named layout in the active
 // template's master (RFC §13.2). A slide whose mapped layout the template
 // defines is related to it; an unmapped kind, or a name the template lacks,
@@ -206,6 +233,16 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	}
 	if err := validateFrameRefs(s, cfg.frames); err != nil {
 		return Stats{}, err
+	}
+	// Validate caller icon extensions at registration (RFC §14.1, D-005): an SVG
+	// outside the translator subset fails here, before any slide composes — not
+	// silently at render. Curated icons are pre-validated by their build-time
+	// test. (The per-render icon registry is assembled by the consuming nodes in
+	// a later phase; Phase 12 ships the registry + the fail-fast check.)
+	for _, ext := range cfg.iconExt {
+		if err := pptx.ValidateIcon(ext.svg); err != nil {
+			return Stats{}, fmt.Errorf("scene: icon extension %q: %w", ext.name, err)
+		}
 	}
 	// Theme precedence: WithTheme option > Scene.Theme field > the presentation's
 	// existing theme (RFC §13.1/§13.3).

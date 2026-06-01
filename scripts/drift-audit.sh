@@ -54,16 +54,19 @@ fi
 # ---------------------------------------------------------------------------
 # 3. P3 — raw OOXML / encoding/xml types are isolated to the OOXML + OPC
 #    layers (and the conformance validator, which parses XML to check it).
-#    Only internal/ooxml (wire types), internal/opc (OPC plumbing), and
-#    internal/conformance (validity tooling) may import encoding/xml; nothing
-#    above the internal wall (pptx, scene, …) may. Test files are exempt.
+#    Only internal/ooxml (wire types), internal/opc (OPC plumbing),
+#    internal/conformance (validity tooling), and internal/render (which parses
+#    SVG — an XML dialect — as icon-translator INPUT; it produces internal/ooxml
+#    structs but defines/exposes no OOXML wire types itself, D-040) may import
+#    encoding/xml; nothing above the internal wall (pptx, scene, …) may. Test
+#    files are exempt.
 # ---------------------------------------------------------------------------
 offenders=$(go_files \
-	| { grep -zvE '^internal/(ooxml|opc|conformance)/' || true; } \
+	| { grep -zvE '^internal/(ooxml|opc|conformance|render)/' || true; } \
 	| { grep -zvE '_test\.go$' || true; } \
 	| xargs -0 grep -lE '"encoding/xml"' 2>/dev/null || true)
 if [ -z "$offenders" ]; then
-	pass "encoding/xml confined to internal/ooxml and internal/opc (P3)"
+	pass "encoding/xml confined to internal/ooxml, opc, conformance, render (P3)"
 else
 	fail "encoding/xml imported outside the OOXML/OPC layers (P3): $(echo "$offenders" | tr '\n' ' ')"
 fi
