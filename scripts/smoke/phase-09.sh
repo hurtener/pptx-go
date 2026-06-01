@@ -36,8 +36,8 @@ else
 	fail "library builds CGo-free" "go build failed"
 fi
 
-# 2. LoadTheme on a real PowerPoint template resolves accent + fonts (criterion 1).
-run_check "brand template theme: accent + fonts" ./pptx/ 'LoadTheme.*Template|TemplateTheme|BrandTheme'
+# 2. Opening a brand kit extracts its theme (incl. sysClr) + fonts + layouts (criterion 1).
+run_check "brand template theme: accent + fonts + layouts" ./pptx/ 'Open_ExtractsThemeAndLayouts'
 # 3. FromTemplate seeds theme + masters; Masters() lists template layouts (criterion 2).
 run_check "FromTemplate seeds theme + masters/layouts" ./pptx/ 'FromTemplate'
 # 4. scene.WithTheme renders the brand accent into slide XML (criterion 3).

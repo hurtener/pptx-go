@@ -36,12 +36,41 @@ func ParseLayout(xmlData []byte) (*SlideLayoutData, error) {
 		background = parseBackground(xmlLayout.CSld.Bg)
 	}
 
+	name := ""
+	if xmlLayout.CSld != nil {
+		name = xmlLayout.CSld.Name
+	}
+
 	return &SlideLayoutData{
 		id:           generateLayoutID(),
-		name:         "",
+		name:         name,
+		layoutType:   layoutTypeFromAttr(xmlLayout.Type),
 		background:   background,
 		placeholders: placeholders,
 	}, nil
+}
+
+// layoutTypeFromAttr maps the OOXML sldLayout@type attribute to the internal
+// SlideLayoutType enum. Unknown or absent types map to SlideLayoutBlank.
+func layoutTypeFromAttr(t string) SlideLayoutType {
+	switch t {
+	case "title":
+		return SlideLayoutTitle
+	case "obj", "tx":
+		return SlideLayoutTitleAndContent
+	case "twoObj", "twoTxTwoObj":
+		return SlideLayoutTwoContent
+	case "fourObj", "vertTx", "clipArtAndVertTx":
+		return SlideLayoutComparison
+	case "titleOnly":
+		return SlideLayoutTitleOnly
+	case "objOnly", "objTx", "picTx":
+		return SlideLayoutObject
+	case "secHead":
+		return SlideLayoutTitle
+	default:
+		return SlideLayoutBlank
+	}
 }
 
 // ParseMaster parses a slide master XML, extracting all placeholder definitions.
@@ -64,9 +93,14 @@ func ParseMaster(xmlData []byte) (*SlideMasterData, error) {
 		background = parseBackground(xmlMaster.CSld.Bg)
 	}
 
+	name := ""
+	if xmlMaster.CSld != nil {
+		name = xmlMaster.CSld.Name
+	}
+
 	return &SlideMasterData{
 		id:           generateMasterID(),
-		name:         "",
+		name:         name,
 		background:   background,
 		placeholders: placeholders,
 	}, nil

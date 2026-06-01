@@ -2,6 +2,7 @@ package scene
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime"
 	"sync"
@@ -91,9 +92,11 @@ type Stats struct {
 
 // renderConfig accumulates RenderOptions.
 type renderConfig struct {
-	resolver AssetResolver
-	logger   *slog.Logger
-	workers  int
+	resolver  AssetResolver
+	logger    *slog.Logger
+	workers   int
+	theme     *pptx.Theme
+	layoutMap LayoutMap
 }
 
 // RenderOption configures a Render call.
@@ -120,6 +123,26 @@ func WithWorkers(n int) RenderOption {
 	return func(c *renderConfig) { c.workers = n }
 }
 
+// WithTheme applies t as the active theme for the render — the brand-kit flow
+// (RFC §13.1, §13.3): a scene authored against token roles re-renders in the
+// brand's palette and fonts (P2). It takes precedence over the Scene's Theme
+// field. A nil theme is ignored.
+func WithTheme(t *pptx.Theme) RenderOption {
+	return func(c *renderConfig) {
+		if t != nil {
+			c.theme = t
+		}
+	}
+}
+
+// WithLayoutMap maps each slide's LayoutKind to a named layout in the active
+// template's master (RFC §13.2). A slide whose mapped layout the template
+// defines is related to it; an unmapped kind, or a name the template lacks,
+// falls back to the blank layout (the latter records a LayoutWarning).
+func WithLayoutMap(m LayoutMap) RenderOption {
+	return func(c *renderConfig) { c.layoutMap = m }
+}
+
 // Render composes a Scene onto pres and returns render Stats (RFC §10.1). It
 // applies the scene's theme (if any), validates (Stage 1), then lays out and
 // composes each slide's nodes via the builder (P1). Render is deterministic
@@ -143,7 +166,12 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	if err := ValidateScene(s); err != nil {
 		return Stats{}, err
 	}
-	if s.Theme != nil {
+	// Theme precedence: WithTheme option > Scene.Theme field > the presentation's
+	// existing theme (RFC §13.1/§13.3).
+	switch {
+	case cfg.theme != nil:
+		pres.SetTheme(cfg.theme)
+	case s.Theme != nil:
 		pres.SetTheme(s.Theme)
 	}
 
@@ -156,10 +184,21 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 
 	// Phase 1: create every slide in scene order. AddSlide serializes on the
 	// presentation lock and appends in call order, so this fixes slide ordering
-	// and the stable slideN.xml file numbers before any concurrency.
+	// and the stable slideN.xml file numbers before any concurrency. The slide's
+	// LayoutKind resolves through the LayoutMap to a template layout (RFC §13.2);
+	// a mapped name the template lacks falls back to blank and warns.
 	slides := make([]*pptx.Slide, len(s.Slides))
+	layoutWarn := make([]*LayoutWarning, len(s.Slides))
 	for i := range s.Slides {
-		slides[i] = pres.AddSlide()
+		name := cfg.layoutMap.nameFor(s.Slides[i].Layout)
+		if name != "" && !pres.HasLayout(name) {
+			layoutWarn[i] = &LayoutWarning{
+				SlideID: s.Slides[i].ID,
+				Message: fmt.Sprintf("layout %q not in template; using blank layout", name),
+			}
+			name = ""
+		}
+		slides[i] = pres.AddSlide(name)
 	}
 
 	// Phase 2: compose. Media-bearing slides render sequentially in scene order
@@ -196,6 +235,9 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		stats.Slides++
 		stats.Shapes += results[i].shapes
 		stats.Assets += results[i].assets
+		if layoutWarn[i] != nil {
+			stats.Warnings = append(stats.Warnings, *layoutWarn[i])
+		}
 		stats.Warnings = append(stats.Warnings, results[i].warnings...)
 		stats.Timings = append(stats.Timings, SlideTiming{SlideID: s.Slides[i].ID, Duration: results[i].dur})
 	}

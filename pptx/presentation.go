@@ -61,6 +61,14 @@ type Presentation struct {
 	// masterCache holds master/layout information loaded from a template.
 	masterCache *MasterCache
 
+	// masters is the read-only master/layout registry built when a deck is
+	// opened or seeded from a template (Phase 09); nil for a blank New() deck.
+	masters []*Master
+
+	// template, when set by FromTemplate, is the brand kit whose theme + masters
+	// + layouts seed this presentation (adopted in New before any slide is added).
+	template *Presentation
+
 	// slideCounter generates slide file names (slide1.xml, slide2.xml, …).
 	slideCounter int32
 
@@ -112,6 +120,17 @@ func New(opts ...Option) *Presentation {
 		if opt != nil {
 			opt(pres)
 		}
+	}
+
+	// Seed from a brand-kit template when one was supplied (RFC §13.1); else
+	// initialize a fresh package + the default scaffold. Template adoption falls
+	// back to the scaffold on any failure so New never yields a broken deck.
+	if pres.template != nil {
+		if err := pres.adoptTemplate(); err == nil {
+			pres.template = nil // don't retain the source after adoption
+			return pres
+		}
+		pres.template = nil
 	}
 
 	// Initialize the package structure.
@@ -242,6 +261,15 @@ func (p *Presentation) loadPresentationPart() error {
 	}
 	p.repopulateSections()
 	p.seedMediaCounter()
+
+	// Extract the deck's theme and master/layout registry so an opened deck can
+	// serve as a brand kit (RFC §13.1): brand.Theme() returns its theme and
+	// brand.Masters() lists its layouts. Both are best-effort — a deck without a
+	// theme part keeps DefaultTheme; an unreadable master contributes nothing.
+	if t, err := loadThemeFromPackage(p.pkg); err == nil && t != nil {
+		p.theme = t
+	}
+	p.masters = buildMasterRegistry(p.pkg)
 
 	return nil
 }
@@ -417,19 +445,9 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	// Create the slide part.
 	slidePart := slide.NewSlidePart(slideNum)
 
-	// Resolve layout.
-	layoutRId := ""
-	if len(layout) > 0 && layout[0] != "" {
-		if p.masterCache != nil {
-			if layoutData, ok := p.masterCache.GetLayoutByName(layout[0]); ok {
-				// Create the layout relationship.
-				layoutRId = p.allocateRelID()
-				// TODO: add layout relationship to the slide
-				_ = layoutData
-			}
-		}
-	}
-	slidePart.SetLayoutRId(layoutRId)
+	// Resolve the slide's layout: a named layout from the template registry
+	// (Phase 09), else the default blank layout.
+	layoutURI := p.resolveLayoutURI(layout...)
 
 	// Set the slide URI.
 	slideURI := opc.NewPackURI(fmt.Sprintf("/ppt/slides/slide%d.xml", slideNum))
@@ -442,7 +460,7 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 
 	// Wire presentation→slide and slide→layout relationships; the returned
 	// relationship id is what <p:sldId r:id="…"> must carry (Phase 03 A2).
-	slideRId := p.relateSlide(slidePart, slidePartOPC)
+	slideRId := p.relateSlide(slidePart, slidePartOPC, layoutURI)
 
 	// Register with PresentationPart (auto-assigns a slide ID; slideRId is the
 	// presentation→slide relationship that <p:sldId> references).
@@ -479,14 +497,8 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	slideNum := int(atomic.AddInt32(&p.slideCounter, 1))
 	slidePart := slide.NewSlidePart(slideNum)
 
-	// Resolve layout.
-	layoutRId := ""
-	if len(layout) > 0 && layout[0] != "" && p.masterCache != nil {
-		if layoutData, ok := p.masterCache.GetLayoutByName(layout[0]); ok {
-			_ = layoutData // TODO: set layout relationship
-		}
-	}
-	slidePart.SetLayoutRId(layoutRId)
+	// Resolve the slide's layout (Phase 09): a named template layout, else blank.
+	layoutURI := p.resolveLayoutURI(layout...)
 
 	// Set URI.
 	slideURI := opc.NewPackURI(fmt.Sprintf("/ppt/slides/slide%d.xml", slideNum))
@@ -498,7 +510,7 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	_ = p.pkg.AddPart(slidePartOPC)
 
 	// Wire presentation→slide and slide→layout relationships.
-	slideRId := p.relateSlide(slidePart, slidePartOPC)
+	slideRId := p.relateSlide(slidePart, slidePartOPC, layoutURI)
 
 	// Register with PresentationPart at the same position, so the emitted
 	// sldIdLst order matches the builder's slide order.
