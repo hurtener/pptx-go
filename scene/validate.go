@@ -55,6 +55,9 @@ func validateNode(n SlideNode) error {
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")
 		}
+		if err := validateCrop(v.Crop); err != nil {
+			return err
+		}
 	case Chart:
 		if v.AssetID == "" {
 			return errors.New("chart requires an asset id")
@@ -116,6 +119,28 @@ func validateNode(n SlideNode) error {
 			return errors.New("card_section has no body")
 		}
 		return validateChildren(v.Body)
+	}
+	return nil
+}
+
+// validateCrop checks a crop is well-formed: each edge fraction is in [0,1] and
+// opposite edges do not over-trim (Left+Right < 1, Top+Bottom < 1), so the
+// composed source rectangle is non-degenerate. An over-crop is a structural
+// error, not a silently clamped image (D-026/D-039).
+func validateCrop(c Crop) error {
+	for _, e := range []struct {
+		name string
+		v    float64
+	}{{"left", c.Left}, {"top", c.Top}, {"right", c.Right}, {"bottom", c.Bottom}} {
+		if e.v < 0 || e.v > 1 {
+			return fmt.Errorf("image crop %s %.3f out of range [0,1]", e.name, e.v)
+		}
+	}
+	if c.Left+c.Right >= 1 {
+		return fmt.Errorf("image crop left+right %.3f >= 1 (no image remains)", c.Left+c.Right)
+	}
+	if c.Top+c.Bottom >= 1 {
+		return fmt.Errorf("image crop top+bottom %.3f >= 1 (no image remains)", c.Top+c.Bottom)
 	}
 	return nil
 }

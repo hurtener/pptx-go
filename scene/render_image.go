@@ -42,6 +42,13 @@ func (r *renderer) renderImage(ps *pptx.Slide, box pptx.Box, v Image, slideID st
 	if v.Alt != "" {
 		img.SetAltText(v.Alt)
 	}
+	// Crop and fit drive the builder's existing srcRect/stretch (D-039). SetFit
+	// with the default FitFill is idempotent (AddImage already stretches), so the
+	// uncropped/default case stays byte-identical to a Phase-10 image.
+	if v.Crop != (Crop{}) {
+		img.SetCrop(v.Crop)
+	}
+	img.SetFit(v.Fit)
 	r.stats.Shapes++
 	r.stats.Assets++
 }
