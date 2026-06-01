@@ -211,8 +211,29 @@ ships `Slides16x9` (default) and `Slides4x3`; print formats
 ## Frame chrome
 
 A curated device/browser bezel (browser / phone / desktop / laptop)
-rendered as native PPTX shapes wrapping an inner image. Applied via the
-`Image.Frame` field. See `RFC-001-pptx-go.md §14.3`.
+rendered as native PPTX shapes wrapping an inner image. Selected on an
+`Image` node by the `Frame` enum (`FrameKind`) or, for a caller-extended
+frame, the `FrameName` string (D-038). See `RFC-001-pptx-go.md §14.3` and
+`Frame recipe`, `Frame registry`.
+
+## Frame recipe
+
+`scene.FrameRecipe` (alias of `scene/frames.Recipe`) — a function
+`func(sl *pptx.Slide, region pptx.Box) (interior pptx.Box, shapes int)`
+that draws a frame's bezel as native shapes into `region` and returns the
+`interior` box the renderer inserts the image into, plus the bezel shape
+count. It composes the public `Builder` only (P1) and is pure integer-EMU
+geometry (deterministic). Curated recipes live in `assets/frames`; callers
+register their own via `scene.WithFrameExtension`. See `RFC §14.3`.
+
+## Frame registry
+
+The per-render, closed-name set of `Frame recipe`s a `Render` consults:
+the four curated names (`browser`, `phone`, `desktop`, `laptop`) overlaid
+with any `scene.WithFrameExtension(name, recipe)` entries (`RFC §14.4`).
+Built once before composition and read-only during it (concurrency-safe,
+byte-identical — D-035). An `Image` whose resolved frame name is absent
+from the registry fails Stage-1 validation (D-038).
 
 ## FromTemplate
 

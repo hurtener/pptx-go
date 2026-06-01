@@ -200,11 +200,17 @@ const (
 )
 
 // Image is an asset image with optional frame chrome (renders as a pic shape).
+//
+// Frame selects one of the curated device frames by enum; FrameName selects a
+// frame by name and, when non-empty, takes precedence over Frame — it is the
+// seam for a caller frame registered via scene.WithFrameExtension (D-038). With
+// both unset (FrameNone, "") the image renders without a bezel.
 type Image struct {
 	node
-	AssetID AssetID
-	Alt     string
-	Frame   FrameKind
+	AssetID   AssetID
+	Alt       string
+	Frame     FrameKind
+	FrameName string
 }
 
 func (Image) NodeKind() NodeKind { return KindImage }

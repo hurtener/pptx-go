@@ -23,6 +23,14 @@
     "github.com/hurtener/pptx-go/scene/layout": {
       "min": 80,
       "reason": "new scene package — geometry engine (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/scene/frames": {
+      "min": 80,
+      "reason": "new scene package — frame registry (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/assets/frames": {
+      "min": 80,
+      "reason": "curated frame shape recipes; scene-adjacent composer (CLAUDE.md §11 — 80%)"
     }
   }
 }

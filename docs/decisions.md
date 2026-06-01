@@ -971,4 +971,48 @@ the first master); rich per-placeholder targeting from the IR is deferred.
 
 ---
 
+## D-038 — Frame reference: FrameKind enum alias + named registry
+
+**Date:** 2026-06-01
+**Status:** Settled
+**Context:** Phase 10 ships the four curated device frames (RFC §14.3) and the
+§14.4 extension seam `scene.WithFrameExtension(name, recipe)`, which references
+frames **by string name**. The `Image` IR node, however, already shipped (Phase
+05) with a closed `Frame FrameKind` enum (`FrameNone` + `FrameBrowser`/
+`FramePhone`/`FrameDesktop`/`FrameLaptop`). An enum cannot name a
+caller-registered frame, so the two reference mechanisms must be reconciled
+without breaking the shipped enum. Brief 02 (F5) surveyed the IR's own
+precedent: `Decoration` already carries both a `DecorationKind` enum **and** a
+free-form `Preset string` curated-name — the identical shape of problem.
+**Decision:** The frame **registry is keyed by name**. The four curated
+`FrameKind` values map to the four reserved curated names (`browser`, `phone`,
+`desktop`, `laptop`). `Image` gains an additive optional field
+`FrameName string`:
+
+- `FrameName != ""` → selects that name (curated **or** caller-registered) and
+  **takes precedence** over the enum.
+- `FrameName == ""` → the `FrameKind` enum selects: `FrameNone` ⇒ no frame,
+  otherwise the curated name for that kind.
+
+The enum stays as the zero-import ergonomic path for the curated four; the
+string is the §14.4 extension seam. An `Image` whose **resolved** frame name is
+absent from the render's registry (curated ∪ `WithFrameExtension` set) fails
+**Stage-1 validation** (closed-name semantics, §14.4) — checked in `Render`
+after the option-free `ValidateScene`, because the registry is derived from
+render options. A curated `FrameKind` always resolves. Extensions are
+**per-render** (folded over a copy of the curated registry, read-only during
+the parallel compose) — not process-global state — preserving D-035 byte-
+identical determinism and concurrency safety.
+
+**Consequences:** No break to the shipped `Image.Frame` surface (`FrameName` is
+additive; its zero value preserves prior behavior). The enum-plus-name pattern
+is now consistent across `Image` (frames) and `Decoration` (ornaments), and is
+the template Phases 12 (icons) and 13 (ornaments) follow for their own curated
+sets. The registry being name-keyed lets a caller override a curated frame for
+one render by registering its name. A true OOXML group-shape for the bezel is
+**not** part of this decision (the builder has no group primitive in V1; a
+framed image is a cluster of sibling native shapes — deferred post-V1).
+
+---
+
 *Append new entries below this line.*

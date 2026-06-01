@@ -67,9 +67,13 @@ Material))*
 
 ### Curated assets (icons, ornaments, frames)
 
-*(no briefs yet — candidates: lucide-to-OOXML path translator
-constraints, preset ornament shape recipes survey, device-frame
-shape geometry)*
+- `02-device-frame-shape-geometry.md` — drawing the four V1 device frames
+  (browser/phone/desktop/laptop) as native rounded-rect + ellipse shapes;
+  the recipe→interior seam, token-only bezel color, and the enum-vs-named
+  frame-reference reconciliation for §14.4 extension.
+
+*(candidates: lucide-to-OOXML path translator constraints, preset ornament
+shape recipes survey)*
 
 ### Charts
 
