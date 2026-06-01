@@ -1015,4 +1015,54 @@ framed image is a cluster of sibling native shapes — deferred post-V1).
 
 ---
 
+## D-039 — Phase 11: media work already delivered; scene Image gains crop/fit; no media-manager relocation
+
+**Date:** 2026-06-01
+**Status:** Settled
+**Context:** The master plan scopes Phase 11 as "Image node + media manager
+refactor", naming a `pptx/media.go` refactor (dedup pool moved to `internal/opc`
+or a new `internal/media`, alt-text first class, MIME detection) plus scene-side
+"full image node composition (asset resolution, alt text, crop, fit, frame)".
+Inspection at the start of Phase 11 found the builder half **already delivered**:
+the foundation builder phase shipped `pptx/media_manager.go` (content-hash MD5
+dedup, global media pool, deterministic ordering), `SetAltText`, `SetCrop`,
+`SetFit` (`FitFill`/`FitNone`), and `sniffImage` MIME detection — all tested
+(`test/parts/media_manager_dedup_test.go`, `test/pptx/media_test.go`). Phase 10
+wired scene asset resolution, alt text, and frame composition. The remaining gap
+was scene-side only: the `Image` IR node could not express **crop** or **fit**.
+The master plan thus drifted from reality (it assumed an upstream media-manager
+refactor still pending). Resolving the drift requires a settled call on three
+points.
+**Decision:**
+1. **Phase 11 adds no builder media code.** The media manager, dedup pool, alt
+   text, crop, fit, and MIME detection are delivered and tested; re-doing them
+   would be redundant. Phase 11's acceptance criteria that name those
+   capabilities (dedup writes one part; alt text round-trips) are satisfied by
+   the existing builder and verified by new **scene-seam** tests.
+2. **The `internal/media` relocation is declined.** The dedup pool's wire type
+   (`MediaResource`) already lives in `internal/ooxml/media` (the P3-isolated
+   seam); the *orchestrator* (`MediaManager`) coordinates `Slide`/`Presentation`
+   state and is correctly placed in package `pptx`. The master plan offered the
+   move as optional ("`internal/opc` **or** a new `internal/media`"); relocating
+   working, tested code for nominal purity is churn with no functional gain
+   (`CLAUDE.md §4.3` — a reasonable deviation, documented here).
+3. **The scene `Image` IR gains `Crop` and `Fit`** as the genuine Phase 11
+   deliverable — mechanism exposure of the builder's existing crop/fit (engine,
+   not product — D-026). `Crop`/`Fit` are re-exported builder types (type
+   aliases, like the design tokens in `scene/tokens.go`); both fields are
+   additive and their zero values (`Crop{}`, `FitFill`) reproduce Phase-10
+   behavior byte-for-byte. `Fit` is limited to `FitFill`/`FitNone`: aspect-aware
+   cover/contain would require reading pixel dimensions, forbidden by §7 (the
+   RFC §8.6 example's `FitCover` is therefore **not** in V1). An out-of-range or
+   over-crop fails Stage-1 validation rather than being silently clamped.
+
+**Consequences:** Phase 11 is a focused scene-IR phase (two `Image` fields +
+their wiring + crop-range validation + consolidation tests), not a builder
+refactor. The media manager stays in `pptx`. A future need for aspect-aware
+fitting (cover/contain) is a separate decision gated on a pixel-dimension source
+the caller supplies (not a pptx-go read), preserving §7. The drift is recorded
+so the master-plan Phase 11 block is understood as superseded by this entry.
+
+---
+
 *Append new entries below this line.*

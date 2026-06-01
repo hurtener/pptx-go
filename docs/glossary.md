@@ -145,6 +145,13 @@ types, resolved relationships, no dangling `rId`, pack URIs); **(2)**
 per-wave PowerPoint check. Layers 1–3 are automated/CI; layer 4 is the
 ground truth they approximate.
 
+## Crop
+
+A per-edge fractional trim (0..1 from each edge) applied to an image's
+source rectangle. `pptx.Crop` on the builder (`Image.SetCrop`); re-exported
+as `scene.Crop` and carried on the scene `image` node (D-039). Drives the
+OOXML `a:srcRect`. Pure mechanism — no pixel inspection (§7).
+
 ## Decoration
 
 A scene IR leaf that places a curated `Ornament` or asset image at a slide
@@ -170,6 +177,14 @@ helpers (`pptx.Pt`, `pptx.Cm`, `pptx.In`, `pptx.Px`).
 A small label rendered above a heading or card body (e.g. "01 · TRAZABILIDAD"
 in pengui-slides reference decks). Plain `RichText`. Not a distinct IR node;
 a field on `Hero`, `Card`, `CardSection`.
+
+## Fit
+
+An image's fill mode: `FitFill` (the default — stretches to fill its box, via
+the OOXML `a:stretch`) or `FitNone` (no stretch fill). `pptx.Fit` on the
+builder (`Image.SetFit`); re-exported as `scene.Fit` on the scene `image`
+node (D-039). Aspect-aware cover/contain are **not** in V1 — they need pixel
+dimensions, forbidden by §7.
 
 ## Fill
 
