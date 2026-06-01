@@ -29,8 +29,9 @@ const (
 	LayoutBlank
 )
 
-// Variant selects a theme variant for a slide (RFC §10.1). Per-slide overrides
-// are V2; a per-scene variant is V1.
+// Variant selects a named theme variant for a slide (RFC §13.3). Variant
+// selection is not yet implemented: a non-default Variant currently renders with
+// the active theme and surfaces a LayoutWarning (it is not silently dropped).
 type Variant int
 
 const (
@@ -38,6 +39,18 @@ const (
 	VariantDark
 	VariantPrint
 )
+
+// String returns the variant's name.
+func (v Variant) String() string {
+	switch v {
+	case VariantDark:
+		return "dark"
+	case VariantPrint:
+		return "print"
+	default:
+		return "light"
+	}
+}
 
 // Metadata is deck-level core metadata.
 type Metadata struct {
@@ -119,6 +132,7 @@ type renderConfig struct {
 	frameExt  []frameExtension
 	frames    *frames.Registry // built in Render: curated ∪ frameExt
 	iconExt   []iconExtension
+	ctx       context.Context
 }
 
 // RenderOption configures a Render call.
@@ -131,9 +145,18 @@ func WithAssetResolver(r AssetResolver) RenderOption {
 }
 
 // WithLogger injects a structured logger for render diagnostics (no logger =
-// no logs; D-016).
+// no logs; D-016). When set, Render emits a render-boundary summary and a Warn
+// event for every LayoutWarning (RFC §18); the handler's performance is the
+// caller's concern (slog calls are synchronous).
 func WithLogger(l *slog.Logger) RenderOption {
 	return func(c *renderConfig) { c.logger = l }
+}
+
+// WithContext sets the context Render uses: the AssetResolver receives it, and
+// Render honors cancellation between slides (returning ctx.Err()). The default
+// is context.Background(). (CLAUDE.md §5 — honor cancellation on I/O.)
+func WithContext(ctx context.Context) RenderOption {
+	return func(c *renderConfig) { c.ctx = ctx }
 }
 
 // WithWorkers sets the number of slides composed concurrently (D-015). The
@@ -258,7 +281,15 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		workers = runtime.GOMAXPROCS(0)
 	}
 
-	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: context.Background()}
+	ctx := cfg.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if cfg.logger != nil {
+		cfg.logger.Debug("scene: render start", "slides", len(s.Slides), "workers", workers)
+	}
+
+	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: ctx}
 
 	// Phase 1: create every slide in scene order. AddSlide serializes on the
 	// presentation lock and appends in call order, so this fixes slide ordering
@@ -286,6 +317,9 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	results := make([]slideResult, len(s.Slides))
 	free := make([]int, 0, len(s.Slides))
 	for i := range s.Slides {
+		if err := ctx.Err(); err != nil { // honor cancellation between slides
+			return Stats{}, err
+		}
 		if workers > 1 && !slideUsesAssets(&s.Slides[i]) {
 			free = append(free, i)
 			continue
@@ -302,10 +336,16 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 			go func(i int) {
 				defer wg.Done()
 				defer func() { <-sem }()
+				if ctx.Err() != nil { // skip remaining work once canceled
+					return
+				}
 				results[i] = base.composeOne(slides[i], &s.Slides[i])
 			}(idx)
 		}
 		wg.Wait()
+		if err := ctx.Err(); err != nil {
+			return Stats{}, err
+		}
 	}
 
 	var stats Stats
@@ -318,6 +358,20 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		}
 		stats.Warnings = append(stats.Warnings, results[i].warnings...)
 		stats.Timings = append(stats.Timings, SlideTiming{SlideID: s.Slides[i].ID, Duration: results[i].dur})
+	}
+	if cfg.logger != nil {
+		// Warnings are logged here, post-aggregation, so order is deterministic
+		// (scene order) regardless of the parallel compose (RFC §18 — layout
+		// overflows, unresolved assets).
+		for _, w := range stats.Warnings {
+			cfg.logger.Warn("scene: layout warning", "slide", w.SlideID, "detail", w.Message)
+		}
+		cfg.logger.Info("scene: render complete",
+			"slides", stats.Slides,
+			"shapes", stats.Shapes,
+			"assets", stats.Assets,
+			"warnings", len(stats.Warnings),
+		)
 	}
 	return stats, nil
 }
