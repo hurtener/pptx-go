@@ -1,12 +1,28 @@
 package scene_test
 
 import (
+	"archive/zip"
+	"bytes"
 	"strings"
 	"testing"
 
 	"github.com/hurtener/pptx-go/pptx"
 	"github.com/hurtener/pptx-go/scene"
 )
+
+// zipNames returns the set of part names in a saved deck.
+func zipNames(t *testing.T, data []byte) map[string]bool {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatalf("open zip: %v", err)
+	}
+	names := make(map[string]bool, len(zr.File))
+	for _, f := range zr.File {
+		names[f.Name] = true
+	}
+	return names
+}
 
 // pngResolver returns a resolver that serves a tiny valid PNG for any id, plus
 // the bytes it serves.
@@ -134,6 +150,142 @@ func TestRenderImage_UnknownFrame(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "nope") {
 		t.Errorf("error %q does not name the unknown frame", err)
+	}
+}
+
+// TestRenderImage_Crop is acceptance criterion 1: a non-zero Crop emits an
+// srcRect with the expected per-edge permille; a zero Crop emits none.
+func TestRenderImage_Crop(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "img",
+		Nodes: []scene.SlideNode{scene.Image{
+			AssetID: "asset://x",
+			Crop:    scene.Crop{Left: 0.1, Top: 0.2, Right: 0.05, Bottom: 0.1},
+		}},
+	}}}
+	data, _ := render(t, sc, scene.WithAssetResolver(resolver))
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	for _, want := range []string{`<a:srcRect`, `l="10000"`, `t="20000"`, `r="5000"`, `b="10000"`} {
+		if !strings.Contains(slide, want) {
+			t.Errorf("cropped image missing %q in:\n%s", want, slide)
+		}
+	}
+}
+
+// TestRenderImage_NoCrop confirms the default (zero) Crop emits no srcRect.
+func TestRenderImage_NoCrop(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "img",
+		Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://x"}},
+	}}}
+	data, _ := render(t, sc, scene.WithAssetResolver(resolver))
+	if slide := zipPart(t, data, "ppt/slides/slide1.xml"); strings.Contains(slide, "<a:srcRect") {
+		t.Errorf("uncropped image unexpectedly emitted a srcRect:\n%s", slide)
+	}
+}
+
+// TestRenderImage_Fit is acceptance criterion 2: FitNone omits the stretch fill;
+// FitFill (the default) keeps it.
+func TestRenderImage_Fit(t *testing.T) {
+	resolver, _ := pngResolver()
+	for _, tc := range []struct {
+		name       string
+		fit        scene.Fit
+		wantStruct bool
+	}{
+		{"fill-default", scene.FitFill, true},
+		{"none", scene.FitNone, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{
+				ID:    "img",
+				Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://x", Fit: tc.fit}},
+			}}}
+			data, _ := render(t, sc, scene.WithAssetResolver(resolver))
+			slide := zipPart(t, data, "ppt/slides/slide1.xml")
+			has := strings.Contains(slide, "<a:stretch")
+			if has != tc.wantStruct {
+				t.Errorf("%s: stretch present = %v, want %v:\n%s", tc.name, has, tc.wantStruct, slide)
+			}
+		})
+	}
+}
+
+// TestRenderImage_CropWithFrame is acceptance criterion 3: crop + fit compose
+// with a frame — the cropped picture is placed inside the bezel interior.
+func TestRenderImage_CropWithFrame(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "img",
+		Nodes: []scene.SlideNode{scene.Image{
+			AssetID: "asset://x",
+			Frame:   scene.FrameBrowser,
+			Crop:    scene.Crop{Left: 0.05, Right: 0.05},
+			Fit:     scene.FitNone,
+		}},
+	}}}
+	data, stats := render(t, sc, scene.WithAssetResolver(resolver))
+	if stats.Shapes < 2 {
+		t.Fatalf("Stats.Shapes = %d, want >= 2 (bezel + image)", stats.Shapes)
+	}
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, "<p:sp>") || !strings.Contains(slide, "<p:pic>") {
+		t.Errorf("framed+cropped image missing bezel or pic:\n%s", slide)
+	}
+	if !strings.Contains(slide, "<a:srcRect") {
+		t.Errorf("framed+cropped image missing srcRect:\n%s", slide)
+	}
+	if strings.Contains(slide, "<a:stretch") {
+		t.Errorf("FitNone image unexpectedly kept a stretch fill:\n%s", slide)
+	}
+}
+
+// TestRenderImage_InvalidCrop is acceptance criterion 4: an out-of-range or
+// over-crop fails Stage-1 validation.
+func TestRenderImage_InvalidCrop(t *testing.T) {
+	resolver, _ := pngResolver()
+	for _, tc := range []struct {
+		name string
+		crop scene.Crop
+	}{
+		{"edge>1", scene.Crop{Left: 1.5}},
+		{"edge<0", scene.Crop{Top: -0.2}},
+		{"over-crop-horizontal", scene.Crop{Left: 0.6, Right: 0.6}},
+		{"over-crop-vertical", scene.Crop{Top: 0.5, Bottom: 0.5}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{
+				ID:    "img",
+				Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://x", Crop: tc.crop}},
+			}}}
+			_, err := scene.Render(pptx.New(), sc, scene.WithAssetResolver(resolver))
+			if err == nil || !strings.Contains(err.Error(), "crop") {
+				t.Fatalf("%s: want a crop validation error, got %v", tc.name, err)
+			}
+		})
+	}
+}
+
+// TestRenderImage_SceneDedup is acceptance criterion 5: the same asset on two
+// slides writes one media part at the scene seam (dedup is preserved).
+func TestRenderImage_SceneDedup(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{
+		{ID: "a", Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://shared"}}},
+		{ID: "b", Nodes: []scene.SlideNode{scene.Image{AssetID: "asset://shared"}}},
+	}}
+	data, stats := render(t, sc, scene.WithAssetResolver(resolver))
+	if stats.Assets != 2 {
+		t.Errorf("Stats.Assets = %d, want 2 (one per slide)", stats.Assets)
+	}
+	names := zipNames(t, data)
+	if !names["ppt/media/image1.png"] {
+		t.Error("expected ppt/media/image1.png to exist")
+	}
+	if names["ppt/media/image2.png"] {
+		t.Error("identical asset bytes were not deduplicated (image2.png exists)")
 	}
 }
 

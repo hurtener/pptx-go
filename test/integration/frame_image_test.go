@@ -85,3 +85,77 @@ func TestFrameImage_RoundTripAndDeterminism(t *testing.T) {
 		t.Errorf("reopened slide count = %d, want 1", reopened.SlideCount())
 	}
 }
+
+// renderCompositeDeck renders a single-slide deck whose image composes a frame,
+// a crop, a non-default fit, and alt text — the full Phase 11 image node.
+func renderCompositeDeck(t *testing.T) []byte {
+	t.Helper()
+	png := append([]byte("\x89PNG\r\n\x1a\n"), []byte("composite-shot")...)
+	resolver := scene.URIAssetResolver(func(string) ([]byte, string, error) {
+		return png, "image/png", nil
+	})
+	sc := scene.Scene{
+		Meta: scene.Metadata{Title: "Composite"},
+		Slides: []scene.SceneSlide{{
+			ID: "shot",
+			Nodes: []scene.SlideNode{scene.Image{
+				AssetID: "asset://hero",
+				Alt:     "cropped product UI",
+				Frame:   scene.FrameLaptop,
+				Crop:    scene.Crop{Left: 0.1, Top: 0.05, Right: 0.1, Bottom: 0.05},
+				Fit:     scene.FitNone,
+			}},
+		}},
+	}
+	pres := pptx.New()
+	if _, err := scene.Render(pres, sc, scene.WithAssetResolver(resolver)); err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	data, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	return data
+}
+
+// TestFrameImage_CropFitComposite is the Phase 11 seam test: a scene image that
+// composes a frame + crop + fit + alt renders to a conformant deck, carries the
+// crop (srcRect) and the FitNone (no stretch) on the framed picture, re-renders
+// byte-identically (D-035), and reopens through pptx round-trip.
+func TestFrameImage_CropFitComposite(t *testing.T) {
+	data := renderCompositeDeck(t)
+
+	rep, err := conformance.ValidateBytes(data, conformance.Options{
+		RequiredParts: []string{
+			"/ppt/presentation.xml",
+			"/ppt/slides/slide1.xml",
+			"/ppt/media/image1.png",
+		},
+	})
+	if err != nil {
+		t.Fatalf("ValidateBytes: %v", err)
+	}
+	if !rep.OK() {
+		t.Fatalf("composite-image deck failed conformance:\n%s", rep)
+	}
+
+	if again := renderCompositeDeck(t); !bytes.Equal(data, again) {
+		t.Fatalf("composite-image render is not byte-identical (%d vs %d bytes)", len(data), len(again))
+	}
+
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	for _, want := range []string{"<p:sp>", "<p:pic>", "<a:srcRect", "cropped product UI"} {
+		if !strings.Contains(slide, want) {
+			t.Errorf("composite slide missing %q:\n%s", want, slide)
+		}
+	}
+	if strings.Contains(slide, "<a:stretch") {
+		t.Errorf("FitNone composite unexpectedly kept a stretch fill:\n%s", slide)
+	}
+
+	if reopened, err := pptx.NewFromBytes(data); err != nil {
+		t.Fatalf("reopen composite deck: %v", err)
+	} else if reopened.SlideCount() != 1 {
+		t.Errorf("reopened slide count = %d, want 1", reopened.SlideCount())
+	}
+}

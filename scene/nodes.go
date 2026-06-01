@@ -1,5 +1,7 @@
 package scene
 
+import "github.com/hurtener/pptx-go/pptx"
+
 // The scene node catalog (RFC §11). SlideNode is a sealed union: an unexported
 // marker keeps the set closed to this package, and NodeKind discriminates for
 // validation and (later) rendering. Leaf nodes hold content; container nodes
@@ -199,18 +201,41 @@ const (
 	FrameLaptop
 )
 
+// Crop is a per-edge fractional image crop (0..1 trimmed from each edge),
+// re-exported from the builder so the IR uses the same vocabulary (D-039). It
+// drives the OOXML srcRect; the zero value is no crop.
+type Crop = pptx.Crop
+
+// Fit is the image fill mode, re-exported from the builder (D-039). V1 ships
+// FitFill (the default — stretches to fill the box) and FitNone; aspect-aware
+// cover/contain are not in V1 (they need pixel dimensions, forbidden by §7).
+type Fit = pptx.Fit
+
+const (
+	// FitFill stretches the image to fill its box (the zero value / default).
+	FitFill = pptx.FitFill
+	// FitNone places the image without a stretch fill mode.
+	FitNone = pptx.FitNone
+)
+
 // Image is an asset image with optional frame chrome (renders as a pic shape).
 //
 // Frame selects one of the curated device frames by enum; FrameName selects a
 // frame by name and, when non-empty, takes precedence over Frame — it is the
 // seam for a caller frame registered via scene.WithFrameExtension (D-038). With
 // both unset (FrameNone, "") the image renders without a bezel.
+//
+// Crop trims the source image per edge; Fit selects the fill mode. Both are
+// mechanism exposure of the builder's crop/fit (D-039); their zero values
+// (Crop{}, FitFill) render the image uncropped and stretched.
 type Image struct {
 	node
 	AssetID   AssetID
 	Alt       string
 	Frame     FrameKind
 	FrameName string
+	Crop      Crop
+	Fit       Fit
 }
 
 func (Image) NodeKind() NodeKind { return KindImage }
