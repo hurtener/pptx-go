@@ -46,7 +46,7 @@ run_check "pptx.WithLogger emits a save event"          ./test/pptx/ 'WithLogger
 # --- PR #2: ornaments + Decoration ----------------------------------------
 run_check "each curated ornament renders at its anchor" ./scene/ 'Ornament|Decoration'
 run_check "bleed decoration uses negative offsets"      ./scene/ 'Bleed'
-run_check "layer z-order honored (bg before / fg after)" ./scene/ 'LayerOrder|DecorationLayer'
+run_check "layer z-order honored (bg before / fg after)" ./scene/ 'LayerZOrder|DecorationLayer'
 run_check "WithOrnamentExtension renders a caller ornament" ./scene/ 'OrnamentExtension'
 run_check "ornament recipes deterministic"              ./assets/ornaments/ 'Recipe|Determinis'
 

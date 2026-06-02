@@ -5,7 +5,7 @@ fills/transform) + internal/ooxml/slide (gradient wire types)
 **RFC sections:** §14.2, §11.1 (decoration), §10.2 (layout order), §12 (policy)
 **Deps:** Phase 12 (the curated-asset extension-seam pattern; the icon
 custom-geometry precedent).
-**Status:** In progress
+**Status:** Done
 
 > **Delivery (split, confirmed with maintainer).** This one plan covers two
 > PRs:
@@ -271,13 +271,27 @@ lands.
   - No `coverage.json` change in PR #1 (gradient/rotation/metadata/logger live in
     existing packages); `internal/ooxml/core` gains a direct `BuildCorePropsXML`
     test.
-- *(PR #2 deviations appended when it lands)*
+- **PR #2 (ornaments + Decoration) — landed.** Deviations:
+  - Ornament recipe contract is `func(sl, box, alpha int, rotationDeg float64)
+    int` (accent-locked per RFC §14.2 default; opacity passed as an OOXML alpha
+    the recipe applies, rather than a pre-built `Color`). This keeps
+    assets/ornaments importing only `pptx` (no scene/ornaments → cycle).
+  - Rotation is honored only by single-shape ornaments (`chevron_arrow`) and
+    asset decorations are not rotated (no public image-rotation API; the multi-
+    shape ornaments can't rotate as a unit without a group transform — D-041).
+    Documented; symmetric ornaments are unaffected.
+  - `Bleed` is surfaced via a warning when `false` and the box is off-canvas
+    (suppressed when `true`), rather than clamping the box — simpler and keeps
+    the caller's geometry intact.
+  - Scene re-exports the `Anchor` constants + `Position`/`Size` aliases so the IR
+    reads `scene.AnchorCenter` etc.
 
 ## 17. Sign-off
 
-- [ ] PR #1 criteria (1–5) pass; PR #2 criteria (6–9) pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-13.sh` `OK ≥ count`, `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary + decisions (D-041, D-042) updated.
-- [ ] (Phase 20+) Docs site / skills — N/A (inert pre-Phase 20).
+- [x] PR #1 criteria (1–5) pass; PR #2 criteria (6–9) pass.
+- [x] `make coverage` clean for touched packages (assets/ornaments 94.3%,
+      scene/ornaments 100%, scene 90%).
+- [x] `scripts/smoke/phase-13.sh` `OK ≥ count`, `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary + decisions (D-041, D-042) updated.
+- [x] (Phase 20+) Docs site / skills — N/A (inert pre-Phase 20).

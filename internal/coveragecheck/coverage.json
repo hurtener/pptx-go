@@ -39,6 +39,14 @@
     "github.com/hurtener/pptx-go/assets/icons": {
       "min": 80,
       "reason": "curated icon SVG embed + registry helpers (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/scene/ornaments": {
+      "min": 80,
+      "reason": "new scene package — ornament registry (CLAUDE.md §11 — 80%)"
+    },
+    "github.com/hurtener/pptx-go/assets/ornaments": {
+      "min": 80,
+      "reason": "curated ornament shape recipes; scene-adjacent composer (CLAUDE.md §11 — 80%)"
     }
   }
 }

@@ -164,9 +164,12 @@ Distinct from preset geometry (`a:prstGeom`, a named `ShapeGeometry`).
 
 ## Decoration
 
-A scene IR leaf that places a curated `Ornament` or asset image at a slide
-position (in-canvas or bleed). Pure visual; carries no text. Layer is
-`background` (renders behind body) or `foreground` (renders on top).
+A scene IR leaf that places a curated `Ornament` (native) or an asset image
+(`pic`) at an anchored slide position. The box is centered on `Anchor` shifted
+by `Offset`, sized by `Size`; `Bleed` permits it off the slide edge; `Opacity`
+(0..1) and `Rotation` (degrees) style it. Pure visual; carries no text. `Layer`
+is `background` (renders behind body) or `foreground` (renders on top) — the
+renderer imposes that z-order (RFC §10.2).
 
 ## Drift audit
 
@@ -381,7 +384,10 @@ XLSX. Lives under `internal/opc`.
 A curated preset decoration shape recipe in the `assets/ornaments/`
 registry: `glow_ring`, `radial_glow`, `grid_dots`, `corner_bracket`,
 `chevron_arrow`, `noise_overlay`. Rendered as native PPTX shapes in the
-active accent token.
+active accent token, at a caller opacity and rotation (the glows use radial
+`Gradient fill`s; `noise_overlay` is a deterministic sparse-dot grain
+approximation — D-041). Selected by a `Decoration`'s `Preset` name; callers
+add more via `scene.WithOrnamentExtension` (mirrors the frame/icon seams).
 
 ## Part
 

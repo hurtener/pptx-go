@@ -100,6 +100,8 @@ func nodeUsesAssets(n SlideNode) bool {
 	switch v := n.(type) {
 	case CodeBlock, Image:
 		return true
+	case Decoration:
+		return v.Kind == DecorationAsset // preset ornaments are native shapes
 	case TwoColumn:
 		return nodesUseAssets(v.Left) || nodesUseAssets(v.Right)
 	case Grid:
@@ -122,20 +124,41 @@ func (r *renderer) bodyRegion() pptx.Box {
 	}
 }
 
-// layout assigns each top-level node a slot. section_divider takes the full
-// slide; every other node stacks vertically in the body region (in IR order).
+// layout assigns each top-level node a slot, imposing the RFC §10.2 z-order:
+// background decorations first (behind), then section dividers and the stacked
+// body, then foreground decorations (on top). Decorations are overlays placed
+// against the full slide (anchor-relative) and do not consume body-stack height;
+// every other node stacks vertically in the body region in IR order.
 func (r *renderer) layout(nodes []SlideNode, slideID string) []placement {
 	cx, cy := r.pres.SlideSize()
-	var out []placement
-	var stacked []SlideNode
+	fullSlide := pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}
+	var bg, fg, sections, stacked []SlideNode
 	for _, n := range nodes {
-		if _, ok := n.(SectionDivider); ok {
-			out = append(out, placement{n, pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}})
-			continue
+		switch d := n.(type) {
+		case Decoration:
+			if d.Layer == LayerForeground {
+				fg = append(fg, n)
+			} else {
+				bg = append(bg, n)
+			}
+		case SectionDivider:
+			sections = append(sections, n)
+		default:
+			stacked = append(stacked, n)
 		}
-		stacked = append(stacked, n)
 	}
-	return append(out, r.stackIn(r.bodyRegion(), stacked, slideID)...)
+	var out []placement
+	for _, n := range bg {
+		out = append(out, placement{n, fullSlide})
+	}
+	for _, n := range sections {
+		out = append(out, placement{n, fullSlide})
+	}
+	out = append(out, r.stackIn(r.bodyRegion(), stacked, slideID)...)
+	for _, n := range fg {
+		out = append(out, placement{n, fullSlide})
+	}
+	return out
 }
 
 // stackIn places nodes top-to-bottom within box (full box width, per-node
@@ -181,6 +204,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderCodeBlock(ps, box, v, slideID)
 	case Image:
 		r.renderImage(ps, box, v, slideID)
+	case Decoration:
+		r.renderDecoration(ps, box, v, slideID)
 	case SectionDivider:
 		r.renderSectionDivider(ps, box, v)
 	case TwoColumn:
@@ -190,7 +215,7 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 	case Table:
 		r.renderTable(ps, box, v, slideID)
 	default:
-		// chart/decoration/flow + card/card_section are later phases.
+		// chart/flow + card/card_section are later phases.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
 }

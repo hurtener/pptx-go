@@ -10,6 +10,7 @@ import (
 
 	"github.com/hurtener/pptx-go/pptx"
 	"github.com/hurtener/pptx-go/scene/frames"
+	"github.com/hurtener/pptx-go/scene/ornaments"
 )
 
 // The scene entrypoint (RFC §10.1). A Scene is a theme + ordered slides + deck
@@ -122,17 +123,30 @@ type iconExtension struct {
 	svg  []byte
 }
 
+// OrnamentRecipe draws an ornament into a box at a caller opacity (OOXML alpha)
+// and rotation, returning the shape count. It composes the public pptx builder
+// only (P1). Register one under a name with WithOrnamentExtension.
+type OrnamentRecipe = ornaments.Recipe
+
+// ornamentExtension is a caller ornament registered for one render.
+type ornamentExtension struct {
+	name   string
+	recipe OrnamentRecipe
+}
+
 // renderConfig accumulates RenderOptions.
 type renderConfig struct {
-	resolver  AssetResolver
-	logger    *slog.Logger
-	workers   int
-	theme     *pptx.Theme
-	layoutMap LayoutMap
-	frameExt  []frameExtension
-	frames    *frames.Registry // built in Render: curated ∪ frameExt
-	iconExt   []iconExtension
-	ctx       context.Context
+	resolver    AssetResolver
+	logger      *slog.Logger
+	workers     int
+	theme       *pptx.Theme
+	layoutMap   LayoutMap
+	frameExt    []frameExtension
+	frames      *frames.Registry // built in Render: curated ∪ frameExt
+	iconExt     []iconExtension
+	ornamentExt []ornamentExtension
+	ornaments   *ornaments.Registry // built in Render: curated ∪ ornamentExt
+	ctx         context.Context
 }
 
 // RenderOption configures a Render call.
@@ -215,6 +229,19 @@ func WithIconExtension(name string, svg []byte) RenderOption {
 // pptx.ValidateIcon (scene never reaches under pptx — P1).
 func ValidateIcon(svg []byte) error { return pptx.ValidateIcon(svg) }
 
+// WithOrnamentExtension registers a caller ornament recipe under name for this
+// render (RFC §14.2/§14.4, D-038). The name joins the closed curated set;
+// registering a curated name overrides it for this render only. Extensions are
+// per-render, not global. A Decoration whose preset name is neither curated nor
+// registered fails Stage-1 validation. A blank name or nil recipe is ignored.
+func WithOrnamentExtension(name string, recipe OrnamentRecipe) RenderOption {
+	return func(c *renderConfig) {
+		if name != "" && recipe != nil {
+			c.ornamentExt = append(c.ornamentExt, ornamentExtension{name: name, recipe: recipe})
+		}
+	}
+}
+
 // WithLayoutMap maps each slide's LayoutKind to a named layout in the active
 // template's master (RFC §13.2). A slide whose mapped layout the template
 // defines is related to it; an unmapped kind, or a name the template lacks,
@@ -266,6 +293,16 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		if err := pptx.ValidateIcon(ext.svg); err != nil {
 			return Stats{}, fmt.Errorf("scene: icon extension %q: %w", ext.name, err)
 		}
+	}
+	// Build the per-render ornament registry (curated ∪ extensions) and validate
+	// that every preset Decoration's name resolves (RFC §14.2/§14.4, D-038). The
+	// registry is read-only during the parallel compose.
+	cfg.ornaments = ornaments.Curated()
+	for _, ext := range cfg.ornamentExt {
+		cfg.ornaments = cfg.ornaments.With(ext.name, ext.recipe)
+	}
+	if err := validateOrnamentRefs(s, cfg.ornaments); err != nil {
+		return Stats{}, err
 	}
 	// Theme precedence: WithTheme option > Scene.Theme field > the presentation's
 	// existing theme (RFC §13.1/§13.3).
