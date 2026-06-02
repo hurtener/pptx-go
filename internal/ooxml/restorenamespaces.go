@@ -215,6 +215,7 @@ var elementNS = map[string]string{
 	"solidFill": "a", "noFill": "a", "gradFill": "a", "pattFill": "a", "grpFill": "a",
 	"srgbClr": "a", "schemeClr": "a", "sysClr": "a", "scrgbClr": "a", "prstClr": "a",
 	"gs": "a", "gsLst": "a", "lin": "a", "alpha": "a", "lumMod": "a", "lumOff": "a",
+	"fillToRect": "a",
 	"ln": "a", "prstDash": "a", "lstStyle": "a", "bodyPr": "a",
 	"normAutofit": "a", "spAutoFit": "a", "noAutofit": "a", "highlight": "a",
 	"p": "a", "pPr": "a", "r": "a", "rPr": "a", "t": "a", "br": "a", "fld": "a",

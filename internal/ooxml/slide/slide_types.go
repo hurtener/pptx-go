@@ -222,11 +222,12 @@ type XOv2DrExtent struct {
 type XShapeProperties struct {
 	XMLName     struct{}         `xml:"spPr"`
 	Transform2D *XTransform2D    `xml:"xfrm,omitempty"`
-	PresetGeom  *XPresetGeometry `xml:"prstGeom,omitempty"`
-	CustomGeom  *XCustomGeometry `xml:"custGeom,omitempty"`
-	SolidFill   *XSolidFill      `xml:"solidFill,omitempty"`
-	NoFill      *XNoFill         `xml:"noFill,omitempty"`
-	Line        *XLineProperties `xml:"ln,omitempty"`
+	PresetGeom   *XPresetGeometry `xml:"prstGeom,omitempty"`
+	CustomGeom   *XCustomGeometry `xml:"custGeom,omitempty"`
+	SolidFill    *XSolidFill      `xml:"solidFill,omitempty"`
+	GradientFill *XGradientFill   `xml:"gradFill,omitempty"`
+	NoFill       *XNoFill         `xml:"noFill,omitempty"`
+	Line         *XLineProperties `xml:"ln,omitempty"`
 }
 
 // XNoFill is the empty <a:noFill/> element (an explicit "no fill").

@@ -260,7 +260,18 @@ lands.
 
 ## 16. Plan deviations encountered during implementation
 
-- *(appended as implementation happens)*
+- **PR #1 (builder foundations + carried fixes) — landed.** Deviations:
+  - `core.xml` is built by a new `internal/ooxml/core.BuildCorePropsXML` (so
+    `encoding/xml` escaping stays below the P3 wall — pptx must not import
+    `encoding/xml`); `pptx.SetMetadata` mutates the existing core part via
+    `Part.SetBlob`. Deterministic (no timestamps).
+  - The builder logger emits one Debug event in `prepareForWrite` (the shared
+    write-path body) rather than per write method — one emit covers
+    Save/Write/WriteToBytes/SaveStream.
+  - No `coverage.json` change in PR #1 (gradient/rotation/metadata/logger live in
+    existing packages); `internal/ooxml/core` gains a direct `BuildCorePropsXML`
+    test.
+- *(PR #2 deviations appended when it lands)*
 
 ## 17. Sign-off
 

@@ -275,6 +275,11 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	case s.Theme != nil:
 		pres.SetTheme(s.Theme)
 	}
+	// Deck core metadata → docProps/core.xml (D-042). Skipped when empty so a
+	// metadata-free scene leaves the scaffold's blank core.xml untouched.
+	if s.Meta != (Metadata{}) {
+		pres.SetMetadata(pptx.Metadata{Title: s.Meta.Title, Author: s.Meta.Author, Subject: s.Meta.Subject})
+	}
 
 	workers := cfg.workers
 	if workers <= 0 {

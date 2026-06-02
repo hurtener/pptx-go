@@ -1,6 +1,10 @@
 package pptx
 
-import "github.com/hurtener/pptx-go/internal/ooxml/presentation"
+import (
+	"log/slog"
+
+	"github.com/hurtener/pptx-go/internal/ooxml/presentation"
+)
 
 // Format is a standard slide canvas aspect ratio (RFC §8.1). Pass one to
 // pptx.New via WithFormat.
@@ -42,6 +46,13 @@ func WithFontSource(src FontSource) Option {
 	return func(p *Presentation) {
 		p.fontSource = src
 	}
+}
+
+// WithLogger injects a structured logger (RFC §18, D-042). When set, the
+// builder emits a Debug write-boundary event on each write/save; no logger =
+// no logs (zero-cost). The handler's performance is the caller's concern.
+func WithLogger(l *slog.Logger) Option {
+	return func(p *Presentation) { p.logger = l }
 }
 
 // WithTheme sets the active theme (default DefaultTheme). The theme drives
