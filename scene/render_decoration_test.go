@@ -144,3 +144,24 @@ func TestDecoration_Asset(t *testing.T) {
 		t.Errorf("asset decoration missing pic:\n%s", slide)
 	}
 }
+
+// TestDecoration_AssetRotationOpacity checks an asset decoration honors Rotation
+// and Opacity (the Phase-13 audit wiring — previously dropped on the asset path).
+func TestDecoration_AssetRotationOpacity(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "a",
+		Nodes: []scene.SlideNode{scene.Decoration{
+			Kind: scene.DecorationAsset, AssetID: "asset://x", Anchor: scene.AnchorCenter,
+			Rotation: 45, Opacity: 0.5,
+		}},
+	}}}
+	data, _ := render(t, sc, scene.WithAssetResolver(resolver))
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, `rot="2700000"`) { // 45 × 60000
+		t.Errorf("asset decoration missing rotation:\n%s", slide)
+	}
+	if !strings.Contains(slide, `<a:alphaModFix amt="50000"`) {
+		t.Errorf("asset decoration missing opacity (alphaModFix):\n%s", slide)
+	}
+}

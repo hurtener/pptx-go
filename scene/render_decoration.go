@@ -40,26 +40,38 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 			r.warn(slideID, fmt.Sprintf("decoration asset %q unresolved: %v", v.AssetID, err))
 			return
 		}
-		if _, aerr := ps.AddImage(pptx.ImageBytes(data, ct), box); aerr != nil {
+		img, aerr := ps.AddImage(pptx.ImageBytes(data, ct), box)
+		if aerr != nil {
 			r.warn(slideID, fmt.Sprintf("decoration image %q: %v", v.AssetID, aerr))
 			return
+		}
+		if v.Rotation != 0 {
+			img.SetRotation(v.Rotation)
+		}
+		if alpha != pptx.AlphaOpaque {
+			img.SetOpacity(alpha)
 		}
 		r.stats.Shapes++
 		r.stats.Assets++
 	}
 }
 
-// decorationBox centers the ornament box on the anchor point (within region)
-// shifted by Offset; Size defaults when zero.
+// decorationBox positions the ornament box so its anchor-corresponding point
+// (the box's top-left for a top-left anchor, its center for a center anchor,
+// etc.) lands on the region's anchor point, shifted by Offset. Size defaults
+// when zero.
 func decorationBox(region pptx.Box, v Decoration) pptx.Box {
 	size := v.Size
 	if size.W <= 0 || size.H <= 0 {
 		size = defaultDecorationSize
 	}
-	p := v.Anchor.Point(region)
+	target := v.Anchor.Point(region)
+	// within is the anchor's offset inside a box of this size at the origin, so
+	// subtracting it aligns the box's matching corner/edge/center to the target.
+	within := v.Anchor.Point(pptx.Box{W: size.W, H: size.H})
 	return pptx.Box{
-		X: p.X + v.Offset.X - size.W/2,
-		Y: p.Y + v.Offset.Y - size.H/2,
+		X: target.X + v.Offset.X - within.X,
+		Y: target.Y + v.Offset.Y - within.Y,
 		W: size.W,
 		H: size.H,
 	}

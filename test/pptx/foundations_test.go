@@ -121,6 +121,41 @@ func TestSetMetadata(t *testing.T) {
 	}
 }
 
+// TestImage_RotationAndOpacity checks the image mutators emit the picture
+// rotation and the blip alphaModFix, and round-trip (the asset-decoration
+// rotation/opacity wiring from the Phase-13 audit).
+func TestImage_RotationAndOpacity(t *testing.T) {
+	p := pptx.New()
+	s := p.AddSlide()
+	img, err := s.AddImage(pptx.ImageBytes(pngBytes("x"), "image/png"), fxBox)
+	if err != nil {
+		t.Fatalf("AddImage: %v", err)
+	}
+	img.SetRotation(30).SetOpacity(40000)
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	slide := readZipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, `rot="1800000"`) { // 30 × 60000
+		t.Errorf("image missing rotation in:\n%s", slide)
+	}
+	if !strings.Contains(slide, `<a:alphaModFix amt="40000"`) {
+		t.Errorf("image missing alphaModFix in:\n%s", slide)
+	}
+	again, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	resaved, err := again.WriteToBytes()
+	if err != nil {
+		t.Fatalf("re-save: %v", err)
+	}
+	if rs := readZipPart(t, resaved, "ppt/slides/slide1.xml"); !strings.Contains(rs, `<a:alphaModFix amt="40000"`) {
+		t.Errorf("opacity did not survive round-trip:\n%s", rs)
+	}
+}
+
 // TestWithLogger_Builder is acceptance criterion 5 (PR #1): the builder emits a
 // write-boundary event when a logger is set; no logger is silent.
 func TestWithLogger_Builder(t *testing.T) {

@@ -353,12 +353,16 @@ const (
 // caller-supplied asset (image). The AssetID is used only when Kind is
 // DecorationAsset.
 //
-// The placement box is centered on Anchor (a point on the slide) shifted by
-// Offset, sized by Size (a zero Size uses a default). Bleed permits the box to
-// extend past the slide edge (negative offsets, RFC §14.2) without a warning.
-// Opacity (0..1; 0 = opaque) dims the ornament; Rotation (degrees) rotates it —
-// honored for single-shape ornaments / chevrons (D-041). Layer selects z-order:
-// background renders behind body content, foreground above it (RFC §10.2).
+// The placement box aligns the box's anchor-corresponding point (its top-left
+// for a top-left Anchor, its center for a center Anchor, …) to that anchor point
+// on the slide, shifted by Offset and sized by Size (a zero Size uses a
+// default). Bleed permits the box to extend past the slide edge (negative
+// offsets, RFC §14.2) without a warning. Opacity (0..1; 0 = opaque) dims the
+// decoration and Rotation (degrees) rotates it — both honored for asset
+// decorations and single-shape ornaments (chevron); a multi-shape ornament
+// cannot rotate as a unit in V1 (no group transform — D-041). Layer selects
+// z-order: background renders behind body content, foreground above it
+// (RFC §10.2).
 type Decoration struct {
 	node
 	Kind     DecorationKind

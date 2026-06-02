@@ -285,6 +285,19 @@ lands.
     the caller's geometry intact.
   - Scene re-exports the `Anchor` constants + `Position`/`Size` aliases so the IR
     reads `scene.AnchorCenter` etc.
+- **Post-PR #2 wiring audit (into PR #25).** A depth pass over the phase fixed:
+  - **`decorationBox` anchor alignment** — it centred the box on *every* anchor,
+    so a corner anchor (e.g. `AnchorTopLeft`) landed half off-canvas. Now the
+    box's anchor-corresponding point (top-left / centre / bottom-right …) aligns
+    to the anchor point; this also removes the spurious off-canvas warnings
+    corner anchors used to trigger.
+  - **Asset-decoration `Rotation` + `Opacity` were silently dropped** (only the
+    preset path used them). Added `pptx.Image.SetRotation` (picture `xfrm rot`)
+    and `pptx.Image.SetOpacity` (blip `<a:alphaModFix>`, a new wire field) and
+    wired both on the asset path — every `Decoration` field is now honored
+    (multi-shape preset rotation remains the one documented V1 limitation,
+    D-041). `surfaceToken` gaining an alpha field was verified to introduce no
+    transparency regression (both constructors set it).
 
 ## 17. Sign-off
 
