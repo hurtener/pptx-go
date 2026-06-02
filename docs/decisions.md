@@ -1118,4 +1118,60 @@ and produces); nothing above the internal wall (`pptx`, `scene`) touches
 
 ---
 
+## D-041 — V1 ships gradient fills (linear + radial); rotation + token-alpha land with them
+
+**Date:** 2026-06-02
+**Status:** Settled
+**Context:** Phase 13's ornaments include `radial_glow` and `glow_ring`, which
+RFC §14.2 describes as gradient/glow effects. The builder shipped only `SolidFill`
++ `NoFill` (alpha on literal colors only) and **no gradient fill** — `pptx/fill.go`
+even notes "Gradient, pattern and picture fills are tracked separately." Rendering
+a glow as alpha-layered concentric solids bands visibly. The Phase-02 builder
+block listed `GradientFill` as in-scope but it was never built (a drift).
+**Decision:** Build **gradient fills in V1**. Add `XGradientFill` (a `gsLst` of
+stops plus either `lin` for linear or `path="circle"` + `fillToRect` for radial)
+to `internal/ooxml/slide`, a `GradientFill` field on `XShapeProperties`, and a
+public `pptx.LinearGradient(angle, stops…)` / `pptx.RadialGradient(stops…)` Fill.
+A radial glow is a 2-stop `path="circle"` gradient: accent (opaque, centre) →
+accent at `alpha=0` (edge). Land two adjacent builder primitives in the same
+change: `pptx.WithRotation(deg)` (the `XTransform2D.Rotation` wire field already
+exists; `chevron_arrow` and rotated asset decorations need it) and
+`pptx.TokenColorAlpha(role, alpha)` (alpha on a *token* color, so a recipe can
+honor a decoration's opacity while staying token-based — P2). **Group-shape unit
+rotation is NOT built** (the builder has no group transform — V2); a multi-shape
+ornament rotates per-shape, which suits the rotationally-symmetric glows/grid and
+is the documented V1 behavior.
+**Consequences:** The builder gains a general gradient primitive (reusable beyond
+ornaments) and shape rotation. `pattFill` (pattern/hatch) stays unbuilt (no V1
+ornament needs it). Glows render as true radial gradients. Gradients are
+deterministic (fixed stops, integer angles) so D-035 holds.
+
+## D-042 — Phase 13 absorbs two carried-forward builder fixes and splits delivery
+
+**Date:** 2026-06-02
+**Status:** Settled
+**Context:** The Phase-12 wiring audit surfaced two builder-layer gaps left
+unfixed at the time (they were feature-sized, not broken wires): `Scene.Meta`
+(Title/Author/Subject) was silently dropped because `core.xml` is a static empty
+part with no setter, and `pptx.WithLogger` is promised by RFC §18 / `CLAUDE.md`
+§8 but never existed (only the scene logger, fixed in the audit). The maintainer
+asked to fold both into Phase 13. Phase 13 is already large (gradient primitives
++ six ornaments + Decoration IR + z-order).
+**Decision:** Land the two carried fixes **with the builder foundations in
+PR #1**, separate from the ornaments/Decoration work in **PR #2** (one Phase-13
+plan covers both). PR #1: gradient fills, `WithRotation`, token-alpha,
+`Presentation.SetMetadata` (regenerates `docProps/core.xml` deterministically —
+XML-escaped caller strings, **no created/modified timestamps**, preserving
+byte-identical output), `pptx.WithLogger` (a builder logger emitting a save-time
+event, RFC §18), and `scene.Render` writing `Scene.Meta` through `SetMetadata`.
+PR #2 builds on PR #1's primitives. Rationale: the fixes and primitives are
+builder-layer and orthogonal to ornaments; shipping them first keeps each review
+focused and clears the audit debt before the ornament content lands.
+**Consequences:** Deck metadata round-trips (the Phase-11/12 decks' `Scene.Meta`
+titles now reach `core.xml`). `pptx.WithLogger` closes the doc-vs-code drift and
+gives builder/scene observability parity. The split means two PRs for one phase;
+the plan's acceptance criteria are grouped per PR.
+
+---
+
 *Append new entries below this line.*
