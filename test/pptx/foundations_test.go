@@ -47,8 +47,18 @@ func TestGradientFill_EmitsAndConforms(t *testing.T) {
 			t.Errorf("gradient slide missing %q in:\n%s", want, slide)
 		}
 	}
-	if _, err := pptx.NewFromBytes(data); err != nil {
+	// Round-trip fidelity (G6): the gradient survives Open → re-save, not just
+	// reopen-without-error.
+	reopened, err := pptx.NewFromBytes(data)
+	if err != nil {
 		t.Fatalf("reopen gradient deck: %v", err)
+	}
+	resaved, err := reopened.WriteToBytes()
+	if err != nil {
+		t.Fatalf("re-save reopened gradient deck: %v", err)
+	}
+	if rs := readZipPart(t, resaved, "ppt/slides/slide1.xml"); !strings.Contains(rs, "<a:gradFill>") || !strings.Contains(rs, `path="circle"`) {
+		t.Errorf("gradient did not survive round-trip through Open:\n%s", rs)
 	}
 }
 

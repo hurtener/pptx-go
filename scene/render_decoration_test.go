@@ -86,6 +86,19 @@ func TestDecoration_BleedSuppressesWarning(t *testing.T) {
 	}
 }
 
+// TestDecoration_PresetOpacity checks a preset decoration's Opacity flows
+// through to the ornament's accent alpha (a solid ornament dims via alpha).
+func TestDecoration_PresetOpacity(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "op",
+		Nodes: []scene.SlideNode{scene.Decoration{Kind: scene.DecorationPreset, Preset: "grid_dots", Anchor: scene.AnchorCenter, Opacity: 0.5}},
+	}}}
+	data, _ := render(t, sc)
+	if slide := zipPart(t, data, "ppt/slides/slide1.xml"); !strings.Contains(slide, `<a:alpha val="50000"`) {
+		t.Errorf("preset decoration opacity did not reach the accent alpha:\n%s", slide)
+	}
+}
+
 // TestDecoration_OrnamentExtension is acceptance criterion 8: a caller ornament
 // registered via WithOrnamentExtension renders.
 func TestDecoration_OrnamentExtension(t *testing.T) {
