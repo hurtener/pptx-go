@@ -473,9 +473,16 @@ type XSrcRect struct {
 	B int `xml:"b,attr,omitempty"`
 }
 
-// XBlip holds a picture reference.
+// XBlip holds a picture reference, with an optional alpha modulation effect
+// (<a:alphaModFix amt="">) for image opacity.
 type XBlip struct {
-	Embed string `xml:"rembed,attr,omitempty"`
+	Embed       string        `xml:"rembed,attr,omitempty"`
+	AlphaModFix *XAlphaModFix `xml:"alphaModFix,omitempty"`
+}
+
+// XAlphaModFix is <a:alphaModFix amt="0..100000"> — scales a picture's opacity.
+type XAlphaModFix struct {
+	Amt int `xml:"amt,attr"`
 }
 
 // XFillProperties holds fill properties.

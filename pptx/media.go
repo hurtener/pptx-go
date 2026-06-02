@@ -231,6 +231,32 @@ func (im *Image) SetFit(f Fit) *Image {
 	return im
 }
 
+// SetRotation rotates the image clockwise by deg degrees about its centre
+// (the picture's <a:xfrm rot>, normalized to [0,360°)).
+func (im *Image) SetRotation(deg float64) *Image {
+	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil || im.pic.ShapeProperties.Transform2D == nil {
+		return im
+	}
+	im.pic.ShapeProperties.Transform2D.Rotation = normalizeAngle60k(deg)
+	return im
+}
+
+// SetOpacity scales the image opacity via the blip's <a:alphaModFix> (alpha
+// 0..100000; AlphaOpaque clears the effect). It is the picture analogue of a
+// fill's alpha — used by a Decoration's opacity.
+func (im *Image) SetOpacity(alpha int) *Image {
+	if im == nil || im.pic == nil || im.pic.BlipFill == nil || im.pic.BlipFill.Blip == nil {
+		return im
+	}
+	a := clampAlpha(alpha)
+	if a >= AlphaOpaque {
+		im.pic.BlipFill.Blip.AlphaModFix = nil
+		return im
+	}
+	im.pic.BlipFill.Blip.AlphaModFix = &slide.XAlphaModFix{Amt: a}
+	return im
+}
+
 // cropPermille converts a 0..1 crop fraction to OOXML's thousandths-of-a-percent
 // (0..100000), clamped to range.
 func cropPermille(frac float64) int {

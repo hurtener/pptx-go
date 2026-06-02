@@ -91,3 +91,20 @@ const (
 // Anchor is a reference point reused from the builder for decoration/connector
 // placement.
 type Anchor = pptx.Anchor
+
+const (
+	AnchorTopLeft      = pptx.AnchorTopLeft
+	AnchorTopCenter    = pptx.AnchorTopCenter
+	AnchorTopRight     = pptx.AnchorTopRight
+	AnchorCenterLeft   = pptx.AnchorCenterLeft
+	AnchorCenter       = pptx.AnchorCenter
+	AnchorCenterRight  = pptx.AnchorCenterRight
+	AnchorBottomLeft   = pptx.AnchorBottomLeft
+	AnchorBottomCenter = pptx.AnchorBottomCenter
+	AnchorBottomRight  = pptx.AnchorBottomRight
+)
+
+// Position and Size are EMU geometry types reused from the builder, carried on
+// the Decoration node (offset + size).
+type Position = pptx.Position
+type Size = pptx.Size

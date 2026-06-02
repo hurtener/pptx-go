@@ -79,6 +79,9 @@ func validateNode(n SlideNode) error {
 		default:
 			return fmt.Errorf("invalid decoration kind %d", v.Kind)
 		}
+		if v.Opacity < 0 || v.Opacity > 1 {
+			return fmt.Errorf("decoration opacity %.3f out of range [0,1]", v.Opacity)
+		}
 	case Flow:
 		if len(v.Steps) == 0 {
 			return errors.New("flow has no steps")

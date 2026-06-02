@@ -221,6 +221,7 @@ var elementNS = map[string]string{
 	"p": "a", "pPr": "a", "r": "a", "rPr": "a", "t": "a", "br": "a", "fld": "a",
 	"latin": "a", "ea": "a", "cs": "a", "hlinkClick": "a",
 	"blip": "a", "stretch": "a", "fillRect": "a", "tile": "a", "srcRect": "a",
+	"alphaModFix": "a",
 	"graphic": "a", "graphicData": "a",
 	"tbl": "a", "tblPr": "a", "tblGrid": "a", "gridCol": "a", "tr": "a", "tc": "a",
 	"tcPr": "a", "tableStyleId": "a", "lnL": "a", "lnR": "a", "lnT": "a", "lnB": "a",
