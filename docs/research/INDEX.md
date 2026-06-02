@@ -76,8 +76,10 @@ Material))*
   arcs), the viewBox→path coordinate mapping, registration-time constraint
   validation, and why the set is lucide-*style* (filled single paths), not
   lucide's stroke-based data.
-
-*(candidates: preset ornament shape recipes survey)*
+- `04-preset-ornament-recipes.md` — the six V1 ornaments as native shape
+  recipes; the builder primitives they need first (gradient fills for glows,
+  `WithRotation`, token-alpha), the Decoration IR expansion
+  (offset/bleed/opacity/rotation/size), and the layer z-order.
 
 ### Charts
 

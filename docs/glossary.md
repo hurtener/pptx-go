@@ -40,10 +40,11 @@ asset was required). See `RFC §10.6`.
 
 ## Bleed
 
-A `Decoration` placement that extends past the slide canvas edge.
-Implemented via negative `<a:off>` coordinates in OOXML (PowerPoint
-accepts these for partial-shape placement). Bleed `Anchor` names start
-with `bleed_*`.
+A `Decoration` placement that extends past the slide canvas edge,
+selected by the `Decoration.Bleed` field (D-041). It relaxes the
+on-canvas clamp so the anchor + offset may place the ornament box partly
+off-slide, implemented via negative `<a:off>` coordinates in OOXML
+(PowerPoint accepts these for partial-shape placement).
 
 ## Block (Block node)
 
@@ -266,6 +267,15 @@ presentation from a `Brand kit`: it clones the brand's package (theme,
 masters, layouts, auxiliary parts) and strips slides, so the new deck inherits
 the brand's identity and starts empty (RFC §13.1, D-037).
 
+## Gradient fill
+
+A multi-stop shape fill (`<a:gradFill>`): a list of color stops plus a
+direction — `<a:lin>` (linear, by angle) or `<a:path path="circle">`
+(radial, by `pptx.RadialGradient`). Added in V1 (D-041) to render the glow
+ornaments (`radial_glow`, `glow_ring`) as true gradients rather than banded
+solids. Public API: `pptx.LinearGradient` / `pptx.RadialGradient` with
+`GradientStop`s. Joins `SolidFill` / `NoFill` as a `Fill`.
+
 ## Icon
 
 A curated lucide-*style* glyph in the `assets/icons/` registry — authored as a
@@ -480,6 +490,14 @@ The token-typed styling of a `Run` (`pptx.RunStyle`): a `TypeRole`
 (typography), a `Color` (token or literal), and bold/italic/underline/
 strike/baseline/code flags. Tokens resolve against the active theme when
 the run is added. (RFC §8.4; D-013 for `Code`.)
+
+## Rotation
+
+A shape's clockwise rotation about its centre, set via `pptx.WithRotation(deg)`
+and stored as the OOXML `<a:xfrm rot="deg×60000">` attribute (D-041). Used by
+the `chevron_arrow` ornament and the `Decoration.Rotation` field. Unit rotation
+of a multi-shape ornament needs a group transform (not in V1); a multi-shape
+ornament rotates per-shape.
 
 ## Round-trip fidelity
 

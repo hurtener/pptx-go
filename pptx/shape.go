@@ -35,9 +35,10 @@ type Shape struct {
 
 // shapeConfig accumulates AddShape options.
 type shapeConfig struct {
-	fill   Fill
-	line   Line
-	radius *RadiusRole
+	fill     Fill
+	line     Line
+	radius   *RadiusRole
+	rotation *float64 // degrees clockwise; nil = unset
 }
 
 // ShapeOption configures a shape at creation time.
@@ -56,6 +57,12 @@ func WithLine(l Line) ShapeOption { return func(c *shapeConfig) { c.line = l } }
 // RadiusFull yields a full capsule (pill).
 func WithRadius(role RadiusRole) ShapeOption {
 	return func(c *shapeConfig) { c.radius = &role }
+}
+
+// WithRotation rotates the shape clockwise by deg degrees about its centre
+// (OOXML <a:xfrm rot>, D-041). The angle is normalized to [0, 360°).
+func WithRotation(deg float64) ShapeOption {
+	return func(c *shapeConfig) { c.rotation = &deg }
 }
 
 // AddShape adds a preset-geometry shape positioned by box (EMU) and returns a
@@ -84,6 +91,10 @@ func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shap
 
 	if cfg.radius != nil && geom == ShapeRoundRect {
 		applyCornerRadius(sp.ShapeProperties, theme.ResolveRadius(*cfg.radius), box)
+	}
+
+	if cfg.rotation != nil && sp.ShapeProperties.Transform2D != nil {
+		sp.ShapeProperties.Transform2D.Rotation = normalizeAngle60k(*cfg.rotation)
 	}
 
 	return &Shape{sp: sp}

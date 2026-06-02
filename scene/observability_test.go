@@ -76,6 +76,23 @@ func TestVariant_SurfacedNotDropped(t *testing.T) {
 	}
 }
 
+// TestRender_MetaReachesCoreProps is the carried-forward fix (D-042): a Scene's
+// Meta (title/author/subject) is written into docProps/core.xml instead of being
+// silently dropped.
+func TestRender_MetaReachesCoreProps(t *testing.T) {
+	sc := scene.Scene{
+		Meta:   scene.Metadata{Title: "Annual Deck", Author: "Acme", Subject: "Q3"},
+		Slides: []scene.SceneSlide{{ID: "s", Nodes: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}}}},
+	}
+	data, _ := render(t, sc)
+	core := zipPart(t, data, "docProps/core.xml")
+	for _, want := range []string{"<dc:title>Annual Deck</dc:title>", "<dc:creator>Acme</dc:creator>", "<dc:subject>Q3</dc:subject>"} {
+		if !strings.Contains(core, want) {
+			t.Errorf("core.xml missing %q in:\n%s", want, core)
+		}
+	}
+}
+
 // ctxKey is a context tag used to prove the caller's context reaches the resolver.
 type ctxKey struct{}
 

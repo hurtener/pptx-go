@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"path"
 	"strings"
 	"sync"
@@ -84,6 +85,10 @@ type Presentation struct {
 	// theme is the active theme driving token resolution (default
 	// DefaultTheme). Set via WithTheme or SetTheme.
 	theme *Theme
+
+	// logger is an optional structured logger (nil = no logs). Set via
+	// WithLogger; the builder emits a write-boundary event (RFC §18).
+	logger *slog.Logger
 
 	// sections are the named slide groupings (D-021), emitted into
 	// presentation.xml's extLst at write time.
@@ -680,6 +685,9 @@ func (p *Presentation) prepareForWrite() error {
 	}
 	// Repair-prompt hygiene on every emitted part (D-020).
 	p.applyHygiene()
+	if p.logger != nil {
+		p.logger.Debug("pptx: prepared deck for write", "slides", len(p.slides), "sections", len(p.sections))
+	}
 	return nil
 }
 

@@ -49,17 +49,29 @@ func RGBA(hex RGB, alpha int) Color {
 	return literalColor{rgb: hex, alpha: alpha}
 }
 
-// surfaceToken is a surface color role resolved against the active theme.
-type surfaceToken struct{ role ColorRole }
+// surfaceToken is a surface color role resolved against the active theme, with
+// an OOXML alpha (AlphaOpaque unless set via TokenColorAlpha).
+type surfaceToken struct {
+	role  ColorRole
+	alpha int
+}
 
 func (s surfaceToken) resolve(t *Theme) resolvedColor {
-	return resolvedColor{rgb: themeOr(t).ResolveColor(s.role), alpha: AlphaOpaque}
+	return resolvedColor{rgb: themeOr(t).ResolveColor(s.role), alpha: clampAlpha(s.alpha)}
 }
 
 // TokenColor returns a color bound to a semantic surface role (e.g.
 // ColorAccent). It resolves to the active theme's value at apply time — swap
 // the theme and the same token yields the new palette's color.
-func TokenColor(role ColorRole) Color { return surfaceToken{role: role} }
+func TokenColor(role ColorRole) Color { return surfaceToken{role: role, alpha: AlphaOpaque} }
+
+// TokenColorAlpha returns a token color (TokenColor) at the given OOXML alpha
+// (0..100000) — the token analogue of RGBA. It keeps the value token-bound (P2)
+// while letting a caller dim it, e.g. a Decoration's opacity or a gradient
+// glow's transparent edge.
+func TokenColorAlpha(role ColorRole, alpha int) Color {
+	return surfaceToken{role: role, alpha: clampAlpha(alpha)}
+}
 
 // textToken is a text color role resolved against the active theme.
 type textToken struct{ role TextColorRole }

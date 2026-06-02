@@ -109,3 +109,12 @@ embedded. Subsetting (embed only used glyphs) is V1.x.
 > The lazy `Color` interface and the `pptx.TokenColor(role)` / `pptx.RGB(...)`
 > builder constructors arrive with the builder spine (D-030); until then the
 > resolver (`Theme.Resolve*`) returns concrete values.
+
+## Gradient / rotation / opacity (mechanisms, no new token — D-041)
+
+Gradient fills (`pptx.LinearGradient` / `pptx.RadialGradient`), shape rotation
+(`pptx.WithRotation`), and token opacity (`pptx.TokenColorAlpha`) are builder
+**mechanisms**, not new theme tokens. They *consume* the existing color tokens:
+a gradient stop's color is any `Color` (typically `TokenColor(role)` or
+`TokenColorAlpha(role, alpha)`), so a theme swap re-renders a glow in the new
+accent. No new token role is introduced; the token taxonomy above is unchanged.
