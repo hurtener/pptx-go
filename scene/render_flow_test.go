@@ -65,7 +65,7 @@ func TestFlowConnectorKinds(t *testing.T) {
 		orient    scene.FlowOrientation
 		want      []string
 	}{
-		{"cycle", scene.ConnectorCycle, scene.FlowHorizontal, []string{`prst="rightArrow"`, `prst="circularArrow"`}},
+		{"cycle", scene.ConnectorCycle, scene.FlowHorizontal, []string{`prst="rightArrow"`, `prst="leftArrow"`}},
 		{"vertical", scene.ConnectorArrow, scene.FlowVertical, []string{`prst="downArrow"`}},
 		{"dashed", scene.ConnectorArrowDashed, scene.FlowHorizontal, []string{`prst="line"`, `val="dash"`, `prst="chevron"`}},
 		{"plus", scene.ConnectorPlus, scene.FlowHorizontal, []string{`prst="mathPlus"`}},

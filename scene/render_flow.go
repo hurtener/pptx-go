@@ -5,67 +5,101 @@ import "github.com/hurtener/pptx-go/pptx"
 // Flow composer (RFC §11.1 / §12, D-044). A Flow renders a sequence of step
 // pills joined by connector glyphs, horizontal or vertical. It composes the
 // public builder only — pills are roundRects, connectors are preset shapes
-// (rightArrow/downArrow, chevron, mathPlus, circularArrow) placed in the gaps;
-// there is no anchored AddConnector. A step's optional icon resolves through the
-// render's icon registry as a native custGeom, so a flow is media-free.
+// (rightArrow/downArrow, chevron, mathPlus) placed in the gaps; cycle adds a
+// return arrow in a reserved band looping back to the first step. There is no
+// anchored AddConnector. A step's optional icon resolves through the render's
+// icon registry as a native custGeom, so a flow is media-free.
 
-// flowGap is the extent reserved for each connector glyph between pills (and for
-// the cycle return arrow).
-const flowGap = pptx.EMU(457200) // 0.5"
+const (
+	flowGap        = pptx.EMU(457200)  // 0.5" reserved per connector gap
+	flowReturnBand = pptx.EMU(548640)  // 0.6" band reserved for the cycle return arrow
+	flowMaxPillW   = pptx.EMU(5486400) // 6" — vertical pills are centered in a column, not full-bleed
+)
 
 func (r *renderer) renderFlow(ps *pptx.Slide, box pptx.Box, v Flow, slideID string) {
+	if len(v.Steps) == 0 {
+		return
+	}
+	if v.Orientation == FlowVertical {
+		r.renderFlowVertical(ps, box, v, slideID)
+		return
+	}
+	r.renderFlowHorizontal(ps, box, v, slideID)
+}
+
+func (r *renderer) renderFlowHorizontal(ps *pptx.Slide, box pptx.Box, v Flow, slideID string) {
 	n := len(v.Steps)
-	if n == 0 {
-		return
-	}
-	vertical := v.Orientation == FlowVertical
-	gaps := n - 1
+	region := box
 	if v.Connector == ConnectorCycle {
-		gaps++ // a trailing slot for the return arrow
+		region.H -= flowReturnBand // pills sit above the return band
 	}
-
-	if vertical {
-		pillH := box.H - pptx.EMU(gaps)*flowGap
-		if pillH < 0 {
-			pillH = 0
-		}
-		pillH /= pptx.EMU(n)
-		y := box.Y
-		for i, step := range v.Steps {
-			r.renderFlowStep(ps, pptx.Box{X: box.X, Y: y, W: box.W, H: pillH}, step, slideID)
-			y += pillH
-			if i < n-1 {
-				r.renderConnector(ps, pptx.Box{X: box.X, Y: y, W: box.W, H: flowGap}, v.Connector, true)
-				y += flowGap
-			}
-		}
-		if v.Connector == ConnectorCycle {
-			r.renderReturnArrow(ps, pptx.Box{X: box.X, Y: y, W: box.W, H: flowGap}, true)
-		}
-		return
-	}
-
-	pillW := box.W - pptx.EMU(gaps)*flowGap
+	pillW := region.W - pptx.EMU(n-1)*flowGap
 	if pillW < 0 {
 		pillW = 0
 	}
 	pillW /= pptx.EMU(n)
-	x := box.X
+
+	x := region.X
 	for i, step := range v.Steps {
-		r.renderFlowStep(ps, pptx.Box{X: x, Y: box.Y, W: pillW, H: box.H}, step, slideID)
+		r.renderFlowStep(ps, pptx.Box{X: x, Y: region.Y, W: pillW, H: region.H}, step, slideID)
 		x += pillW
 		if i < n-1 {
-			r.renderConnector(ps, pptx.Box{X: x, Y: box.Y, W: flowGap, H: box.H}, v.Connector, false)
+			r.renderConnector(ps, pptx.Box{X: x, Y: region.Y, W: flowGap, H: region.H}, v.Connector, false)
 			x += flowGap
 		}
 	}
-	if v.Connector == ConnectorCycle {
-		r.renderReturnArrow(ps, pptx.Box{X: x, Y: box.Y, W: flowGap, H: box.H}, false)
+	if v.Connector == ConnectorCycle && n >= 2 {
+		// A left-pointing arrow under the row, spanning back to the first step.
+		h := pptx.In(0.3)
+		band := pptx.Box{X: region.X, Y: region.Bottom() + (flowReturnBand-h)/2, W: region.W, H: h}
+		ps.AddShape(pptx.ShapeGeometry("leftArrow"), band,
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
+		r.stats.Shapes++
 	}
 }
 
-// renderFlowStep draws one pill: a rounded rect with an optional top-center
-// icon, a centered label, and an optional detail line below.
+func (r *renderer) renderFlowVertical(ps *pptx.Slide, box pptx.Box, v Flow, slideID string) {
+	n := len(v.Steps)
+	// Center the pill column (not full-bleed); cycle reserves a right band.
+	availW := box.W
+	if v.Connector == ConnectorCycle {
+		availW -= flowReturnBand
+	}
+	pillW := availW
+	if pillW > flowMaxPillW {
+		pillW = flowMaxPillW
+	}
+	pillX := box.X + (availW-pillW)/2
+
+	pillH := box.H - pptx.EMU(n-1)*flowGap
+	if pillH < 0 {
+		pillH = 0
+	}
+	pillH /= pptx.EMU(n)
+
+	y := box.Y
+	for i, step := range v.Steps {
+		r.renderFlowStep(ps, pptx.Box{X: pillX, Y: y, W: pillW, H: pillH}, step, slideID)
+		y += pillH
+		if i < n-1 {
+			r.renderConnector(ps, pptx.Box{X: pillX, Y: y, W: pillW, H: flowGap}, v.Connector, true)
+			y += flowGap
+		}
+	}
+	if v.Connector == ConnectorCycle && n >= 2 {
+		// An up-pointing arrow in the right band, looping back to the first step.
+		w := pptx.In(0.3)
+		band := pptx.Box{X: box.Right() - flowReturnBand + (flowReturnBand-w)/2, Y: box.Y, W: w, H: y - box.Y - flowGap}
+		if band.H > 0 {
+			ps.AddShape(pptx.ShapeGeometry("upArrow"), band,
+				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
+			r.stats.Shapes++
+		}
+	}
+}
+
+// renderFlowStep draws one pill: a rounded rect with the icon + label + detail
+// group centered vertically.
 func (r *renderer) renderFlowStep(ps *pptx.Slide, box pptx.Box, step FlowStep, slideID string) {
 	ps.AddShape(pptx.ShapeRoundRect, box,
 		pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorSurfaceAlt))),
@@ -73,32 +107,53 @@ func (r *renderer) renderFlowStep(ps *pptx.Slide, box pptx.Box, step FlowStep, s
 	r.stats.Shapes++
 
 	pad := r.theme.ResolveSpace(pptx.SpaceSM)
-	inner := pptx.Box{X: box.X + pad, Y: box.Y + pad, W: box.W - 2*pad, H: box.H - 2*pad}
-	if inner.W < 0 {
-		inner.W = 0
+	innerX := box.X + pad
+	innerW := box.W - 2*pad
+	if innerW < 0 {
+		innerW = 0
 	}
-	y := inner.Y
 
-	if step.Icon != "" {
-		iconSz := pptx.In(0.35)
-		ib := pptx.Box{X: inner.X + (inner.W-iconSz)/2, Y: y, W: iconSz, H: iconSz}
+	const (
+		iconSz  = pptx.EMU(457200) // 0.5"
+		labelH  = pptx.EMU(310896) // ~0.34"
+		detailH = pptx.EMU(237744) // ~0.26"
+		vgap    = pptx.EMU(54864)  // ~0.06"
+	)
+	hasIcon := step.Icon != ""
+	hasDetail := len(step.Detail) > 0
+
+	// Measure the content group and center it vertically within the pill.
+	contentH := labelH
+	if hasIcon {
+		contentH += iconSz + vgap
+	}
+	if hasDetail {
+		contentH += vgap + detailH
+	}
+	y := box.Y + (box.H-contentH)/2
+	if min := box.Y + pad; y < min {
+		y = min
+	}
+
+	if hasIcon {
+		ib := pptx.Box{X: innerX + (innerW-iconSz)/2, Y: y, W: iconSz, H: iconSz}
 		if svg, ok := r.cfg.icons.Lookup(step.Icon); !ok {
 			r.warn(slideID, "flow step icon "+step.Icon+" not found at compose (should have failed Stage-1)")
 		} else if _, err := ps.AddIcon(svg, ib); err == nil {
 			r.stats.Shapes++
-			y += iconSz + pad
 		}
+		y += iconSz + vgap
 	}
 
-	labelH := pptx.In(0.32)
-	tf := ps.AddTextFrame(pptx.Box{X: inner.X, Y: y, W: inner.W, H: labelH}).Anchor(pptx.AnchorMiddle)
-	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-	r.addRichText(ps, p, step.Label, pptx.TypeBody)
+	lf := ps.AddTextFrame(pptx.Box{X: innerX, Y: y, W: innerW, H: labelH}).Anchor(pptx.AnchorMiddle)
+	lp := lf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+	r.addRichText(ps, lp, step.Label, pptx.TypeBody)
 	r.stats.Shapes++
 	y += labelH
 
-	if len(step.Detail) > 0 {
-		df := ps.AddTextFrame(pptx.Box{X: inner.X, Y: y, W: inner.W, H: inner.Bottom() - y})
+	if hasDetail {
+		y += vgap
+		df := ps.AddTextFrame(pptx.Box{X: innerX, Y: y, W: innerW, H: detailH}).Anchor(pptx.AnchorMiddle)
 		dp := df.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
 		r.addRichText(ps, dp, step.Detail, pptx.TypeCaption)
 		r.stats.Shapes++
@@ -111,19 +166,16 @@ func (r *renderer) renderConnector(ps *pptx.Slide, gap pptx.Box, kind ConnectorK
 	accent := pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))
 	switch kind {
 	case ConnectorPlus:
-		sz := pptx.In(0.22)
-		b := centerIn(gap, sz, sz)
-		ps.AddShape(pptx.ShapeGeometry("mathPlus"), b, pptx.WithFill(accent))
+		sz := pptx.In(0.24)
+		ps.AddShape(pptx.ShapeGeometry("mathPlus"), centerIn(gap, sz, sz), pptx.WithFill(accent))
 		r.stats.Shapes++
 	case ConnectorArrowDashed:
 		r.renderDashedArrow(ps, gap, vertical)
 	default: // ConnectorArrow and ConnectorCycle inter-pair glyph
 		if vertical {
-			b := centerIn(gap, pptx.In(0.3), gap.H*7/10)
-			ps.AddShape(pptx.ShapeGeometry("downArrow"), b, pptx.WithFill(accent))
+			ps.AddShape(pptx.ShapeGeometry("downArrow"), centerIn(gap, pptx.In(0.3), gap.H*7/10), pptx.WithFill(accent))
 		} else {
-			b := centerIn(gap, gap.W*7/10, pptx.In(0.3))
-			ps.AddShape(pptx.ShapeRightArrow, b, pptx.WithFill(accent))
+			ps.AddShape(pptx.ShapeRightArrow, centerIn(gap, gap.W*7/10, pptx.In(0.3)), pptx.WithFill(accent))
 		}
 		r.stats.Shapes++
 	}
@@ -151,21 +203,6 @@ func (r *renderer) renderDashedArrow(ps *pptx.Slide, gap pptx.Box, vertical bool
 	r.stats.Shapes++
 	head := pptx.Box{X: gap.Right() - headSz, Y: cy - headSz/2, W: headSz, H: headSz}
 	ps.AddShape(pptx.ShapeChevron, head, pptx.WithFill(accent))
-	r.stats.Shapes++
-}
-
-// renderReturnArrow draws the cycle return glyph (a circular arrow) in the
-// trailing slot after the last step.
-func (r *renderer) renderReturnArrow(ps *pptx.Slide, gap pptx.Box, vertical bool) {
-	sz := pptx.In(0.35)
-	var b pptx.Box
-	if vertical {
-		b = centerIn(gap, sz, gap.H*7/10)
-	} else {
-		b = centerIn(gap, gap.W*7/10, sz)
-	}
-	ps.AddShape(pptx.ShapeGeometry("circularArrow"), b,
-		pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
 	r.stats.Shapes++
 }
 
