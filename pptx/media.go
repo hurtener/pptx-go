@@ -161,10 +161,11 @@ type Crop struct {
 }
 
 // Fit selects how an image fills its frame. PowerPoint stores no single "fit"
-// value and aspect-aware cover/contain would require reading pixel dimensions
-// (forbidden by §7), so V1 ships the two fits expressible without pixel
-// inspection. Caller-side sizing of the Box drives aspect (engine, not
-// product — D-026).
+// value, so V1 ships FitFill / FitNone and lets caller-side Box sizing drive
+// aspect (engine, not product — D-026). Aspect-aware cover/contain is a V1.x
+// candidate: it needs the image's dimensions, which can be read from the format
+// header via image.DecodeConfig — the dimension header is not pixel data, so it
+// is permitted (§7/D-046); the chart composer already reads it for aspect-fit.
 type Fit int
 
 const (

@@ -26,7 +26,7 @@ fi
 
 # 2. ChartPlaceholder builder helper exists + round-trips.
 if grep -rq "func.*ChartPlaceholder" pptx/ 2>/dev/null; then
-    if go test ./pptx/ -run 'ChartPlaceholder' >/dev/null 2>&1; then
+    if go test ./test/pptx/ -run 'ChartPlaceholder' >/dev/null 2>&1; then
         ok "ChartPlaceholder emits a labeled slot that round-trips"
     else
         fail "ChartPlaceholder emits a labeled slot that round-trips" "tests failed"
