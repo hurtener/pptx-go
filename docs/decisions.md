@@ -1303,6 +1303,39 @@ stated, not implied, so future header reads (e.g. aspect-aware image fit) have a
 clear precedent. No native chart rendering enters the library (D-004 holds);
 `ChartPlaceholder` is the only new public API. Stdlib-only (P4 intact).
 
+## D-047 — Round-trip read reconstructs the navigable model by extending the builder types; 4-PR split
+
+**Date:** 2026-06-03
+**Status:** Settled
+**Context:** RFC §16 guarantees a pptx-go-authored deck reopens into "the same
+Shape model we wrote" — `pres.Slides()[0].Shapes()[0]` is navigable. Today
+`pptx.Open` reconstructs high-level structure (presentation, slides, theme,
+masters, sections) but **preserves slide shapes as opaque OOXML** in the
+`spTree`; byte/codec round-trip already holds (G6 `ToXML→FromXML` goldens), but
+there is no public read API to inspect shapes/fills/lines/text/tables/images.
+This is the read-vs-preserve distinction Phase 18 must close.
+**Decision:** Phase 18 **reconstructs the navigable model** (preserve alone is
+insufficient — RFC §16 outranks the byte-identity acceptance line). The read
+model **extends the existing builder types** — add read accessors to
+`Shape`/`Fill`/`Line`/`TextFrame`/`Table`/`Image` plus a `Slide.Shapes()`
+enumerator — rather than a parallel `Read*` hierarchy ("the same Shape model").
+Read accessors are **pure mappings** from the `internal/ooxml` Go structs that
+`Open` already populates (via `FromXML`) to the public types — no new XML
+parsing, so P3 holds (`pptx` consumes `internal/ooxml` domain structs, never raw
+XML). Deliver as a **4-PR split** (one plan): PR#1 shapes + geometry / rotation /
+fill / line / shadow + `Slide.Shapes()`; PR#2 text (paragraphs / runs / styles /
+links / bullets); PR#3 tables + images; PR#4 a comprehensive
+`test/integration/roundtrip_test.go` walking every shipped primitive + IR node
+plus a fixture byte-identity check (modulo documented reorderings, D-035).
+Reading back a scene `Scene` is **out of scope** (RFC §16 is the builder model;
+scene is one-way). The write-only `Fill`/`Line` shapes gain read accessors in
+PR#1 so reopened values compare field-equal to authored ones (the golden
+assertion).
+**Consequences:** pptx-go gains a real read/inspection API — the "R" in the
+name. No write-side breaks (accessors are additive). Theme/master/layout/section
+already reconstruct, so the round-trip test mostly confirms them. Third-party
+read robustness stays Phase 19 (best-effort). Stdlib-only; P1/P3 intact.
+
 ---
 
 *Append new entries below this line.*

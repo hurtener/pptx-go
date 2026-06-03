@@ -532,6 +532,15 @@ A name in the closed `PresetOrnamentName` enum identifying one of the
 curated ornaments. Distinct from the open-name caller-supplied asset path
 under a `Decoration` source `asset_ref`.
 
+## Read model
+
+The navigable builder model `pptx.Open` reconstructs from a pptx-go-authored
+deck — the **same** `Shape` / `Fill` / `Line` / `TextFrame` / `Table` / `Image`
+types the builder writes, enumerated via `Slide.Shapes()` (RFC §16, D-047).
+Reading maps the already-parsed `internal/ooxml` structs to public types; it is
+not a parallel read hierarchy. Distinct from byte/codec round-trip (which the
+G6 goldens already guarantee).
+
 ## RepairPromptHygiene
 
 An always-on XML post-processor that strips known PowerPoint
@@ -601,6 +610,12 @@ A scene IR leaf node representing a slide whose content is a single
 full-bleed chapter break (label + optional ornament). **Distinct from
 `PptxSection`** (the OOXML slide-grouping primitive). A
 `section_divider` slide can be inside a `PptxSection` or not.
+
+## Shapes (read enumerator)
+
+`Slide.Shapes() []*Shape` — the read-side enumerator of a reopened slide; each
+`*Shape` exposes the authored geometry / rotation / fill / line / shadow / text
+/ table / image via read accessors (the read model, RFC §16, D-047).
 
 ## ShapeGeometry
 
