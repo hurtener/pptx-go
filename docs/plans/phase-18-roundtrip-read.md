@@ -198,7 +198,31 @@ No write-side breaks: accessors are additive; `AddShape`/`AddText`/… unchanged
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+**PR#1 (shapes + props).** No deviations from the RFC or D-047. Decisions the
+plan left open to PR#1, now settled:
+
+- **Fill read shape (D-047 Q1).** `Shape.Fill()` returns the reconstructed
+  **sealed `Fill`** (matches §9, "one read+write model" — no parallel read
+  type). Inspection is via three reader methods added to the sealed interface:
+  `Kind() FillKind` (`FillSolid` / `FillNone` / `FillGradient`), `SolidColor()
+  (Color, bool)`, and `Gradient() (GradientRead, bool)`. A shape with no fill
+  option returns a nil `Fill` (inherits its style fill). In-package round-trip
+  tests assert authored == reopened via `reflect.DeepEqual` on the sealed value;
+  literal-authored fills compare equal directly.
+- **`Shape` generalized to wrap pic / graphic-frame (plan §7).** `Shape` now
+  carries one of `sp` / `pic` / `gf`; `props()` and `xfrm()` resolve the common
+  `<spPr>` / transform across kinds. `Box()` reads through `xfrm()`. This sets
+  up PR#2 (text) / PR#3 (table, image) without reworking the handle. The builder
+  still constructs only `sp` shapes.
+- **Reopened colors surface as resolved literals (D-030).** Theme tokens resolve
+  to sRGB at write time, so the slide carries no token to reconstruct;
+  `colorFromSrgb` maps a reopened `<a:srgbClr>` back to a bare `RGB` (opaque) or
+  a `literalColor` (with alpha), mirroring `SolidFill(RGB(...))` /
+  `SolidFill(RGBA(...))` so a reopened fill compares field-equal.
+- **`Shadow()` reconstructs cartesian offsets from polar `dist`/`dir`.** An
+  axis-aligned shadow round-trips exactly; an oblique one to within sub-EMU
+  rounding (D-035). `Geometry()` returns `""` for a custom-geometry (icon) or
+  non-shape child — preset-geometry round-trip is exact.
 
 ## 17. Sign-off
 
