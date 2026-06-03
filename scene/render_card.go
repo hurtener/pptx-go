@@ -117,10 +117,22 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	ps.AddShape(pptx.ShapeRoundRect, box, opts...)
 	r.stats.Shapes++
 
-	// 2. Left accent stripe (the card's accent marker, RFC §12.1).
-	stripe := pptx.Box{X: box.X, Y: box.Y, W: cardStripeW, H: box.H}
-	ps.AddShape(pptx.ShapeRect, stripe, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
-	r.stats.Shapes++
+	// 2. Left accent stripe (the card's accent marker, RFC §12.1). Inset
+	// vertically by the corner radius so its square corners stay within the
+	// card's rounded outline (a full-height stripe pokes past the rounding).
+	// Omitted for BorderAccent: the full accent border already supplies the
+	// accent, so a stripe there is a redundant doubly-blue left edge.
+	if c.border != BorderAccent {
+		rad := r.theme.ResolveRadius(pptx.RadiusLG)
+		if half := box.H / 2; rad > half {
+			rad = half
+		}
+		stripe := pptx.Box{X: box.X, Y: box.Y + rad, W: cardStripeW, H: box.H - 2*rad}
+		if stripe.H > 0 {
+			ps.AddShape(pptx.ShapeRect, stripe, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
+			r.stats.Shapes++
+		}
+	}
 
 	// 3. Header region, inset by padding (past the stripe).
 	pad := r.cardPadding(c.size)

@@ -192,3 +192,29 @@ func TestCardParallel(t *testing.T) {
 		t.Error("card scene render differs between workers=1 and workers=4 (idempotency broken)")
 	}
 }
+
+// TestCardAccentBorderDropsStripe guards the accent-border fix: a BorderAccent
+// card omits the redundant left accent stripe (the border is the accent) and
+// emits the accent border line, while other border styles keep their stripe.
+func TestCardAccentBorderDropsStripe(t *testing.T) {
+	mk := func(b scene.BorderStyle) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "b",
+			Nodes: []scene.SlideNode{scene.Card{
+				Header:      "H",
+				BorderStyle: b,
+				Body:        []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+			}},
+		}}}
+	}
+	_, solid := render(t, mk(scene.BorderSolid))
+	_, accent := render(t, mk(scene.BorderAccent))
+	if accent.Shapes != solid.Shapes-1 {
+		t.Errorf("BorderAccent shapes=%d, want one fewer than BorderSolid=%d (the stripe is dropped)", accent.Shapes, solid.Shapes)
+	}
+	data, _ := render(t, mk(scene.BorderAccent))
+	xml := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(xml, `<a:ln w="19050"`) { // 1.5pt accent border
+		t.Errorf("BorderAccent card missing the accent border line:\n%s", xml)
+	}
+}
