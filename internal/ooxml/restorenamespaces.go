@@ -217,6 +217,7 @@ var elementNS = map[string]string{
 	"gs": "a", "gsLst": "a", "lin": "a", "alpha": "a", "lumMod": "a", "lumOff": "a",
 	"fillToRect": "a",
 	"ln": "a", "prstDash": "a", "lstStyle": "a", "bodyPr": "a",
+	"effectLst": "a", "outerShdw": "a",
 	"normAutofit": "a", "spAutoFit": "a", "noAutofit": "a", "highlight": "a",
 	"p": "a", "pPr": "a", "r": "a", "rPr": "a", "t": "a", "br": "a", "fld": "a",
 	"latin": "a", "ea": "a", "cs": "a", "hlinkClick": "a",

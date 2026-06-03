@@ -1172,6 +1172,49 @@ titles now reach `core.xml`). `pptx.WithLogger` closes the doc-vs-code drift and
 gives builder/scene observability parity. The split means two PRs for one phase;
 the plan's acceptance criteria are grouped per PR.
 
+## D-043 — Phase 14 builds the `outerShdw` elevation primitive; splits delivery; Card IR grows additively
+
+**Date:** 2026-06-02
+**Status:** Settled
+**Context:** Phase 14 (`card`/`card_section`) renders elevation as a real card
+drop shadow, but the builder has **no shadow primitive** — every shape emits an
+empty `<a:effectLst/>` and the theme-resolved `Elevation` (blur/offset/color/
+alpha) is dropped. This is the same situation gradients were for Phase 13
+ornaments (D-041): a real visual property the theme already tokenizes but the
+builder cannot emit. The shipped `Card` also lacks the v4 knobs RFC §16 maps
+1:1 (`Eyebrow`, `Icon`, `HeaderPill`, `BorderStyle`, `Size`, `Layout`), and the
+icon registry built in Phase 12 (D-040) was never *consumed* — `cfg.icons` was
+deliberately not stored to avoid a write-only field. The shipped `Card` already
+carries `Outline bool`; the v4 knob is a richer `border_style`.
+**Decision:** **Build** the `<a:outerShdw>` shadow primitive in V1 (not
+approximate, not defer) — the D-041 precedent. Add `XEffectList`/`XOuterShadow`
+to `internal/ooxml/slide`, an `EffectList` field on `XShapeProperties` (after
+`Line`, per `CT_ShapeProperties` order), `effectLst`/`outerShdw` →`a:` entries
+in `restorenamespaces`, and public `pptx.WithElevation(role)` (token path, P2)
++ `pptx.WithShadow(Elevation)` (literal escape hatch) `ShapeOption`s. The theme
+`Elevation`'s cartesian `OffsetX/OffsetY` convert to `outerShdw`'s polar
+`dist`/`dir` with integer rounding (D-035 holds); a flat elevation emits **no**
+`effectLst` (byte-identical to today). **Deliver as a split** (the D-042
+pattern): PR#1 = the builder shadow primitive (self-contained, round-trip
+golden); PR#2 = `card`/`card_section` + icon-registry wiring (store `cfg.icons`
+= curated ∪ extensions, `validateIconRefs` closed-name Stage-1 check mirroring
+`validateOrnamentRefs`, name→bytes→`AddIcon` at compose). **Grow the Card IR
+additively**: new fields' zero values reproduce current output byte-for-byte;
+new enums (`BorderStyle`/`CardSize`/`CardLayout`) re-exported into `scene`.
+**Keep `Outline` and `BorderStyle` both** — `BorderDefault` (zero) defers to
+`Outline` (false→no border, true→neutral solid); a non-default `BorderStyle`
+wins. Preservation over folding, so every existing `Card{…, Outline:…}` stays
+byte-identical (no field removal).
+**Consequences:** The builder gains a general, reusable drop-shadow primitive
+(any node, not just cards). Elevation tokens finally drive output. The icon
+registry's consumption half lands, closing the Phase-12 deferral; an unknown
+icon name fails before compose. Cards render with the full v4 knob set. A
+plain (text+icon) card stays media-free and parallel (`AddIcon` is `custGeom`,
+not a `pic`); only an image/code-bearing card body renders sequentially —
+`nodeUsesAssets` recurses `Card.Body`/`CardSection.Body`. Elevation is a
+**mechanism over the existing token** (no new theme token — a THEME.md note,
+per D-041), reusing the `Elevation` role.
+
 ---
 
 *Append new entries below this line.*

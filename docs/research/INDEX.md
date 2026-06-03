@@ -47,15 +47,24 @@ compatibility across PowerPoint versions)*
 - `01-master-layout-theme-ingestion.md` — `LoadTheme`/`FromTemplate` strategy:
   copy template parts wholesale, extract the `Theme`, map `LayoutKind` to
   named layouts.
+- `05-card-chrome-and-shadow-primitive.md` — the `outerShdw` builder shadow
+  primitive (`WithShadow` / `WithElevation`) elevation needs, mirroring the
+  D-041 gradient build.
 
 *(candidates: rich-text auto-fit modes in OOXML practice, table merged-cell
 semantics)*
 
 ### scene — Layer 2 renderer
 
-*(no briefs yet — candidates: layout-engine survey (CSS grid analogues
-expressible in EMU), text-overflow heuristics, scene IR JSON wire form
-compatibility with pengui-slides v4)*
+- `05-card-chrome-and-shadow-primitive.md` — `card` / `card_section` as native
+  chrome (rounded rect + accent stripe + icon/eyebrow/header/pill + body);
+  the builder shadow primitive elevation needs (`outerShdw`), wiring the icon
+  registry into compose (closing the Phase-12 deferral), and the additive
+  Card IR expansion.
+
+*(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
+text-overflow heuristics, scene IR JSON wire form compatibility with
+pengui-slides v4)*
 
 ### Theme & tokens
 
@@ -80,6 +89,9 @@ Material))*
   recipes; the builder primitives they need first (gradient fills for glows,
   `WithRotation`, token-alpha), the Decoration IR expansion
   (offset/bleed/opacity/rotation/size), and the layer z-order.
+- `05-card-chrome-and-shadow-primitive.md` — wiring the curated icon registry
+  into compose (the first node to *place* an icon: card), closing the Phase-12
+  consumption deferral with a `validateIconRefs` closed-name Stage-1 check.
 
 ### Charts
 
