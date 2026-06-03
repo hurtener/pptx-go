@@ -98,7 +98,7 @@ func nodesUseAssets(nodes []SlideNode) bool {
 // idempotency, only forgo parallelism until it is classified here.
 func nodeUsesAssets(n SlideNode) bool {
 	switch v := n.(type) {
-	case CodeBlock, Image:
+	case CodeBlock, Image, Chart:
 		return true
 	case Decoration:
 		return v.Kind == DecorationAsset // preset ornaments are native shapes
@@ -229,8 +229,9 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderCardSection(ps, box, v, slideID)
 	case Flow:
 		r.renderFlow(ps, box, v, slideID)
+	case Chart:
+		r.renderChart(ps, box, v, slideID)
 	default:
-		// chart is a later phase.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
 }
@@ -309,6 +310,8 @@ func preferredHeight(n SlideNode) pptx.EMU {
 	case CodeBlock:
 		return pptx.In(2.6)
 	case Image:
+		return pptx.In(3.0)
+	case Chart:
 		return pptx.In(3.0)
 	case Table:
 		rows := len(v.Rows)

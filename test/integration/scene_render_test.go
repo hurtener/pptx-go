@@ -1,6 +1,9 @@
 package integration
 
 import (
+	"bytes"
+	"image"
+	"image/png"
 	"testing"
 
 	"github.com/hurtener/pptx-go/internal/conformance"
@@ -115,5 +118,50 @@ func TestConformance_FlowIconSeam(t *testing.T) {
 	}}}
 	if _, err := scene.Render(pptx.New(), bad); err == nil {
 		t.Error("unknown flow step icon accepted; expected a Stage-1 render error")
+	}
+}
+
+// TestConformance_Chart exercises the chart image-shape path end-to-end through
+// real internal/opc + encoding/xml (Phase 17, D-046): a chart with a raster
+// reaches the slide as a pic + media part, and an aspect mismatch surfaces a
+// warning without erroring.
+func TestConformance_Chart(t *testing.T) {
+	// A 4:3 PNG against a wide single-node slot → aspect warning.
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 400, 300))); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+	shot := buf.Bytes()
+	resolver := scene.URIAssetResolver(func(uuid string) ([]byte, string, error) {
+		return shot, "image/png", nil
+	})
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "chart",
+		Nodes: []scene.SlideNode{scene.Chart{AssetID: "asset://c", Caption: "Q3"}},
+	}}}
+
+	pres := pptx.New()
+	stats, err := scene.Render(pres, sc, scene.WithAssetResolver(resolver))
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	if stats.Assets != 1 {
+		t.Fatalf("Stats.Assets = %d, want 1", stats.Assets)
+	}
+	if len(stats.Warnings) == 0 {
+		t.Error("4:3 chart in a wide slot should raise an aspect warning")
+	}
+	data, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	rep, err := conformance.ValidateBytes(data, conformance.Options{
+		RequiredParts: []string{"/ppt/presentation.xml", "/ppt/slides/slide1.xml", "/ppt/media/image1.png"},
+	})
+	if err != nil {
+		t.Fatalf("ValidateBytes: %v", err)
+	}
+	if !rep.OK() {
+		t.Fatalf("chart deck failed conformance:\n%s", rep)
 	}
 }

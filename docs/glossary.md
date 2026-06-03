@@ -23,6 +23,14 @@ anchors by name; the `scene` renderer translates anchor + offset into EMU
 coordinates at render time. Distinct from a `LayoutSlot`, which is the
 region a layout engine assigns to a content node.
 
+## Aspect warning
+
+The `LayoutWarning` a `chart` raises when the chart image's aspect ratio
+diverges from its assigned slot beyond the threshold (15%). The image's
+dimensions are read from its header (`image.DecodeConfig`, not pixel data —
+D-046); the chart is contained-to-fit and the warning informs the caller. See
+`RFC-001-pptx-go.md §15.1`.
+
 ## Asset
 
 Any non-OOXML byte payload referenced by content: image bytes, chart PNG,
@@ -114,6 +122,13 @@ recursive type cycles; `Card` body is leaf-only.
 A scene IR leaf representing a data chart. V1 disposition: image-shape
 (caller-rendered bytes). V2 disposition: native `c:chart` parts. See
 `RFC-001-pptx-go.md §15`.
+
+## Chart placeholder
+
+A labeled bordered chart slot drawn by `pptx.ChartPlaceholder(box)` — a
+rounded rect + "Chart" label, no bytes committed. The chart composer reuses it
+when an asset is unresolved, so a missing chart shows a labeled slot rather than
+a blank gap (D-046). See `RFC-001-pptx-go.md §15.1`.
 
 ## Color (interface)
 
