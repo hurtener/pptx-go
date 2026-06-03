@@ -1,10 +1,6 @@
 package scene
 
-import (
-	"fmt"
-
-	"github.com/hurtener/pptx-go/pptx"
-)
+import "github.com/hurtener/pptx-go/pptx"
 
 // Per-leaf composers (RFC §11.1 / §12). Each maps a node to builder calls
 // following its intrinsic policy — native shapes, except code_block (an image).
@@ -112,28 +108,7 @@ func (r *renderer) renderArrow(ps *pptx.Slide, box pptx.Box, v Arrow) {
 	}
 }
 
-func (r *renderer) renderCodeBlock(ps *pptx.Slide, box pptx.Box, v CodeBlock, slideID string) {
-	imgBox := box
-	if v.Caption != "" {
-		imgBox.H = box.H - pptx.In(0.4)
-	}
-	data, ct, err := r.resolve(v.AssetID)
-	if err != nil {
-		r.warn(slideID, fmt.Sprintf("code_block asset %q unresolved: %v", v.AssetID, err))
-	} else if _, aerr := ps.AddImage(pptx.ImageBytes(data, ct), imgBox); aerr != nil {
-		r.warn(slideID, fmt.Sprintf("code_block image %q: %v", v.AssetID, aerr))
-	} else {
-		r.stats.Shapes++
-		r.stats.Assets++
-	}
-	if v.Caption != "" {
-		capBox := pptx.Box{X: box.X, Y: imgBox.Y + imgBox.H, W: box.W, H: pptx.In(0.4)}
-		tf := ps.AddTextFrame(capBox)
-		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-		p.AddRun(v.Caption, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextMuted)})
-		r.stats.Shapes++
-	}
-}
+// renderCodeBlock moved to render_code_block.go (Phase 16, D-045).
 
 func (r *renderer) renderSectionDivider(ps *pptx.Slide, box pptx.Box, v SectionDivider) {
 	// Full-bleed background fill + centered label.
