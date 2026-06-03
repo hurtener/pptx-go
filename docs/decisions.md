@@ -1215,6 +1215,41 @@ not a `pic`); only an image/code-bearing card body renders sequentially —
 **mechanism over the existing token** (no new theme token — a THEME.md note,
 per D-041), reusing the `Elevation` role.
 
+## D-044 — Flow renders by composition (no new builder API); flow-level connector kind; arrow_dashed = dashed line + chevron
+
+**Date:** 2026-06-03
+**Status:** Settled
+**Context:** Phase 15 (`flow`) renders a sequential step pipeline — pills joined
+by connectors (`arrow`, `arrow_dashed`, `cycle`, `plus`), horizontal or vertical.
+The RFC §8.1 sketches `Slide.AddConnector(kind, from, to Anchor)` (an anchored
+`cxnSp`) but it was **never built**. Flow connectors are decorative glyphs in the
+gaps between pills, not routed between anchors, so they do not need it — they
+compose existing preset shapes (the `Arrow` leaf already renders `rightArrow`
+etc. via `AddShape`). Two wrinkles: block-arrow presets are filled (can't be
+"dashed"), and `pptx.Line` has no line-end arrowhead, so `arrow_dashed` has no
+one-shape rendering; and flow steps commonly carry an icon.
+**Decision:** Render flow by **pure composition — no new builder API** (do not
+build `AddConnector` in V1; defer it to if/when a node needs true routed
+connectors). Connectors are a **flow-level** `Flow.Connector ConnectorKind`
+applied between every adjacent pair (per-pair `[]ConnectorKind` is a future
+additive field). `cycle` = inter-pair arrows plus one trailing return arrow (a
+`circularArrow` preset glyph). `plus` = a `mathPlus` glyph per gap.
+**`arrow_dashed` = a thin dashed line (`ShapeLine` + `Line.Dash`) plus a small
+solid chevron head** (two shapes per connector); real OOXML `lnEnd` arrowheads on
+`pptx.Line` are **deferred** (a future builder addition if a node needs
+arrow-terminated lines). Grow the IR **additively**: `Flow.Connector` (zero =
+`ConnectorArrow`, preserving the prior default) and `FlowStep.Icon` (optional,
+resolved through the Phase-14 icon registry; `validateIconRefs` extended to walk
+flow steps); `ConnectorKind` is a re-exported scene enum. The step pill is a
+dedicated lighter `renderFlowStep` (roundRect + centered label + optional detail
++ optional icon), **not** the heavier card chrome.
+**Consequences:** Phase 15 is a single PR (no builder change, so no split).
+Flow is media-free (native shapes + custGeom icons) → parallel-safe, classified
+not-asset-bearing in `nodeUsesAssets`. No new theme token (pills/connectors reuse
+color/radius/space tokens), so no THEME.md change. The unbuilt RFC `AddConnector`
+and `pptx.Line` arrowheads remain V1.x candidates, documented here so the gap is
+explicit rather than silent.
+
 ---
 
 *Append new entries below this line.*

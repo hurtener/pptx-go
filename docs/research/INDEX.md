@@ -61,6 +61,11 @@ semantics)*
   the builder shadow primitive elevation needs (`outerShdw`), wiring the icon
   registry into compose (closing the Phase-12 deferral), and the additive
   Card IR expansion.
+- `06-flow-step-pipeline.md` — `flow` as native step pills + connector glyphs
+  (`arrow` / `arrow_dashed` / `cycle` / `plus`) composing preset shapes (no new
+  builder API — the RFC's unbuilt `AddConnector` is not needed); flow-level
+  connector kind, the `arrow_dashed` geometry wrinkle, a lighter dedicated
+  step-pill, and the additive Flow IR (`Connector`, optional step `Icon`).
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 text-overflow heuristics, scene IR JSON wire form compatibility with

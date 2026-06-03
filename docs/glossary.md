@@ -130,6 +130,14 @@ A semantic color role (e.g. `canvas`, `surface`, `accent`, `accent_warm`,
 `success`). Page-level surfaces resolve via the active `Theme`'s
 `ColorPalette` to an OOXML color value. See `RFC-001-pptx-go.md §7.1`.
 
+## Connector kind
+
+A `Flow`'s inter-step glyph (`ConnectorKind`): `arrow` (solid, the default),
+`arrow_dashed` (a dashed line + chevron head), `cycle` (arrows plus a trailing
+return arrow), or `plus` (a `mathPlus` glyph). A flow-level choice applied
+between every adjacent step pair. Composes preset shapes — pptx-go does not
+build the RFC's anchored `AddConnector` in V1 (D-044). See `RFC §11.1`.
+
 ## Container node
 
 A scene IR node that contains child nodes (`two_column`, `grid`, `card`,
@@ -232,6 +240,12 @@ applied. Gradient, pattern and picture (blip) fills are tracked for later.
 A scene IR leaf for a sequential step pipeline (horizontal/vertical) with
 a connector glyph between adjacent steps. See `RFC-001-pptx-go.md §11.1`.
 Renders as native PPTX shape group.
+
+## Flow step
+
+One pill in a `Flow` (`FlowStep`): a label + optional detail line + optional
+icon (a closed-name icon resolved through the curated registry, like a card's).
+Rendered as a lighter rounded pill — not the full card chrome (D-044).
 
 ## FontSource
 
