@@ -34,7 +34,7 @@ fi
 
 # 2. The elevation/shadow primitive exists and emits outerShdw (PR#1).
 if grep -rq "func WithElevation" pptx/ 2>/dev/null && grep -rq "outerShdw\|XOuterShadow" internal/ooxml/slide/ 2>/dev/null; then
-    if go test ./pptx/ -run 'Shadow|Elevation' >/dev/null 2>&1; then
+    if go test ./test/pptx/ -run 'WithElevation|WithShadow' >/dev/null 2>&1; then
         ok "WithElevation emits a round-tripping outerShdw"
     else
         fail "WithElevation emits a round-tripping outerShdw" "shadow tests failed"
@@ -45,7 +45,7 @@ fi
 
 # 3. A no-shadow shape emits no effectLst (byte-identical guard) (PR#1).
 if grep -rq "func WithElevation" pptx/ 2>/dev/null; then
-    if go test ./pptx/ -run 'NoEffect|FlatElevation|ShadowOmit' >/dev/null 2>&1; then
+    if go test ./test/pptx/ -run 'ShadowOmittedWhenFlat' >/dev/null 2>&1; then
         ok "no-shadow / flat shape emits no effectLst"
     else
         fail "no-shadow / flat shape emits no effectLst" "byte-identical guard test failed"

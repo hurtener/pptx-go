@@ -35,10 +35,12 @@ type Shape struct {
 
 // shapeConfig accumulates AddShape options.
 type shapeConfig struct {
-	fill     Fill
-	line     Line
-	radius   *RadiusRole
-	rotation *float64 // degrees clockwise; nil = unset
+	fill       Fill
+	line       Line
+	radius     *RadiusRole
+	rotation   *float64       // degrees clockwise; nil = unset
+	shadow     *Elevation     // literal drop shadow; nil = unset
+	shadowRole *ElevationRole // token drop shadow; resolved at AddShape; wins over shadow
 }
 
 // ShapeOption configures a shape at creation time.
@@ -63,6 +65,29 @@ func WithRadius(role RadiusRole) ShapeOption {
 // (OOXML <a:xfrm rot>, D-041). The angle is normalized to [0, 360°).
 func WithRotation(deg float64) ShapeOption {
 	return func(c *shapeConfig) { c.rotation = &deg }
+}
+
+// WithElevation casts a drop shadow from the active theme's Elevation token for
+// role (the documented token path — P2, D-043). The token resolves at AddShape
+// time, so a theme swap re-renders the shadow in the brand's elevation.
+// ElevationFlat (and any flat token) emits no effect — byte-identical to a shape
+// with no shadow.
+func WithElevation(role ElevationRole) ShapeOption {
+	return func(c *shapeConfig) {
+		r := role
+		c.shadowRole = &r
+		c.shadow = nil
+	}
+}
+
+// WithShadow casts a drop shadow from a literal Elevation (the escape hatch;
+// the documented path is WithElevation). A flat Elevation (IsFlat) emits no
+// effect.
+func WithShadow(e Elevation) ShapeOption {
+	return func(c *shapeConfig) {
+		c.shadow = &e
+		c.shadowRole = nil
+	}
 }
 
 // AddShape adds a preset-geometry shape positioned by box (EMU) and returns a
@@ -97,7 +122,42 @@ func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shap
 		sp.ShapeProperties.Transform2D.Rotation = normalizeAngle60k(*cfg.rotation)
 	}
 
+	// Drop shadow (D-043): token role resolves against the active theme; a literal
+	// Elevation is the escape hatch. A flat elevation emits no effect, keeping a
+	// no-shadow shape byte-identical.
+	switch {
+	case cfg.shadowRole != nil:
+		applyShadow(sp.ShapeProperties, theme.ResolveElevation(*cfg.shadowRole))
+	case cfg.shadow != nil:
+		applyShadow(sp.ShapeProperties, *cfg.shadow)
+	}
+
 	return &Shape{sp: sp}
+}
+
+// applyShadow attaches an <a:effectLst><a:outerShdw> realizing e. A flat
+// elevation is a no-op (no effect list), so it does not perturb existing output.
+// The Theme's cartesian OffsetX/OffsetY become outerShdw's polar dist/dir,
+// rounded to integers so the serialized bytes are deterministic (D-035).
+func applyShadow(spPr *slide.XShapeProperties, e Elevation) {
+	if spPr == nil || e.IsFlat() {
+		return
+	}
+	dist := int(math.Round(math.Hypot(float64(e.OffsetX), float64(e.OffsetY))))
+	dir := 0
+	if e.OffsetX != 0 || e.OffsetY != 0 {
+		deg := math.Atan2(float64(e.OffsetY), float64(e.OffsetX)) * 180 / math.Pi
+		dir = normalizeAngle60k(deg)
+	}
+	spPr.EffectList = &slide.XEffectList{
+		OuterShdw: &slide.XOuterShadow{
+			BlurRad:      int(e.Blur),
+			Dist:         dist,
+			Dir:          dir,
+			RotWithShape: 0,
+			SrgbClr:      &slide.XSrgbClr{Val: string(e.Color), Alpha: &slide.XAlpha{Val: e.Alpha}},
+		},
+	}
 }
 
 // applyCornerRadius sets a roundRect's corner radius via its adjust guide. The

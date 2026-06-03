@@ -228,6 +228,7 @@ type XShapeProperties struct {
 	GradientFill *XGradientFill   `xml:"gradFill,omitempty"`
 	NoFill       *XNoFill         `xml:"noFill,omitempty"`
 	Line         *XLineProperties `xml:"ln,omitempty"`
+	EffectList   *XEffectList     `xml:"effectLst,omitempty"`
 }
 
 // XNoFill is the empty <a:noFill/> element (an explicit "no fill").
