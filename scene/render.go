@@ -106,6 +106,12 @@ func nodeUsesAssets(n SlideNode) bool {
 		return nodesUseAssets(v.Left) || nodesUseAssets(v.Right)
 	case Grid:
 		return nodesUseAssets(v.Cells)
+	case Card:
+		// The card chrome (incl. a native custGeom icon) registers no media; only
+		// an asset-bearing body node does (D-015, D-043).
+		return nodesUseAssets(v.Body)
+	case CardSection:
+		return nodesUseAssets(v.Body)
 	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, SectionDivider, Table:
 		return false
 	default:
@@ -214,8 +220,12 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderGrid(ps, box, v, slideID)
 	case Table:
 		r.renderTable(ps, box, v, slideID)
+	case Card:
+		r.renderCard(ps, box, v, slideID)
+	case CardSection:
+		r.renderCardSection(ps, box, v, slideID)
 	default:
-		// chart/flow + card/card_section are later phases.
+		// chart/flow are later phases.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
 }
@@ -323,10 +333,19 @@ func preferredHeight(n SlideNode) pptx.EMU {
 			}
 		}
 		return pptx.EMU(rows)*maxCell + estGap*pptx.EMU(rows-1)
+	case Card:
+		return cardChromeEst + nodesHeight(v.Body) + estGap
+	case CardSection:
+		return cardChromeEst + nodesHeight(v.Body) + estGap
 	default:
 		return pptx.In(1.0)
 	}
 }
+
+// cardChromeEst is the deterministic slot height a card's chrome (header row +
+// padding) contributes above its body. A placement estimate, not a content
+// opinion (D-026).
+const cardChromeEst = pptx.EMU(1097280) // ~1.2"
 
 // estGap is a fixed gap estimate used only for sizing nested containers (the
 // actual gap at render time comes from the theme).

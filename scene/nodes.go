@@ -430,15 +430,57 @@ const (
 	BodyHorizontal
 )
 
-// Card is an accent card with a body of leaf children.
+// BorderStyle selects a card's border treatment (D-043). BorderDefault (zero)
+// defers to the legacy Outline bool, so an existing Card{…, Outline:…} renders
+// byte-identically; an explicit style overrides Outline.
+type BorderStyle int
+
+const (
+	BorderDefault BorderStyle = iota // defer to Outline
+	BorderNone                       // no border (even if Outline is true)
+	BorderSolid                      // neutral hairline border
+	BorderAccent                     // accent-colored border
+)
+
+// CardSize scales a card's interior padding. CardSizeMD (zero) preserves the
+// default padding.
+type CardSize int
+
+const (
+	CardSizeMD CardSize = iota
+	CardSizeSM
+	CardSizeLG
+)
+
+// CardLayout arranges a card's header region. CardLayoutDefault (zero) places
+// the icon to the left of the eyebrow/header stack (a header row); IconTop
+// stacks the icon above the text. (Further v4 header variants are deferred —
+// RFC §11.3; plan §16.)
+type CardLayout int
+
+const (
+	CardLayoutDefault CardLayout = iota // icon left of the eyebrow/header stack
+	CardLayoutIconTop                   // icon above the eyebrow/header stack
+)
+
+// Card is an accent card: chrome (rounded rect + accent stripe + optional
+// icon/eyebrow/header/header-pill) over a body of leaf children. All fields
+// beyond Header/Body/BodyLayout/Fill/Outline/Elevation are additive (D-043):
+// their zero values reproduce the pre-Phase-14 render byte-for-byte.
 type Card struct {
 	node
-	Header     string
-	Body       []SlideNode
-	BodyLayout BodyLayout
-	Fill       ColorRole
-	Outline    bool
-	Elevation  ElevationRole
+	Header      string
+	Eyebrow     string // kicker label above the header
+	Icon        string // curated/extension icon name (closed-name; Stage-1 validated)
+	HeaderPill  string // pill badge text, right of the header row
+	Body        []SlideNode
+	BodyLayout  BodyLayout
+	Fill        ColorRole
+	Outline     bool        // legacy border shorthand; see BorderStyle (D-043)
+	BorderStyle BorderStyle // explicit border; BorderDefault defers to Outline
+	Size        CardSize    // interior padding scale
+	Layout      CardLayout  // header arrangement
+	Elevation   ElevationRole
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }
