@@ -26,11 +26,46 @@ const (
 	ShapeLine          ShapeGeometry = "line"
 )
 
-// Shape is an opaque handle to a shape that was added to a slide. It does not
-// expose the underlying OOXML wire type (P3); it exists so callers can hold a
-// reference for future, type-safe mutators.
+// Shape is a handle to a shape on a slide — either one the builder added or one
+// recovered by Open from a reopened deck (Slide.Shapes, RFC §16). It does not
+// expose the underlying OOXML wire type (P3); read accessors (Geometry,
+// Rotation, Fill, Line, Shadow) map the recovered wire fields back to the public
+// builder types so a reopened shape compares field-equal to the authored one.
+//
+// Exactly one of the underlying children is set: an auto-shape (sp), a picture
+// (pic), or a graphic frame / table (gf). The builder constructs only sp shapes;
+// Shapes() wraps whichever child it finds so the read accessors land on a common
+// handle (text/table/image read arrive in later read chunks).
 type Shape struct {
-	sp *slide.XSp
+	sp  *slide.XSp
+	pic *slide.XPicture
+	gf  *slide.XGraphicFrame
+}
+
+// props returns the shape's <spPr>, regardless of the underlying child kind, or
+// nil when the child carries none (a graphic frame has its transform inline, not
+// under spPr).
+func (sh *Shape) props() *slide.XShapeProperties {
+	switch {
+	case sh.sp != nil:
+		return sh.sp.ShapeProperties
+	case sh.pic != nil:
+		return sh.pic.ShapeProperties
+	default:
+		return nil
+	}
+}
+
+// xfrm returns the shape's 2D transform: spPr/xfrm for an auto-shape or picture,
+// or the graphic frame's own xfrm.
+func (sh *Shape) xfrm() *slide.XTransform2D {
+	if sh.gf != nil {
+		return sh.gf.Transform2D
+	}
+	if p := sh.props(); p != nil {
+		return p.Transform2D
+	}
+	return nil
 }
 
 // shapeConfig accumulates AddShape options.
@@ -189,10 +224,13 @@ func applyCornerRadius(spPr *slide.XShapeProperties, radius EMU, box Box) {
 
 // Box returns the shape's position and size in EMU.
 func (sh *Shape) Box() Box {
-	if sh == nil || sh.sp == nil || sh.sp.ShapeProperties == nil || sh.sp.ShapeProperties.Transform2D == nil {
+	if sh == nil {
 		return Box{}
 	}
-	xf := sh.sp.ShapeProperties.Transform2D
+	xf := sh.xfrm()
+	if xf == nil {
+		return Box{}
+	}
 	var b Box
 	if xf.Offset != nil {
 		b.X, b.Y = EMU(xf.Offset.X), EMU(xf.Offset.Y)
@@ -201,6 +239,95 @@ func (sh *Shape) Box() Box {
 		b.W, b.H = EMU(xf.Extent.Cx), EMU(xf.Extent.Cy)
 	}
 	return b
+}
+
+// Geometry returns the shape's preset geometry — the OOXML prst name (e.g.
+// ShapeRoundRect). It is the empty string for a custom-geometry shape (an icon
+// glyph, custGeom) or one with no geometry (a picture or graphic frame). It is
+// the read inverse of AddShape's geom argument.
+func (sh *Shape) Geometry() ShapeGeometry {
+	if sh == nil {
+		return ""
+	}
+	if p := sh.props(); p != nil && p.PresetGeom != nil {
+		return ShapeGeometry(p.PresetGeom.Prst)
+	}
+	return ""
+}
+
+// Rotation returns the shape's clockwise rotation in degrees within [0, 360°),
+// or 0 if unset — the read inverse of WithRotation.
+func (sh *Shape) Rotation() float64 {
+	if sh == nil {
+		return 0
+	}
+	if xf := sh.xfrm(); xf != nil {
+		return float64(xf.Rotation) / 60000.0
+	}
+	return 0
+}
+
+// Fill returns the shape's interior fill, or nil when the shape has no explicit
+// fill (it inherits its style fill). A reopened fill surfaces resolved literal
+// colors (D-030); inspect it via Fill.Kind / SolidColor / Gradient. It is the
+// read inverse of WithFill.
+func (sh *Shape) Fill() Fill {
+	if sh == nil {
+		return nil
+	}
+	return fillFromX(sh.props())
+}
+
+// Line returns the shape's outline, or a zero Line when the shape has no
+// explicit outline (it inherits its style line). It is the read inverse of
+// WithLine.
+func (sh *Shape) Line() Line {
+	if sh == nil {
+		return Line{}
+	}
+	p := sh.props()
+	if p == nil || p.Line == nil {
+		return Line{}
+	}
+	x := p.Line
+	ln := Line{Width: EMU(x.Width)}
+	if x.SolidFill != nil {
+		ln.Color = colorFromSrgb(x.SolidFill.SrgbClr)
+	}
+	if x.PrstDash != nil {
+		ln.Dash = x.PrstDash.Val
+	}
+	return ln
+}
+
+// Shadow returns the shape's drop shadow as an Elevation and true, or a zero
+// Elevation and false when the shape casts none. The OOXML outerShdw stores the
+// offset in polar form (dist/dir); Shadow reconstructs the cartesian
+// OffsetX/OffsetY, so an axis-aligned shadow round-trips exactly and an oblique
+// one to within sub-EMU rounding (D-035). It is the read inverse of
+// WithElevation / WithShadow.
+func (sh *Shape) Shadow() (Elevation, bool) {
+	if sh == nil {
+		return Elevation{}, false
+	}
+	p := sh.props()
+	if p == nil || p.EffectList == nil || p.EffectList.OuterShdw == nil {
+		return Elevation{}, false
+	}
+	o := p.EffectList.OuterShdw
+	rad := float64(o.Dir) / 60000.0 * math.Pi / 180
+	e := Elevation{
+		Blur:    EMU(o.BlurRad),
+		OffsetX: EMU(math.Round(float64(o.Dist) * math.Cos(rad))),
+		OffsetY: EMU(math.Round(float64(o.Dist) * math.Sin(rad))),
+	}
+	if o.SrgbClr != nil {
+		e.Color = RGB(o.SrgbClr.Val)
+		if o.SrgbClr.Alpha != nil {
+			e.Alpha = o.SrgbClr.Alpha.Val
+		}
+	}
+	return e, true
 }
 
 // activeTheme returns the presentation's theme, or DefaultTheme if unavailable.

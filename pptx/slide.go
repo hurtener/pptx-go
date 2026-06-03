@@ -311,6 +311,31 @@ func (s *Slide) PartURI() *opc.PackURI {
 	return s.part.PartURI()
 }
 
+// Shapes returns the slide's shapes in document order — the read-side
+// enumerator (RFC §16). Each shape-tree child is wrapped in a *Shape: an
+// auto-shape, a picture, or a graphic frame (a table). On a reopened pptx-go
+// deck the returned handles expose the authored geometry / rotation / fill /
+// line / shadow via the Shape read accessors (text / table / image read arrive
+// in later read chunks). Group shapes and unrecognized children are skipped.
+func (s *Slide) Shapes() []*Shape {
+	if s == nil || s.part == nil {
+		return nil
+	}
+	children := s.part.SpTree().Children
+	shapes := make([]*Shape, 0, len(children))
+	for _, child := range children {
+		switch c := child.(type) {
+		case *slide.XSp:
+			shapes = append(shapes, &Shape{sp: c})
+		case *slide.XPicture:
+			shapes = append(shapes, &Shape{pic: c})
+		case *slide.XGraphicFrame:
+			shapes = append(shapes, &Shape{gf: c})
+		}
+	}
+	return shapes
+}
+
 // ============================================================================
 // Viewport and boundary checking
 // ============================================================================

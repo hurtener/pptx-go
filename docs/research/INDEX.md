@@ -54,6 +54,9 @@ compatibility across PowerPoint versions)*
   §7-boundary clarification that reading image dimension headers
   (`image.DecodeConfig`) is permitted (decoding pixel data is not), enabling the
   chart aspect-ratio warning.
+- `08-roundtrip-read.md` — the read-side public model (`Slide.Shapes()` + read
+  accessors on the builder types) needed to reconstruct an opened deck per
+  RFC §16, backed by pure `X*`→public mappings over the already-parsed tree.
 
 *(candidates: rich-text auto-fit modes in OOXML practice, table merged-cell
 semantics)*
@@ -118,8 +121,13 @@ Apple Silicon vs x86_64, zip-streaming costs vs in-memory)*
 
 ### Read & round-trip
 
-*(no briefs yet — candidates: PowerPoint output variance (PowerPoint vs
-PowerPoint Online vs Office for Mac), Keynote-to-PPTX export quirks)*
+- `08-roundtrip-read.md` — what `pptx.Open` reconstructs today (hybrid: high-
+  level structure rebuilt, slide shapes preserved as opaque OOXML) vs the RFC
+  §16 mandate (reconstruct the navigable Go model — `Slides()[0].Shapes()[0]`);
+  the extend-the-builder-types read model and the split-by-primitive delivery.
+
+*(candidates: PowerPoint output variance (PowerPoint vs PowerPoint Online vs
+Office for Mac), Keynote-to-PPTX export quirks)*
 
 ---
 
