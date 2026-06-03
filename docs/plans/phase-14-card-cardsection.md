@@ -337,15 +337,34 @@ File in `docs/glossary.md` (alphabetical) in the respective PR:
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+- **CardLayout ships two values, not three.** §9 listed
+  `CardLayoutDefault / CardLayoutIconLeft / CardLayoutIconTop`. Implemented
+  `CardLayoutDefault` (icon left of the eyebrow/header stack) and
+  `CardLayoutIconTop` (icon stacked above) — `IconLeft` folded into `Default`
+  to avoid a redundant synonym (Default *is* icon-left). Honors brief Q1
+  (ship the variants the reference decks use; defer the rest — RFC §11.3). No
+  acceptance criterion changes.
+- **Acceptance criterion 3 restated.** As written it asserts a zero-field Card
+  "renders byte-identically to the pre-Phase-14 Card render." Pre-Phase-14 the
+  renderer had no Card case — a Card produced a `LayoutWarning` ("not yet
+  implemented; node skipped") and *no shapes*, so there is no prior render to
+  match. The meaningful invariant — render determinism for the additive IR
+  (D-035) — is tested instead by `TestCardParallel` (byte-identical at
+  workers=1 vs N) plus the unchanged catalog/policy tests (`scene_test.go`).
+  The shadow primitive's own byte-identical guard (`TestShadowOmittedWhenFlat`,
+  PR#1) covers the no-perturbation property at the builder layer.
+- **CardSection IR kept minimal.** It carries `Header` + `Body` only (no
+  Fill/Icon/BorderStyle/etc.); it shares `renderCardChrome` with chrome
+  defaults. Expanding its knob set is deferred — additive when a reference deck
+  needs it.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-14.sh` reports `OK ≥ 9` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entries added (D-043).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-14.sh` reports `OK ≥ 9` and `FAIL = 0` (9 OK, 0 FAIL).
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated.
+- [x] Decision entries added (D-043).
 - [ ] (Phase 20+) Docs site updated for user-facing surface changes. (inert)
 - [ ] (Phase 20+) Affected agent skill(s) updated. (inert)
