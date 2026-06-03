@@ -149,8 +149,10 @@ func (s *Slide) addImagePart(data []byte, ext string) string {
 }
 
 // Image is an opaque handle to an image added to a slide. It exposes typed
-// mutators (alt text, crop, fit) without surfacing the OOXML wire type (P3).
+// mutators (alt text, crop, fit) without surfacing the OOXML wire type (P3), and
+// read accessors over a reopened deck (RFC §16).
 type Image struct {
+	s   *Slide // owning slide (read side: resolves the embedded bytes)
 	pic *slide.XPicture
 }
 
@@ -190,7 +192,7 @@ func (s *Slide) AddImage(src ImageSource, box Box) (*Image, error) {
 
 	rID := s.addImagePart(img.bytes, img.ext)
 	pic := s.builder.AddPicture(int(box.X), int(box.Y), int(box.W), int(box.H), rID)
-	return &Image{pic: pic}, nil
+	return &Image{s: s, pic: pic}, nil
 }
 
 // SetAltText sets the image's alternative text (the cNvPr/@descr attribute).
@@ -256,6 +258,89 @@ func (im *Image) SetOpacity(alpha int) *Image {
 	}
 	im.pic.BlipFill.Blip.AlphaModFix = &slide.XAlphaModFix{Amt: a}
 	return im
+}
+
+// ============================================================================
+// Read accessors (RFC §16) — the read inverse of the image authoring API.
+// ============================================================================
+
+// ErrImagePartMissing is returned by Image.Bytes when the picture's embedded
+// relationship or its media part cannot be resolved in the reopened package.
+var ErrImagePartMissing = errors.New("pptx: image media part not found")
+
+// AltText returns the image's alternative text — the read inverse of SetAltText
+// (empty when unset).
+func (im *Image) AltText() string {
+	if im != nil && im.pic != nil && im.pic.NonVisual.CNvPr != nil {
+		return im.pic.NonVisual.CNvPr.Descr
+	}
+	return ""
+}
+
+// Crop returns the image's per-edge crop as fractions (0..1) — the read inverse
+// of SetCrop (a zero Crop when uncropped).
+func (im *Image) Crop() Crop {
+	if im == nil || im.pic == nil || im.pic.BlipFill == nil || im.pic.BlipFill.SrcRect == nil {
+		return Crop{}
+	}
+	r := im.pic.BlipFill.SrcRect
+	return Crop{
+		Left:   float64(r.L) / 100000.0,
+		Top:    float64(r.T) / 100000.0,
+		Right:  float64(r.R) / 100000.0,
+		Bottom: float64(r.B) / 100000.0,
+	}
+}
+
+// Fit returns the image's fill mode — the read inverse of SetFit (FitFill when a
+// stretch fill is present, FitNone otherwise).
+func (im *Image) Fit() Fit {
+	if im != nil && im.pic != nil && im.pic.BlipFill != nil && im.pic.BlipFill.Stretch != nil {
+		return FitFill
+	}
+	return FitNone
+}
+
+// Rotation returns the image's clockwise rotation in degrees within [0, 360°) —
+// the read inverse of SetRotation (0 when unset).
+func (im *Image) Rotation() float64 {
+	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil || im.pic.ShapeProperties.Transform2D == nil {
+		return 0
+	}
+	return float64(im.pic.ShapeProperties.Transform2D.Rotation) / 60000.0
+}
+
+// Opacity returns the image's opacity (OOXML alpha 0..100000) — the read inverse
+// of SetOpacity (AlphaOpaque when no alpha-modulation effect is set).
+func (im *Image) Opacity() int {
+	if im != nil && im.pic != nil && im.pic.BlipFill != nil && im.pic.BlipFill.Blip != nil &&
+		im.pic.BlipFill.Blip.AlphaModFix != nil {
+		return im.pic.BlipFill.Blip.AlphaModFix.Amt
+	}
+	return AlphaOpaque
+}
+
+// Bytes resolves the image's embedded bytes by following the picture's
+// <a:blip r:embed> relationship to its media part in the reopened package (R4).
+// It returns ErrImagePartMissing when the relationship or part is absent. The
+// bytes are returned verbatim — pptx-go does not decode pixel data (§7).
+func (im *Image) Bytes() ([]byte, error) {
+	if im == nil || im.pic == nil || im.pic.BlipFill == nil || im.pic.BlipFill.Blip == nil {
+		return nil, ErrImagePartMissing
+	}
+	rid := im.pic.BlipFill.Blip.Embed
+	if rid == "" || im.s == nil || im.s.part == nil || im.s.presentation == nil || im.s.presentation.pkg == nil {
+		return nil, ErrImagePartMissing
+	}
+	rel := im.s.part.Relationships().Get(rid)
+	if rel == nil {
+		return nil, fmt.Errorf("%w: relationship %q", ErrImagePartMissing, rid)
+	}
+	part := im.s.presentation.pkg.GetPart(rel.TargetURI())
+	if part == nil {
+		return nil, fmt.Errorf("%w: %s", ErrImagePartMissing, rel.TargetURI().URI())
+	}
+	return part.Blob(), nil
 }
 
 // cropPermille converts a 0..1 crop fraction to OOXML's thousandths-of-a-percent

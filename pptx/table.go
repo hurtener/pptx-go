@@ -209,6 +209,80 @@ func (c *Cell) activeTheme() *Theme {
 	return DefaultTheme()
 }
 
+// ============================================================================
+// Read accessors (RFC §16) — the read inverse of the table authoring API.
+// ============================================================================
+
+// RowCount returns the table's number of rows — the read inverse of AddTable's
+// rows argument.
+func (t *Table) RowCount() int { return t.rows }
+
+// ColCount returns the table's number of columns — the read inverse of
+// AddTable's cols argument.
+func (t *Table) ColCount() int { return t.cols }
+
+// ColumnWidths returns the table's column widths (EMU), left to right — the read
+// inverse of SetColumnWidths.
+func (t *Table) ColumnWidths() []EMU {
+	grid := t.tbl().Grid
+	if grid == nil {
+		return nil
+	}
+	ws := make([]EMU, len(grid.GridCols))
+	for i, c := range grid.GridCols {
+		ws[i] = EMU(c.W)
+	}
+	return ws
+}
+
+// HeaderRow reports whether the first row is marked as a header — the read
+// inverse of SetHeaderRow.
+func (t *Table) HeaderRow() bool { return t.headerOn }
+
+// RowBanding reports whether row banding is enabled — the read inverse of
+// SetBanding's rowBand argument.
+func (t *Table) RowBanding() bool { return t.bandRowOn }
+
+// GridSpan returns the number of columns the cell spans (1 for an unmerged
+// cell) — the read inverse of MergeRight.
+func (c *Cell) GridSpan() int {
+	if !c.ok() || c.tc.GridSpan == 0 {
+		return 1
+	}
+	return c.tc.GridSpan
+}
+
+// RowSpan returns the number of rows the cell spans (1 for an unmerged cell) —
+// the read inverse of MergeDown.
+func (c *Cell) RowSpan() int {
+	if !c.ok() || c.tc.RowSpan == 0 {
+		return 1
+	}
+	return c.tc.RowSpan
+}
+
+// Covered reports whether the cell is covered by a neighboring cell's merge
+// (hMerge or vMerge) — i.e. it is not the merge anchor and renders no content.
+func (c *Cell) Covered() bool {
+	return c.ok() && (c.tc.HMerge == "1" || c.tc.VMerge == "1")
+}
+
+// Fill returns the cell's interior fill, or nil when the cell has no explicit
+// fill — the read inverse of SetFill.
+func (c *Cell) Fill() Fill {
+	if !c.ok() || c.tc.Pr == nil {
+		return nil
+	}
+	switch {
+	case c.tc.Pr.SolidFill != nil:
+		return solidFill{color: colorFromSrgb(c.tc.Pr.SolidFill.SrgbClr)}
+	case c.tc.Pr.NoFill != nil:
+		return noFill{}
+	default:
+		return nil
+	}
+}
+
 // boolAttr renders an OOXML boolean attribute ("1" when true, omitted otherwise).
 func boolAttr(b bool) string {
 	if b {
