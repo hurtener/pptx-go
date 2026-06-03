@@ -9,6 +9,12 @@
 
 ---
 
+## Accent stripe
+
+The thin themed bar a `Card` / `CardSection` draws along one edge (the accent
+token color) to mark the card visually. Part of the card chrome. Distinct
+from a `border` (which outlines the whole card). See `RFC-001-pptx-go.md §11.2`.
+
 ## Anchor
 
 A point on a shape (top-left, top-center, …, bleed-top-right, …) used to
@@ -89,6 +95,13 @@ single substrate for all higher-level content authoring. See
 A scene IR container node — accent strip + optional icon / eyebrow /
 header-pill, with leaf children. Renders as a native PPTX shape group.
 See `RFC-001-pptx-go.md §11.2`.
+
+## Card chrome
+
+A card's non-content shapes: the background rounded-rect (with `fill`,
+`border_style`, and `elevation` shadow), the accent stripe, and the header row
+(optional icon + eyebrow + header + header-pill). Shared by `Card` and
+`CardSection`; the body region renders inside it. See `RFC-001-pptx-go.md §11.2`.
 
 ## CardSection
 
@@ -178,6 +191,15 @@ run as part of `Preflight`. It mechanically checks file mirroring
 (`AGENTS.md == CLAUDE.md`), the canonical module path, the P1/P3 layering
 seams, and (from Phase 20) the §19 user-facing-vocabulary rule. Checks
 grow as phases land.
+
+## Elevation primitive
+
+The builder drop-shadow mechanism (`pptx.WithElevation(role)` /
+`pptx.WithShadow(e)`) that realizes the `Elevation` token as an OOXML
+`<a:effectLst><a:outerShdw>` effect. `WithElevation` resolves the role against
+the active theme (P2 token path); `WithShadow` takes a literal `Elevation`
+(escape hatch). A flat elevation emits no effect. Not a new token — a mechanism
+over the existing `Elevation` role (D-043). See `docs/design/THEME.md`.
 
 ## EMU
 
@@ -278,6 +300,13 @@ direction — `<a:lin>` (linear, by angle) or `<a:path path="circle">`
 ornaments (`radial_glow`, `glow_ring`) as true gradients rather than banded
 solids. Public API: `pptx.LinearGradient` / `pptx.RadialGradient` with
 `GradientStop`s. Joins `SolidFill` / `NoFill` as a `Fill`.
+
+## Header pill
+
+A small pill-shaped badge (rounded-rect + short label) rendered in a card's
+header row, typically right-aligned (e.g. a status tag like "NEW" or "BETA").
+A field on `Card` / `CardSection`; part of the card chrome. See
+`RFC-001-pptx-go.md §11.2`.
 
 ## Icon
 

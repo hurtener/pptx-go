@@ -118,3 +118,15 @@ Gradient fills (`pptx.LinearGradient` / `pptx.RadialGradient`), shape rotation
 a gradient stop's color is any `Color` (typically `TokenColor(role)` or
 `TokenColorAlpha(role, alpha)`), so a theme swap re-renders a glow in the new
 accent. No new token role is introduced; the token taxonomy above is unchanged.
+
+## Elevation / shadow (mechanism, no new token — D-043)
+
+The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is
+a builder **mechanism**, not a new theme token. It *consumes* the existing
+`Elevation` token (the `ElevationRole` → `Elevation{Blur, OffsetX, OffsetY,
+Color, Alpha}` already in the taxonomy above): `WithElevation(role)` resolves
+the role against the active theme at `AddShape` time and emits
+`<a:effectLst><a:outerShdw>`, so a theme swap re-renders the same shape with
+the brand's elevation. `WithShadow(e)` is the literal escape hatch (P2 — the
+documented path is `WithElevation`). A flat elevation
+(`Elevation.IsFlat()`) emits no effect. No new token role is introduced.
