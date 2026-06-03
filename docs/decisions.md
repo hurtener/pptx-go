@@ -1250,6 +1250,28 @@ color/radius/space tokens), so no THEME.md change. The unbuilt RFC `AddConnector
 and `pptx.Line` arrowheads remain V1.x candidates, documented here so the gap is
 explicit rather than silent.
 
+## D-045 — `code_block` language badge; renderer relocated
+
+**Date:** 2026-06-03
+**Status:** Settled
+**Context:** The `code_block` raster path (a caller-rendered code image + an
+optional caption below) shipped in Phases 06/11 per D-014, but the
+`CodeBlock.Language` field has been carried in the IR and never rendered — a
+set-but-unused field surfaced by the Phase-16 finalize.
+**Decision:** Render `CodeBlock.Language` (when non-empty) as a small **native
+overlay badge** — a rounded-rect pill with the language text — inset into the
+**top-right** corner of the code image, drawn after the `pic` so it overlays
+(shape-tree order = z-order). The badge reuses the card header-pill chrome
+precedent (D-043): surface-tone fill, caption text, no new theme token. An empty
+`Language` emits no badge (byte-identical to prior output). Relocate
+`renderCodeBlock` from `render_leaves.go` to its own `scene/render_code_block.go`
+for parity with `render_card.go` / `render_flow.go`. No public API is added (the
+badge is compose behavior over the existing field); the per-node policy (D-014:
+`pic` + `asset_id`) is unchanged — the badge is a native overlay on top.
+**Consequences:** The language field finally drives output. Code blocks read as
+labeled snippets. The raster/caption behavior and D-014/D-036 contracts are
+unchanged. Pure composition — no builder change, no new token.
+
 ---
 
 *Append new entries below this line.*
