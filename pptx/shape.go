@@ -343,6 +343,40 @@ func (sh *Shape) TextFrame() (*TextFrame, bool) {
 	return &TextFrame{s: sh.s, body: sh.sp.TextBody}, true
 }
 
+// Table returns the table this shape bears and true, or nil and false when the
+// shape is not a table (a graphic frame carrying an <a:tbl>). On a reopened deck
+// the returned handle exposes the authored row/column counts, column widths,
+// header/banding intent, and per-cell text / fill / merge via the Table and Cell
+// read accessors (RFC §16).
+func (sh *Shape) Table() (*Table, bool) {
+	if sh == nil || sh.gf == nil || sh.gf.Graphic == nil ||
+		sh.gf.Graphic.GraphicData == nil || sh.gf.Graphic.GraphicData.Table == nil {
+		return nil, false
+	}
+	tbl := sh.gf.Graphic.GraphicData.Table
+	cols := 0
+	if tbl.Grid != nil {
+		cols = len(tbl.Grid.GridCols)
+	}
+	t := &Table{slide: sh.s, gf: sh.gf, rows: len(tbl.Rows), cols: cols}
+	if tbl.Pr != nil {
+		t.headerOn = tbl.Pr.FirstRow == "1"
+		t.bandRowOn = tbl.Pr.BandRow == "1"
+	}
+	return t, true
+}
+
+// Image returns the image this shape bears and true, or nil and false when the
+// shape is not a picture. On a reopened deck the returned handle exposes the
+// authored alt text / crop / fit / rotation / opacity and resolves the embedded
+// bytes via Image.Bytes (RFC §16).
+func (sh *Shape) Image() (*Image, bool) {
+	if sh == nil || sh.pic == nil {
+		return nil, false
+	}
+	return &Image{s: sh.s, pic: sh.pic}, true
+}
+
 // activeTheme returns the presentation's theme, or DefaultTheme if unavailable.
 func (s *Slide) activeTheme() *Theme {
 	if s.presentation != nil {

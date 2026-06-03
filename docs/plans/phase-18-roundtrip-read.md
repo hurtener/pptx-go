@@ -258,6 +258,24 @@ D-047's accessor list):**
   not returned by `Runs()`. Frame body props (anchor / autofit / margins) read
   is deferred to PR#4 — the codec already preserves them (G6).
 
+**PR#3 (tables + images).** No deviations from the RFC or D-047. Decisions
+settled in PR#3:
+
+- **`Shape.Table()` / `Shape.Image()` reconstruct the existing `Table` / `Image`
+  handles** off the reopened graphic-frame / picture child, deriving the
+  unexported state (`rows`/`cols` from the grid/rows, `headerOn`/`bandRowOn` from
+  the `tblPr` flags). Table read accessors: `RowCount`, `ColCount`,
+  `ColumnWidths`, `HeaderRow`, `RowBanding`; cell accessors: `GridSpan`,
+  `RowSpan`, `Covered`, `Fill`. Cell **text** reuses the existing
+  `Cell.TextFrame()` + the PR#2 read model — one model, no new text path.
+- **Image bytes resolve through the package (R4).** `Image.Bytes()` follows the
+  picture's `<a:blip r:embed>` relationship to its media part in the reopened
+  `opc.Package` (`Image` gained an owning-slide back-ref); a missing
+  relationship/part returns `ErrImagePartMissing`, never a panic. Bytes are
+  returned verbatim — no pixel decode (§7). Other image reads (`AltText`, `Crop`,
+  `Fit`, `Rotation`, `Opacity`) are pure field maps; `Fit` reports `FitFill` when
+  a stretch fill is present (the builder default), `FitNone` otherwise.
+
 ## 17. Sign-off
 
 - [ ] All acceptance criteria pass.
