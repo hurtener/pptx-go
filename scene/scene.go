@@ -10,6 +10,7 @@ import (
 
 	"github.com/hurtener/pptx-go/pptx"
 	"github.com/hurtener/pptx-go/scene/frames"
+	"github.com/hurtener/pptx-go/scene/icons"
 	"github.com/hurtener/pptx-go/scene/ornaments"
 )
 
@@ -144,6 +145,7 @@ type renderConfig struct {
 	frameExt    []frameExtension
 	frames      *frames.Registry // built in Render: curated ∪ frameExt
 	iconExt     []iconExtension
+	icons       *icons.Registry // built in Render: curated ∪ iconExt
 	ornamentExt []ornamentExtension
 	ornaments   *ornaments.Registry // built in Render: curated ∪ ornamentExt
 	ctx         context.Context
@@ -284,15 +286,21 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 	if err := validateFrameRefs(s, cfg.frames); err != nil {
 		return Stats{}, err
 	}
-	// Validate caller icon extensions at registration (RFC §14.1, D-005): an SVG
-	// outside the translator subset fails here, before any slide composes — not
-	// silently at render. Curated icons are pre-validated by their build-time
-	// test. (The per-render icon registry is assembled by the consuming nodes in
-	// a later phase; Phase 12 ships the registry + the fail-fast check.)
+	// Build the per-render icon registry (curated ∪ extensions) and run the
+	// registry-aware half of Stage-1 validation: a caller SVG outside the
+	// translator subset fails at registration (RFC §14.1, D-005), and a card's
+	// Icon name must resolve to a curated or registered icon before any slide
+	// composes (D-043). Curated icons are pre-validated by their build-time test.
+	// The registry is read-only during the parallel compose.
+	cfg.icons = icons.Curated()
 	for _, ext := range cfg.iconExt {
 		if err := pptx.ValidateIcon(ext.svg); err != nil {
 			return Stats{}, fmt.Errorf("scene: icon extension %q: %w", ext.name, err)
 		}
+		cfg.icons = cfg.icons.With(ext.name, ext.svg)
+	}
+	if err := validateIconRefs(s, cfg.icons); err != nil {
+		return Stats{}, err
 	}
 	// Build the per-render ornament registry (curated ∪ extensions) and validate
 	// that every preset Decoration's name resolves (RFC §14.2/§14.4, D-038). The
