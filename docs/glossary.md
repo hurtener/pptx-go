@@ -355,6 +355,13 @@ a strict superset of pengui-slides v4's IR (`RFC-001-pptx-go.md §21`).
 top). The `scene` layout engine processes background decorations before
 body nodes and foreground decorations after.
 
+## Language badge
+
+The small overlay pill on a `code_block` image showing its source language
+(`CodeBlock.Language`), inset top-right over the raster. A native rounded-rect +
+caption text, reusing the card header-pill chrome (D-045). Empty `Language` =
+no badge. See `RFC-001-pptx-go.md §11.1`.
+
 ## Layout
 
 `pptx.Layout` — a read-only view of one slide layout in a template (its name
