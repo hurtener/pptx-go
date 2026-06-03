@@ -50,5 +50,5 @@ func (s *Slide) AddIcon(svg []byte, box Box, opts ...ShapeOption) (*Shape, error
 	fill.applyFill(sp.ShapeProperties, theme)
 	cfg.line.apply(sp.ShapeProperties, theme)
 
-	return &Shape{sp: sp}, nil
+	return &Shape{s: s, sp: sp}, nil
 }

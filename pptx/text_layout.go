@@ -31,6 +31,68 @@ func anchorString(v TextAnchor) string {
 	}
 }
 
+// alignFrom is alignString's read inverse: an OOXML algn value → Alignment.
+func alignFrom(s string) Alignment {
+	switch s {
+	case "ctr":
+		return AlignCenter
+	case "r":
+		return AlignRight
+	case "just":
+		return AlignJustify
+	default:
+		return AlignLeft
+	}
+}
+
+// underlineFrom maps an OOXML u value back to an Underline.
+func underlineFrom(s string) Underline {
+	switch s {
+	case "sng":
+		return UnderlineSingle
+	case "dbl":
+		return UnderlineDouble
+	default:
+		return UnderlineNone
+	}
+}
+
+// strikeFrom maps an OOXML strike value back to a Strike.
+func strikeFrom(s string) Strike {
+	switch s {
+	case "sngStrike":
+		return StrikeSingle
+	case "dblStrike":
+		return StrikeDouble
+	default:
+		return StrikeNone
+	}
+}
+
+// baselineFrom maps an OOXML baseline percentage back to a BaselineShift, by
+// sign (toProps emits +30000 for superscript, -25000 for subscript).
+func baselineFrom(v int) BaselineShift {
+	switch {
+	case v > 0:
+		return Superscript
+	case v < 0:
+		return Subscript
+	default:
+		return BaselineNone
+	}
+}
+
+// bulletFromChar maps a bullet character back to its BulletKind (the read
+// inverse of Bullet's BuChar branches; an unrecognized char is a disc).
+func bulletFromChar(char string) BulletKind {
+	switch char {
+	case "☐":
+		return BulletCheckbox
+	default:
+		return BulletDisc
+	}
+}
+
 // toProps translates a RunStyle to run character properties, resolving the type
 // role and color against t. It returns nil when the style carries nothing to
 // emit, so an unstyled run inherits its placeholder/master styling.

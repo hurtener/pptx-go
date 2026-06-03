@@ -37,6 +37,7 @@ const (
 // Shapes() wraps whichever child it finds so the read accessors land on a common
 // handle (text/table/image read arrive in later read chunks).
 type Shape struct {
+	s   *Slide // owning slide (read side: resolves hyperlink relationships)
 	sp  *slide.XSp
 	pic *slide.XPicture
 	gf  *slide.XGraphicFrame
@@ -167,7 +168,7 @@ func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shap
 		applyShadow(sp.ShapeProperties, *cfg.shadow)
 	}
 
-	return &Shape{sp: sp}
+	return &Shape{s: s, sp: sp}
 }
 
 // applyShadow attaches an <a:effectLst><a:outerShdw> realizing e. A flat
@@ -328,6 +329,18 @@ func (sh *Shape) Shadow() (Elevation, bool) {
 		}
 	}
 	return e, true
+}
+
+// TextFrame returns the shape's rich-text container and true, or nil and false
+// when the shape carries no text body. On a reopened deck the returned frame
+// enumerates paragraphs → runs with their authored style / color / hyperlink /
+// bullet (Slide.Shapes, RFC §16). Table-cell text is reached via the table read
+// accessors, not here.
+func (sh *Shape) TextFrame() (*TextFrame, bool) {
+	if sh == nil || sh.sp == nil || sh.sp.TextBody == nil {
+		return nil, false
+	}
+	return &TextFrame{s: sh.s, body: sh.sp.TextBody}, true
 }
 
 // activeTheme returns the presentation's theme, or DefaultTheme if unavailable.
