@@ -224,6 +224,20 @@ plan left open to PR#1, now settled:
   rounding (D-035). `Geometry()` returns `""` for a custom-geometry (icon) or
   non-shape child — preset-geometry round-trip is exact.
 
+**Audit findings carried to later PRs (not regressions; scoped out of PR#1 by
+D-047's accessor list):**
+
+- **Corner radius (`WithRadius`) has no read accessor yet.** The roundRect
+  adjust value survives at the codec level (G6 — `avLst` is preserved), but no
+  navigable accessor exposes it. A token→fraction read is inherently lossy (like
+  colors/shadows), so the comprehensive **PR#4** walk asserts the adjust value
+  survives; a `Shape.CornerRadius()` accessor is added there if field-level read
+  is wanted.
+- **Custom geometry (`custGeom`, icon glyphs) is enumerated but not decoded.**
+  `Shapes()` returns the shape and `Geometry()` returns `""`; the path detail is
+  not surfaced (icons are a render-only primitive, not a navigable authored
+  shape). PR#4 confirms icon decks reopen and re-save byte-identically.
+
 ## 17. Sign-off
 
 - [ ] All acceptance criteria pass.
