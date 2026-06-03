@@ -112,6 +112,9 @@ func nodeUsesAssets(n SlideNode) bool {
 		return nodesUseAssets(v.Body)
 	case CardSection:
 		return nodesUseAssets(v.Body)
+	case Flow:
+		// Native pills + connectors + custGeom step icons register no media.
+		return false
 	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, SectionDivider, Table:
 		return false
 	default:
@@ -224,8 +227,10 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderCard(ps, box, v, slideID)
 	case CardSection:
 		r.renderCardSection(ps, box, v, slideID)
+	case Flow:
+		r.renderFlow(ps, box, v, slideID)
 	default:
-		// chart/flow are later phases.
+		// chart is a later phase.
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
 }
@@ -337,6 +342,15 @@ func preferredHeight(n SlideNode) pptx.EMU {
 		return cardChromeEst + nodesHeight(v.Body) + estGap
 	case CardSection:
 		return cardChromeEst + nodesHeight(v.Body) + estGap
+	case Flow:
+		if v.Orientation == FlowVertical {
+			n := len(v.Steps)
+			if n < 1 {
+				n = 1
+			}
+			return pptx.In(0.9) * pptx.EMU(n)
+		}
+		return pptx.In(1.4)
 	default:
 		return pptx.In(1.0)
 	}

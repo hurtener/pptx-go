@@ -21,35 +21,42 @@ func validateIconRefs(s Scene, reg *icons.Registry) error {
 		if where == "" {
 			where = fmt.Sprintf("#%d", i)
 		}
-		walkCards(sl.Nodes, func(c Card) {
-			if c.Icon == "" {
+		check := func(name, kind string) {
+			if name == "" {
 				return
 			}
-			if _, ok := reg.Lookup(c.Icon); !ok {
+			if _, ok := reg.Lookup(name); !ok {
 				errs = append(errs, fmt.Errorf(
-					"slide %s: card icon %q is not a curated or registered icon (have %v)",
-					where, c.Icon, reg.Names()))
+					"slide %s: %s icon %q is not a curated or registered icon (have %v)",
+					where, kind, name, reg.Names()))
 			}
-		})
+		}
+		walkIconRefs(sl.Nodes, check)
 	}
 	return errors.Join(errs...)
 }
 
-// walkCards visits every Card in a node tree, recursing into container children
-// (including a CardSection's body and nested cards).
-func walkCards(nodes []SlideNode, fn func(Card)) {
+// walkIconRefs visits every icon name in a node tree — a Card's Icon and each
+// FlowStep's Icon — recursing into container children (CardSection bodies,
+// nested cards, columns, grid cells). The callback receives the name and the
+// owning node kind (for the error message).
+func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 	for _, n := range nodes {
 		switch v := n.(type) {
 		case Card:
-			fn(v)
-			walkCards(v.Body, fn)
+			fn(v.Icon, "card")
+			walkIconRefs(v.Body, fn)
 		case CardSection:
-			walkCards(v.Body, fn)
+			walkIconRefs(v.Body, fn)
+		case Flow:
+			for _, st := range v.Steps {
+				fn(st.Icon, "flow step")
+			}
 		case TwoColumn:
-			walkCards(v.Left, fn)
-			walkCards(v.Right, fn)
+			walkIconRefs(v.Left, fn)
+			walkIconRefs(v.Right, fn)
 		case Grid:
-			walkCards(v.Cells, fn)
+			walkIconRefs(v.Cells, fn)
 		}
 	}
 }

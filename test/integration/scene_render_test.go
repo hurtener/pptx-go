@@ -72,3 +72,48 @@ func TestConformance_SceneRender(t *testing.T) {
 		t.Fatalf("scene-rendered deck failed conformance:\n%s", rep)
 	}
 }
+
+// TestConformance_FlowIconSeam exercises the flow→icon-registry seam end-to-end
+// through real internal/opc + encoding/xml (Phase 15, D-044): a flow step's
+// closed-name icon resolves to a native custGeom that reaches the slide part,
+// and an unknown step icon name fails Stage-1 before compose. Deps name Phase 14
+// (the icon-registry wiring this consumes).
+func TestConformance_FlowIconSeam(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "flow",
+		Nodes: []scene.SlideNode{scene.Flow{
+			Connector: scene.ConnectorCycle,
+			Steps: []scene.FlowStep{
+				{Label: scene.RichText{{Text: "Plan"}}, Icon: "star"},
+				{Label: scene.RichText{{Text: "Ship"}}, Icon: "check"},
+			},
+		}},
+	}}}
+
+	pres := pptx.New()
+	if _, err := scene.Render(pres, sc); err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	data, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	rep, err := conformance.ValidateBytes(data, conformance.Options{
+		RequiredParts: []string{"/ppt/presentation.xml", "/ppt/slides/slide1.xml"},
+	})
+	if err != nil {
+		t.Fatalf("ValidateBytes: %v", err)
+	}
+	if !rep.OK() {
+		t.Fatalf("flow-icon deck failed conformance:\n%s", rep)
+	}
+
+	// An unknown step icon name must fail Stage-1, before any compose.
+	bad := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "bad",
+		Nodes: []scene.SlideNode{scene.Flow{Steps: []scene.FlowStep{{Label: scene.RichText{{Text: "x"}}, Icon: "no-such-icon"}}}},
+	}}}
+	if _, err := scene.Render(pptx.New(), bad); err == nil {
+		t.Error("unknown flow step icon accepted; expected a Stage-1 render error")
+	}
+}

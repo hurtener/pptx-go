@@ -316,17 +316,34 @@ const (
 	FlowVertical
 )
 
-// FlowStep is one step in a Flow.
+// ConnectorKind selects a flow's inter-step glyph (D-044). The zero value is
+// ConnectorArrow, so an existing Flow with no Connector keeps a solid-arrow
+// pipeline. Connectors compose preset shapes — no anchored AddConnector.
+type ConnectorKind int
+
+const (
+	ConnectorArrow       ConnectorKind = iota // solid arrow (default)
+	ConnectorArrowDashed                      // dashed line + chevron head
+	ConnectorCycle                            // arrows + a trailing return arrow
+	ConnectorPlus                             // a mathPlus glyph between steps
+)
+
+// FlowStep is one step in a Flow: a label, optional detail line, and optional
+// icon. Icon is a closed-name curated/extension icon (Stage-1 validated), like
+// a card's (D-044); its zero value renders a plain pill.
 type FlowStep struct {
 	Label  RichText
 	Detail RichText
+	Icon   string
 }
 
-// Flow is a sequential step pipeline.
+// Flow is a sequential step pipeline. Connector is additive (D-044): its zero
+// value (ConnectorArrow) preserves a solid-arrow flow.
 type Flow struct {
 	node
 	Orientation FlowOrientation
 	Steps       []FlowStep
+	Connector   ConnectorKind
 }
 
 func (Flow) NodeKind() NodeKind { return KindFlow }
