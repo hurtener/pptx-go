@@ -326,11 +326,11 @@ func (s *Slide) Shapes() []*Shape {
 	for _, child := range children {
 		switch c := child.(type) {
 		case *slide.XSp:
-			shapes = append(shapes, &Shape{sp: c})
+			shapes = append(shapes, &Shape{s: s, sp: c})
 		case *slide.XPicture:
-			shapes = append(shapes, &Shape{pic: c})
+			shapes = append(shapes, &Shape{s: s, pic: c})
 		case *slide.XGraphicFrame:
-			shapes = append(shapes, &Shape{gf: c})
+			shapes = append(shapes, &Shape{s: s, gf: c})
 		}
 	}
 	return shapes

@@ -122,6 +122,7 @@ type Paragraph struct {
 
 // Run is a styled text span within a Paragraph.
 type Run struct {
+	tf  *TextFrame // owning frame (read side: resolves the hyperlink relationship)
 	run *slide.XTextRun
 }
 
@@ -192,7 +193,7 @@ func (p *Paragraph) AddRun(text string, style RunStyle) *Run {
 	run := &slide.XTextRun{Text: text, TextProperties: style.toProps(p.tf.s.activeTheme())}
 	xp := p.x()
 	xp.Content = append(xp.Content, run)
-	return &Run{run: run}
+	return &Run{tf: p.tf, run: run}
 }
 
 // AddBreak appends a line break to the paragraph.
@@ -273,4 +274,150 @@ func (tf *TextFrame) bodyPr() *slide.XBodyPr {
 		tf.body.BodyPr = &slide.XBodyPr{}
 	}
 	return tf.body.BodyPr
+}
+
+// ============================================================================
+// Read accessors (RFC §16) — the read inverse of the authoring API. Reopened
+// runs surface resolved character properties: token typography/color resolve to
+// concrete sizes and sRGB at write time (D-033), so the read model reports the
+// resolved family / size / color, not the originating TypeRole / token.
+// ============================================================================
+
+// Paragraphs returns the frame's paragraphs in document order — the read-side
+// enumerator. Each is addressable through the same Paragraph handle the builder
+// hands out, so its read accessors (Runs / Alignment / Level / BulletStyle) and
+// authoring methods share one type.
+func (tf *TextFrame) Paragraphs() []*Paragraph {
+	if tf == nil || tf.body == nil {
+		return nil
+	}
+	ps := make([]*Paragraph, len(tf.body.Paragraphs))
+	for i := range tf.body.Paragraphs {
+		ps[i] = &Paragraph{tf: tf, idx: i}
+	}
+	return ps
+}
+
+// Runs returns the paragraph's text runs in document order — the read inverse of
+// AddRun / AddHyperlink. Line breaks (AddBreak) carry no text and are not
+// returned.
+func (p *Paragraph) Runs() []*Run {
+	xp := p.x()
+	runs := make([]*Run, 0, len(xp.Content))
+	for _, c := range xp.Content {
+		if r, ok := c.(*slide.XTextRun); ok {
+			runs = append(runs, &Run{tf: p.tf, run: r})
+		}
+	}
+	return runs
+}
+
+// Alignment returns the paragraph's horizontal alignment — the read inverse of
+// Align (AlignLeft when unset).
+func (p *Paragraph) Alignment() Alignment {
+	if pr := p.x().Pr; pr != nil {
+		return alignFrom(pr.Alignment)
+	}
+	return AlignLeft
+}
+
+// Level returns the paragraph's outline/indent level (0-based) — the read
+// inverse of Indent.
+func (p *Paragraph) Level() int {
+	if pr := p.x().Pr; pr != nil {
+		return pr.Level
+	}
+	return 0
+}
+
+// BulletStyle returns the paragraph's bullet style — the read inverse of Bullet
+// (BulletNone when unset or explicitly suppressed).
+func (p *Paragraph) BulletStyle() BulletKind {
+	pr := p.x().Pr
+	if pr == nil {
+		return BulletNone
+	}
+	switch {
+	case pr.BuAutoNum != nil:
+		return BulletNumber
+	case pr.BuChar != nil:
+		return bulletFromChar(pr.BuChar.Char)
+	default:
+		return BulletNone
+	}
+}
+
+// Text returns the run's literal text.
+func (r *Run) Text() string { return r.run.Text }
+
+// Font returns the run's Latin typeface, or "" when unset (it inherits).
+func (r *Run) Font() string {
+	if pr := r.run.TextProperties; pr != nil && pr.Latin != nil {
+		return pr.Latin.Typeface
+	}
+	return ""
+}
+
+// FontSize returns the run's font size in points, or 0 when unset.
+func (r *Run) FontSize() float64 {
+	if pr := r.run.TextProperties; pr != nil {
+		return float64(pr.FontSize) / 100.0
+	}
+	return 0
+}
+
+// Bold reports whether the run is bold.
+func (r *Run) Bold() bool {
+	pr := r.run.TextProperties
+	return pr != nil && pr.Bold == "1"
+}
+
+// Italic reports whether the run is italic.
+func (r *Run) Italic() bool {
+	pr := r.run.TextProperties
+	return pr != nil && pr.Italic == "1"
+}
+
+// Underline returns the run's underline style — the read inverse of
+// RunStyle.Underline.
+func (r *Run) Underline() Underline {
+	if pr := r.run.TextProperties; pr != nil {
+		return underlineFrom(pr.Underline)
+	}
+	return UnderlineNone
+}
+
+// Strike returns the run's strikethrough style — the read inverse of
+// RunStyle.Strike.
+func (r *Run) Strike() Strike {
+	if pr := r.run.TextProperties; pr != nil {
+		return strikeFrom(pr.Strike)
+	}
+	return StrikeNone
+}
+
+// Baseline returns the run's baseline shift — the read inverse of
+// RunStyle.BaselineRel.
+func (r *Run) Baseline() BaselineShift {
+	if pr := r.run.TextProperties; pr != nil {
+		return baselineFrom(pr.Baseline)
+	}
+	return BaselineNone
+}
+
+// Color returns the run's text color and true, or nil and false when the run has
+// no explicit color (it inherits). A reopened color is a resolved literal (D-030).
+func (r *Run) Color() (Color, bool) {
+	pr := r.run.TextProperties
+	if pr == nil || pr.SolidFill == nil {
+		return nil, false
+	}
+	return colorFromSrgb(pr.SolidFill.SrgbClr), true
+}
+
+// Code reports whether the run is styled as inline code — detected by the
+// subtle background tint pptx-go applies for code and nothing else (D-013).
+func (r *Run) Code() bool {
+	pr := r.run.TextProperties
+	return pr != nil && pr.Highlight != nil
 }

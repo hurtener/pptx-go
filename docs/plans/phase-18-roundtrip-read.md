@@ -238,6 +238,26 @@ D-047's accessor list):**
   not surfaced (icons are a render-only primitive, not a navigable authored
   shape). PR#4 confirms icon decks reopen and re-save byte-identically.
 
+**PR#2 (text).** No deviations from the RFC or D-047. Decisions settled in PR#2:
+
+- **`Run` exposes resolved character properties via getter methods**, not a
+  returned `RunStyle`. A run's `TypeRole` and token color resolve to a concrete
+  family / size / sRGB at write time (D-033), so they cannot be recovered; the
+  read accessors (`Text`, `Font`, `FontSize`, `Bold`, `Italic`, `Underline`,
+  `Strike`, `Baseline`, `Color`, `Code`) report the resolved values — the same
+  resolved-literal stance as PR#1's `Fill`.
+- **Getter names avoid the chained-setter collision.** `Align`/`Indent`/`Bullet`
+  are builder setters returning `*Paragraph`; the read inverses are
+  `Alignment()`, `Level()`, `BulletStyle()`.
+- **Back-references added for hyperlink resolution.** `Shape` gained `s *Slide`
+  and `Run` gained `tf *TextFrame` (set in both the authoring and read paths);
+  `Run.Hyperlink()` resolves the run's `<a:hlinkClick r:id>` through the slide's
+  reopened relationships to the verbatim URL (`TargetRef`).
+- **`Code()` is detected by the inline-code highlight tint** pptx-go applies for
+  code and nothing else (D-013). Line breaks (`AddBreak`) carry no text and are
+  not returned by `Runs()`. Frame body props (anchor / autofit / margins) read
+  is deferred to PR#4 — the codec already preserves them (G6).
+
 ## 17. Sign-off
 
 - [ ] All acceptance criteria pass.
