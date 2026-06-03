@@ -227,15 +227,15 @@ File in `docs/glossary.md` (alphabetical) in this PR:
 
 ## 16. Plan deviations encountered during implementation
 
-- **Cycle return arrow is a banded left/up arrow, not a trailing `circularArrow`
-  glyph.** The plan (and D-044) first proposed a `circularArrow` in a trailing
-  slot after the last step. The visual check showed that reads as a lone,
-  disconnected glyph beside the last pill, not a loop. Changed to: reserve a
-  return band (below a horizontal row / right of a vertical column) and draw a
-  full-span **`leftArrow`** (horizontal) / **`upArrow`** (vertical) looping back
-  to the first step. Still pure composition, still deterministic; clearer
-  "cycle" reading. D-044's intent (cycle = inter-pair arrows + a return) is
-  unchanged — only the return glyph/placement.
+- **Cycle return is a U-loop, not a trailing `circularArrow` glyph or a block
+  arrow.** D-044 first proposed a `circularArrow` in a trailing slot; the visual
+  check showed that as a lone semicircle beside the last pill (not a loop). A
+  second pass used a full-span block `leftArrow`/`upArrow`, which read as heavy.
+  Final: a **feedback U-loop** drawn with thin accent lines + a small chevron
+  arrowhead in the reserved band — down from the last step, back across (or up,
+  for vertical), and into the first step. Still pure composition and
+  deterministic; the standard cycle visual. D-044's intent (cycle = inter-pair
+  arrows + a return path) is unchanged — only the return geometry.
 - **Vertical pills are centered in a capped-width column, not full-bleed.** The
   first cut stretched vertical pills to the full body width (thin bars); the
   visual check showed that looked weak. Vertical pills are now centered at up to

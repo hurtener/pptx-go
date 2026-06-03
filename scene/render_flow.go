@@ -49,13 +49,27 @@ func (r *renderer) renderFlowHorizontal(ps *pptx.Slide, box pptx.Box, v Flow, sl
 		}
 	}
 	if v.Connector == ConnectorCycle && n >= 2 {
-		// A left-pointing arrow under the row, spanning back to the first step.
-		h := pptx.In(0.3)
-		band := pptx.Box{X: region.X, Y: region.Bottom() + (flowReturnBand-h)/2, W: region.W, H: h}
-		ps.AddShape(pptx.ShapeGeometry("leftArrow"), band,
-			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
-		r.stats.Shapes++
+		firstCx := region.X + pillW/2
+		lastCx := region.X + pptx.EMU(n-1)*(pillW+flowGap) + pillW/2
+		r.renderReturnLoopH(ps, region, firstCx, lastCx)
 	}
+}
+
+// renderReturnLoopH draws a feedback loop under a horizontal row: down from the
+// last step, back across to the first, then up into it with an arrowhead. Thin
+// accent lines + a small chevron — reads as a cycle, not a heavy block arrow.
+func (r *renderer) renderReturnLoopH(ps *pptx.Slide, region pptx.Box, firstCx, lastCx pptx.EMU) {
+	line := pptx.Line{Width: pptx.Pt(1.5), Color: pptx.TokenColor(pptx.ColorAccent)}
+	accent := pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))
+	top := region.Bottom()
+	midY := top + flowReturnBand/2
+	head := pptx.In(0.16)
+	// down stub at the last step, across to the first, up stub into the first
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: lastCx, Y: top, W: 1, H: midY - top}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: firstCx, Y: midY, W: lastCx - firstCx, H: 1}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: firstCx, Y: top + head, W: 1, H: midY - top - head}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeChevron, pptx.Box{X: firstCx - head/2, Y: top, W: head, H: head}, pptx.WithFill(accent), pptx.WithRotation(270))
+	r.stats.Shapes += 4
 }
 
 func (r *renderer) renderFlowVertical(ps *pptx.Slide, box pptx.Box, v Flow, slideID string) {
@@ -87,15 +101,26 @@ func (r *renderer) renderFlowVertical(ps *pptx.Slide, box pptx.Box, v Flow, slid
 		}
 	}
 	if v.Connector == ConnectorCycle && n >= 2 {
-		// An up-pointing arrow in the right band, looping back to the first step.
-		w := pptx.In(0.3)
-		band := pptx.Box{X: box.Right() - flowReturnBand + (flowReturnBand-w)/2, Y: box.Y, W: w, H: y - box.Y - flowGap}
-		if band.H > 0 {
-			ps.AddShape(pptx.ShapeGeometry("upArrow"), band,
-				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
-			r.stats.Shapes++
-		}
+		firstCy := box.Y + pillH/2
+		lastCy := box.Y + pptx.EMU(n-1)*(pillH+flowGap) + pillH/2
+		r.renderReturnLoopV(ps, box, pillX+pillW, firstCy, lastCy)
 	}
+}
+
+// renderReturnLoopV draws a feedback loop to the right of a vertical column:
+// right from the last step, up to the first, then left into it with an
+// arrowhead. rightEdge is the pills' right edge; the loop lives in the band
+// between it and the slot's right side.
+func (r *renderer) renderReturnLoopV(ps *pptx.Slide, box pptx.Box, rightEdge, firstCy, lastCy pptx.EMU) {
+	line := pptx.Line{Width: pptx.Pt(1.5), Color: pptx.TokenColor(pptx.ColorAccent)}
+	accent := pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))
+	midX := rightEdge + flowReturnBand/2
+	head := pptx.In(0.16)
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: rightEdge, Y: lastCy, W: midX - rightEdge, H: 1}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: midX, Y: firstCy, W: 1, H: lastCy - firstCy}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeLine, pptx.Box{X: rightEdge + head, Y: firstCy, W: midX - rightEdge - head, H: 1}, pptx.WithFill(pptx.NoFill()), pptx.WithLine(line))
+	ps.AddShape(pptx.ShapeChevron, pptx.Box{X: rightEdge, Y: firstCy - head/2, W: head, H: head}, pptx.WithFill(accent), pptx.WithRotation(180))
+	r.stats.Shapes += 4
 }
 
 // renderFlowStep draws one pill: a rounded rect with the icon + label + detail
