@@ -50,6 +50,10 @@ compatibility across PowerPoint versions)*
 - `05-card-chrome-and-shadow-primitive.md` — the `outerShdw` builder shadow
   primitive (`WithShadow` / `WithElevation`) elevation needs, mirroring the
   D-041 gradient build.
+- `07-chart-image-shape.md` — the `pptx.ChartPlaceholder` slot helper and the
+  §7-boundary clarification that reading image dimension headers
+  (`image.DecodeConfig`) is permitted (decoding pixel data is not), enabling the
+  chart aspect-ratio warning.
 
 *(candidates: rich-text auto-fit modes in OOXML practice, table merged-cell
 semantics)*
@@ -66,6 +70,10 @@ semantics)*
   builder API — the RFC's unbuilt `AddConnector` is not needed); flow-level
   connector kind, the `arrow_dashed` geometry wrinkle, a lighter dedicated
   step-pill, and the additive Flow IR (`Connector`, optional step `Icon`).
+- `07-chart-image-shape.md` — `chart` as the code_block raster path minus the
+  badge plus an aspect-ratio `LayoutWarning`; aspect detection options
+  (`image.DecodeConfig` header read vs caller field) and the `ChartPlaceholder`
+  slot helper.
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 text-overflow heuristics, scene IR JSON wire form compatibility with

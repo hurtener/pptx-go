@@ -1274,4 +1274,35 @@ unchanged. Pure composition — no builder change, no new token.
 
 ---
 
+## D-046 — Reading image dimension headers is permitted; chart contains-to-fit with an aspect warning; ChartPlaceholder
+
+**Date:** 2026-06-03
+**Status:** Settled
+**Context:** RFC §15.1 requires the V1 `chart` (image-shape, D-004) to warn when
+the chart image's aspect ratio diverges from its assigned slot — which needs the
+image's dimensions. §7 says the library "does not parse **pixel data**"; the
+Phase-11 Image `Fit` comment over-read this as "pixel dimensions … forbidden by
+§7" and deferred aspect-aware fit. Image dimensions live in the format **header**
+(PNG `IHDR`, JPEG `SOFn`), not in the pixel data; Go's stdlib
+`image.DecodeConfig` returns them without decoding pixels.
+**Decision:** Reading image **dimension headers** via `image.DecodeConfig`
+(stdlib, CGo-free) is **permitted**; decoding **pixel data** remains forbidden
+(§7 unchanged in intent — the boundary is now explicit). The `chart` composer
+reads the caller bytes' dimensions, places the `pic` to **contain** within its
+slot preserving aspect (centered/letterboxed), and raises one `LayoutWarning`
+when `|slotAR − imgAR| / imgAR` exceeds **0.15**, with the divergence rounded to
+an integer percent for deterministic text (D-035). If `DecodeConfig` fails, the
+chart fills the slot and no aspect warning is raised (degrade, never error).
+Add `pptx.ChartPlaceholder(box, opts…) *Shape` — a builder helper that draws a
+labeled bordered slot ("Chart") without bytes; the chart composer reuses it when
+the asset is unresolved (a labeled slot instead of a blank gap, D-036). Fix the
+Image `Fit` comment to state the §7 boundary correctly (no behavior change; it
+does **not** ship Image aspect-aware fit — out of scope, now unblocked for V1.x).
+**Consequences:** Charts size correctly and warn on mismatch. The §7 boundary is
+stated, not implied, so future header reads (e.g. aspect-aware image fit) have a
+clear precedent. No native chart rendering enters the library (D-004 holds);
+`ChartPlaceholder` is the only new public API. Stdlib-only (P4 intact).
+
+---
+
 *Append new entries below this line.*
