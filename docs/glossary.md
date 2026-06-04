@@ -230,6 +230,15 @@ English Metric Unit. OOXML's canonical length unit. `1 inch = 914,400
 EMU`. Integer, no floating-point. `pptx/units.go` provides conversion
 helpers (`pptx.Pt`, `pptx.Cm`, `pptx.In`, `pptx.Px`).
 
+## External deck
+
+A PPTX pptx-go did **not** author (PowerPoint, a Keynote export, another
+library). Read support for external decks is **best-effort** (RFC §16, D-048):
+they open without panicking and report degradation via [Read warning](#read-warning)s,
+but round-trip fidelity is not promised — unrecognized shapes are dropped (and
+warned), though unrecognized parts pass through unchanged. Contrast a
+self-authored deck, which round-trips losslessly (D-047).
+
 ## Eyebrow
 
 A small label rendered above a heading or card body (e.g. "01 · TRAZABILIDAD"
@@ -540,6 +549,15 @@ types the builder writes, enumerated via `Slide.Shapes()` (RFC §16, D-047).
 Reading maps the already-parsed `internal/ooxml` structs to public types; it is
 not a parallel read hierarchy. Distinct from byte/codec round-trip (which the
 G6 goldens already guarantee).
+
+## Read warning
+
+A non-fatal degradation (`pptx.ReadWarning`) noted while opening a deck pptx-go
+did not author, surfaced via `Presentation.ReadWarnings()`. V1 reports
+unrecognized shape-tree elements that were ignored (`WarnDroppedElement`) and
+referenced parts that could not be read (`WarnUnreadablePart`), de-duplicated per
+part + element. Empty for a self-authored deck. The mechanism behind the
+[external deck](#external-deck) best-effort posture (RFC §16, D-048).
 
 ## RepairPromptHygiene
 

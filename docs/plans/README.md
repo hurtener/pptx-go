@@ -566,13 +566,17 @@ counterpart).
 **Subsystem:** pptx (read) + internal/ooxml
 **RFC sections:** §16
 **Deps:** Phase 18.
-**What lands:**
-- Parsers gracefully handle unrecognized OOXML elements (preserved as
-  opaque `RawShape` / `RawPart` carriers).
+**What lands:** (scope set by **D-048** — best-effort graceful degradation, not
+opaque-carrier preservation; the RFC parks fidelity preservation in V2)
+- Parsers gracefully **ignore** unrecognized OOXML shape-tree elements and
+  surface them in `Presentation.ReadWarnings()` (warn, don't preserve).
+- Parts pptx-go does not model **pass through unchanged** on re-save (the OPC
+  pass-through; "`RawPart`" is realized as that, not a new carrier type). Opaque
+  `RawShape` *preservation* of unrecognized shapes is deferred to V2.
 - Documented degradation modes when external-deck features don't map
   to the builder model.
 **Acceptance criteria:**
-- A library of PowerPoint-authored sample decks loads without panic.
+- A library of synthetic external-style sample decks loads without panic.
 - Unsupported elements surface in a `ReadWarnings` slice.
 
 ---

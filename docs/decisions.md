@@ -1338,4 +1338,38 @@ read robustness stays Phase 19 (best-effort). Stdlib-only; P1/P3 intact.
 
 ---
 
+## D-048 — External-deck read is best-effort graceful degradation (warn, don't preserve); opaque-carrier preservation deferred to V2
+
+**Date:** 2026-06-04
+**Status:** Settled
+**Context:** RFC §16 commits to lossless round-trip of **pptx-go-authored** decks
+(delivered in Phase 18, D-047) and to **best-effort** reading of third-party
+decks: "an unrecognized extension element is ignored at parse time, a recognized
+one is surfaced … we do not promise round-trip fidelity. V2 invests in
+third-party robustness." The master plan's Phase 19 entry (`docs/plans/README.md`,
+Wave 6) overstated this as preserving unrecognized OOXML "as opaque `RawShape` /
+`RawPart` carriers." Today `XSpTree.UnmarshalXML` silently `d.Skip()`s
+unrecognized shape-tree children (data loss with no signal), while the OPC layer
+already re-emits every loaded part on save (unmodeled parts round-trip for free).
+**Decision:** Phase 19 implements RFC §16's external-deck clause as **best-effort
+graceful degradation**, not byte-preserving carriers (the RFC outranks the master
+plan, and parks fidelity preservation in V2). Concretely: `NewFromBytes` /
+`OpenStream` **never panic** on a third-party deck; unrecognized/dropped content
+is surfaced in `Presentation.ReadWarnings()` (a `[]ReadWarning`, de-duplicated per
+part+element); and parts pptx-go does not model **pass through unchanged** on
+re-save (verified + tested, D-035) — so "`RawPart`" is realized as the existing
+OPC pass-through, not a new type. Opaque **`RawShape` preservation** of
+unrecognized shape-tree children (re-emitting their raw XML) is **deferred to
+V2**. The collection seam stays P3-clean: `internal/ooxml/slide` records bare
+element *names* on the part; `pptx` owns the `ReadWarning` mapping. The
+master-plan §19 entry is updated to match in the same PR.
+**Consequences:** pptx-go opens third-party decks without crashing and reports
+its degradation, satisfying the RFC's best-effort posture and the master plan's
+no-panic + `ReadWarnings` acceptance — without the risk-heavy raw-XML capture
+through the bare-name/RestoreNamespaces codec. External decks lose unrecognized
+*shapes* on re-save (warned), but keep unrecognized *parts*. Additive public API
+(no write-side break); V1 round-trip fidelity of authored decks is unchanged.
+
+---
+
 *Append new entries below this line.*
