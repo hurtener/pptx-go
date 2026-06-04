@@ -3,7 +3,7 @@
 **Subsystem:** pptx (read) + internal/ooxml (parsers)
 **RFC sections:** §16
 **Deps:** Phases 03–17 (every shipped builder API / IR node has a parser counterpart)
-**Status:** Draft
+**Status:** Complete (PR#1–4 shipped)
 
 ---
 
@@ -276,13 +276,37 @@ settled in PR#3:
   `Fit`, `Rotation`, `Opacity`) are pure field maps; `Fit` reports `FitFill` when
   a stretch fill is present (the builder default), `FitNone` otherwise.
 
+**PR#4 (comprehensive round-trip test).** No deviations. Decisions settled:
+
+- **The fixture reopens byte-identically with no reordering caveat.** A deck
+  exercising the full builder surface (shapes + fill/line/shadow/rotation, rich
+  text + bullets/links, a merged table, a cropped/rotated image) re-saves
+  byte-for-byte through `Open` (D-035) — so criterion 5 asserts exact
+  `bytes.Equal`, and the "modulo documented permissible reorderings" allowance
+  was not needed. A scene-rendered deck (all 20 node kinds) is likewise
+  byte-identical on reopen.
+- **The scene side is walked at the builder level (D-047).** Scene read is out of
+  scope, so `TestRoundTrip_SceneNodes` renders a scene covering every node kind
+  (a mechanical `KindHero..KindCardSection` coverage assertion guards against a
+  future node slipping the walk), reopens it, and asserts every slide exposes
+  navigable shapes and the deck re-saves byte-identically — confirming the
+  builder primitives each node composes round-trip.
+- **Radius / custGeom field-level read** (flagged in PR#1) stays a V1.x follow-up:
+  the integration walk confirms a roundRect and an icon (custGeom) deck reopen
+  and re-save byte-identically, so the codec preserves them (G6); a navigable
+  `CornerRadius()` accessor is not added in V1.
+
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-18.sh` reports `OK ≥ count(criteria)` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entries added (D-047).
-- [ ] Round-trip goldens for the new read accessors land with each PR.
+- [x] All acceptance criteria pass. (PR#1 shapes, PR#2 text, PR#3 tables+images,
+      PR#4 comprehensive walk + byte-identity.)
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-18.sh` reports `OK ≥ count(criteria)` and `FAIL = 0`
+      (5 OK, 0 FAIL, 0 SKIP).
+- [x] Prior phases' smoke scripts still pass (`make preflight` PASS).
+- [x] Glossary updated (read model / `Shapes()`, in the plan commit).
+- [x] Decision entries added (D-047).
+- [x] Round-trip goldens for the new read accessors land with each PR
+      (`test/pptx/shape_read_test.go`, `text_read_test.go`,
+      `table_image_read_test.go`, `test/integration/roundtrip_test.go`).
 - [ ] (Phase 20+) Docs site / skills updated. (inert)
