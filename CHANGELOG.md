@@ -87,6 +87,17 @@ changes.
   `LayoutKind` to a named template layout (`scene.DefaultLayoutMap` covers
   PowerPoint's standard names); an unknown layout falls back to the blank layout
   with a `LayoutWarning`.
+- Reading back authored decks: `pptx.Open` reconstructs a navigable model, not
+  just the bytes. `Slide.Shapes()` enumerates a reopened slide's shapes, and
+  each `Shape` exposes read accessors — `Geometry`, `Rotation`, `Fill`
+  (`Kind`/`SolidColor`/`Gradient`), `Line`, `Shadow`, `TextFrame`, `Table`, and
+  `Image`. A reopened `TextFrame` yields `Paragraphs` → `Runs` with their
+  resolved style, color, bullet, alignment, and hyperlink target; a reopened
+  `Table` yields its rows/columns, header/banding, per-cell text, fill, and
+  merge spans; a reopened `Image` yields its alt text, crop, fit, rotation,
+  opacity, and embedded bytes. Every shape, run, fill, line, table, and image
+  pptx-go emits round-trips back into the same model, and a self-authored deck
+  reopens byte-identically.
 
 ### Fixed
 
