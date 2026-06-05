@@ -166,6 +166,7 @@ func (p *XTextParagraph) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 // decoding.
 func (xst *XSpTree) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	xst.Children = xst.Children[:0]
+	xst.dropped = xst.dropped[:0]
 	for {
 		tok, err := d.Token()
 		if err != nil {
@@ -207,6 +208,11 @@ func (xst *XSpTree) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 				}
 				xst.Children = append(xst.Children, &gf)
 			default:
+				// Best-effort external read (RFC §16, D-048): an unrecognized
+				// shape-tree child (group shape, mc:AlternateContent, …) is
+				// ignored, but its name is recorded so the reader can surface a
+				// dropped-element warning.
+				xst.dropped = append(xst.dropped, t.Name.Local)
 				if err := d.Skip(); err != nil {
 					return err
 				}
