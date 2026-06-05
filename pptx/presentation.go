@@ -97,6 +97,11 @@ type Presentation struct {
 	// fontCounter generates embedded font part names (font1.fntdata, …).
 	fontCounter int32
 
+	// readWarnings are the non-fatal degradations noted while opening a deck
+	// pptx-go did not author (Phase 19, D-048); nil for a self-authored deck.
+	// Surfaced via ReadWarnings().
+	readWarnings []ReadWarning
+
 	// mu guards concurrent access.
 	mu sync.RWMutex
 }
@@ -321,17 +326,46 @@ func (p *Presentation) repopulateSlides() error {
 		}
 		rel := presPart.Relationships().Get(relID)
 		if rel == nil {
-			continue // dangling reference — skip rather than fail
+			// Dangling reference — best-effort read skips it with a warning
+			// rather than failing the open (D-048).
+			p.addReadWarning(ReadWarning{
+				Kind:   WarnUnreadablePart,
+				Detail: fmt.Sprintf("slide relationship %q has no target", relID),
+			})
+			continue
 		}
 		slideURI := rel.TargetURI()
 		opcPart := p.pkg.GetPart(slideURI)
 		if opcPart == nil {
+			p.addReadWarning(ReadWarning{
+				Kind:   WarnUnreadablePart,
+				Part:   slideURI.URI(),
+				Detail: "referenced slide part is missing from the package",
+			})
 			continue
 		}
 
 		sp := slide.NewSlidePartWithURI(slideURI)
 		if err := sp.FromXML(opcPart.Blob()); err != nil {
-			return fmt.Errorf("parse slide %s: %w", slideURI.URI(), err)
+			// A malformed slide degrades to a warning + skip, not a hard error
+			// (best-effort external read, D-048). Self-authored slides never
+			// reach this path.
+			p.addReadWarning(ReadWarning{
+				Kind:   WarnUnreadablePart,
+				Part:   slideURI.URI(),
+				Detail: "slide XML could not be parsed: " + err.Error(),
+			})
+			continue
+		}
+		// Surface any unrecognized shape-tree children the codec ignored,
+		// de-duplicated per element (D-048).
+		for _, name := range sp.SpTree().DroppedChildren() {
+			p.addReadWarning(ReadWarning{
+				Kind:    WarnDroppedElement,
+				Part:    slideURI.URI(),
+				Element: name,
+				Detail:  "unrecognized shape-tree element ignored at parse time",
+			})
 		}
 		// Load the slide's relationships so the rId counter resumes past the
 		// existing rIds, and recover the layout id.
@@ -363,6 +397,7 @@ func (p *Presentation) repopulateSlides() error {
 	if int(p.slideCounter) < maxNum {
 		p.slideCounter = int32(maxNum)
 	}
+	p.sortReadWarnings()
 	return nil
 }
 

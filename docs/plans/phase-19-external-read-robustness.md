@@ -229,7 +229,21 @@ No band override needed; no decision required for coverage.
 
 ## 16. Plan deviations encountered during implementation
 
-- *(empty until implementation)*
+**PR#1 (ReadWarnings surface + dropped-element collection).** No design
+deviations. Sequencing notes:
+
+- The §8 "PR#1" docs (D-048, glossary `external deck` / `read warning`,
+  master-plan §19 reconcile, the smoke skeleton) were front-loaded into the
+  **plan PR** (#38) so the decision was settled before code; PR#1 is therefore
+  code + tests only.
+- `WarnUnreadablePart` covers three cases that previously failed silently or
+  hard: a dangling slide relationship, a missing referenced part, and a slide
+  whose XML fails to parse (the last was a hard `return err` before — now a
+  warn-and-skip, per criterion 2 / D-048's best-effort posture).
+- `internal/ooxml/slide` is **not** in the mechanical coverage gate
+  (`coverage.json`), like `pptx` (Phase 18); the new dropped-element path is
+  covered by `TestReadWarnings_DroppedElement` regardless. §12's "85% codec
+  band" is the CLAUDE.md default, not a configured gate entry.
 
 ## 17. Sign-off
 

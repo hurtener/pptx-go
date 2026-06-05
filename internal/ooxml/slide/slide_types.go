@@ -163,7 +163,17 @@ type XSpTree struct {
 	NonVisual            nvGrpSpPr              `xml:"nvGrpSpPr"`
 	GroupShapeProperties *XGroupShapeProperties `xml:"grpSpPr,omitempty"`
 	Children             []any                  `xml:"-"`
+
+	// dropped records the local-names of unrecognized child elements ignored by
+	// UnmarshalXML (group shapes, mc:AlternateContent, …). Best-effort external
+	// read surfaces these as read warnings (Phase 19, D-048); a pptx-go-authored
+	// tree leaves it empty.
+	dropped []string
 }
+
+// DroppedChildren returns the local-names of unrecognized child elements that
+// UnmarshalXML ignored, in document order. Empty for a tree pptx-go authored.
+func (xst *XSpTree) DroppedChildren() []string { return xst.dropped }
 
 // nvGrpSpPr holds non-visual group shape properties.
 type nvGrpSpPr struct {
