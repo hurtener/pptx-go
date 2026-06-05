@@ -168,8 +168,13 @@ func TestReadWarnings_PartPassThrough(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WriteToBytes: %v", err)
 	}
-	got := unzipParts(t, out)[custom]
-	if !bytes.Equal(got, customBytes) {
+	outParts := unzipParts(t, out)
+	if got := outParts[custom]; !bytes.Equal(got, customBytes) {
 		t.Errorf("unmodeled part not preserved: got %q, want %q", got, customBytes)
+	}
+	// The part's content-type registration must survive too, else the re-saved
+	// deck carries a part with no declared content type (invalid OPC).
+	if ct := string(outParts["[Content_Types].xml"]); !strings.Contains(ct, "/customXml/item1.xml") {
+		t.Errorf("unmodeled part's content-type override dropped on re-save:\n%s", ct)
 	}
 }
