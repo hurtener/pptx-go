@@ -245,13 +245,41 @@ deviations. Sequencing notes:
   covered by `TestReadWarnings_DroppedElement` regardless. §12's "85% codec
   band" is the CLAUDE.md default, not a configured gate entry.
 
+**PR#2 (no-panic hardening + corpus + fuzz).** Two deviations from §8, both
+documented here per §4.3:
+
+- **The synthetic external-deck corpus is generated in-test, not vendored as
+  binary `.pptx` fixtures under `test/integration/testdata/external/`.** Each
+  variant is a pptx-go-authored base deck whose ZIP is mutated (via stdlib
+  `archive/zip`) to look like a third-party export — group shapes,
+  `mc:AlternateContent`, foreign namespaces, missing/dangling parts, truncated
+  XML, a malformed master `bgRef`. Generating the corpus in code keeps it fully
+  reviewable (a binary `.pptx` is opaque in review) and stdlib-only, while still
+  exercising the same `internal/opc` + `encoding/xml` read seam through the
+  public `pptx.NewFromBytes` API. No `testdata/external/` directory is added.
+- **The no-panic hardening reduced to a single guard.** The read path was
+  already defensive (relationship targets are never nil; `SpTree()` is always
+  initialized; the theme color accessors are nil-safe). The one reachable panic
+  was `parseBackground` dereferencing `xmlBg.BgRef.Clr` on a `<p:bgRef>` with no
+  color child (`internal/ooxml/slide/master_parser.go`); it is now guarded, with
+  a regression entry in the corpus (`master_bgref_without_color`) proven
+  load-bearing (the corpus panics without the guard) and a fuzz seed on
+  `FuzzParseMaster` / `FuzzParseLayout`.
+- **Fuzz seam:** a new `FuzzParseSlide` (`internal/ooxml/slide/slide_fuzz_test.go`)
+  exercises the shape-tree parse with external-style seeds; the existing
+  `FuzzParseLayout`/`FuzzParseMaster` gained malformed-background seeds. Invariant:
+  no panic, parsed-or-error.
+- **Smoke:** no edit needed — `scripts/smoke/phase-19.sh` criterion 4 auto-flips
+  to `OK` once `test/integration/external_read_test.go` exists (PR-aware skeleton
+  from the plan PR).
+
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for touched packages.
-- [ ] `scripts/smoke/phase-19.sh` reports `OK ≥ count(criteria)` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated.
-- [ ] Decision entries added (D-048).
-- [ ] Master-plan §19 entry reconciled to D-048.
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for touched packages.
+- [x] `scripts/smoke/phase-19.sh` reports `OK ≥ count(criteria)` and `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated. (PR#1)
+- [x] Decision entries added (D-048). (PR#1)
+- [x] Master-plan §19 entry reconciled to D-048. (PR#1)
 - [ ] (Phase 20+) Docs site / skills updated. (inert)

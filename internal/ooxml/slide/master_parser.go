@@ -184,8 +184,11 @@ func extractPlaceholderFromShape(shape XMLShape) *Placeholder {
 
 // parseBackground parses a background XML element into a Background struct.
 func parseBackground(xmlBg *XMLBackground) *Background {
-	// handle <p:bgRef> background reference (theme color reference)
-	if xmlBg.BgRef != nil {
+	// handle <p:bgRef> background reference (theme color reference). A
+	// well-formed bgRef carries a color child; a malformed external deck may
+	// omit it, so guard the dereference and fall through rather than panic
+	// (best-effort external read, D-048).
+	if xmlBg.BgRef != nil && xmlBg.BgRef.Clr != nil {
 		return &Background{
 			backgroundType: BackgroundTypeThemeColor,
 			solidColorRGB:  xmlBg.BgRef.Clr.Val, // theme color name, e.g. "bg1"

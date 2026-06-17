@@ -98,6 +98,15 @@ changes.
   opacity, and embedded bytes. Every shape, run, fill, line, table, and image
   pptx-go emits round-trips back into the same model, and a self-authored deck
   reopens byte-identically.
+- Best-effort reading of third-party decks: opening a deck pptx-go did not
+  author (PowerPoint, Keynote export, another library) no longer fails or
+  panics on content it cannot model. `Presentation.ReadWarnings()` reports each
+  degradation — an unrecognized shape-tree element ignored at parse time
+  (`WarnDroppedElement`), or a referenced part that was missing, dangling, or
+  unparseable and was skipped (`WarnUnreadablePart`) — while every part pptx-go
+  does not model passes through unchanged on re-save. Fidelity preservation of
+  unrecognized content is not promised (D-048); a self-authored deck reports no
+  warnings.
 
 ### Fixed
 
