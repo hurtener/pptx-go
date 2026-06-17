@@ -11,6 +11,10 @@ func FuzzParseLayout(f *testing.F) {
 	f.Add([]byte(``))
 	f.Add([]byte(`not xml`))
 	f.Add([]byte(`<p:sldLayout`))
+	// External-style background references: a bgRef missing its color child, and
+	// a solidFill missing its color — the parser must not nil-deref (D-048).
+	f.Add([]byte(`<p:sldLayout><p:cSld><p:bg><p:bgRef idx="1001"/></p:bg><p:spTree/></p:cSld></p:sldLayout>`))
+	f.Add([]byte(`<p:sldLayout><p:cSld><p:bg><p:bgPr><a:solidFill/></p:bgPr></p:bg><p:spTree/></p:cSld></p:sldLayout>`))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		layout, err := ParseLayout(data)
@@ -26,6 +30,9 @@ func FuzzParseMaster(f *testing.F) {
 	f.Add([]byte(`<p:sldMaster><p:cSld><p:spTree/></p:cSld></p:sldMaster>`))
 	f.Add([]byte(``))
 	f.Add([]byte(`garbage`))
+	// A master whose <p:bgRef> carries no color child — the malformed background
+	// the parser must not nil-deref on (D-048).
+	f.Add([]byte(`<p:sldMaster><p:cSld><p:bg><p:bgRef idx="1001"></p:bgRef></p:bg><p:spTree/></p:cSld></p:sldMaster>`))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		master, err := ParseMaster(data)
