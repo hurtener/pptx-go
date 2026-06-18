@@ -25,3 +25,14 @@ coverage.html
 
 # Validation harness scratch output
 test-output/
+
+# Example binaries: `go build ./examples/<name>` (without ./...) emits an
+# executable named after the dir at the repo root. Never commit these.
+/scaffold-a-presentation
+/define-a-theme
+/load-a-brand-template
+/compose-a-scene
+/embed-a-chart-raster
+/embed-a-code-block-raster
+/extend-the-icon-set
+/register-an-asset
