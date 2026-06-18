@@ -176,19 +176,34 @@ type XSpTree struct {
 func (xst *XSpTree) DroppedChildren() []string { return xst.dropped }
 
 // DroppedDescendants returns the local-names of unrecognized elements dropped
-// below the top-level shape-tree children — currently unmodeled paragraph-level
-// children (e.g. <a:fld> fields, math) inside shape text bodies. It lets the
-// reader surface nested degradation, not just top-level drops (best-effort read,
-// D-048). Empty for a tree pptx-go authored.
+// below the top-level shape-tree children — unmodeled paragraph-level children
+// (e.g. <a:fld> fields, math) inside any text body the reader reconstructs:
+// shape text bodies and table-cell text bodies. It lets the reader surface
+// nested degradation, not just top-level drops (best-effort read, D-048). Empty
+// for a tree pptx-go authored.
 func (xst *XSpTree) DroppedDescendants() []string {
 	var out []string
-	for _, child := range xst.Children {
-		sp, ok := child.(*XSp)
-		if !ok || sp.TextBody == nil {
-			continue
+	collect := func(tb *XTextBody) {
+		if tb == nil {
+			return
 		}
-		for i := range sp.TextBody.Paragraphs {
-			out = append(out, sp.TextBody.Paragraphs[i].dropped...)
+		for i := range tb.Paragraphs {
+			out = append(out, tb.Paragraphs[i].dropped...)
+		}
+	}
+	for _, child := range xst.Children {
+		switch c := child.(type) {
+		case *XSp:
+			collect(c.TextBody)
+		case *XGraphicFrame:
+			if c.Graphic == nil || c.Graphic.GraphicData == nil || c.Graphic.GraphicData.Table == nil {
+				continue
+			}
+			for ri := range c.Graphic.GraphicData.Table.Rows {
+				for ci := range c.Graphic.GraphicData.Table.Rows[ri].Cells {
+					collect(c.Graphic.GraphicData.Table.Rows[ri].Cells[ci].TextBody)
+				}
+			}
 		}
 	}
 	return out

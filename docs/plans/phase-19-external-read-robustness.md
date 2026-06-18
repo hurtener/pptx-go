@@ -308,11 +308,13 @@ doc tidies (Tier C) landed in the `chore(checkpoint)` PR; see D-049, D-050.
 **Tier-B landed (follow-up PR):**
 
 - *Nested-drop observability* — `WarnDroppedElement` now also covers nested
-  unmodeled content: a shape text body's unrecognized children (e.g. `<a:fld>`
-  fields) are recorded (`XTextParagraph.dropped` → `XSpTree.DroppedDescendants`)
-  and surfaced. Struct-unmarshal silent drops (unmodeled effects, etc.) remain a
-  documented limitation — `encoding/xml` ignores unknown children with no hook.
-  (audit: wiring #1 / test B5.)
+  unmodeled content in every text body the reader reconstructs: shape text
+  bodies **and table-cell text bodies** (e.g. `<a:fld>` fields). Recorded via
+  `XTextParagraph.dropped` → `XSpTree.DroppedDescendants` (which walks `XSp` and
+  `XGraphicFrame` table cells) and surfaced. Struct-unmarshal silent drops
+  (unmodeled effects, etc.) remain a documented limitation — `encoding/xml`
+  ignores unknown children with no hook. (audit: wiring #1 / test B5; the
+  table-cell case was caught by the adversarial review pass.)
 - *Round-trip read gaps closed* — `TextFrame` gained `AutoFitMode` /
   `VerticalAnchor` / `MarginInsets` read accessors, asserted through round-trip;
   `Cell.RowSpan > 1` round-trip asserted; a theme part that exists but fails to

@@ -234,6 +234,33 @@ func externalCorpus() []corpusEntry {
 			want: &wantWarning{kind: pptx.WarnDroppedElement, element: "fld", part: "/ppt/slides/slide1.xml", detailContains: "text-body element"},
 		},
 		{
+			name: "table_cell_field",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A field inside a TABLE CELL's text body — the cell's graphicFrame
+				// parses cleanly, so without descending into table cells this fld
+				// would be dropped with no warning (the dangerous false-confidence
+				// case). It must surface like any other nested drop.
+				injectIntoSpTree(t, parts,
+					`<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="50" name="t"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>`+
+						`<p:xfrm><a:off x="0" y="0"/><a:ext cx="100" cy="100"/></p:xfrm>`+
+						`<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">`+
+						`<a:tbl><a:tblGrid><a:gridCol w="100"/></a:tblGrid>`+
+						`<a:tr h="100"><a:tc><a:txBody><a:bodyPr/><a:p><a:fld id="{G}" type="slidenum"><a:t>3</a:t></a:fld></a:p></a:txBody></a:tc></a:tr>`+
+						`</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`)
+			},
+			want: &wantWarning{kind: pptx.WarnDroppedElement, element: "fld", part: "/ppt/slides/slide1.xml", detailContains: "text-body element"},
+		},
+		{
+			name: "theme_absent",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A deck with no theme part at all is not a degradation — it must
+				// open cleanly with no warning (ErrThemeNotFound is silent).
+				delete(parts, "ppt/theme/theme1.xml")
+			},
+			expectClean:        true,
+			keepsAuthoredShape: true,
+		},
+		{
 			name: "malformed_theme",
 			mutate: func(t *testing.T, parts map[string][]byte) {
 				// A theme part that exists but cannot be parsed: the deck keeps the

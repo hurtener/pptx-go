@@ -304,9 +304,13 @@ func (p *Presentation) loadPresentationPart() error {
 		// A theme part exists but could not be parsed: keep DefaultTheme and warn
 		// rather than failing the open (best-effort read, D-048). A deck with no
 		// theme part (ErrThemeNotFound) is not a degradation.
+		themeURI := "/ppt/theme/theme1.xml"
+		if tp := p.pkg.GetPartsByType(opc.ContentTypeTheme); len(tp) > 0 {
+			themeURI = tp[0].PartURI().URI()
+		}
 		p.addReadWarning(ReadWarning{
 			Kind:   WarnUnreadablePart,
-			Part:   "/ppt/theme/theme1.xml",
+			Part:   themeURI,
 			Detail: "theme could not be parsed: " + err.Error(),
 		})
 		p.sortReadWarnings()

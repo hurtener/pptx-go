@@ -122,6 +122,7 @@ func (p *XTextParagraph) MarshalXML(e *xml.Encoder, start xml.StartElement) erro
 func (p *XTextParagraph) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	p.Pr = nil
 	p.Content = p.Content[:0]
+	p.dropped = p.dropped[:0]
 	for {
 		tok, err := d.Token()
 		if err != nil {

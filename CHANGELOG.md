@@ -107,7 +107,7 @@ changes.
   unparseable and was skipped (`WarnUnreadablePart`) — while every part pptx-go
   does not model passes through unchanged on re-save. Dropped-element warnings
   now also cover nested unmodeled content (e.g. an `<a:fld>` field inside a shape's
-  text body), and a theme part that exists but cannot be parsed degrades to a
+  or a table cell's text body), and a theme part that exists but cannot be parsed degrades to a
   `WarnUnreadablePart` (the deck keeps the default theme) rather than failing the
   open. Fidelity preservation of unrecognized content is not promised (D-048); a
   self-authored deck reports no warnings.
