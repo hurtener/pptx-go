@@ -589,9 +589,12 @@ opaque-carrier preservation; the RFC parks fidelity preservation in V2)
 **RFC sections:** `CLAUDE.md §19`
 **Deps:** Wave 6 complete.
 **What lands:**
-- `skills/` — initial SKILL.md set: "scaffold a presentation", "load a
-  brand theme", "compose a scene", "extend the icon set",
-  "rasterize and embed a code block", "rasterize and embed a chart".
+- `skills/` — the eight SKILL.md workflows per `CLAUDE.md §19`: "scaffold a
+  presentation", "define a Theme", "load a brand template", "compose a
+  scene", "embed a chart raster", "embed a code-block raster", "extend the
+  icon set", "register an asset". (Reconciled from the earlier six-skill
+  wording to the authoritative `CLAUDE.md §19` list — see
+  `phase-20-skills-docs.md` §5.)
 - `docs/site/` — VitePress (or similar) docs site with quickstart, API
   reference, scene catalog, theme guide, examples.
 - `.github/workflows/pages.yml` — CI to build and deploy on push.

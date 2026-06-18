@@ -15,6 +15,14 @@ The thin themed bar a `Card` / `CardSection` draws along one edge (the accent
 token color) to mark the card visually. Part of the card chrome. Distinct
 from a `border` (which outlines the whole card). See `RFC-001-pptx-go.md §11.2`.
 
+## Agent skill
+
+A `skills/<name>/SKILL.md` file (agentskills.io format: YAML frontmatter +
+instructions) that teaches an AI coding agent one pptx-go workflow — e.g.
+scaffold a presentation, define a Theme, compose a scene. Keeping skills in
+sync with the user-facing surface is binding repo hygiene (`CLAUDE.md §19`);
+drift is a defect. Shipped in Phase 20.
+
 ## Anchor
 
 A point on a shape (top-left, top-center, …, bleed-top-right, …) used to
@@ -673,6 +681,13 @@ does not affect render idempotency.
 `log/slog` — Go's structured logging stdlib package. pptx-go accepts an
 optional `*slog.Logger` via `pptx.WithLogger` / `scene.WithLogger`. No
 logger = no logs (zero cost).
+
+## Skill smoke
+
+The Phase 20 check that compiles and runs each agent skill's linked
+`examples/` program (`go build` + `go run`), so a skill cannot silently
+drift from the public API — an outdated identifier fails CI. Part of
+`scripts/smoke/phase-20.sh`. See [Agent skill](#agent-skill).
 
 ## Smoke check
 
