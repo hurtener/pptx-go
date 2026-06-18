@@ -1,0 +1,63 @@
+name: Docs site (GitHub Pages)
+
+# Builds the VitePress docs site (docs/site) and deploys it to GitHub Pages.
+# The site toolchain is Node-only and lives entirely here + under docs/site;
+# it never enters the Go module (P4). Build runs on every push; deploy runs
+# only from the default branch.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/site/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'docs/site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build site
+        run: npm run build
+      - name: Upload Pages artifact
+        # Only the default branch produces a deployable artifact.
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site/.vitepress/dist
+
+  deploy:
+    # Deploy only from the default branch; PR builds validate without deploying.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
