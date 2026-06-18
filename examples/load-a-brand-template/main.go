@@ -54,12 +54,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("opening brand kit: %v", err)
 	}
-	defer func() { _ = brand.Close() }()
 
 	// --- Step 3: seed a new deck from the brand kit ---------------------------
 	// FromTemplate adopts the brand's theme + masters/layouts. The new deck
 	// starts slide-free; the brand deck is cloned, not retained or mutated.
 	deck := pptx.New(pptx.FromTemplate(brand))
+	// FromTemplate clones the brand at New() time, so the source can be released
+	// now (closing it here rather than via defer keeps later log.Fatal paths
+	// clean — gocritic exitAfterDefer).
+	_ = brand.Close()
 
 	// --- Step 4: discover and select layouts by name --------------------------
 	// AddSlide with a layout name resolves against the adopted registry; an
