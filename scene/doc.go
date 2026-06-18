@@ -6,7 +6,10 @@
 // scene composes pptx; it never reaches under the builder (P1). Its token
 // enums are aliases of pptx's, so callers use one vocabulary.
 //
-// This package currently provides the IR catalog, Stage 1 structural
-// validation, the AssetResolver seam, and the per-node rendering-policy table.
-// Render is a no-op stub here; rendering lands in later phases.
+// This package provides the IR catalog, two-stage validation (structural plus
+// token/asset/registry resolution), the AssetResolver seam, the per-node
+// rendering-policy table, the curated icon/ornament/frame registries with
+// per-render caller extension, and a fully implemented, internally parallel,
+// deterministic Render that composes every node kind onto the builder and
+// returns Stats.
 package scene
