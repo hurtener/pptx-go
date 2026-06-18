@@ -25,3 +25,9 @@ coverage.html
 
 # Validation harness scratch output
 test-output/
+
+# VitePress docs site (Node build artifacts — never committed; built by CI)
+docs/site/node_modules/
+docs/site/package-lock.json
+docs/site/.vitepress/cache/
+docs/site/.vitepress/dist/
