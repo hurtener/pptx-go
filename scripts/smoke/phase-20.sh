@@ -78,17 +78,20 @@ else
     skip "all examples build and run clean" "examples/ not added yet (PR#2)"
 fi
 
-# 4. The docs site builds (PR#3). SKIP without the node/vitepress toolchain,
-#    mirroring the codec schema smoke's optional-tool pattern.
+# 4. The docs site builds (PR#3). The Go preflight does not install Node deps, so
+#    this only runs when vitepress is already installed locally; otherwise it
+#    SKIPs — the authoritative build runs in .github/workflows/pages.yml on every
+#    PR that touches docs/site. This mirrors the codec schema smoke's
+#    optional-tool pattern (never FAIL on a missing dev toolchain).
 if [ -d docs/site ]; then
-    if command -v npx >/dev/null 2>&1 && [ -f docs/site/package.json ]; then
-        if (cd docs/site && npx --no-install vitepress build >/dev/null 2>&1); then
+    if [ -x docs/site/node_modules/.bin/vitepress ]; then
+        if (cd docs/site && node_modules/.bin/vitepress build >/dev/null 2>&1); then
             ok "docs site builds (vitepress)"
         else
             fail "docs site builds (vitepress)" "vitepress build failed"
         fi
     else
-        skip "docs site builds (vitepress)" "node/vitepress toolchain not present"
+        skip "docs site builds (vitepress)" "vitepress not installed; built by pages.yml CI"
     fi
 else
     skip "docs site builds (vitepress)" "docs/site/ not added yet (PR#3)"
