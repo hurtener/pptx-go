@@ -416,6 +416,49 @@ func (s *SlidePart) FromXML(data []byte) error {
 	return nil
 }
 
+// xNotesPart is the root of a notesSlideN.xml part (<p:notes>). It reuses the
+// slide's common-slide-data and shape-tree types — a notesSlide's body
+// placeholder carries the same <p:txBody> structure as any slide shape.
+type xNotesPart struct {
+	XMLName struct{} `xml:"notes"`
+	CSld    *XCSld   `xml:"cSld"`
+}
+
+// ParseNotesBody extracts the speaker-notes text body from a notesSlide part's
+// XML. It returns the body placeholder's <p:txBody> (the first shape carrying
+// text), or nil with no error when the part has no notes text. Best-effort:
+// malformed notes degrade to a parse error the caller can treat as "no notes"
+// (RFC §16, D-048).
+func ParseNotesBody(data []byte) (*XTextBody, error) {
+	cleanData, err := ooxml.StripNamespacePrefixes(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to clean notes XML: %w", err)
+	}
+	var np xNotesPart
+	if err := xml.Unmarshal(cleanData, &np); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal notes XML: %w", err)
+	}
+	if np.CSld == nil || np.CSld.SpTree == nil {
+		return nil, nil
+	}
+	// Prefer a shape whose text body actually has paragraphs; fall back to the
+	// first shape carrying a (possibly empty) text body.
+	var fallback *XTextBody
+	for _, child := range np.CSld.SpTree.Children {
+		sp, ok := child.(*XSp)
+		if !ok || sp.TextBody == nil {
+			continue
+		}
+		if len(sp.TextBody.Paragraphs) > 0 {
+			return sp.TextBody, nil
+		}
+		if fallback == nil {
+			fallback = sp.TextBody
+		}
+	}
+	return fallback, nil
+}
+
 // NewSlideLayoutPart creates a new slide layout part.
 func NewSlideLayoutPart(id int) *SlideLayoutPart {
 	return &SlideLayoutPart{

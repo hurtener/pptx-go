@@ -96,14 +96,14 @@ PR#1.
 pptx/slide.go         # CHANGED — Slide.Shapes()
 pptx/shape.go         # CHANGED — read accessors (Geometry/Rotation/Fill/Line/Shadow)
 pptx/fill.go          # CHANGED — readable Fill/Line
-pptx/shape_read_test.go            # NEW — per-primitive read round-trip
+test/pptx/shape_read_test.go       # NEW — per-primitive read round-trip
 # PR#2
 pptx/text.go          # CHANGED — TextFrame/Paragraph/Run read accessors
-pptx/text_read_test.go             # NEW
+test/pptx/text_read_test.go        # NEW
 # PR#3
 pptx/table.go         # CHANGED — Table read
 pptx/media.go         # CHANGED — Image read
-pptx/table_image_read_test.go      # NEW
+test/pptx/table_image_read_test.go # NEW
 # PR#4
 test/integration/roundtrip_test.go # NEW — comprehensive walk + fixture byte-identity
 scripts/smoke/phase-18.sh          # NEW (lands PR#1, criteria flip across PRs)

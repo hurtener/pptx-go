@@ -523,8 +523,8 @@ Created via `TextFrame.AddParagraph`. (RFC §8.4.)
 ## Presentation
 
 `pptx.Presentation` — the top-level builder type. Owns slides, sections,
-masters, the theme, and the OPC package. Created via `pptx.New` or
-`pptx.Open[Stream]`.
+masters, the theme, and the OPC package. Created via `pptx.New`, or read
+from an existing deck via `pptx.NewFromBytes` / `NewFromFile` / `OpenStream`.
 
 ## PptxSection
 
@@ -543,8 +543,8 @@ under a `Decoration` source `asset_ref`.
 
 ## Read model
 
-The navigable builder model `pptx.Open` reconstructs from a pptx-go-authored
-deck — the **same** `Shape` / `Fill` / `Line` / `TextFrame` / `Table` / `Image`
+The navigable builder model `pptx.NewFromBytes` / `OpenStream` reconstructs from
+a pptx-go-authored deck — the **same** `Shape` / `Fill` / `Line` / `TextFrame` / `Table` / `Image`
 types the builder writes, enumerated via `Slide.Shapes()` (RFC §16, D-047).
 Reading maps the already-parsed `internal/ooxml` structs to public types; it is
 not a parallel read hierarchy. Distinct from byte/codec round-trip (which the

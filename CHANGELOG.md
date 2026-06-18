@@ -107,8 +107,29 @@ changes.
   does not model passes through unchanged on re-save. Fidelity preservation of
   unrecognized content is not promised (D-048); a self-authored deck reports no
   warnings.
+- Read constructors (`NewFromBytes`, `NewFromFile`, `OpenStream`) now accept
+  options: `WithLogger` makes read-time degradation visible to logs (a `Warn`
+  event per dropped element / skipped part, mirroring `ReadWarnings`), and
+  `WithReadPartLimit(n)` overrides the per-part size ceiling (default 100 MB;
+  `n <= 0` disables it). (D-049.)
 
 ### Fixed
+
+- Speaker notes now round-trip: a reopened deck's notes are reconstructed into a
+  navigable `SpeakerNotes()` text frame. Previously notes were invisible after
+  reopen, and inspecting `SpeakerNotes()` then saving destroyed the existing
+  notes — both fixed. (D-050.)
+
+### Security
+
+- Opening a deck is now memory-bounded and zip-slip-safe by default (CLAUDE.md
+  §7): a part whose decompressed size exceeds the per-part limit (default
+  100 MB, configurable via `WithReadPartLimit`) is rejected with
+  `opc.ErrPartTooLarge` rather than allocated, and a ZIP entry whose path escapes
+  the package root (absolute or containing `..`) is rejected at parse time with
+  `opc.ErrUnsafePartPath`. Both eager and streaming opens are covered, and the
+  external-ingest parse surfaces (`opc.Open`, `presentation.FromXML`, the rels
+  and content-types parsers) gained fuzz targets. (D-049.)
 
 - Slide layouts read from a deck now carry their name and type (the layout
   parser previously discarded both), so layouts can be selected by name.

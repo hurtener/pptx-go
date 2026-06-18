@@ -495,7 +495,7 @@ notes go to a separate channel) — untenable.
 **Decision:** V1 ships speaker notes as a property of every `*pptx.Slide`
 via `slide.SpeakerNotes() *TextFrame`. The text frame is RichText,
 themed (notes inherit the theme's body type), and round-trips through
-`pptx.Open`. The scene IR's `SceneSlide.Notes` field maps directly.
+`pptx.NewFromBytes` / `OpenStream`. The scene IR's `SceneSlide.Notes` field maps directly.
 (`RFC §8.8`.)
 **Consequences:** Phase 03's scope includes ~1 small file
 (`pptx/notes.go`). Round-trip tests cover notes in Phase 03.
@@ -1309,7 +1309,7 @@ clear precedent. No native chart rendering enters the library (D-004 holds);
 **Status:** Settled
 **Context:** RFC §16 guarantees a pptx-go-authored deck reopens into "the same
 Shape model we wrote" — `pres.Slides()[0].Shapes()[0]` is navigable. Today
-`pptx.Open` reconstructs high-level structure (presentation, slides, theme,
+`pptx.NewFromBytes` / `OpenStream` reconstructs high-level structure (presentation, slides, theme,
 masters, sections) but **preserves slide shapes as opaque OOXML** in the
 `spTree`; byte/codec round-trip already holds (G6 `ToXML→FromXML` goldens), but
 there is no public read API to inspect shapes/fills/lines/text/tables/images.
@@ -1369,6 +1369,63 @@ no-panic + `ReadWarnings` acceptance — without the risk-heavy raw-XML capture
 through the bare-name/RestoreNamespaces codec. External decks lose unrecognized
 *shapes* on re-save (warned), but keep unrecognized *parts*. Additive public API
 (no write-side break); V1 round-trip fidelity of authored decks is unchanged.
+
+---
+
+## D-049 — Read-path security bounds (§7) are enforced in internal/opc with a caller-configurable limit; read constructors accept Options and log degradation (§8)
+
+**Date:** 2026-06-18
+**Status:** Settled
+**Context:** The Wave 6 checkpoint audit found two CLAUDE.md §7 invariants
+unimplemented on the read path that Phase 18/19 exercise: there was no per-part
+memory bound (`io.ReadAll` was unbounded — a malicious external part could OOM
+the process, and `ErrPartTooLarge`/the documented 100 MB default did not exist),
+and no zip-slip guard (`NormalizeZipPath` did not reject `..` or absolute
+entries). Separately (§8), the read path recorded degradations only in
+`ReadWarnings()`; no logger could even be injected, since the read constructors
+took no options.
+**Decision:** `internal/opc` enforces a per-part decompressed-size ceiling at
+open (default `DefaultMaxPartBytes` = 100 MB) on both the eager (`Open`/`OpenFile`)
+and streaming (`OpenStream`/`OpenStreamFromReader`) paths, returning
+`ErrPartTooLarge`; it rejects entries whose normalized path escapes the package
+root with `ErrUnsafePartPath` (`safePartPath`). The bound is caller-configurable
+through `opc.WithMaxPartBytes` (variadic `OpenOption`, so existing internal
+callers compile unchanged and inherit the default). The `pptx` read constructors
+(`NewFromBytes`, `NewFromFile`, `OpenStream`) now take `...Option`:
+`WithReadPartLimit(n)` maps to the opc bound (n ≤ 0 = unlimited), and
+`WithLogger` now applies on read — `addReadWarning` emits a `Warn` event per
+distinct degradation when a logger is present, so degradation is visible to logs,
+not just the `ReadWarnings` slice. The streaming path validates the declared size
+and entry path at open (the body is still read lazily).
+**Consequences:** Opening an untrusted deck is memory-bounded and zip-slip-safe
+by default, satisfying §7. Read-time observability matches §8 (no global logger;
+zero-cost when absent). The opc `OpenOption` seam is additive; no caller breaks.
+Build-time options passed to a read constructor (e.g. `WithFormat`) are harmless
+no-ops. A lying-header zip bomb on the lazy streaming read remains a smaller
+follow-up (the eager path is fully guarded).
+
+---
+
+## D-050 — Speaker notes are reconstructed on open (round-trip), closing a G6 gap and a read-then-save data-loss footgun
+
+**Date:** 2026-06-18
+**Status:** Settled
+**Context:** `Slide.SpeakerNotes()` (D-022) shipped its write half without a read
+half: a reopened deck's notes were invisible (`HasSpeakerNotes()` returned false,
+`SpeakerNotes()` returned a fresh empty frame), and merely calling
+`SpeakerNotes()` to inspect a reopened deck and then `Save()` overwrote the
+existing `notesSlide` part with empty content — silent data loss, a G6
+round-trip-fidelity violation for a shipped builder API.
+**Decision:** `repopulateSlides` reconstructs each slide's notes from its
+`notesSlide` part on open (`slide.ParseNotesBody` extracts the body placeholder's
+`<p:txBody>`; the slide→notesSlide relationship locates the part). The
+reconstructed `*TextFrame` is the same type the builder writes, so notes are
+navigable via `SpeakerNotes()` and re-emit on save. A referenced-but-unreadable
+notes part degrades to a `WarnUnreadablePart` rather than failing the open
+(best-effort, D-048); external decks with a non-pptx-go notes layout are
+best-effort (the first text-bearing shape wins).
+**Consequences:** Notes now round-trip losslessly for self-authored decks (G6),
+and the inspect-then-save data loss is fixed. Additive; no write-side change.
 
 ---
 

@@ -23,8 +23,11 @@ import (
 
 // OpenStream opens a .pptx file using the OPC streaming reader (lazy per-part
 // loading) and returns a Presentation. (RFC §9, §17.2.)
-func OpenStream(path string) (*Presentation, error) {
-	sp, err := opc.OpenStream(path)
+func OpenStream(path string, opts ...Option) (*Presentation, error) {
+	pres := newReadShell(opts)
+	pres.theme = DefaultTheme()
+
+	sp, err := opc.OpenStream(path, pres.openOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("open stream %q: %w", path, err)
 	}
@@ -34,14 +37,8 @@ func OpenStream(path string) (*Presentation, error) {
 	if err != nil {
 		return nil, err
 	}
+	pres.pkg = pkg
 
-	pres := &Presentation{
-		pkg:           pkg,
-		slides:        make([]*Slide, 0),
-		mediaManager:  NewMediaManager(),
-		masterManager: NewMasterManager(),
-		theme:         DefaultTheme(),
-	}
 	if err := pres.loadPresentationPart(); err != nil {
 		return nil, fmt.Errorf("parse presentation part: %w", err)
 	}

@@ -70,8 +70,12 @@ func (p *Package) SetCoreProperties(props *CoreProperties) {
 
 // ===== Opening a package =====
 
-// Open opens an OPC package from a ZIP stream.
-func Open(r io.ReaderAt, size int64) (*Package, error) {
+// Open opens an OPC package from a ZIP stream. By default each part is bounded
+// to DefaultMaxPartBytes and unsafe (zip-slip) entry paths are rejected at parse
+// time (CLAUDE.md §7); WithMaxPartBytes overrides the bound.
+func Open(r io.ReaderAt, size int64, opts ...OpenOption) (*Package, error) {
+	cfg := resolveOpenConfig(opts)
+
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open zip: %w", err)
@@ -79,15 +83,15 @@ func Open(r io.ReaderAt, size int64) (*Package, error) {
 
 	pkg := NewPackage()
 
-	if err := pkg.loadContentTypes(zipReader); err != nil {
+	if err := pkg.loadContentTypes(zipReader, cfg); err != nil {
 		return nil, fmt.Errorf("failed to load content types: %w", err)
 	}
 
-	if err := pkg.loadParts(zipReader); err != nil {
+	if err := pkg.loadParts(zipReader, cfg); err != nil {
 		return nil, fmt.Errorf("failed to load parts: %w", err)
 	}
 
-	if err := pkg.loadRelationships(zipReader); err != nil {
+	if err := pkg.loadRelationships(zipReader, cfg); err != nil {
 		return nil, fmt.Errorf("failed to load relationships: %w", err)
 	}
 
@@ -99,7 +103,7 @@ func Open(r io.ReaderAt, size int64) (*Package, error) {
 }
 
 // OpenFile opens an OPC package from a file path.
-func OpenFile(path string) (*Package, error) {
+func OpenFile(path string, opts ...OpenOption) (*Package, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -111,10 +115,10 @@ func OpenFile(path string) (*Package, error) {
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	return Open(file, stat.Size())
+	return Open(file, stat.Size(), opts...)
 }
 
-func (p *Package) loadContentTypes(zipReader *zip.Reader) error {
+func (p *Package) loadContentTypes(zipReader *zip.Reader, cfg openConfig) error {
 	var ctFile *zip.File
 	for _, f := range zipReader.File {
 		if f.Name == PathContentTypes {
@@ -127,13 +131,7 @@ func (p *Package) loadContentTypes(zipReader *zip.Reader) error {
 		return fmt.Errorf("[Content_Types].xml not found")
 	}
 
-	rc, err := ctFile.Open()
-	if err != nil {
-		return fmt.Errorf("failed to open [Content_Types].xml: %w", err)
-	}
-	defer rc.Close()
-
-	data, err := io.ReadAll(rc)
+	data, err := readZipEntry(ctFile, cfg.maxPartBytes)
 	if err != nil {
 		return fmt.Errorf("failed to read [Content_Types].xml: %w", err)
 	}
@@ -141,7 +139,7 @@ func (p *Package) loadContentTypes(zipReader *zip.Reader) error {
 	return p.contentTypes.FromXML(data)
 }
 
-func (p *Package) loadParts(zipReader *zip.Reader) error {
+func (p *Package) loadParts(zipReader *zip.Reader, cfg openConfig) error {
 	for _, f := range zipReader.File {
 		// Normalize path to handle Windows backslash issues.
 		normalizedName := NormalizeZipPath(f.Name)
@@ -155,16 +153,14 @@ func (p *Package) loadParts(zipReader *zip.Reader) error {
 		if strings.HasSuffix(normalizedName, "/") {
 			continue
 		}
+		// Reject zip-slip before constructing a part URI (CLAUDE.md §7).
+		if err := safePartPath(normalizedName); err != nil {
+			return err
+		}
 
 		uri := NewPackURI("/" + normalizedName)
 
-		rc, err := f.Open()
-		if err != nil {
-			return fmt.Errorf("failed to open %s: %w", f.Name, err)
-		}
-
-		blob, err := io.ReadAll(rc)
-		rc.Close()
+		blob, err := readZipEntry(f, cfg.maxPartBytes)
 		if err != nil {
 			return fmt.Errorf("failed to read %s: %w", f.Name, err)
 		}
@@ -181,7 +177,7 @@ func (p *Package) loadParts(zipReader *zip.Reader) error {
 	return nil
 }
 
-func (p *Package) loadRelationships(zipReader *zip.Reader) error {
+func (p *Package) loadRelationships(zipReader *zip.Reader, cfg openConfig) error {
 	for _, f := range zipReader.File {
 		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
@@ -189,14 +185,12 @@ func (p *Package) loadRelationships(zipReader *zip.Reader) error {
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {
 			continue
 		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return fmt.Errorf("failed to open %s: %w", normalizedName, err)
+		// Reject zip-slip on the .rels path too (CLAUDE.md §7).
+		if err := safePartPath(normalizedName); err != nil {
+			return err
 		}
 
-		data, err := io.ReadAll(rc)
-		rc.Close()
+		data, err := readZipEntry(f, cfg.maxPartBytes)
 		if err != nil {
 			return fmt.Errorf("failed to read %s: %w", normalizedName, err)
 		}
