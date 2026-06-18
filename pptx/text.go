@@ -276,6 +276,54 @@ func (tf *TextFrame) bodyPr() *slide.XBodyPr {
 	return tf.body.BodyPr
 }
 
+// AutoFitMode returns the frame's auto-fit behavior — the read inverse of
+// AutoFit. A frame with no explicit autofit child reports AutoFitNone.
+func (tf *TextFrame) AutoFitMode() AutoFitMode {
+	if tf == nil || tf.body == nil || tf.body.BodyPr == nil {
+		return AutoFitNone
+	}
+	switch bp := tf.body.BodyPr; {
+	case bp.NormAutofit != nil:
+		return AutoFitNormal
+	case bp.SpAutoFit != nil:
+		return AutoFitShape
+	default:
+		return AutoFitNone
+	}
+}
+
+// VerticalAnchor returns the frame's vertical text anchor — the read inverse of
+// Anchor. A frame with no explicit anchor reports AnchorTop (the OOXML default).
+func (tf *TextFrame) VerticalAnchor() TextAnchor {
+	if tf == nil || tf.body == nil || tf.body.BodyPr == nil {
+		return AnchorTop
+	}
+	switch tf.body.BodyPr.Anchor {
+	case "ctr":
+		return AnchorMiddle
+	case "b":
+		return AnchorBottom
+	default:
+		return AnchorTop
+	}
+}
+
+// MarginInsets returns the frame's internal insets (EMU) — the read inverse of
+// Margins. An unset inset (the attribute is omitted) reads as 0.
+func (tf *TextFrame) MarginInsets() (top, right, bottom, left EMU) {
+	if tf == nil || tf.body == nil || tf.body.BodyPr == nil {
+		return 0, 0, 0, 0
+	}
+	bp := tf.body.BodyPr
+	emu := func(p *int) EMU {
+		if p == nil {
+			return 0
+		}
+		return EMU(*p)
+	}
+	return emu(bp.TIns), emu(bp.RIns), emu(bp.BIns), emu(bp.LIns)
+}
+
 // ============================================================================
 // Read accessors (RFC §16) — the read inverse of the authoring API. Reopened
 // runs surface resolved character properties: token typography/color resolve to

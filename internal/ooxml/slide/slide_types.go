@@ -175,6 +175,25 @@ type XSpTree struct {
 // UnmarshalXML ignored, in document order. Empty for a tree pptx-go authored.
 func (xst *XSpTree) DroppedChildren() []string { return xst.dropped }
 
+// DroppedDescendants returns the local-names of unrecognized elements dropped
+// below the top-level shape-tree children — currently unmodeled paragraph-level
+// children (e.g. <a:fld> fields, math) inside shape text bodies. It lets the
+// reader surface nested degradation, not just top-level drops (best-effort read,
+// D-048). Empty for a tree pptx-go authored.
+func (xst *XSpTree) DroppedDescendants() []string {
+	var out []string
+	for _, child := range xst.Children {
+		sp, ok := child.(*XSp)
+		if !ok || sp.TextBody == nil {
+			continue
+		}
+		for i := range sp.TextBody.Paragraphs {
+			out = append(out, sp.TextBody.Paragraphs[i].dropped...)
+		}
+	}
+	return out
+}
+
 // nvGrpSpPr holds non-visual group shape properties.
 type nvGrpSpPr struct {
 	CNvPr      *XNvCxnSpPr `xml:"cNvPr"`
@@ -371,6 +390,7 @@ type XTextParagraphList struct {
 type XTextParagraph struct {
 	Pr      *XParaProps `xml:"pPr,omitempty"`
 	Content []any       `xml:"-"` // *XTextRun | *XTextBreak, in document order
+	dropped []string    // unrecognized child local-names ignored at parse (e.g. fld)
 }
 
 // XParaProps is <a:pPr>: indent/level/alignment plus an optional bullet. At

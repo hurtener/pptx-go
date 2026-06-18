@@ -149,6 +149,10 @@ func (p *XTextParagraph) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 				}
 				p.Content = append(p.Content, &b)
 			default:
+				// An unrecognized paragraph child (e.g. <a:fld> field, math) is
+				// ignored, but its name is recorded so the reader can surface a
+				// nested dropped-element warning (D-048).
+				p.dropped = append(p.dropped, t.Name.Local)
 				if err := d.Skip(); err != nil {
 					return err
 				}

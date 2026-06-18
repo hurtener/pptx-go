@@ -4,6 +4,7 @@ package pptx
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -299,6 +300,16 @@ func (p *Presentation) loadPresentationPart() error {
 	// theme part keeps DefaultTheme; an unreadable master contributes nothing.
 	if t, err := loadThemeFromPackage(p.pkg); err == nil && t != nil {
 		p.theme = t
+	} else if err != nil && !errors.Is(err, ErrThemeNotFound) {
+		// A theme part exists but could not be parsed: keep DefaultTheme and warn
+		// rather than failing the open (best-effort read, D-048). A deck with no
+		// theme part (ErrThemeNotFound) is not a degradation.
+		p.addReadWarning(ReadWarning{
+			Kind:   WarnUnreadablePart,
+			Part:   "/ppt/theme/theme1.xml",
+			Detail: "theme could not be parsed: " + err.Error(),
+		})
+		p.sortReadWarnings()
 	}
 	p.masters = buildMasterRegistry(p.pkg)
 
@@ -386,6 +397,17 @@ func (p *Presentation) repopulateSlides() error {
 				Part:    slideURI.URI(),
 				Element: name,
 				Detail:  "unrecognized shape-tree element ignored at parse time",
+			})
+		}
+		// Nested unmodeled content (e.g. <a:fld> fields in a shape's text body)
+		// is also dropped at parse; surface it so ReadWarnings does not give false
+		// confidence (D-048).
+		for _, name := range sp.SpTree().DroppedDescendants() {
+			p.addReadWarning(ReadWarning{
+				Kind:    WarnDroppedElement,
+				Part:    slideURI.URI(),
+				Element: name,
+				Detail:  "unrecognized text-body element ignored at parse time",
 			})
 		}
 		// Load the slide's relationships so the rId counter resumes past the

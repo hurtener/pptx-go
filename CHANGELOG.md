@@ -87,26 +87,30 @@ changes.
   `LayoutKind` to a named template layout (`scene.DefaultLayoutMap` covers
   PowerPoint's standard names); an unknown layout falls back to the blank layout
   with a `LayoutWarning`.
-- Reading back authored decks: `pptx.Open` reconstructs a navigable model, not
-  just the bytes. `Slide.Shapes()` enumerates a reopened slide's shapes, and
-  each `Shape` exposes read accessors — `Geometry`, `Rotation`, `Fill`
-  (`Kind`/`SolidColor`/`Gradient`), `Line`, `Shadow`, `TextFrame`, `Table`, and
-  `Image`. A reopened `TextFrame` yields `Paragraphs` → `Runs` with their
-  resolved style, color, bullet, alignment, and hyperlink target; a reopened
-  `Table` yields its rows/columns, header/banding, per-cell text, fill, and
-  merge spans; a reopened `Image` yields its alt text, crop, fit, rotation,
-  opacity, and embedded bytes. Every shape, run, fill, line, table, and image
-  pptx-go emits round-trips back into the same model, and a self-authored deck
-  reopens byte-identically.
+- Reading back authored decks: `pptx.NewFromBytes` / `OpenStream` reconstructs a
+  navigable model, not just the bytes. `Slide.Shapes()` enumerates a reopened
+  slide's shapes, and each `Shape` exposes read accessors — `Geometry`,
+  `Rotation`, `Fill` (`Kind`/`SolidColor`/`Gradient`), `Line`, `Shadow`,
+  `TextFrame`, `Table`, and `Image`. A reopened `TextFrame` yields `Paragraphs` →
+  `Runs` with their resolved style, color, bullet, alignment, and hyperlink
+  target, plus frame-level `AutoFitMode` / `VerticalAnchor` / `MarginInsets`; a
+  reopened `Table` yields its rows/columns, header/banding, per-cell text, fill,
+  and merge spans (`GridSpan` and `RowSpan`); a reopened `Image` yields its alt
+  text, crop, fit, rotation, opacity, and embedded bytes. Every shape, run, fill,
+  line, table, and image pptx-go emits round-trips back into the same model, and a
+  self-authored deck reopens byte-identically.
 - Best-effort reading of third-party decks: opening a deck pptx-go did not
   author (PowerPoint, Keynote export, another library) no longer fails or
   panics on content it cannot model. `Presentation.ReadWarnings()` reports each
   degradation — an unrecognized shape-tree element ignored at parse time
   (`WarnDroppedElement`), or a referenced part that was missing, dangling, or
   unparseable and was skipped (`WarnUnreadablePart`) — while every part pptx-go
-  does not model passes through unchanged on re-save. Fidelity preservation of
-  unrecognized content is not promised (D-048); a self-authored deck reports no
-  warnings.
+  does not model passes through unchanged on re-save. Dropped-element warnings
+  now also cover nested unmodeled content (e.g. an `<a:fld>` field inside a shape's
+  text body), and a theme part that exists but cannot be parsed degrades to a
+  `WarnUnreadablePart` (the deck keeps the default theme) rather than failing the
+  open. Fidelity preservation of unrecognized content is not promised (D-048); a
+  self-authored deck reports no warnings.
 - Read constructors (`NewFromBytes`, `NewFromFile`, `OpenStream`) now accept
   options: `WithLogger` makes read-time degradation visible to logs (a `Warn`
   event per dropped element / skipped part, mirroring `ReadWarnings`), and

@@ -305,17 +305,35 @@ doc tidies (Tier C) landed in the `chore(checkpoint)` PR; see D-049, D-050.
   status set to Complete. (Historical phase-plan / research-brief uses of
   `pptx.Open` as shorthand for the read model are left as-is.)
 
+**Tier-B landed (follow-up PR):**
+
+- *Nested-drop observability* — `WarnDroppedElement` now also covers nested
+  unmodeled content: a shape text body's unrecognized children (e.g. `<a:fld>`
+  fields) are recorded (`XTextParagraph.dropped` → `XSpTree.DroppedDescendants`)
+  and surfaced. Struct-unmarshal silent drops (unmodeled effects, etc.) remain a
+  documented limitation — `encoding/xml` ignores unknown children with no hook.
+  (audit: wiring #1 / test B5.)
+- *Round-trip read gaps closed* — `TextFrame` gained `AutoFitMode` /
+  `VerticalAnchor` / `MarginInsets` read accessors, asserted through round-trip;
+  `Cell.RowSpan > 1` round-trip asserted; a theme part that exists but fails to
+  parse now degrades to a `WarnUnreadablePart`. (audit: test F3/F4/F5, wiring #3.)
+- *Corpus + parity hardening* — `WarnUnreadablePart` corpus cases now assert the
+  Part URI and a Detail substring (not just `Kind`); `OpenStream`↔`NewFromBytes`
+  parity is tested. (audit: test F3, wiring #4.)
+
 **Deferred (tracked follow-ups, not V1.0 blockers):**
 
-- *Nested-drop observability* — `WarnDroppedElement` covers only top-level
-  shape-tree children; nested unmodeled content (e.g. `<a:fld>` fields,
-  unmodeled effects) is dropped without a warning. Broaden the warning surface
-  or document the limitation. (audit: wiring #1.)
-- *Round-trip read gaps* — `TextFrame` AutoFit/Anchor/Margins and `Cell.RowSpan>1`
-  are authored but not asserted through the read model; theme/master parse
-  failures degrade without a `ReadWarning`. (audit: test F4/F5, wiring #3.)
 - *Read-codec coverage gate* — `internal/opc`, `internal/ooxml/*`, and `pptx` are
-  not in `internal/coveragecheck/coverage.json` despite §11's bands. (audit: F9.)
+  not in `internal/coveragecheck/coverage.json` despite §11's bands. Adding them
+  is **not** a cleanup: the gate uses per-package coverage, and even with
+  cross-package attribution (`-coverpkg`) the read codecs sit well below the §11
+  bands (`internal/ooxml/slide` ≈ 25%, `pptx` ≈ 60% by func) because much of that
+  code is write/marshal paths — gating them needs a dedicated codec-test effort
+  plus a `-coverpkg` harness switch, tracked as its own initiative. (audit: F9.)
+- *Master/layout parse-failure warnings* — a malformed layout/master still yields
+  a nameless registry entry without a `ReadWarning` (`buildMasterRegistry` would
+  need to thread warnings out). Lower signal than the theme case, which landed.
+  (audit: wiring #3.)
 - *V2* — opaque `RawShape` preservation; pre-existing P3 builder-signature leaks
   (`Slide.Part`, `*slide.XSp` returns); custGeom/alt-text read accessors;
   lazy-streaming zip-bomb bound. (audit: hygiene M2, wiring #5.)
