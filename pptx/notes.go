@@ -52,6 +52,46 @@ func (s *Slide) SetSpeakerNotes(text string) {
 // HasSpeakerNotes reports whether the slide carries speaker notes.
 func (s *Slide) HasSpeakerNotes() bool { return s.notes != nil }
 
+// repopulateNotes reconstructs a slide's speaker-notes TextFrame from its
+// notesSlide part on open, so reopened notes are visible via SpeakerNotes() and
+// survive re-save (G6). Without this, a reopened deck's notes are invisible and
+// inspecting SpeakerNotes() then saving would overwrite them with an empty
+// frame. A referenced-but-unreadable notes part degrades to a WarnUnreadablePart
+// rather than failing the open (D-048). Caller holds p.mu (or is a constructor
+// before the value is shared).
+func (p *Presentation) repopulateNotes(s *Slide, sp *slide.SlidePart) {
+	rels := sp.Relationships().GetByType(opc.RelTypeNotesSlide)
+	if len(rels) == 0 {
+		return
+	}
+	target := rels[0].TargetURI()
+	if target == nil {
+		return
+	}
+	part := p.pkg.GetPart(target)
+	if part == nil {
+		p.addReadWarning(ReadWarning{
+			Kind:   WarnUnreadablePart,
+			Part:   target.URI(),
+			Detail: "referenced notesSlide part is missing from the package",
+		})
+		return
+	}
+	body, err := slide.ParseNotesBody(part.Blob())
+	if err != nil {
+		p.addReadWarning(ReadWarning{
+			Kind:   WarnUnreadablePart,
+			Part:   target.URI(),
+			Detail: "notesSlide XML could not be parsed: " + err.Error(),
+		})
+		return
+	}
+	if body == nil {
+		return
+	}
+	s.notes = &TextFrame{s: s, body: body}
+}
+
 // syncNotes materializes the notes parts for every slide carrying notes: a
 // shared notes master (created once, wired from presentation.xml) and a
 // per-slide notesSlide part wired from the slide. The slide→notesSlide

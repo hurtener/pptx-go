@@ -34,7 +34,9 @@ func NewStreamPackage() *StreamPackage {
 
 // OpenStream opens an OPC package from a file path using streaming (lazy loading).
 // The file handle remains open to support on-demand part loading.
-func OpenStream(path string) (*StreamPackage, error) {
+func OpenStream(path string, opts ...OpenOption) (*StreamPackage, error) {
+	cfg := resolveOpenConfig(opts)
+
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -62,17 +64,17 @@ func OpenStream(path string) (*StreamPackage, error) {
 	}
 
 	// Load only metadata; do not read part content yet.
-	if err := pkg.loadContentTypes(); err != nil {
+	if err := pkg.loadContentTypes(cfg); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("failed to load content types: %w", err)
 	}
 
-	if err := pkg.loadPartMetadata(); err != nil {
+	if err := pkg.loadPartMetadata(cfg); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("failed to load part metadata: %w", err)
 	}
 
-	if err := pkg.loadRelationships(); err != nil {
+	if err := pkg.loadRelationships(cfg); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("failed to load relationships: %w", err)
 	}
@@ -82,7 +84,9 @@ func OpenStream(path string) (*StreamPackage, error) {
 
 // OpenStreamFromReader opens an OPC package from an io.ReaderAt using streaming.
 // Note: the caller is responsible for keeping the ReaderAt valid for the lifetime of the package.
-func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
+func OpenStreamFromReader(r io.ReaderAt, size int64, opts ...OpenOption) (*StreamPackage, error) {
+	cfg := resolveOpenConfig(opts)
+
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open zip: %w", err)
@@ -96,15 +100,15 @@ func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
 		zipReader:     zipReader,
 	}
 
-	if err := pkg.loadContentTypes(); err != nil {
+	if err := pkg.loadContentTypes(cfg); err != nil {
 		return nil, fmt.Errorf("failed to load content types: %w", err)
 	}
 
-	if err := pkg.loadPartMetadata(); err != nil {
+	if err := pkg.loadPartMetadata(cfg); err != nil {
 		return nil, fmt.Errorf("failed to load part metadata: %w", err)
 	}
 
-	if err := pkg.loadRelationships(); err != nil {
+	if err := pkg.loadRelationships(cfg); err != nil {
 		return nil, fmt.Errorf("failed to load relationships: %w", err)
 	}
 
@@ -112,17 +116,12 @@ func OpenStreamFromReader(r io.ReaderAt, size int64) (*StreamPackage, error) {
 }
 
 // loadContentTypes loads content types (must be done eagerly).
-func (p *StreamPackage) loadContentTypes() error {
+func (p *StreamPackage) loadContentTypes(cfg openConfig) error {
 	for _, f := range p.zipReader.File {
 		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
 		if normalizedName == PathContentTypes {
-			rc, err := f.Open()
-			if err != nil {
-				return err
-			}
-			data, err := io.ReadAll(rc)
-			rc.Close()
+			data, err := readZipEntry(f, cfg.maxPartBytes)
 			if err != nil {
 				return err
 			}
@@ -132,8 +131,10 @@ func (p *StreamPackage) loadContentTypes() error {
 	return fmt.Errorf("[Content_Types].xml not found")
 }
 
-// loadPartMetadata loads only part metadata, deferring content loading.
-func (p *StreamPackage) loadPartMetadata() error {
+// loadPartMetadata loads only part metadata, deferring content loading. The
+// part body is read lazily, but the declared size and entry path are validated
+// here so an oversized or zip-slip part is rejected at open (CLAUDE.md §7).
+func (p *StreamPackage) loadPartMetadata(cfg openConfig) error {
 	for _, f := range p.zipReader.File {
 		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
@@ -147,6 +148,12 @@ func (p *StreamPackage) loadPartMetadata() error {
 		}
 		if normalizedName == "" || strings.HasSuffix(normalizedName, "/") {
 			continue
+		}
+		if err := safePartPath(normalizedName); err != nil {
+			return err
+		}
+		if cfg.maxPartBytes > 0 && f.UncompressedSize64 > uint64(cfg.maxPartBytes) {
+			return fmt.Errorf("%w: %q declares %d bytes (limit %d)", ErrPartTooLarge, f.Name, f.UncompressedSize64, cfg.maxPartBytes)
 		}
 
 		uri := NewPackURI("/" + normalizedName)
@@ -163,7 +170,7 @@ func (p *StreamPackage) loadPartMetadata() error {
 }
 
 // loadRelationships loads all relationship files.
-func (p *StreamPackage) loadRelationships() error {
+func (p *StreamPackage) loadRelationships(cfg openConfig) error {
 	for _, f := range p.zipReader.File {
 		// Normalize path.
 		normalizedName := NormalizeZipPath(f.Name)
@@ -171,13 +178,11 @@ func (p *StreamPackage) loadRelationships() error {
 		if !strings.Contains(normalizedName, PathRelsDir+"/") || !strings.HasSuffix(normalizedName, ".rels") {
 			continue
 		}
-
-		rc, err := f.Open()
-		if err != nil {
+		if err := safePartPath(normalizedName); err != nil {
 			return err
 		}
-		data, err := io.ReadAll(rc)
-		rc.Close()
+
+		data, err := readZipEntry(f, cfg.maxPartBytes)
 		if err != nil {
 			return err
 		}

@@ -814,7 +814,7 @@ notes.AddParagraph(pptx.ParagraphOpts{}).
     AddRun("Talking point 1: …", pptx.RunStyle{TypeRole: pptx.TypeBody})
 ```
 
-Speaker notes are RichText, themed, and round-trip through `pptx.Open`.
+Speaker notes are RichText, themed, and round-trip through `pptx.NewFromBytes` / `OpenStream`.
 pengui-slides v4 carries notes on `Slide.metadata.speakerNotes`; the
 scene IR's `SceneSlide.Notes` field maps directly. (D-022.)
 

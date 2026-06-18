@@ -102,6 +102,11 @@ type Presentation struct {
 	// Surfaced via ReadWarnings().
 	readWarnings []ReadWarning
 
+	// readPartLimit overrides the per-part decompressed size ceiling enforced
+	// when opening a deck (CLAUDE.md §7). nil = the opc default (100 MB); a value
+	// <= 0 disables the bound. Set via WithReadPartLimit on a read constructor.
+	readPartLimit *int64
+
 	// mu guards concurrent access.
 	mu sync.RWMutex
 }
@@ -183,21 +188,15 @@ func NewWithTemplate(name TemplateType) (*Presentation, error) {
 }
 
 // NewFromBytes creates a presentation from raw PPTX bytes.
-func NewFromBytes(data []byte) (*Presentation, error) {
+func NewFromBytes(data []byte, opts ...Option) (*Presentation, error) {
+	pres := newReadShell(opts)
+
 	reader := bytes.NewReader(data)
-	pkg, err := opc.Open(reader, int64(len(data)))
+	pkg, err := opc.Open(reader, int64(len(data)), pres.openOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse PPTX data: %w", err)
 	}
-
-	pres := &Presentation{
-		pkg:           pkg,
-		slides:        make([]*Slide, 0),
-		mediaManager:  NewMediaManager(),
-		masterManager: NewMasterManager(),
-		slideCounter:  0,
-		relCounter:    0,
-	}
+	pres.pkg = pkg
 
 	if err := pres.loadPresentationPart(); err != nil {
 		return nil, fmt.Errorf("failed to parse presentation part: %w", err)
@@ -207,26 +206,48 @@ func NewFromBytes(data []byte) (*Presentation, error) {
 }
 
 // NewFromFile creates a presentation from a PPTX file path.
-func NewFromFile(path string) (*Presentation, error) {
-	pkg, err := opc.OpenFile(path)
+func NewFromFile(path string, opts ...Option) (*Presentation, error) {
+	pres := newReadShell(opts)
+
+	pkg, err := opc.OpenFile(path, pres.openOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open PPTX file: %w", err)
 	}
-
-	pres := &Presentation{
-		pkg:           pkg,
-		slides:        make([]*Slide, 0),
-		mediaManager:  NewMediaManager(),
-		masterManager: NewMasterManager(),
-		slideCounter:  0,
-		relCounter:    0,
-	}
+	pres.pkg = pkg
 
 	if err := pres.loadPresentationPart(); err != nil {
 		return nil, fmt.Errorf("failed to parse presentation part: %w", err)
 	}
 
 	return pres, nil
+}
+
+// newReadShell builds a Presentation shell for a read constructor and applies
+// the caller's options before the package is opened, so WithLogger and
+// WithReadPartLimit take effect during parsing. It seeds an empty presentation
+// part so build-time options (e.g. WithFormat) are harmless no-ops on read —
+// loadPresentationPart replaces it with the parsed part.
+func newReadShell(opts []Option) *Presentation {
+	pres := &Presentation{
+		slides:           make([]*Slide, 0),
+		mediaManager:     NewMediaManager(),
+		masterManager:    NewMasterManager(),
+		presentationPart: presentation.NewPresentationPart(),
+	}
+	for _, o := range opts {
+		if o != nil {
+			o(pres)
+		}
+	}
+	return pres
+}
+
+// openOptions translates the read configuration into opc open options.
+func (p *Presentation) openOptions() []opc.OpenOption {
+	if p.readPartLimit == nil {
+		return nil
+	}
+	return []opc.OpenOption{opc.WithMaxPartBytes(*p.readPartLimit)}
 }
 
 // ============================================================================
@@ -390,6 +411,7 @@ func (p *Presentation) repopulateSlides() error {
 			num:          num,
 		}
 		s.shapeIDCounter.Store(1)
+		p.repopulateNotes(s, sp)
 		p.slides = append(p.slides, s)
 	}
 

@@ -73,6 +73,54 @@ func TestSpeakerNotes_RoundTrip(t *testing.T) {
 	}
 }
 
+// TestSpeakerNotes_ReadBack proves the read accessor reconstructs notes on a
+// reopened deck (not just that the bytes pass through), and guards the data-loss
+// footgun: inspecting SpeakerNotes() on a reopened deck and then re-saving must
+// preserve the notes rather than overwrite them with an empty frame.
+func TestSpeakerNotes_ReadBack(t *testing.T) {
+	const notes = "Talking point: keep it under five minutes."
+
+	p := pptx.New()
+	s := p.AddSlide()
+	s.AddRectangle(914400, 914400, 2743200, 1371600)
+	s.SetSpeakerNotes(notes)
+	data, err := p.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	reopened, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	rs := reopened.Slides()
+	if len(rs) != 1 {
+		t.Fatalf("reopened slides = %d, want 1", len(rs))
+	}
+	// The read accessor reconstructs a navigable notes TextFrame.
+	if !rs[0].HasSpeakerNotes() {
+		t.Fatal("HasSpeakerNotes() = false on a reopened deck that had notes")
+	}
+	paras := rs[0].SpeakerNotes().Paragraphs()
+	if len(paras) == 0 || len(paras[0].Runs()) == 0 {
+		t.Fatalf("reopened notes have no runs: %d paragraphs", len(paras))
+	}
+	if got := paras[0].Runs()[0].Text(); got != notes {
+		t.Errorf("reopened notes text = %q, want %q", got, notes)
+	}
+
+	// Data-loss guard: inspecting then re-saving must keep the notes. (Before the
+	// read-back fix, SpeakerNotes() created an empty frame that overwrote them.)
+	_ = rs[0].SpeakerNotes()
+	data2, err := reopened.WriteToBytes()
+	if err != nil {
+		t.Fatalf("re-WriteToBytes: %v", err)
+	}
+	if got := readZipPart(t, data2, "ppt/notesSlides/notesSlide1.xml"); !strings.Contains(got, notes) {
+		t.Errorf("notes destroyed by inspect-then-save:\n%s", got)
+	}
+}
+
 // TestSpeakerNotes_None confirms a deck with no notes emits no notes parts.
 func TestSpeakerNotes_None(t *testing.T) {
 	p := pptx.New()

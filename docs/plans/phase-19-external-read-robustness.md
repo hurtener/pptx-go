@@ -3,7 +3,7 @@
 **Subsystem:** pptx (read) + internal/ooxml (parsers)
 **RFC sections:** §16
 **Deps:** Phase 18 (the navigable read model external decks degrade against)
-**Status:** Draft
+**Status:** Complete
 
 ---
 
@@ -283,3 +283,39 @@ documented here per §4.3:
 - [x] Decision entries added (D-048). (PR#1)
 - [x] Master-plan §19 entry reconciled to D-048. (PR#1)
 - [ ] (Phase 20+) Docs site / skills updated. (inert)
+
+## 18. Wave 6 checkpoint audit — outcome & deferred follow-ups
+
+The read-only Wave 6 checkpoint (CLAUDE.md §17) audited Phases 18–19 across four
+lenses (wiring, RFC drift, test strength, hygiene). Tier-A defects and the cheap
+doc tidies (Tier C) landed in the `chore(checkpoint)` PR; see D-049, D-050.
+
+**Landed in the checkpoint:**
+
+- §7 read-path security bounds — per-part 100 MB ceiling (`ErrPartTooLarge`,
+  caller-configurable via `WithReadPartLimit`) + zip-slip rejection
+  (`ErrUnsafePartPath`), on both eager and streaming opens (D-049).
+- Read constructors accept `...Option`; `WithLogger` now logs read degradation
+  (§8); fuzz targets for `opc.Open` + `presentation`/rels/content-types parsers
+  (D-049).
+- Speaker-notes read-back + inspect-then-save data-loss fix (D-050).
+- Doc tidies: the non-existent `pptx.Open` symbol corrected to
+  `NewFromBytes`/`OpenStream` on the user-facing surfaces (RFC §16, glossary) and
+  the D-022 / D-047 references; Phase 18 plan §8 test paths corrected; this plan's
+  status set to Complete. (Historical phase-plan / research-brief uses of
+  `pptx.Open` as shorthand for the read model are left as-is.)
+
+**Deferred (tracked follow-ups, not V1.0 blockers):**
+
+- *Nested-drop observability* — `WarnDroppedElement` covers only top-level
+  shape-tree children; nested unmodeled content (e.g. `<a:fld>` fields,
+  unmodeled effects) is dropped without a warning. Broaden the warning surface
+  or document the limitation. (audit: wiring #1.)
+- *Round-trip read gaps* — `TextFrame` AutoFit/Anchor/Margins and `Cell.RowSpan>1`
+  are authored but not asserted through the read model; theme/master parse
+  failures degrade without a `ReadWarning`. (audit: test F4/F5, wiring #3.)
+- *Read-codec coverage gate* — `internal/opc`, `internal/ooxml/*`, and `pptx` are
+  not in `internal/coveragecheck/coverage.json` despite §11's bands. (audit: F9.)
+- *V2* — opaque `RawShape` preservation; pre-existing P3 builder-signature leaks
+  (`Slide.Part`, `*slide.XSp` returns); custGeom/alt-text read accessors;
+  lazy-streaming zip-bomb bound. (audit: hygiene M2, wiring #5.)

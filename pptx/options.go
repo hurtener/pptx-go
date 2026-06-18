@@ -49,10 +49,21 @@ func WithFontSource(src FontSource) Option {
 }
 
 // WithLogger injects a structured logger (RFC §18, D-042). When set, the
-// builder emits a Debug write-boundary event on each write/save; no logger =
-// no logs (zero-cost). The handler's performance is the caller's concern.
+// builder emits a Debug write-boundary event on each write/save, and a read
+// constructor emits a Warn event per non-fatal degradation (a dropped element
+// or skipped part) it also records in ReadWarnings. No logger = no logs
+// (zero-cost). The handler's performance is the caller's concern.
 func WithLogger(l *slog.Logger) Option {
 	return func(p *Presentation) { p.logger = l }
+}
+
+// WithReadPartLimit sets the per-part decompressed size ceiling enforced when
+// opening a deck (CLAUDE.md §7): a part larger than n bytes is rejected with an
+// error wrapping opc.ErrPartTooLarge rather than allocated. n <= 0 disables the
+// bound. Unset, the default is 100 MB. It applies only to the read constructors
+// (NewFromBytes, NewFromFile, OpenStream); it is a no-op on New().
+func WithReadPartLimit(n int64) Option {
+	return func(p *Presentation) { p.readPartLimit = &n }
 }
 
 // WithTheme sets the active theme (default DefaultTheme). The theme drives

@@ -60,8 +60,10 @@ func (p *Presentation) ReadWarnings() []ReadWarning {
 
 // addReadWarning appends w, de-duplicated per (Kind, Part, Element) so a deck
 // with many instances of the same unrecognized element on a part yields one
-// warning (R1). Called single-threaded during open, before the presentation is
-// handed to the caller, so it does not take p.mu.
+// warning (R1). When a logger is injected (WithLogger), each distinct
+// degradation is also emitted as a Warn event so it is visible to logs, not just
+// ReadWarnings (CLAUDE.md §8). Called single-threaded during open, before the
+// presentation is handed to the caller, so it does not take p.mu.
 func (p *Presentation) addReadWarning(w ReadWarning) {
 	for _, e := range p.readWarnings {
 		if e.Kind == w.Kind && e.Part == w.Part && e.Element == w.Element {
@@ -69,6 +71,14 @@ func (p *Presentation) addReadWarning(w ReadWarning) {
 		}
 	}
 	p.readWarnings = append(p.readWarnings, w)
+	if p.logger != nil {
+		p.logger.Warn("pptx: read degradation",
+			"kind", w.Kind.String(),
+			"part", w.Part,
+			"element", w.Element,
+			"detail", w.Detail,
+		)
+	}
 }
 
 // sortReadWarnings orders the collected warnings deterministically (by part,
