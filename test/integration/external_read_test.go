@@ -106,8 +106,10 @@ func injectIntoSpTree(t *testing.T, parts map[string][]byte, xmlFragment string)
 
 // wantWarning describes one ReadWarning a corpus variant must surface.
 type wantWarning struct {
-	kind    pptx.ReadWarningKind
-	element string // empty = don't care (e.g. for unreadable-part warnings)
+	kind           pptx.ReadWarningKind
+	element        string // empty = don't assert the element
+	part           string // empty = don't assert the part URI
+	detailContains string // empty = don't assert the detail substring
 }
 
 // corpusEntry is one synthetic external-style deck plus its expected degradation.
@@ -194,7 +196,7 @@ func externalCorpus() []corpusEntry {
 				delete(parts, slide1)
 				delete(parts, "ppt/slides/_rels/slide1.xml.rels")
 			},
-			want: &wantWarning{kind: pptx.WarnUnreadablePart},
+			want: &wantWarning{kind: pptx.WarnUnreadablePart, part: "/ppt/slides/slide1.xml", detailContains: "missing from the package"},
 		},
 		{
 			name: "dangling_slide_relationship",
@@ -208,7 +210,7 @@ func externalCorpus() []corpusEntry {
 				}
 				parts["ppt/_rels/presentation.xml.rels"] = []byte(out)
 			},
-			want: &wantWarning{kind: pptx.WarnUnreadablePart},
+			want: &wantWarning{kind: pptx.WarnUnreadablePart, detailContains: "has no target"},
 		},
 		{
 			name: "malformed_slide_xml",
@@ -217,7 +219,56 @@ func externalCorpus() []corpusEntry {
 				// a warn-and-skip rather than a hard error or panic.
 				parts[slide1] = []byte(`<?xml version="1.0"?><p:sld><p:cSld><p:spTree><p:sp`)
 			},
-			want: &wantWarning{kind: pptx.WarnUnreadablePart},
+			want: &wantWarning{kind: pptx.WarnUnreadablePart, part: "/ppt/slides/slide1.xml", detailContains: "could not be parsed"},
+		},
+		{
+			name: "text_body_field",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A slide-number field <a:fld> inside a shape's text body — common in
+				// real decks, unmodeled by pptx-go, dropped at parse. It must surface
+				// as a nested dropped-element warning, not vanish silently.
+				injectIntoSpTree(t, parts,
+					`<p:sp><p:nvSpPr><p:cNvPr id="9" name="tb"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr/>`+
+						`<p:txBody><a:bodyPr/><a:p><a:fld id="{F}" type="slidenum"><a:t>3</a:t></a:fld></a:p></p:txBody></p:sp>`)
+			},
+			want: &wantWarning{kind: pptx.WarnDroppedElement, element: "fld", part: "/ppt/slides/slide1.xml", detailContains: "text-body element"},
+		},
+		{
+			name: "table_cell_field",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A field inside a TABLE CELL's text body — the cell's graphicFrame
+				// parses cleanly, so without descending into table cells this fld
+				// would be dropped with no warning (the dangerous false-confidence
+				// case). It must surface like any other nested drop.
+				injectIntoSpTree(t, parts,
+					`<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="50" name="t"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>`+
+						`<p:xfrm><a:off x="0" y="0"/><a:ext cx="100" cy="100"/></p:xfrm>`+
+						`<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">`+
+						`<a:tbl><a:tblGrid><a:gridCol w="100"/></a:tblGrid>`+
+						`<a:tr h="100"><a:tc><a:txBody><a:bodyPr/><a:p><a:fld id="{G}" type="slidenum"><a:t>3</a:t></a:fld></a:p></a:txBody></a:tc></a:tr>`+
+						`</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`)
+			},
+			want: &wantWarning{kind: pptx.WarnDroppedElement, element: "fld", part: "/ppt/slides/slide1.xml", detailContains: "text-body element"},
+		},
+		{
+			name: "theme_absent",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A deck with no theme part at all is not a degradation — it must
+				// open cleanly with no warning (ErrThemeNotFound is silent).
+				delete(parts, "ppt/theme/theme1.xml")
+			},
+			expectClean:        true,
+			keepsAuthoredShape: true,
+		},
+		{
+			name: "malformed_theme",
+			mutate: func(t *testing.T, parts map[string][]byte) {
+				// A theme part that exists but cannot be parsed: the deck keeps the
+				// default theme and warns, rather than failing the open.
+				parts["ppt/theme/theme1.xml"] = []byte(`<a:theme><a:themeElements`)
+			},
+			want:               &wantWarning{kind: pptx.WarnUnreadablePart, part: "/ppt/theme/theme1.xml", detailContains: "theme could not be parsed"},
+			keepsAuthoredShape: true,
 		},
 		{
 			name: "stray_custom_part",
@@ -315,14 +366,21 @@ func TestExternalRead_CorpusNoPanic(t *testing.T) {
 	}
 }
 
-// hasWarning reports whether ws contains a warning matching want (element is
-// matched only when want.element is non-empty).
+// hasWarning reports whether ws contains a warning matching want. Each of
+// element / part / detailContains is asserted only when non-empty, so a case can
+// pin down as much of the warning as it cares about.
 func hasWarning(ws []pptx.ReadWarning, want wantWarning) bool {
 	for _, w := range ws {
 		if w.Kind != want.kind {
 			continue
 		}
 		if want.element != "" && w.Element != want.element {
+			continue
+		}
+		if want.part != "" && w.Part != want.part {
+			continue
+		}
+		if want.detailContains != "" && !strings.Contains(w.Detail, want.detailContains) {
 			continue
 		}
 		return true
