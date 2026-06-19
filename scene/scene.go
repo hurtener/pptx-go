@@ -69,13 +69,16 @@ type Scene struct {
 }
 
 // SceneSlide is one slide in a Scene: a layout intent, the top-level node list,
-// optional speaker notes, and a theme variant.
+// optional speaker notes, a theme variant, and body-stack alignment. The zero
+// value for Content ({VAlignTop, HAlignLeft}) reproduces the pre-Phase-13
+// layout unchanged — fully backward-compatible.
 type SceneSlide struct {
 	ID      string
 	Layout  LayoutKind
 	Nodes   []SlideNode
 	Notes   RichText
 	Variant Variant
+	Content Alignment // body-stack alignment; zero value = top-left (default)
 }
 
 // LayoutWarning is a non-fatal layout issue surfaced in Stats.Warnings (e.g.
