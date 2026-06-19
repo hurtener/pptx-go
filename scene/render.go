@@ -73,7 +73,7 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 		r.addRichText(ps, p, sl.Notes, pptx.TypeBody)
 	}
 
-	for _, pl := range r.layout(sl.Nodes, sl.ID) {
+	for _, pl := range r.layout(sl.Nodes, sl.ID, sl.Content) {
 		r.renderNode(ps, pl.box, pl.node, sl.ID)
 	}
 }
@@ -138,7 +138,10 @@ func (r *renderer) bodyRegion() pptx.Box {
 // body, then foreground decorations (on top). Decorations are overlays placed
 // against the full slide (anchor-relative) and do not consume body-stack height;
 // every other node stacks vertically in the body region in IR order.
-func (r *renderer) layout(nodes []SlideNode, slideID string) []placement {
+//
+// align carries the slide's Content alignment; it is applied only to the body
+// stack (not to decorations or section-dividers, which are full-slide overlays).
+func (r *renderer) layout(nodes []SlideNode, slideID string, align Alignment) []placement {
 	cx, cy := r.pres.SlideSize()
 	fullSlide := pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}
 	var bg, fg, sections, stacked []SlideNode
@@ -163,7 +166,7 @@ func (r *renderer) layout(nodes []SlideNode, slideID string) []placement {
 	for _, n := range sections {
 		out = append(out, placement{n, fullSlide})
 	}
-	out = append(out, r.stackIn(r.bodyRegion(), stacked, slideID)...)
+	out = append(out, r.alignedStackIn(r.bodyRegion(), stacked, slideID, align)...)
 	for _, n := range fg {
 		out = append(out, placement{n, fullSlide})
 	}
@@ -386,4 +389,131 @@ func maxEMU(a, b pptx.EMU) pptx.EMU {
 		return a
 	}
 	return b
+}
+
+// alignedStackIn is the body-stack layout with Phase-13 alignment applied.
+// It is the sole caller of the alignment logic; container renderers (TwoColumn,
+// Grid, Card, CardSection) continue to call stackIn so their sub-layouts are
+// unaffected by slide-level alignment (spec: "OUT of scope — top-level body
+// stack only").
+//
+// With the zero Alignment {VAlignTop, HAlignLeft} and no per-node Align
+// overrides, alignedStackIn produces placements byte-identical to stackIn
+// (the pre-Phase-13 behavior). No fast-path is used because per-node Align
+// fields must be checked even when the slide's Alignment is zero.
+func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID string, align Alignment) []placement {
+	n := len(nodes)
+	if n == 0 {
+		return nil
+	}
+
+	gap := r.theme.ResolveSpace(pptx.SpaceMD)
+
+	// Compute per-node preferred heights and the total stack height
+	// (node heights + standard gap between each pair).
+	heights := make([]pptx.EMU, n)
+	var bodyH pptx.EMU // sum of node heights only (no gaps)
+	for i, nd := range nodes {
+		heights[i] = preferredHeight(nd)
+		bodyH += heights[i]
+	}
+	// totalH = bodyH + gap*(n-1); gap appears between nodes, not after the last.
+	var gapCount pptx.EMU
+	if n > 1 {
+		gapCount = pptx.EMU(n - 1)
+	}
+	totalH := bodyH + gap*gapCount
+
+	// Vertical: compute the Y coordinate of the first node.
+	startY := box.Y
+	switch align.Vertical {
+	case VAlignCenter:
+		slack := box.H - totalH
+		if slack > 0 {
+			startY = box.Y + slack/2
+		}
+	case VAlignBottom:
+		candidate := box.Bottom() - totalH
+		if candidate > box.Y {
+			startY = candidate
+		}
+		// VAlignTop and VAlignJustify both start at box.Y; Justify adjusts the gap.
+	}
+
+	// Effective inter-node gap: VAlignJustify distributes slack into the gaps.
+	effectiveGap := gap
+	if align.Vertical == VAlignJustify && n > 1 {
+		slack := box.H - bodyH // total vertical space available for gaps
+		if slack > gap*pptx.EMU(n-1) {
+			effectiveGap = slack / pptx.EMU(n-1)
+		}
+	}
+
+	// Overflow warning: same semantics as stackIn (fires when the content
+	// is taller than the box, regardless of how vertical alignment clamped it).
+	if totalH > box.H {
+		r.warn(slideID, "content overflows its region")
+	}
+
+	out := make([]placement, 0, n)
+	y := startY
+	for i, nd := range nodes {
+		h := heights[i]
+		hAlign := nodeEffectiveHAlign(nd, align.Horizontal)
+
+		plBox := pptx.Box{X: box.X, Y: y, W: box.W, H: h}
+
+		if hAlign != HAlignLeft {
+			nw := nodeNaturalWidth(nd, r.theme)
+			if nw > box.W {
+				nw = box.W
+			}
+			if nw > 0 && nw < box.W {
+				var offsetX pptx.EMU
+				switch hAlign {
+				case HAlignCenter:
+					offsetX = (box.W - nw) / 2
+				case HAlignRight:
+					offsetX = box.W - nw
+				}
+				plBox.X = box.X + offsetX
+				plBox.W = nw
+			}
+		}
+
+		out = append(out, placement{nd, plBox})
+		y += h + effectiveGap
+	}
+	return out
+}
+
+// nodeEffectiveHAlign returns the horizontal alignment that applies to n in
+// the body stack. The priority rule mirrors the spec: a non-zero per-node
+// Align field overrides the slide-level slideHAlign. Container and visual
+// nodes (Grid, TwoColumn, Table, Card, CardSection, Chart, CodeBlock, Image,
+// Callout, Flow, Divider, Arrow) always return HAlignLeft so they keep their
+// full box width — alignment within them is their own concern.
+func nodeEffectiveHAlign(n SlideNode, slideHAlign HAlign) HAlign {
+	var nodeAlign HAlign
+	switch v := n.(type) {
+	case Hero:
+		nodeAlign = v.Align
+	case Heading:
+		nodeAlign = v.Align
+	case Prose:
+		nodeAlign = v.Align
+	case Quote:
+		nodeAlign = v.Align
+	case Chip:
+		nodeAlign = v.Align
+	case SectionDivider:
+		nodeAlign = v.Align
+	default:
+		// Containers and visuals: always full-width. Not subject to h-align.
+		return HAlignLeft
+	}
+	if nodeAlign != 0 {
+		return nodeAlign
+	}
+	return slideHAlign
 }

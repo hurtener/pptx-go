@@ -102,28 +102,37 @@ func (node) isSlideNode() {}
 // ============================================================================
 
 // Hero is a cover-slide title block: eyebrow + title + optional subtitle.
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type Hero struct {
 	node
 	Eyebrow  string
 	Title    string
 	Subtitle string
+	Align    HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (Hero) NodeKind() NodeKind { return KindHero }
 
 // Prose is one or more body paragraphs.
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type Prose struct {
 	node
 	Paragraphs []RichText
+	Align      HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (Prose) NodeKind() NodeKind { return KindProse }
 
 // Heading is a section heading at the given level (1–6).
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type Heading struct {
 	node
 	Text  RichText
 	Level int
+	Align HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (Heading) NodeKind() NodeKind { return KindHeading }
@@ -162,10 +171,13 @@ type Divider struct {
 func (Divider) NodeKind() NodeKind { return KindDivider }
 
 // Quote is a pull quote with optional attribution.
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type Quote struct {
 	node
 	Text        RichText
 	Attribution string
+	Align       HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (Quote) NodeKind() NodeKind { return KindQuote }
@@ -250,11 +262,14 @@ const (
 )
 
 // Chip is an inline pill.
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type Chip struct {
 	node
 	Label string
 	Tone  ChipTone
 	Color ColorRole
+	Align HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (Chip) NodeKind() NodeKind { return KindChip }
@@ -397,10 +412,13 @@ type Decoration struct {
 func (Decoration) NodeKind() NodeKind { return KindDecoration }
 
 // SectionDivider is a full-bleed chapter break (a whole slide).
+// Align overrides the slide's Content.Horizontal for this node; the zero
+// value (HAlignLeft) inherits the slide default.
 type SectionDivider struct {
 	node
 	Eyebrow string
 	Label   string
+	Align   HAlign // per-node horizontal alignment override; 0 = inherit slide
 }
 
 func (SectionDivider) NodeKind() NodeKind { return KindSectionDivider }
