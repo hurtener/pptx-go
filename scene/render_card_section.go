@@ -10,6 +10,6 @@ import "github.com/hurtener/pptx-go/pptx"
 func (r *renderer) renderCardSection(ps *pptx.Slide, box pptx.Box, v CardSection, slideID string) {
 	body := r.renderCardChrome(ps, box, cardChrome{header: v.Header}, slideID)
 	for _, pl := range r.stackIn(body, v.Body, slideID) {
-		r.renderNode(ps, pl.box, pl.node, slideID)
+		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
 }

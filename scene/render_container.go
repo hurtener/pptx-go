@@ -16,10 +16,10 @@ func (r *renderer) renderTwoColumn(ps *pptx.Slide, box pptx.Box, v TwoColumn, sl
 		return
 	}
 	for _, pl := range r.stackIn(cols[0], v.Left, slideID) {
-		r.renderNode(ps, pl.box, pl.node, slideID)
+		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
 	for _, pl := range r.stackIn(cols[1], v.Right, slideID) {
-		r.renderNode(ps, pl.box, pl.node, slideID)
+		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
 }
 
@@ -30,7 +30,7 @@ func (r *renderer) renderGrid(ps *pptx.Slide, box pptx.Box, v Grid, slideID stri
 		if i >= len(cells) {
 			break
 		}
-		r.renderNode(ps, cells[i], n, slideID)
+		r.renderNode(ps, cells[i], n, slideID, HAlignLeft)
 	}
 }
 

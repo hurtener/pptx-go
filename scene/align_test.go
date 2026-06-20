@@ -1,7 +1,10 @@
 package scene
 
 import (
+	"archive/zip"
 	"bytes"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/hurtener/pptx-go/pptx"
@@ -84,18 +87,14 @@ func TestAlignBottom_Vertical(t *testing.T) {
 	}
 }
 
-// TestAlignCenter_Horizontal_Heading checks that HAlignCenter narrows a short
-// Heading's box to its naturalWidth and centers it in the body region.
+// TestAlignCenter_Horizontal_Heading checks that HAlignCenter keeps a Heading's
+// box at full body width (paragraph alignment handles centering within the frame)
+// and stores HAlignCenter on the placement so the renderer can set algn="ctr".
 func TestAlignCenter_Horizontal_Heading(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
 
 	h := Heading{Text: RichText{{Text: "Short"}}, Level: 2}
-	nw := nodeNaturalWidth(h, r.theme)
-	if nw >= body.W {
-		t.Skip("naturalWidth >= body width; centering has no effect")
-	}
-
 	nodes := []SlideNode{h}
 	placements := r.layout(nodes, "test", Alignment{Horizontal: HAlignCenter})
 
@@ -110,32 +109,27 @@ func TestAlignCenter_Horizontal_Heading(t *testing.T) {
 		t.Fatal("Heading placement not found")
 	}
 
-	wantX := body.X + (body.W-nw)/2
-	wantW := nw
-	if got.box.X != wantX {
-		t.Errorf("centered Heading X = %d, want %d", got.box.X, wantX)
+	// Text nodes keep the full body-width box; paragraph alignment centers within it.
+	if got.box.X != body.X {
+		t.Errorf("centered Heading X = %d, want body.X %d (full-width box)", got.box.X, body.X)
 	}
-	if got.box.W != wantW {
-		t.Errorf("centered Heading W = %d, want %d (= naturalWidth)", got.box.W, wantW)
+	if got.box.W != body.W {
+		t.Errorf("centered Heading W = %d, want body.W %d (full-width box)", got.box.W, body.W)
 	}
-	// X must be to the right of the body left edge.
-	if got.box.X <= body.X {
-		t.Errorf("centered heading X (%d) should be > body.X (%d)", got.box.X, body.X)
+	// The effective alignment is carried on the placement for the renderer.
+	if got.hAlign != HAlignCenter {
+		t.Errorf("placement.hAlign = %v, want HAlignCenter", got.hAlign)
 	}
 }
 
-// TestAlignRight_Horizontal_Heading checks that HAlignRight places a short
-// Heading flush with the body right edge.
+// TestAlignRight_Horizontal_Heading checks that HAlignRight keeps a Heading's
+// box at full body width and stores HAlignRight on the placement so the renderer
+// can set algn="r" on every paragraph.
 func TestAlignRight_Horizontal_Heading(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
 
 	h := Heading{Text: RichText{{Text: "Short"}}, Level: 2}
-	nw := nodeNaturalWidth(h, r.theme)
-	if nw >= body.W {
-		t.Skip("naturalWidth >= body width; right-align has no effect")
-	}
-
 	nodes := []SlideNode{h}
 	placements := r.layout(nodes, "test", Alignment{Horizontal: HAlignRight})
 
@@ -150,26 +144,26 @@ func TestAlignRight_Horizontal_Heading(t *testing.T) {
 		t.Fatal("Heading placement not found")
 	}
 
-	// Right edge of the placed box should equal the body's right edge.
-	if got.box.Right() != body.Right() {
-		t.Errorf("right-aligned Heading right edge = %d, want %d (body right)", got.box.Right(), body.Right())
+	// Text nodes keep the full body-width box; paragraph alignment right-aligns within it.
+	if got.box.X != body.X {
+		t.Errorf("right-aligned Heading X = %d, want body.X %d (full-width box)", got.box.X, body.X)
 	}
-	if got.box.W != nw {
-		t.Errorf("right-aligned Heading W = %d, want %d (naturalWidth)", got.box.W, nw)
+	if got.box.W != body.W {
+		t.Errorf("right-aligned Heading W = %d, want body.W %d (full-width box)", got.box.W, body.W)
+	}
+	if got.hAlign != HAlignRight {
+		t.Errorf("placement.hAlign = %v, want HAlignRight", got.hAlign)
 	}
 }
 
 // TestAlignPerNode_Override_HeadingRight checks that a per-node HAlignRight
-// overrides the slide-level HAlignLeft default.
+// overrides the slide-level HAlignLeft default and that the placement carries
+// HAlignRight so the renderer can set algn="r" on its paragraphs.
 func TestAlignPerNode_Override_HeadingRight(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
 
 	h := Heading{Text: RichText{{Text: "Right-node"}}, Level: 1, Align: HAlignRight}
-	nw := nodeNaturalWidth(h, r.theme)
-	if nw >= body.W {
-		t.Skip("naturalWidth >= body width")
-	}
 
 	// Slide default = left; node overrides to right.
 	nodes := []SlideNode{h}
@@ -186,23 +180,26 @@ func TestAlignPerNode_Override_HeadingRight(t *testing.T) {
 		t.Fatal("Heading placement not found")
 	}
 
-	if got.box.Right() != body.Right() {
-		t.Errorf("per-node right Heading right edge = %d, want %d", got.box.Right(), body.Right())
+	// Full-width box: the text frame spans body.W; paragraph right-aligns within it.
+	if got.box.X != body.X {
+		t.Errorf("per-node right Heading X = %d, want body.X %d", got.box.X, body.X)
+	}
+	if got.box.W != body.W {
+		t.Errorf("per-node right Heading W = %d, want body.W %d", got.box.W, body.W)
+	}
+	if got.hAlign != HAlignRight {
+		t.Errorf("placement.hAlign = %v, want HAlignRight", got.hAlign)
 	}
 }
 
 // TestAlignPerNode_Override_NodeCenterSlideLeft checks that a per-node
-// HAlignCenter overrides a slide-level HAlignLeft.
+// HAlignCenter overrides a slide-level HAlignLeft, keeps the full-width box,
+// and records HAlignCenter on the placement for the renderer.
 func TestAlignPerNode_Override_NodeCenterSlideLeft(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
 
 	h := Heading{Text: RichText{{Text: "Ctr"}}, Level: 2, Align: HAlignCenter}
-	nw := nodeNaturalWidth(h, r.theme)
-	if nw >= body.W {
-		t.Skip("naturalWidth >= body width")
-	}
-
 	nodes := []SlideNode{h}
 	placements := r.layout(nodes, "test", Alignment{Horizontal: HAlignLeft})
 
@@ -217,9 +214,15 @@ func TestAlignPerNode_Override_NodeCenterSlideLeft(t *testing.T) {
 		t.Fatal("Heading placement not found")
 	}
 
-	wantX := body.X + (body.W-nw)/2
-	if got.box.X != wantX {
-		t.Errorf("per-node center: X = %d, want %d", got.box.X, wantX)
+	// Full-width box: no physical centering of the frame; paragraph centering does the work.
+	if got.box.X != body.X {
+		t.Errorf("per-node center: X = %d, want body.X %d", got.box.X, body.X)
+	}
+	if got.box.W != body.W {
+		t.Errorf("per-node center: W = %d, want body.W %d", got.box.W, body.W)
+	}
+	if got.hAlign != HAlignCenter {
+		t.Errorf("placement.hAlign = %v, want HAlignCenter", got.hAlign)
 	}
 }
 
@@ -379,5 +382,85 @@ func TestAlignDeterminism_ByteIdentical(t *testing.T) {
 	}
 	if !bytes.Equal(a, seq) {
 		t.Fatal("aligned scene: default-worker render differs from sequential render")
+	}
+}
+
+// alignZipPart extracts a named part from a PPTX zip archive.
+func alignZipPart(t *testing.T, data []byte, name string) string {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatalf("open zip: %v", err)
+	}
+	for _, f := range zr.File {
+		if f.Name == name {
+			rc, _ := f.Open()
+			defer func() { _ = rc.Close() }()
+			b, _ := io.ReadAll(rc)
+			return string(b)
+		}
+	}
+	t.Fatalf("part %s not found", name)
+	return ""
+}
+
+// TestAlignParagraph_XMLAttributes verifies that the rendered slide XML contains
+// the correct OOXML algn attributes for centered and right-aligned headings, and
+// that a left-aligned (default) heading emits no algn attribute.
+//
+// This is the key correctness guard: it proves that paragraph alignment (not just
+// placement box arithmetic) reaches the PPTX bytes.
+func TestAlignParagraph_XMLAttributes(t *testing.T) {
+	sc := Scene{
+		Slides: []SceneSlide{
+			{
+				ID:      "center-slide",
+				Content: Alignment{Horizontal: HAlignCenter},
+				Nodes: []SlideNode{
+					Heading{Text: RichText{{Text: "Centered"}}, Level: 1},
+				},
+			},
+			{
+				ID:      "right-slide",
+				Content: Alignment{Horizontal: HAlignRight},
+				Nodes: []SlideNode{
+					Heading{Text: RichText{{Text: "Right"}}, Level: 2},
+				},
+			},
+			{
+				ID:      "left-slide",
+				Content: Alignment{Horizontal: HAlignLeft},
+				Nodes: []SlideNode{
+					Heading{Text: RichText{{Text: "Left"}}, Level: 3},
+				},
+			},
+		},
+	}
+
+	pres := pptx.New()
+	if _, err := Render(pres, sc); err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	data, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+
+	// Slide 1: HAlignCenter → paragraph must carry algn="ctr".
+	slide1 := alignZipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide1, `algn="ctr"`) {
+		t.Errorf("slide1 (center heading): expected algn=\"ctr\" in XML\n%.400s", slide1)
+	}
+
+	// Slide 2: HAlignRight → paragraph must carry algn="r".
+	slide2 := alignZipPart(t, data, "ppt/slides/slide2.xml")
+	if !strings.Contains(slide2, `algn="r"`) {
+		t.Errorf("slide2 (right heading): expected algn=\"r\" in XML\n%.400s", slide2)
+	}
+
+	// Slide 3: HAlignLeft → no algn attribute (OOXML default = left).
+	slide3 := alignZipPart(t, data, "ppt/slides/slide3.xml")
+	if strings.Contains(slide3, `algn=`) {
+		t.Errorf("slide3 (left heading): unexpected algn attr in XML (should default to left)\n%.400s", slide3)
 	}
 }
