@@ -675,6 +675,24 @@ proven by parallel≡sequential equality).
 - Two flexible nodes share the slack proportional to preferred height.
 - Every non-fill mode is byte-identical; determinism holds under N workers.
 
+#### Phase 24 — slide chrome
+
+**Subsystem:** scene
+**RFC sections:** §10.2, §10.6
+**Deps:** Phase 06 (leaves), Phase 11 (Image/asset resolution).
+**What lands:**
+- `scene/scene.go` — a `Chrome` struct on `Scene` (brand slot + page total +
+  `Enabled`) and `SceneSlide.Section` / `.PageNumber` fields.
+- `scene/chrome.go` — opt-in chrome drawn outside a shrunk body region: a top
+  section eyebrow + hairline rule, and a bottom footer with a brand slot
+  (text or image asset) and an `N / total` page number. Native shapes reusing
+  existing tokens; a brand image forces sequential composition.
+**Acceptance criteria:**
+- A chrome-enabled deck renders a consistent footer page number + per-slide
+  section eyebrow outside the body box; the body region shrinks to make room.
+- Page total and per-slide number auto-derive and are overridable.
+- Chrome disabled is byte-identical; determinism holds under N workers.
+
 ---
 
 ## 4. Post-V1 backlog

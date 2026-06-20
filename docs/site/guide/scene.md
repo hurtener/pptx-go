@@ -206,3 +206,27 @@ proportion to their natural height, deterministically. Text leaves and atoms
 keep their size (stretching text is meaningless), and a slide with no flexible
 node simply top-aligns. This is a mechanism, not a judgment — the engine never
 decides on its own that a slide looks thin; you opt a slide into fill.
+
+### Slide chrome
+
+Set `Scene.Chrome` to draw consistent per-slide furniture **outside** the body
+region — the body shrinks to make room, so chrome never overlaps content:
+
+```go
+sc := scene.Scene{
+    Chrome: scene.Chrome{Enabled: true, Brand: "ACME", Total: 0}, // Total 0 = slide count
+    Slides: []scene.SceneSlide{
+        {ID: "intro", Section: "DIRECTION", Nodes: …}, // eyebrow "DIRECTION", footer "1 / N"
+        {ID: "ask",   Section: "THE ASK",   Nodes: …},
+    },
+}
+```
+
+When enabled, each slide gets a bottom footer with the brand slot (left) and an
+`N / total` page number (right); a slide that sets `Section` also gets a top
+eyebrow label + hairline rule. The page total defaults to the slide count and
+each slide's number to its position (both overridable via `Chrome.Total` and
+`SceneSlide.PageNumber`). The brand slot is text (`Chrome.Brand`) or an image
+(`Chrome.BrandAsset`, resolved through your `AssetResolver`). Chrome colors come
+from theme tokens, so a theme swap re-skins it. Leaving `Chrome` at its zero
+value (disabled) renders exactly as before.

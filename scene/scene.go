@@ -63,11 +63,29 @@ type Metadata struct {
 	Subject string
 }
 
+// Chrome configures optional, opt-in slide chrome (RFC §10.2): recurring
+// per-slide furniture drawn outside the body region — a top section eyebrow and
+// a bottom footer (brand slot + "N / total" page number). The zero value
+// (Enabled == false) draws no chrome, so a chrome-free deck is byte-identical to
+// one authored before this field existed.
+//
+// Chrome is a mechanism, not a judgment (D-026): the engine draws the bands it
+// is handed and composes the page-number string, but invents no brand and no
+// section names. Colors resolve through theme tokens (TextMuted, ColorSurfaceAlt)
+// so a theme swap re-skins chrome.
+type Chrome struct {
+	Enabled    bool    // master switch; false (zero value) = no chrome
+	Brand      string  // footer-left brand text; used when BrandAsset is empty
+	BrandAsset AssetID // footer-left brand image, resolved via the AssetResolver
+	Total      int     // page-number denominator ("N / Total"); 0 = len(Scene.Slides)
+}
+
 // Scene is the input to Render.
 type Scene struct {
 	Theme  *pptx.Theme // optional; the builder's default theme if nil
 	Slides []SceneSlide
 	Meta   Metadata
+	Chrome Chrome // optional opt-in slide chrome; zero value = disabled
 }
 
 // SceneSlide is one slide in a Scene: a layout intent, the top-level node list,
@@ -84,6 +102,8 @@ type SceneSlide struct {
 	Variant    Variant
 	Content    Alignment  // body-stack alignment; zero value = top-left (default)
 	Background Background // full-bleed slide background; zero value = no background (BackgroundNone)
+	Section    string     // chrome: top eyebrow label; empty = no eyebrow on this slide
+	PageNumber int        // chrome: the N in "N / total"; 0 = scene position (1-based)
 }
 
 // LayoutWarning is a non-fatal layout issue surfaced in Stats.Warnings (e.g.
@@ -347,7 +367,12 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		cfg.logger.Debug("scene: render start", "slides", len(s.Slides), "workers", workers)
 	}
 
-	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: ctx}
+	base := &renderer{pres: pres, cfg: cfg, theme: pres.Theme(), ctx: ctx,
+		chrome: s.Chrome, chromeTotal: chromeTotalFor(s)}
+	// A brand-image chrome is the only chrome path that registers global media;
+	// like other media-bearing slides it must compose sequentially so the brand
+	// part is numbered deterministically. Brand-text chrome stays parallel.
+	chromeSerial := chromeNeedsSerial(s)
 
 	// Phase 1: create every slide in scene order. AddSlide serializes on the
 	// presentation lock and appends in call order, so this fixes slide ordering
@@ -378,11 +403,11 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		if err := ctx.Err(); err != nil { // honor cancellation between slides
 			return Stats{}, err
 		}
-		if workers > 1 && !slideNeedsSerial(&s.Slides[i]) {
+		if workers > 1 && !chromeSerial && !slideNeedsSerial(&s.Slides[i]) {
 			free = append(free, i)
 			continue
 		}
-		results[i] = base.composeOne(slides[i], &s.Slides[i])
+		results[i] = base.composeOne(slides[i], &s.Slides[i], i)
 	}
 
 	if len(free) > 0 {
@@ -397,7 +422,7 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 				if ctx.Err() != nil { // skip remaining work once canceled
 					return
 				}
-				results[i] = base.composeOne(slides[i], &s.Slides[i])
+				results[i] = base.composeOne(slides[i], &s.Slides[i], i)
 			}(idx)
 		}
 		wg.Wait()

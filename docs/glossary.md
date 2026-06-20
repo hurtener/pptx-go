@@ -313,6 +313,13 @@ A resolved typography value: font `Family`, `Size` (points), `Weight`
 (100–900; ≥600 is bold), and `Italic`. `Theme.ResolveType(TypeRole)`
 returns one.
 
+## Footer page number
+
+The `N / total` page indicator `Slide chrome` draws bottom-right on every
+chrome-enabled slide. `N` defaults to the slide's 1-based scene position
+(overridable via `SceneSlide.PageNumber`); `total` defaults to the slide count
+(overridable via `Scene.Chrome.Total`). See `RFC-001-pptx-go.md §10.2`.
+
 ## Format
 
 `pptx.Format` — a first-class enum on `*Presentation` that selects
@@ -656,6 +663,13 @@ typed `Scene`; emits via the `Builder`. Never reaches under the builder
 A single slide in a `Scene`: a layout kind, a list of top-level
 `SlideNode`s, optional notes, an optional theme variant.
 
+## Section eyebrow
+
+The top band of `Slide chrome`: a per-slide section label + a hairline rule,
+drawn only when the slide sets `SceneSlide.Section`. Distinct from
+`section_divider` (a full-bleed chapter-break *node*) — the eyebrow is chrome in
+the top margin, above the body region. See `RFC-001-pptx-go.md §10.2`.
+
 ## section_divider
 
 A scene IR leaf node representing a slide whose content is a single
@@ -675,6 +689,15 @@ A preset shape outline on the builder (`pptx.ShapeRect`, `ShapeEllipse`,
 `ShapeRoundRect`, …), carrying the OOXML preset-geometry (`prst`) name.
 Passed to `Slide.AddShape(geom, box, …)` with a `Box` (EMU) and optional
 `Fill`/`Line`.
+
+## Slide chrome
+
+Opt-in recurring per-slide furniture drawn outside a shrunk body region: a
+`Section eyebrow` at the top and a footer (a brand slot — text or image asset —
+plus a `Footer page number`) at the bottom. Driven by `Scene.Chrome` (brand slot
++ page total + `Enabled`) and `SceneSlide.Section` / `.PageNumber`. Native shapes
+reusing existing tokens; the zero value renders nothing (byte-identical). A
+mechanism, not a judgment (D-053, D-026). See `RFC-001-pptx-go.md §10.2`.
 
 ## SlideNode
 

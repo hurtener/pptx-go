@@ -1512,4 +1512,45 @@ tall card's own body children) and per-node grow weights — both noted in
 
 ---
 
+## D-053 — Opt-in slide chrome: section eyebrow + footer page number outside a shrunk body region
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** Reference decks read "designed" partly because every content slide
+carries a section eyebrow + hairline rule at the top (`01 — DIRECTION`) and a
+footer with a brand mark and an `N / total` page number. The engine had no
+concept of chrome — recurring per-slide furniture drawn outside the content — so
+a caller could not produce it without hand-placing shapes on every slide. Third
+unit of Wave 8 (`DECKARD-PRODUCT-REQUIREMENTS.md` R3).
+**Decision:** Add opt-in chrome driven by new fields: a `Chrome` struct on
+`Scene` (`Enabled`, `Brand`, `BrandAsset AssetID`, `Total`) and `Section` +
+`PageNumber` on `SceneSlide`. When `Chrome.Enabled`, `bodyRegion` shrinks by a
+fixed eyebrow-band height (top) and footer-band height (bottom), and
+`renderChrome` draws — in the reclaimed margin — a top section eyebrow + hairline
+rule (only when the slide sets `Section`) and a bottom footer with a brand slot
+(left) and an `N / total` page number (right). Shrinking the body makes overlap
+structurally impossible. Page `Total` defaults to `len(Slides)` and the per-slide
+number defaults to the 1-based scene position; both are overridable. The brand
+slot is text-or-asset: brand *text* is a native run (renders in parallel); a
+brand *image* (`BrandAsset`, resolved via the existing `AssetResolver`) is the
+only global-media touch, so it forces sequential composition deck-wide for stable
+part numbering, and an unresolved brand asset degrades to a `LayoutWarning`
+(warn-don't-fail). Chrome colors resolve through existing tokens (`TextMuted`,
+`ColorSurfaceAlt`) — **no new builder API, no new token** (P2), so no `THEME.md`
+entry. Chrome is drawn after the body so the footer stays visible over a
+full-bleed background. It is a *mechanism*, not a judgment (D-026): the engine
+draws the bands it is handed and composes the page-number string, but invents no
+brand and no section names, and never decides a deck "needs" chrome.
+**Consequences:** A caller can turn on consistent, theme-aware chrome with a few
+fields; the eyebrow is per-slide, the footer consistent. Additive and fully
+backward-compatible: every new field's zero value is inert, so a chrome-free deck
+is byte-identical to one authored before the fields existed. Determinism holds
+across worker counts for both brand text (parallel) and brand asset (serial).
+New public scene surface (the `Chrome` type + fields) ⇒ a smoke check lands in
+the same PR (§4.2). Deferred: per-slide chrome opt-out, a custom page-number
+format, extra footer slots (date/confidential), and authoring chrome as true
+master placeholders — all noted in `docs/research/11-slide-chrome.md`.
+
+---
+
 *Append new entries below this line.*

@@ -245,6 +245,14 @@ height is shared proportionally and deterministically; text leaves keep their
 size, and a slide with no flexible node just top-aligns. It is opt-in — the
 engine never decides on its own that a slide looks thin.
 
+Set `Scene.Chrome` (`Enabled`, `Brand`/`BrandAsset`, `Total`) for opt-in
+per-slide **chrome** drawn outside the body region (the body shrinks to fit): a
+bottom footer with the brand slot + an `N / total` page number on every slide,
+and a top section eyebrow + hairline on slides that set `SceneSlide.Section`.
+Page total and per-slide number auto-derive (slide count; 1-based position) and
+are overridable. Chrome uses theme tokens; the zero value (disabled) is
+byte-identical.
+
 ## Complete example
 
 See `examples/compose-a-scene/main.go` for a runnable program: a cover slide
