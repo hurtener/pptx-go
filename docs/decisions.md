@@ -1470,4 +1470,46 @@ Deckard R2) is the inverse direction and is a separate Wave 8 phase.
 
 ---
 
+## D-052 — `VAlignFill` grow-to-fit: flexible nodes consume leftover body height
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** A heading followed by one block leaves the bottom of the slide empty
+and reads thin. The Phase-13 alignments `VAlignCenter`/`VAlignJustify` only
+*float* the body stack (move it, or spread the inter-node gaps); the product's
+reference "designed" look is the heading pinned at the top with the content
+**growing** to fill the frame (tall cards, full-bleed grids). The engine had no
+way to express that. Second unit of Wave 8 (`DECKARD-PRODUCT-REQUIREMENTS.md`
+R2), built on D-051's content-aware heights (the basis for the slack).
+**Decision:** Add `VAlignFill`, a new opt-in value of the `VAlign` enum on
+`SceneSlide.Content.Vertical`. It is top-pinned (like `VAlignTop`) with the
+standard inter-node gap; after the fixed leaves take their preferred height,
+`alignedStackIn` distributes the positive leftover height (`slack = box.H −
+totalH`) to the **flexible** nodes — the containers (`Grid`, `TwoColumn`, `Card`,
+`CardSection`, `Table`) and the stretchable visuals (`Image`, `Chart`) — so they
+grow to consume it. Text leaves and atoms stay at preferred height (stretching
+text is meaningless); `CodeBlock` is excluded (growing a monospaced-code raster
+distorts the listing). The share is proportional to each flexible node's
+preferred height, with the rounding remainder assigned to the last flexible node
+(equal split when the flexible heights sum to zero) — pure integer EMU math, so
+the result is worker-count independent. **No container renderer changed:** the
+scene geometry engine already honors a taller box (`layout.Grid` scales rows to
+`parent.H`, `layout.Columns` give full-height columns, card chrome runs to
+`box.Bottom()`, image/chart/table consume `box.H`), and the grown slot box
+propagates one nesting level (a grown `Grid` hands its taller cell box to the
+child renderer). Fill is a *mechanism*, not a judgment (D-026): the engine never
+decides a slide "looks thin"; the caller opts a slide into fill.
+**Consequences:** Sparse slides can fill their frame on demand, matching the
+reference look, with no new public type/function/field beyond the one enum
+constant. Additive and fully backward-compatible: every existing `VAlign` value
+and the zero value are unchanged, so every existing scene renders byte-identical.
+Fill composes with D-051 — it consumes only positive slack, so when content
+already overflows (`slack ≤ 0`) nothing grows and the overflow `LayoutWarning`
+still fires. Determinism holds (a `VAlignFill` deck renders byte-identically
+across worker counts). Deferred: recursive fill *inside* a container (spreading a
+tall card's own body children) and per-node grow weights — both noted in
+`docs/research/10-grow-to-fit.md`.
+
+---
+
 *Append new entries below this line.*

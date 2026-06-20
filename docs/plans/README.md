@@ -657,6 +657,24 @@ text by design (less overlap, truthful overflow). Single-line content is
 unaffected; there are no byte-golden snapshots to regenerate (determinism is
 proven by parallel≡sequential equality).
 
+#### Phase 23 — grow-to-fit
+
+**Subsystem:** scene
+**RFC sections:** §10.2
+**Deps:** Phase 13 (alignment), Phase 22 (content-aware height).
+**What lands:**
+- `scene/align.go` — `VAlignFill`, a new opt-in body-stack vertical alignment.
+- `scene/render.go` — `alignedStackIn` distributes leftover body height to the
+  flexible nodes (`Grid`, `TwoColumn`, `Card`, `CardSection`, `Table`, `Chart`,
+  `Image`) so they grow to fill the frame; fixed leaves stay at preferred
+  height. No container renderer changes — the geometry engine already honors a
+  taller box.
+**Acceptance criteria:**
+- A heading + grid under `VAlignFill` pins the heading at top and grows the grid
+  to the bottom margin; a taller slot yields proportionally taller cells.
+- Two flexible nodes share the slack proportional to preferred height.
+- Every non-fill mode is byte-identical; determinism holds under N workers.
+
 ---
 
 ## 4. Post-V1 backlog

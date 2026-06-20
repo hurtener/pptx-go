@@ -236,6 +236,15 @@ it, and a slide whose text genuinely exceeds the body region records a
 The estimate is deterministic; short single-line content is allotted the same
 compact height and never falsely warns.
 
+`SceneSlide.Content.Vertical` aligns the body stack: `VAlignTop` (default),
+`VAlignCenter`, `VAlignBottom`, `VAlignJustify`, and `VAlignFill`. `VAlignFill`
+pins fixed leaves at the top and **grows the flexible nodes** — the containers
+(`Grid`, `TwoColumn`, `Card`, `CardSection`, `Table`) plus `Image`/`Chart` — to
+consume the remaining height, so a sparse slide fills its frame. The leftover
+height is shared proportionally and deterministically; text leaves keep their
+size, and a slide with no flexible node just top-aligns. It is opt-in — the
+engine never decides on its own that a slide looks thin.
+
 ## Complete example
 
 See `examples/compose-a-scene/main.go` for a runnable program: a cover slide

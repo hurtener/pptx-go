@@ -81,6 +81,10 @@ semantics)*
   (`ceil(naturalWidth / availableWidth)`) feeding a content-aware
   `preferredHeight`, so stacked nodes stop overlapping and overflow is reported
   truthfully, while single-line content stays byte-identical.
+- `10-grow-to-fit.md` — `VAlignFill`: after fixed leaves take preferred height,
+  distribute the leftover body height to the flexible nodes (containers +
+  Image/Chart) so they grow to consume the frame; the geometry engine already
+  honors the taller box, so no container renderer changes.
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

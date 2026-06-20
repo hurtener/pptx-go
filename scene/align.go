@@ -70,6 +70,11 @@ const (
 	// VAlignJustify distributes the vertical slack evenly into the inter-node
 	// gaps. Equivalent to VAlignTop for a single node or when slack ≤ 0.
 	VAlignJustify
+	// VAlignFill pins fixed leaves at the top (like VAlignTop) and grows the
+	// flexible nodes (containers + Image/Chart) to consume the remaining body
+	// height, so a sparse slide fills its frame instead of reading thin. With no
+	// flexible node, or when slack ≤ 0, it is equivalent to VAlignTop.
+	VAlignFill
 )
 
 // String returns the vertical alignment name.
@@ -81,6 +86,8 @@ func (v VAlign) String() string {
 		return "bottom"
 	case VAlignJustify:
 		return "justify"
+	case VAlignFill:
+		return "fill"
 	default:
 		return "top"
 	}
