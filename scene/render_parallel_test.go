@@ -2,6 +2,7 @@ package scene_test
 
 import (
 	"bytes"
+	"strings"
 	"sync"
 	"testing"
 
@@ -60,6 +61,32 @@ func TestRenderDeterministic_ParallelMatchesSequential(t *testing.T) {
 	}
 	if !bytes.Equal(a, seq) {
 		t.Fatal("default-worker render differs from sequential render")
+	}
+}
+
+// TestRenderDeterministic_MultiLineWrap is the Phase-22 determinism guard: a
+// deck with paragraphs that wrap to several lines (content-aware preferredHeight)
+// must render byte-identically across worker counts — the wrapped-line estimate
+// is pure integer math, so layout never depends on scheduling (RFC §10.1).
+func TestRenderDeterministic_MultiLineWrap(t *testing.T) {
+	long := strings.TrimSpace(strings.Repeat("lorem ipsum dolor sit amet ", 18))
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{
+				scene.Heading{Text: rt(long), Level: 1},
+				scene.Prose{Paragraphs: []scene.RichText{rt(long), rt(long)}},
+				scene.List{Items: []scene.ListItem{{Text: rt(long)}, {Text: rt(long)}}},
+				scene.Quote{Text: rt(long)},
+				scene.Callout{Body: rt(long)},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("multi-line wrap: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
 	}
 }
 

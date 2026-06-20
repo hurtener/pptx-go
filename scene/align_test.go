@@ -28,7 +28,7 @@ func newTestRenderer(t *testing.T) *renderer {
 func TestAlignCenter_Vertical_SingleHero(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
-	heroH := preferredHeight(Hero{})
+	heroH := preferredHeight(Hero{}, body.W, r.theme)
 
 	slack := body.H - heroH
 	if slack <= 0 {
@@ -63,7 +63,7 @@ func TestAlignCenter_Vertical_SingleHero(t *testing.T) {
 func TestAlignBottom_Vertical(t *testing.T) {
 	r := newTestRenderer(t)
 	body := r.bodyRegion()
-	heroH := preferredHeight(Hero{})
+	heroH := preferredHeight(Hero{}, body.W, r.theme)
 
 	nodes := []SlideNode{Hero{Title: "Bottom"}}
 	placements := r.layout(nodes, "test", Alignment{Vertical: VAlignBottom})
@@ -312,7 +312,7 @@ func TestAlignJustify_Vertical(t *testing.T) {
 	}
 	// The last node's bottom should equal the body bottom (when totalH ≤ body.H).
 	last := stacked[len(stacked)-1]
-	totalH := preferredHeight(nodes[0]) + preferredHeight(nodes[1]) + preferredHeight(nodes[2])
+	totalH := preferredHeight(nodes[0], body.W, r.theme) + preferredHeight(nodes[1], body.W, r.theme) + preferredHeight(nodes[2], body.W, r.theme)
 	if totalH <= body.H {
 		wantBottom := body.Bottom()
 		if last.box.Bottom() != wantBottom {

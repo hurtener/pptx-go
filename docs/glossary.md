@@ -166,6 +166,15 @@ build the RFC's anchored `AddConnector` in V1 (D-044). See `RFC §11.1`.
 A scene IR node that contains child nodes (`two_column`, `grid`, `card`,
 `card_section`). See `RFC-001-pptx-go.md §11.2`.
 
+## Content-aware height
+
+A text-bearing node's slot height derived from how many lines its text wraps to
+(line count × the node's line height), rather than a fixed per-node constant.
+The scene renderer computes it deterministically via the `Wrapped-line estimate`
+so stacked nodes don't overlap and overflow is reported truthfully; single-line
+content keeps its prior fixed height (byte-identical). See
+`RFC-001-pptx-go.md §10.2`.
+
 ## CGo
 
 Go's C-interop facility. The shipped pptx-go artifact compiles with
@@ -810,6 +819,14 @@ The `scene.RenderOption` that sets how many slides compose concurrently
 (D-015). Default `runtime.GOMAXPROCS(0)`; `1` forces sequential. Output
 stays byte-identical regardless: slides are created in scene order and any
 slide that may register media composes sequentially (D-035, D-036).
+
+## Wrapped-line estimate
+
+The deterministic line count the scene layout engine uses to size a text slot:
+`ceil(naturalWidth(text) / availableWidth)`, floored at 1, using the same pinned
+char-width model as horizontal alignment. It drives `Content-aware height`; it
+is an allotment estimate, not a prediction of PowerPoint's exact display reflow.
+See `RFC-001-pptx-go.md §10.2`.
 
 ---
 

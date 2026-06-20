@@ -77,10 +77,13 @@ semantics)*
   badge plus an aspect-ratio `LayoutWarning`; aspect detection options
   (`image.DecodeConfig` header read vs caller field) and the `ChartPlaceholder`
   slot helper.
+- `09-text-height-metrics.md` — deterministic wrapped-line-count estimation
+  (`ceil(naturalWidth / availableWidth)`) feeding a content-aware
+  `preferredHeight`, so stacked nodes stop overlapping and overflow is reported
+  truthfully, while single-line content stays byte-identical.
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
-text-overflow heuristics, scene IR JSON wire form compatibility with
-pengui-slides v4)*
+scene IR JSON wire form compatibility with pengui-slides v4)*
 
 ### Theme & tokens
 

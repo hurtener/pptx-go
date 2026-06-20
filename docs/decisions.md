@@ -1429,4 +1429,45 @@ and the inspect-then-save data loss is fixed. Additive; no write-side change.
 
 ---
 
+## D-051 — Content-aware `preferredHeight`: a node's slot grows with its wrapped text, and overflow is reported truthfully
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** The scene layout engine's `preferredHeight` (`scene/render.go`)
+allotted a **fixed** slot per node regardless of text length — a `Prose` got
+`0.4"` per paragraph, a `List` `0.32"` per item, a `Heading` `0.6"`, etc. — so
+a paragraph that wrapped to several lines was given the space of one and its
+text frame overran the next stacked node. The same under-count meant the total
+stack height was under-reported, so the `RFC §10.2` overflow `LayoutWarning`
+never fired when real content ran off the slide. `RFC §10.2` already mandates a
+*content-driven* preferred bbox; the fixed-height shortcut was the gap. This is
+the first phase of **Wave 8** (post-V1 engine extensions requested by the
+product built on pptx-go, `DECKARD-PRODUCT-REQUIREMENTS.md` R1).
+**Decision:** `preferredHeight` (and its helper `nodesHeight`) take the
+available width and the active theme and become content-aware for the
+text-bearing nodes (`Prose`, `List`, `Heading`, `Quote`, `Callout`, `Table`).
+A deterministic `wrappedLines` estimate (`scene/metrics.go`) —
+`ceil(naturalWidth / availableWidth)`, floored at 1, reusing the Phase-13 pinned
+char-width model — feeds `height = lines × line-height`. Each node's prior fixed
+constant is reused as its line height, so **single-line content reduces to
+exactly the prior height (byte-identical)**, and the `avail ≤ 0` / nil-theme
+path returns the fixed height unchanged. The existing `totalH > box.H` overflow
+check now consumes content-aware heights, so it fires on real wrapped overflow
+with no new warning plumbing. The estimate stays a placement *mechanism*, not a
+content opinion — no render mode, no "too full" judgment, no text resizing
+(D-026). This is the **one intentional layout change** of Wave 8: multi-line
+text now occupies more vertical space (less overlap, truthful overflow);
+single-line content is unaffected.
+**Consequences:** Stacked nodes stop overlapping and overflow is reported when
+content genuinely exceeds the body region, giving callers the truthful
+`Stats.Warnings` signal the product needs. No public `pptx`/`scene` API changes
+and no new scene IR node — the change is internal to `scene` layout. Determinism
+holds (pure integer math; a multi-line fixture renders byte-identically across
+worker counts). There are no byte-golden snapshots to regenerate; the
+parallel≡sequential determinism guard and the single-line reduction tests are
+the regression guards. Grow-to-fit (distributing slack to flexible nodes,
+Deckard R2) is the inverse direction and is a separate Wave 8 phase.
+
+---
+
 *Append new entries below this line.*

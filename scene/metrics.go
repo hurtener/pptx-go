@@ -2,10 +2,11 @@ package scene
 
 import "github.com/hurtener/pptx-go/pptx"
 
-// Text-width estimation for alignment (Phase 13). naturalWidth is a pure,
-// deterministic estimator: no DOM, no measurement, pinned constants. It is
-// used only for horizontal centering/right-aligning the body stack; it is
-// NOT used for height/line-count estimation (which is a separate later unit).
+// Text-width estimation (Phase 13) and wrapped-line-count estimation
+// (Phase 22). naturalWidth is a pure, deterministic estimator: no DOM, no
+// measurement, pinned constants. It horizontally centers/right-aligns the body
+// stack, and — via wrappedLines — feeds the content-aware preferredHeight so a
+// node's slot grows with the text that wraps into it.
 
 // avgCharWidthFactor is the ratio of average character width to font point
 // size. Calibrated for the default sans-serif (Calibri/Inter); pinned as a
@@ -76,8 +77,8 @@ func naturalWidthAt(rt RichText, base pptx.TypeRole, theme *pptx.Theme) pptx.EMU
 // full box width and alignment within them is their own concern.
 //
 // The estimate is a single-width value per node (the dominant run or the
-// widest visible part). It is NOT a max-line-width across wrapped paragraphs
-// (line-wrapping is a separate later unit).
+// widest visible part). It is NOT a max-line-width across wrapped paragraphs;
+// wrappedLines handles vertical line-count estimation separately.
 func nodeNaturalWidth(n SlideNode, theme *pptx.Theme) pptx.EMU {
 	switch v := n.(type) {
 	case Hero:
@@ -104,4 +105,38 @@ func nodeNaturalWidth(n SlideNode, theme *pptx.Theme) pptx.EMU {
 	// Containers and visuals are always full-width; callers should not
 	// center/right-align them — nodeEffectiveHAlign returns HAlignLeft for them.
 	return 0
+}
+
+// wrappedLines estimates how many lines rt occupies when laid out in a column
+// of width avail, using the same pinned char-width model as naturalWidth. It is
+// the vertical complement of naturalWidth: where naturalWidth answers "how wide
+// is this text on one line", wrappedLines answers "how many lines does it take
+// in this width". The estimate is the char-budget model
+//
+//	lines = ceil(naturalWidthAt(rt, base, …) / avail)
+//
+// floored at 1. base is the node's rendering TypeRole, substituted for runs
+// that carry the zero TypeRole (see naturalWidthAt).
+//
+// wrappedLines is a pure, deterministic function: pure integer ceil division
+// over the (already deterministic) naturalWidth result, no measurement, no
+// allocation. It deliberately returns 1 — i.e. defers to the caller's existing
+// fixed per-line height — when avail <= 0 or theme is nil, so a content-aware
+// preferredHeight that lacks a real width/theme reproduces the pre-Phase-22
+// fixed-height output byte-for-byte. It never claims long text is one line,
+// which is the only property the overlap/overflow guarantees require.
+func wrappedLines(rt RichText, base pptx.TypeRole, avail pptx.EMU, theme *pptx.Theme) int {
+	if avail <= 0 || theme == nil {
+		return 1
+	}
+	w := naturalWidthAt(rt, base, theme)
+	if w <= 0 {
+		return 1
+	}
+	// ceil(w / avail) with positive integers.
+	lines := int((w + avail - 1) / avail)
+	if lines < 1 {
+		lines = 1
+	}
+	return lines
 }

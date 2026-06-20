@@ -134,10 +134,16 @@ Wave 4 — Curated assets + composites Phase 12–16
 Wave 5 — Charts                       Phase 17
 Wave 6 — Reading + round-trip        Phase 18–19
 Wave 7 — Docs, skills, release       Phase 20–21
+Wave 8 — Post-V1 engine extensions   Phase 22–…
 ```
 
 Each wave ends with a checkpoint audit (`CLAUDE.md §17`). V1.0.0 ships at
-the end of Wave 7.
+the end of Wave 7. **Wave 8** is the first post-V1 wave: caller-driven engine
+mechanisms requested by the product built on pptx-go
+(`DECKARD-PRODUCT-REQUIREMENTS.md`). Each is additive and backward-compatible —
+a new optional capability whose zero value reproduces the prior render
+byte-for-byte (the one intentional exception is Phase 22, which changes
+multi-line text layout by design).
 
 ---
 
@@ -620,6 +626,36 @@ opaque-carrier preservation; the RFC parks fidelity preservation in V2)
 **Acceptance criteria:**
 - `git tag v0.1.0`-able with a green release dry-run.
 - Sample example renders the canonical Galici-style deck end-to-end.
+
+### Wave 8 — Post-V1 engine extensions
+
+Caller-driven engine mechanisms requested by the product built on pptx-go,
+specified in `DECKARD-PRODUCT-REQUIREMENTS.md` (R1–R7). Each is additive and
+deterministic; the engine stays unopinionated (D-026) — it provides the
+mechanism, the caller supplies the values.
+
+#### Phase 22 — content-aware text height
+
+**Subsystem:** scene
+**RFC sections:** §10.2
+**Deps:** Phase 13 (alignment + metrics), Phase 05–08 (scene spine).
+**What lands:**
+- `scene/metrics.go` — `wrappedLines`, a deterministic
+  `ceil(naturalWidth / availableWidth)` line-count estimate built on the
+  existing pinned char-width model.
+- `scene/render.go` — `preferredHeight`/`nodesHeight` become content-aware
+  (`Prose`, `List`, `Heading`, `Quote`, `Callout`, `Table`); the overflow
+  `LayoutWarning` now fires on real wrapped overflow.
+**Acceptance criteria:**
+- A paragraph that wraps to N lines is allotted ≥ N line-heights; the next
+  stacked node does not overlap it.
+- A slide whose wrapped content exceeds the body region emits the overflow
+  warning (it did not before).
+- Single-line content is byte-identical; determinism holds under N workers.
+**Note (the one intentional break):** this phase changes layout for multi-line
+text by design (less overlap, truthful overflow). Single-line content is
+unaffected; there are no byte-golden snapshots to regenerate (determinism is
+proven by parallel≡sequential equality).
 
 ---
 
