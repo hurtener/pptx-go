@@ -1553,4 +1553,46 @@ master placeholders — all noted in `docs/research/11-slide-chrome.md`.
 
 ---
 
+## D-054 — Rich card visuals: header band, status dot, watermark (optional colors are `*ColorRole`)
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** `Card` already supported fill/icon/eyebrow/header-pill/border/size/
+elevation, but reference "designed" cards add three visuals it could not express:
+a colored header band (the top of the card a solid accent, the body in surface
+below — distinct from a full `Fill`), a small status dot in the top-right corner,
+and a large low-opacity watermark behind the body (a ghosted `01`). Fourth unit
+of Wave 8 (`DECKARD-PRODUCT-REQUIREMENTS.md` R4), the next additive Card growth
+after D-043.
+**Decision:** Add three additive `Card` fields rendered in `render_card.go`:
+`HeaderFill *ColorRole` (a banded header region from the card top to the header
+bottom, body keeps `Fill`), `StatusDot *ColorRole` (a small `ShapeEllipse` in the
+top-right, inset by the card padding), and `Watermark string` (a large
+`TypeDisplay` run drawn in the body region behind the body content, faint via
+`TokenColorAlpha` at a pinned ~13% alpha). The header band is sized by a pure
+`cardHeaderBottom` helper that shares the header-row height constants with the
+emit code, so it ends exactly where the body begins. All three are token-bound
+(P2) and compose from existing builder primitives — **no new builder API and no
+new token**. Each is opt-in; with all three unset, `renderCardChrome` emits the
+same shapes in the same order as before (the header-row literals were extracted
+to value-identical constants), so an unset card is byte-for-byte unchanged.
+Applies to `Card` only; `CardSection` builds its chrome without the new fields.
+**Deviation from the requirement (§4.3).** R4 specifies `HeaderFill ColorRole`
+and `StatusDot ColorRole` (value types), but `ColorRole`'s zero value is
+`ColorCanvas` — a real color, not "unset" — so a value-typed field cannot satisfy
+the same requirement's acceptance "each zero-value omits its element." The fields
+therefore ship as `*ColorRole` (nil = omit), the only representation that honors
+the binding acceptance without inventing a sentinel role. `Watermark` is a
+`string` whose `""` already means omit.
+**Consequences:** A card can match the reference look (banded header, status dot,
+ghosted watermark) with three opt-in fields; the caller supplies the colors and
+label, the engine renders them and picks only the watermark's mechanical faint
+opacity (D-026). Additive and backward-compatible (byte-identical when unset);
+deterministic native shapes (cards stay parallel-safe). New public scene surface
+(the Card fields) ⇒ a smoke check lands in the same PR (§4.2). Deferred: a
+pill+dot offset when both occupy the top-right, a watermark color/size knob, and
+flat-bottomed band corners — all noted in `docs/research/12-rich-card-visuals.md`.
+
+---
+
 *Append new entries below this line.*

@@ -94,6 +94,14 @@ stack), `CardLayoutIconTop` (icon above it).
 | `Size` | `CardSize` | Interior padding scale |
 | `Layout` | `CardLayout` | Header arrangement |
 | `Elevation` | `ElevationRole` | Shadow/elevation role |
+| `HeaderFill` | `*ColorRole` | Colored header band (body keeps `Fill`); `nil` = none |
+| `StatusDot` | `*ColorRole` | Small status dot, top-right corner; `nil` = none |
+| `Watermark` | `string` | Large, low-opacity label behind the body; `""` = none |
+
+`HeaderFill` and `StatusDot` are `*ColorRole` (not `ColorRole`) so their `nil`
+zero value means "omit" — a plain `ColorRole` zero is a real color (`canvas`).
+Take the address of a role to set them: `hf := scene.ColorAccent; card.HeaderFill
+= &hf`. All three reuse theme tokens, so a theme swap re-skins them.
 
 ```go
 card := scene.Card{

@@ -380,6 +380,13 @@ deterministic. A mechanism, not a judgment (D-026, D-052): the caller opts a
 slide into fill; the engine never decides a slide looks thin. See
 `RFC-001-pptx-go.md §10.2`.
 
+## Header band
+
+A `Card`'s optional colored top region (`Card.HeaderFill *ColorRole`): the
+header in an accent color with the body in `Fill` below — distinct from a full
+`Fill`. `nil` omits it. Part of the rich card visuals (D-054). See
+`RFC-001-pptx-go.md §11.2`.
+
 ## Header pill
 
 A small pill-shaped badge (rounded-rect + short label) rendered in a card's
@@ -764,6 +771,12 @@ shape counts, asset counts, and warnings. The library's observability
 surface (we have no `obs/v1` protocol; pptx-go is a library, not a
 service).
 
+## Status dot
+
+A `Card`'s optional small filled dot (`Card.StatusDot *ColorRole`) in the
+top-right corner — a colored status indicator. `nil` omits it. Part of the rich
+card visuals (D-054). See `RFC-001-pptx-go.md §11.2`.
+
 ## Streaming
 
 `pptx.OpenStream` and `pptx.SaveStream` — lazy-load and streaming-save
@@ -855,6 +868,13 @@ The body-stack vertical alignment (`scene.VAlignFill`, on
 A named theme variant (`light`, `dark`, `print`, brand-specific). The
 scene's `Variant` field selects between variants the caller registered.
 Per-slide theme overrides are V2; per-scene variant is V1.
+
+## Watermark (card)
+
+A `Card`'s optional large, low-opacity label (`Card.Watermark string`) drawn
+behind the body content — e.g. a ghosted `01`. Rendered as a `TokenColorAlpha`
+display run; `""` omits it. Part of the rich card visuals (D-054). See
+`RFC-001-pptx-go.md §11.2`.
 
 ## Wave
 
