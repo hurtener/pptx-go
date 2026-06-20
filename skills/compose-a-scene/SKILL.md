@@ -229,6 +229,13 @@ falling back to blank, an unresolved asset) surface as `Warnings` — pptx-go
 **warns, it does not fail** on layout problems, and has no strict mode. A caller
 that wants warnings to be fatal inspects `Stats.Warnings` itself.
 
+Slot heights are **content-aware**: a text node's height grows with the number
+of lines its text wraps to, so a long paragraph doesn't overlap the node beneath
+it, and a slide whose text genuinely exceeds the body region records a
+`content overflows its region` warning (the signal to flag a slide as too full).
+The estimate is deterministic; short single-line content is allotted the same
+compact height and never falsely warns.
+
 ## Complete example
 
 See `examples/compose-a-scene/main.go` for a runnable program: a cover slide

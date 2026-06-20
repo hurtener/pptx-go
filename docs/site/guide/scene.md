@@ -172,3 +172,17 @@ type Stats struct {
 
 `LayoutWarning` carries `SlideID`, `Node`, and `Message`. There is no strict
 mode: a caller that wants warnings to be fatal inspects `Stats.Warnings` itself.
+
+### Layout sizing and overflow
+
+The renderer sizes each node's slot to its content: a text node's height grows
+with the number of lines its text wraps to in the available width, so stacked
+nodes don't overlap when a paragraph runs long. This estimate is deterministic
+(it never depends on worker count) and is an *allotment*, not a prediction of
+PowerPoint's exact on-screen reflow.
+
+Because the height is content-aware, a slide whose text genuinely exceeds the
+body region records a `content overflows its region` `LayoutWarning` — that is
+the signal to inspect when you want to flag a slide as too full. Short,
+single-line content is allotted the same compact height as before and never
+falsely warns.

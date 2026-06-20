@@ -269,7 +269,7 @@ func (r *renderer) stackIn(box pptx.Box, nodes []SlideNode, slideID string) []pl
 	out := make([]placement, 0, len(nodes))
 	y := box.Y
 	for _, n := range nodes {
-		h := preferredHeight(n)
+		h := preferredHeight(n, box.W, r.theme)
 		out = append(out, placement{node: n, box: pptx.Box{X: box.X, Y: y, W: box.W, H: h}})
 		y += h + gap
 	}
@@ -373,30 +373,53 @@ func (r *renderer) warn(slideID, msg string) {
 
 // preferredHeight returns a node's preferred slot height (EMU). These are
 // deterministic placement sizes, not content opinions (D-026).
-func preferredHeight(n SlideNode) pptx.EMU {
+//
+// Text-bearing nodes are content-aware (Phase 22, RFC §10.2): their height grows
+// with the number of lines the text wraps to in the available width avail,
+// estimated by wrappedLines against theme. A single line reproduces the node's
+// pre-Phase-22 fixed height exactly, so single-line content stays byte-identical;
+// avail <= 0 or a nil theme also falls back to the fixed (single-line) height.
+// Visual and atom nodes (Hero, Divider, Chip, Arrow, Image, Chart, CodeBlock,
+// Flow) do not wrap and keep fixed slot heights.
+func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 	switch v := n.(type) {
 	case Hero:
 		return pptx.In(2.2)
 	case Heading:
-		return pptx.In(0.6)
+		lines := wrappedLines(v.Text, headingRole(v.Level), avail, theme)
+		return pptx.In(0.6) * pptx.EMU(lines)
 	case Prose:
-		lines := len(v.Paragraphs)
-		if lines < 1 {
-			lines = 1
+		if len(v.Paragraphs) == 0 {
+			return pptx.In(0.4)
 		}
-		return pptx.In(0.4) * pptx.EMU(lines)
+		var h pptx.EMU
+		for _, para := range v.Paragraphs {
+			lines := wrappedLines(para, pptx.TypeBody, avail, theme)
+			h += pptx.In(0.4) * pptx.EMU(lines)
+		}
+		return h
 	case List:
-		items := len(v.Items)
-		if items < 1 {
-			items = 1
+		if len(v.Items) == 0 {
+			return pptx.In(0.32)
 		}
-		return pptx.In(0.32) * pptx.EMU(items)
+		var h pptx.EMU
+		for _, item := range v.Items {
+			lines := wrappedLines(item.Text, pptx.TypeBody, avail, theme)
+			h += pptx.In(0.32) * pptx.EMU(lines)
+		}
+		return h
 	case Divider:
 		return pptx.In(0.2)
 	case Quote:
-		return pptx.In(1.1)
+		// Fixed chrome (attribution + padding) is one In(1.1) slot; each extra
+		// wrapped line of the quote text adds one quote line-height.
+		lines := wrappedLines(v.Text, pptx.TypeH3, avail, theme)
+		return pptx.In(1.1) + quoteLineEst*pptx.EMU(lines-1)
 	case Callout:
-		return pptx.In(1.0)
+		// The body wraps within the box minus the accent bar + text inset
+		// (mirrors renderCallout's In(0.2) inset).
+		lines := wrappedLines(v.Body, pptx.TypeBody, avail-calloutInsetEst, theme)
+		return pptx.In(1.0) + calloutLineEst*pptx.EMU(lines-1)
 	case Chip:
 		return pptx.In(0.4)
 	case Arrow:
@@ -408,17 +431,10 @@ func preferredHeight(n SlideNode) pptx.EMU {
 	case Chart:
 		return pptx.In(3.0)
 	case Table:
-		rows := len(v.Rows)
-		if len(v.Headers) > 0 {
-			rows++
-		}
-		h := pptx.In(0.4) * pptx.EMU(rows)
-		if v.Caption != "" {
-			h += pptx.In(0.4)
-		}
-		return h
+		return tableHeight(v, avail, theme)
 	case TwoColumn:
-		return maxEMU(nodesHeight(v.Left), nodesHeight(v.Right))
+		colW := (avail - estGap) / 2
+		return maxEMU(nodesHeight(v.Left, colW, theme), nodesHeight(v.Right, colW, theme))
 	case Grid:
 		cols := v.Columns
 		if cols < 1 {
@@ -428,17 +444,18 @@ func preferredHeight(n SlideNode) pptx.EMU {
 		if rows < 1 {
 			rows = 1
 		}
+		cellW := (avail - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU
 		for _, c := range v.Cells {
-			if h := preferredHeight(c); h > maxCell {
+			if h := preferredHeight(c, cellW, theme); h > maxCell {
 				maxCell = h
 			}
 		}
 		return pptx.EMU(rows)*maxCell + estGap*pptx.EMU(rows-1)
 	case Card:
-		return cardChromeEst + nodesHeight(v.Body) + estGap
+		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case CardSection:
-		return cardChromeEst + nodesHeight(v.Body) + estGap
+		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case Flow:
 		if v.Orientation == FlowVertical {
 			n := len(v.Steps)
@@ -453,24 +470,75 @@ func preferredHeight(n SlideNode) pptx.EMU {
 	}
 }
 
-// cardChromeEst is the deterministic slot height a card's chrome (header row +
-// padding) contributes above its body. A placement estimate, not a content
-// opinion (D-026).
-const cardChromeEst = pptx.EMU(1097280) // ~1.2"
+// Placement estimates (deterministic; not content opinions, D-026). Pinned
+// compile-time EMU literals so output is worker-count-independent (RFC §10.1).
+const (
+	cardChromeEst = pptx.EMU(1097280) // ~1.2"; card header row + padding above the body
+	estGap        = pptx.EMU(137160)  // ~0.15"; nested-container gap estimate
 
-// estGap is a fixed gap estimate used only for sizing nested containers (the
-// actual gap at render time comes from the theme).
-const estGap = pptx.EMU(137160) // ~0.15"
+	// Content-aware (Phase 22) increments and insets. quoteLineEst / calloutLineEst
+	// are the per-extra-wrapped-line height added to the fixed-chrome nodes;
+	// calloutInsetEst / cardBodyInsetEst approximate the horizontal space the
+	// node's text loses to chrome so the wrap estimate uses the true text column.
+	quoteLineEst     = pptx.EMU(411480) // ~0.45"; per extra wrapped line of a Quote
+	calloutLineEst   = pptx.EMU(274320) // ~0.30"; per extra wrapped line of a Callout body
+	calloutInsetEst  = pptx.EMU(182880) // ~0.20"; accent bar + text inset (renderCallout)
+	cardBodyInsetEst = pptx.EMU(182880) // ~0.20"; per-side card body padding estimate
+)
 
-// nodesHeight estimates the stacked height of a node list (for container slot
-// sizing).
-func nodesHeight(nodes []SlideNode) pptx.EMU {
+// tableHeight estimates a Table's slot height: each row is the tallest cell in
+// it (the cell's wrapped line count × a row line-height), summed over the header
+// (if any) and body rows, plus a caption line. It falls back to the count-based
+// pre-Phase-22 height when the column width can't be estimated (no columns, or
+// no width/theme), which keeps single-line tables byte-identical.
+func tableHeight(v Table, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
+	cols := tableColumns(v)
+	if cols < 1 || avail <= 0 || theme == nil {
+		rows := len(v.Rows)
+		if len(v.Headers) > 0 {
+			rows++
+		}
+		h := pptx.In(0.4) * pptx.EMU(rows)
+		if v.Caption != "" {
+			h += pptx.In(0.4)
+		}
+		return h
+	}
+	colW := avail / pptx.EMU(cols)
+	var h pptx.EMU
+	if len(v.Headers) > 0 {
+		h += tableRowHeight(v.Headers, colW, theme)
+	}
+	for _, row := range v.Rows {
+		h += tableRowHeight(row, colW, theme)
+	}
+	if v.Caption != "" {
+		h += pptx.In(0.4)
+	}
+	return h
+}
+
+// tableRowHeight is In(0.4) times the wrapped line count of the tallest cell in
+// the row (a single-line row is In(0.4), byte-identical to the prior model).
+func tableRowHeight(cells []RichText, colW pptx.EMU, theme *pptx.Theme) pptx.EMU {
+	maxLines := 1
+	for _, cell := range cells {
+		if l := wrappedLines(cell, pptx.TypeBody, colW, theme); l > maxLines {
+			maxLines = l
+		}
+	}
+	return pptx.In(0.4) * pptx.EMU(maxLines)
+}
+
+// nodesHeight estimates the stacked height of a node list laid out in a column
+// of width avail (for container slot sizing).
+func nodesHeight(nodes []SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 	var sum pptx.EMU
 	for i, n := range nodes {
 		if i > 0 {
 			sum += estGap
 		}
-		sum += preferredHeight(n)
+		sum += preferredHeight(n, avail, theme)
 	}
 	return sum
 }
@@ -505,7 +573,7 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 	heights := make([]pptx.EMU, n)
 	var bodyH pptx.EMU // sum of node heights only (no gaps)
 	for i, nd := range nodes {
-		heights[i] = preferredHeight(nd)
+		heights[i] = preferredHeight(nd, box.W, r.theme)
 		bodyH += heights[i]
 	}
 	// totalH = bodyH + gap*(n-1); gap appears between nodes, not after the last.
