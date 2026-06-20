@@ -61,12 +61,35 @@ func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide) slideResult {
 // (notes first). It mutates only ps and the renderer's own Stats; the only
 // presentation-shared touch is the global media manager, which is concurrency-
 // safe — and slides that reach it are scheduled sequentially (see Render).
+//
+// VariantDark derives a per-slide dark theme (darkThemeFrom), temporarily
+// replaces the presentation's active theme so that all token colors resolve to
+// dark-palette values, draws a dark canvas fill when no explicit Background is
+// set, then restores the original theme on return. Dark slides always render in
+// the sequential pass (slideNeedsSerial) so the theme swap is never concurrent
+// with another slide's composition.
 func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
-	// Theme variant selection (RFC §13.3) is not yet implemented; surface a
-	// non-default request rather than silently rendering with the active theme.
-	if sl.Variant != VariantLight {
+	// VariantDark: swap in the dark theme for this slide's composition.
+	// The presentation theme is restored via defer so it is reset even if a
+	// future code path adds an early return. VariantPrint is not yet implemented
+	// and surfaces a LayoutWarning instead of silently using the light theme.
+	switch sl.Variant {
+	case VariantDark:
+		orig := r.pres.Theme()
+		dark := darkThemeFrom(orig)
+		r.pres.SetTheme(dark) // token resolution in AddShape/AddRun now uses dark
+		r.theme = dark        // spacing/radius lookups on the per-slide renderer
+		defer r.pres.SetTheme(orig)
+	case VariantLight:
+		// default — no change
+	default:
 		r.warn(sl.ID, fmt.Sprintf("theme variant %q requested but variant selection is not yet implemented; rendered with the active theme", sl.Variant))
 	}
+
+	// Background fill — drawn first so it sits behind all decorations and body
+	// content (the z-order requirement from RFC §10.2 and the Phase-13 spec).
+	r.renderBackground(ps, sl)
+
 	if len(sl.Notes) > 0 {
 		nf := ps.SpeakerNotes()
 		p := nf.AddParagraph(pptx.ParagraphOpts{})
@@ -78,10 +101,74 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 	}
 }
 
-// slideUsesAssets reports whether composing sl may register global media. Such
-// slides render sequentially in scene order so media part numbering stays
-// deterministic (RFC §10.1 byte-identical requirement); see Render.
-func slideUsesAssets(sl *SceneSlide) bool { return nodesUseAssets(sl.Nodes) }
+// renderBackground draws a full-slide fill as the lowest layer of the slide
+// when sl.Background.Kind != BackgroundNone. For VariantDark + BackgroundNone,
+// it draws a dark canvas rect so a bare dark slide is visually dark rather than
+// inheriting the presentation's white default.
+//
+// The presentation's active theme is already dark (swapped by composeSlide)
+// when this is called for a VariantDark slide, so TokenColor roles resolve to
+// the dark palette automatically.
+func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
+	cx, cy := r.pres.SlideSize()
+	full := pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}
+	bg := sl.Background
+
+	switch bg.Kind {
+	case BackgroundNone:
+		if sl.Variant != VariantDark {
+			return // no background fill; byte-identical to pre-Phase-13 output
+		}
+		// Dark variant with no explicit background: fill the canvas with the
+		// dark canvas color so the slide is not transparently white.
+		ps.AddShape(pptx.ShapeRect, full,
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorCanvas))))
+		r.stats.Shapes++
+
+	case BackgroundColor:
+		ps.AddShape(pptx.ShapeRect, full,
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(bg.Color))))
+		r.stats.Shapes++
+
+	case BackgroundGradient:
+		fill := pptx.LinearGradient(float64(bg.Angle),
+			pptx.GradientStop{Pos: 0, Color: pptx.TokenColor(bg.Gradient[0])},
+			pptx.GradientStop{Pos: 1, Color: pptx.TokenColor(bg.Gradient[1])},
+		)
+		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(fill))
+		r.stats.Shapes++
+
+	case BackgroundAsset:
+		data, ct, err := r.resolve(bg.AssetID)
+		if err != nil {
+			r.warn(sl.ID, fmt.Sprintf("background asset %q unresolved: %v", bg.AssetID, err))
+			return
+		}
+		if _, aerr := ps.AddImage(pptx.ImageBytes(data, ct), full); aerr != nil {
+			r.warn(sl.ID, fmt.Sprintf("background image %q: %v", bg.AssetID, aerr))
+			return
+		}
+		r.stats.Shapes++
+		r.stats.Assets++
+	}
+}
+
+// slideUsesAssets reports whether composing sl may register global media (images,
+// charts, code-block rasters). Such slides render sequentially in scene order so
+// media part numbering stays deterministic (RFC §10.1 byte-identical
+// requirement); see Render and slideNeedsSerial.
+func slideUsesAssets(sl *SceneSlide) bool {
+	return nodesUseAssets(sl.Nodes) || sl.Background.Kind == BackgroundAsset
+}
+
+// slideNeedsSerial reports whether sl must compose in the sequential pass rather
+// than the parallel free pool. It extends slideUsesAssets with VariantDark: dark
+// slides temporarily swap the presentation's active theme (see composeSlide),
+// which is not concurrent-safe; they must render sequentially so no other slide
+// composition reads the presentation theme while it is dark.
+func slideNeedsSerial(sl *SceneSlide) bool {
+	return slideUsesAssets(sl) || sl.Variant == VariantDark
+}
 
 func nodesUseAssets(nodes []SlideNode) bool {
 	for _, n := range nodes {

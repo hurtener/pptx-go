@@ -49,30 +49,34 @@ func TestWithLogger_Nil(t *testing.T) {
 	}
 }
 
-// TestVariant_SurfacedNotDropped checks a non-default theme variant produces a
-// LayoutWarning (variant selection is unimplemented) instead of being silently
-// ignored; the default variant is silent.
+// TestVariant_SurfacedNotDropped checks that VariantDark is now implemented
+// (no variant warning) and that VariantPrint (still unimplemented) still warns,
+// while VariantLight (default) is always silent.
 func TestVariant_SurfacedNotDropped(t *testing.T) {
 	body := []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}}
 	sc := scene.Scene{Slides: []scene.SceneSlide{
-		{ID: "light", Nodes: body},                            // default → no warning
-		{ID: "dark", Variant: scene.VariantDark, Nodes: body}, // non-default → warning
+		{ID: "light", Nodes: body},                              // default → no warning
+		{ID: "dark", Variant: scene.VariantDark, Nodes: body},   // implemented → no warning
+		{ID: "print", Variant: scene.VariantPrint, Nodes: body}, // unimplemented → warning
 	}}
 	stats, err := scene.Render(pptx.New(), sc)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	var darkWarns int
+	var printWarns int
 	for _, w := range stats.Warnings {
-		if w.SlideID == "dark" && strings.Contains(w.Message, "variant") {
-			darkWarns++
+		if w.SlideID == "print" && strings.Contains(w.Message, "variant") {
+			printWarns++
 		}
 		if w.SlideID == "light" {
 			t.Errorf("default-variant slide unexpectedly warned: %s", w.Message)
 		}
+		if w.SlideID == "dark" && strings.Contains(w.Message, "variant") {
+			t.Errorf("VariantDark is now implemented but still warns: %s", w.Message)
+		}
 	}
-	if darkWarns != 1 {
-		t.Errorf("dark-variant warnings = %d, want 1; all warnings: %+v", darkWarns, stats.Warnings)
+	if printWarns != 1 {
+		t.Errorf("VariantPrint warnings = %d, want 1; all warnings: %+v", printWarns, stats.Warnings)
 	}
 }
 
