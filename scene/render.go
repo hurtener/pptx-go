@@ -21,6 +21,13 @@ type renderer struct {
 	theme *pptx.Theme
 	ctx   context.Context
 	stats Stats
+
+	// Chrome state (Phase 24): deck-level chrome config copied onto each per-slide
+	// renderer, the resolved page-number total, and this slide's scene index (for
+	// the default 1-based page number). Inert when chrome.Enabled is false.
+	chrome      Chrome
+	chromeTotal int
+	slideIndex  int
 }
 
 // placement is a node assigned to a slot.
@@ -46,8 +53,9 @@ var bodyMargin = pptx.In(0.5)
 // (its own Stats), so concurrent slides never share mutable render state. The
 // returned slideResult is merged by the caller in scene order. ps and sl must
 // belong to the same scene index.
-func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide) slideResult {
-	sr := &renderer{pres: base.pres, cfg: base.cfg, theme: base.theme, ctx: base.ctx}
+func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide, idx int) slideResult {
+	sr := &renderer{pres: base.pres, cfg: base.cfg, theme: base.theme, ctx: base.ctx,
+		chrome: base.chrome, chromeTotal: base.chromeTotal, slideIndex: idx}
 	start := time.Now()
 	sr.composeSlide(ps, sl)
 	return slideResult{
@@ -100,6 +108,12 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 	for _, pl := range r.layout(sl.Nodes, sl.ID, sl.Content) {
 		r.renderNode(ps, pl.box, pl.node, sl.ID, pl.hAlign)
 	}
+
+	// Chrome is drawn last so the eyebrow and footer page number stay visible
+	// even over a full-bleed background or section divider. It occupies the
+	// margin the body region vacated (see bodyRegion), so it never overlaps the
+	// body content. Inert when chrome is disabled.
+	r.renderChrome(ps, sl)
 }
 
 // renderBackground draws a full-slide fill as the lowest layer of the slide
@@ -210,14 +224,23 @@ func nodeUsesAssets(n SlideNode) bool {
 	}
 }
 
-// bodyRegion returns the margin-inset content region of the slide.
+// bodyRegion returns the margin-inset content region of the slide. When chrome
+// is enabled (Phase 24) the region shrinks by the eyebrow band at the top and
+// the footer band at the bottom, so the body never extends into the chrome and
+// overlap is structurally impossible.
 func (r *renderer) bodyRegion() pptx.Box {
 	cx, cy := r.pres.SlideSize() // EMU
+	top := bodyMargin
+	bottom := bodyMargin
+	if r.chrome.Enabled {
+		top += chromeEyebrowH + chromeBandGap
+		bottom += chromeFooterH + chromeBandGap
+	}
 	return pptx.Box{
 		X: bodyMargin,
-		Y: bodyMargin,
+		Y: top,
 		W: pptx.EMU(cx) - 2*bodyMargin,
-		H: pptx.EMU(cy) - 2*bodyMargin,
+		H: pptx.EMU(cy) - top - bottom,
 	}
 }
 
