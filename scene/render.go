@@ -25,8 +25,9 @@ type renderer struct {
 
 // placement is a node assigned to a slot.
 type placement struct {
-	node SlideNode
-	box  pptx.Box
+	node   SlideNode
+	box    pptx.Box
+	hAlign HAlign // effective horizontal alignment for text leaf nodes (zero = HAlignLeft)
 }
 
 // slideResult is one slide's composition outcome, merged into Stats in scene
@@ -97,7 +98,7 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 	}
 
 	for _, pl := range r.layout(sl.Nodes, sl.ID, sl.Content) {
-		r.renderNode(ps, pl.box, pl.node, sl.ID)
+		r.renderNode(ps, pl.box, pl.node, sl.ID, pl.hAlign)
 	}
 }
 
@@ -248,14 +249,14 @@ func (r *renderer) layout(nodes []SlideNode, slideID string, align Alignment) []
 	}
 	var out []placement
 	for _, n := range bg {
-		out = append(out, placement{n, fullSlide})
+		out = append(out, placement{node: n, box: fullSlide})
 	}
 	for _, n := range sections {
-		out = append(out, placement{n, fullSlide})
+		out = append(out, placement{node: n, box: fullSlide})
 	}
 	out = append(out, r.alignedStackIn(r.bodyRegion(), stacked, slideID, align)...)
 	for _, n := range fg {
-		out = append(out, placement{n, fullSlide})
+		out = append(out, placement{node: n, box: fullSlide})
 	}
 	return out
 }
@@ -269,7 +270,7 @@ func (r *renderer) stackIn(box pptx.Box, nodes []SlideNode, slideID string) []pl
 	y := box.Y
 	for _, n := range nodes {
 		h := preferredHeight(n)
-		out = append(out, placement{n, pptx.Box{X: box.X, Y: y, W: box.W, H: h}})
+		out = append(out, placement{node: n, box: pptx.Box{X: box.X, Y: y, W: box.W, H: h}})
 		y += h + gap
 	}
 	if len(nodes) > 0 && y-gap > box.Bottom() {
@@ -279,20 +280,23 @@ func (r *renderer) stackIn(box pptx.Box, nodes []SlideNode, slideID string) []pl
 }
 
 // renderNode dispatches a node to its composer per the §12 policy.
-func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID string) {
+// hAlign is the effective horizontal alignment computed by alignedStackIn for
+// this node; text leaf renderers (Hero/Heading/Prose/Quote) use it to set
+// ParagraphOpts.Align. Container and visual nodes ignore it.
+func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID string, hAlign HAlign) {
 	switch v := n.(type) {
 	case Hero:
-		r.renderHero(ps, box, v)
+		r.renderHero(ps, box, v, hAlign)
 	case Prose:
-		r.renderProse(ps, box, v)
+		r.renderProse(ps, box, v, hAlign)
 	case Heading:
-		r.renderHeading(ps, box, v)
+		r.renderHeading(ps, box, v, hAlign)
 	case List:
 		r.renderList(ps, box, v)
 	case Divider:
 		r.renderDivider(ps, box, v)
 	case Quote:
-		r.renderQuote(ps, box, v)
+		r.renderQuote(ps, box, v, hAlign)
 	case Callout:
 		r.renderCallout(ps, box, v)
 	case Chip:
@@ -550,25 +554,32 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 
 		plBox := pptx.Box{X: box.X, Y: y, W: box.W, H: h}
 
+		// Chip is a physical pill that should move: narrow its box and offset X
+		// so the pill shape itself is positioned at center/right.
+		// Text leaf nodes (Hero, Heading, Prose, Quote) keep the full body-width
+		// box — their paragraph alignment (set by the renderer via hAlignToParagraph)
+		// handles the per-line centering/right-alignment within the full frame.
 		if hAlign != HAlignLeft {
-			nw := nodeNaturalWidth(nd, r.theme)
-			if nw > box.W {
-				nw = box.W
-			}
-			if nw > 0 && nw < box.W {
-				var offsetX pptx.EMU
-				switch hAlign {
-				case HAlignCenter:
-					offsetX = (box.W - nw) / 2
-				case HAlignRight:
-					offsetX = box.W - nw
+			if _, isChip := nd.(Chip); isChip {
+				nw := nodeNaturalWidth(nd, r.theme)
+				if nw > box.W {
+					nw = box.W
 				}
-				plBox.X = box.X + offsetX
-				plBox.W = nw
+				if nw > 0 && nw < box.W {
+					var offsetX pptx.EMU
+					switch hAlign {
+					case HAlignCenter:
+						offsetX = (box.W - nw) / 2
+					case HAlignRight:
+						offsetX = box.W - nw
+					}
+					plBox.X = box.X + offsetX
+					plBox.W = nw
+				}
 			}
 		}
 
-		out = append(out, placement{nd, plBox})
+		out = append(out, placement{node: nd, box: plBox, hAlign: hAlign})
 		y += h + effectiveGap
 	}
 	return out

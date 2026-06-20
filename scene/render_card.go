@@ -252,12 +252,12 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 		cols := layout.Columns(body, weights, gap)
 		for i, n := range v.Body {
 			if i < len(cols) {
-				r.renderNode(ps, cols[i], n, slideID)
+				r.renderNode(ps, cols[i], n, slideID, HAlignLeft)
 			}
 		}
 		return
 	}
 	for _, pl := range r.stackIn(body, v.Body, slideID) {
-		r.renderNode(ps, pl.box, pl.node, slideID)
+		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
 }

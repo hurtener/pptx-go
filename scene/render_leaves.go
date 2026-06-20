@@ -6,26 +6,29 @@ import "github.com/hurtener/pptx-go/pptx"
 // following its intrinsic policy — native shapes, except code_block (an image).
 // No product behavior (D-026): typography is the node's theme role, verbatim.
 
-func (r *renderer) renderHero(ps *pptx.Slide, box pptx.Box, v Hero) {
+func (r *renderer) renderHero(ps *pptx.Slide, box pptx.Box, v Hero, hAlign HAlign) {
+	pAlign := hAlignToParagraph(hAlign)
+	opts := pptx.ParagraphOpts{Align: pAlign}
 	tf := ps.AddTextFrame(box).Anchor(pptx.AnchorMiddle)
-	r.plainPara(tf, v.Eyebrow, pptx.TypeCaption, pptx.ParagraphOpts{})
-	r.plainPara(tf, v.Title, pptx.TypeDisplay, pptx.ParagraphOpts{})
-	r.plainPara(tf, v.Subtitle, pptx.TypeBody, pptx.ParagraphOpts{})
+	r.plainPara(tf, v.Eyebrow, pptx.TypeCaption, opts)
+	r.plainPara(tf, v.Title, pptx.TypeDisplay, opts)
+	r.plainPara(tf, v.Subtitle, pptx.TypeBody, opts)
 	r.stats.Shapes++
 }
 
-func (r *renderer) renderProse(ps *pptx.Slide, box pptx.Box, v Prose) {
+func (r *renderer) renderProse(ps *pptx.Slide, box pptx.Box, v Prose, hAlign HAlign) {
+	pAlign := hAlignToParagraph(hAlign)
 	tf := ps.AddTextFrame(box)
 	for _, para := range v.Paragraphs {
-		p := tf.AddParagraph(pptx.ParagraphOpts{})
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign})
 		r.addRichText(ps, p, para, pptx.TypeBody)
 	}
 	r.stats.Shapes++
 }
 
-func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading) {
+func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading, hAlign HAlign) {
 	tf := ps.AddTextFrame(box)
-	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p := tf.AddParagraph(pptx.ParagraphOpts{Align: hAlignToParagraph(hAlign)})
 	r.addRichText(ps, p, v.Text, headingRole(v.Level))
 	r.stats.Shapes++
 }
@@ -46,12 +49,13 @@ func (r *renderer) renderDivider(ps *pptx.Slide, box pptx.Box, _ Divider) {
 	r.stats.Shapes++
 }
 
-func (r *renderer) renderQuote(ps *pptx.Slide, box pptx.Box, v Quote) {
+func (r *renderer) renderQuote(ps *pptx.Slide, box pptx.Box, v Quote, hAlign HAlign) {
+	pAlign := hAlignToParagraph(hAlign)
 	tf := ps.AddTextFrame(box)
-	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign})
 	r.addRichText(ps, p, v.Text, pptx.TypeH3)
 	if v.Attribution != "" {
-		r.plainPara(tf, "— "+v.Attribution, pptx.TypeCaption, pptx.ParagraphOpts{})
+		r.plainPara(tf, "— "+v.Attribution, pptx.TypeCaption, pptx.ParagraphOpts{Align: pAlign})
 	}
 	r.stats.Shapes++
 }

@@ -1,5 +1,7 @@
 package scene
 
+import "github.com/hurtener/pptx-go/pptx"
+
 // Alignment types for the scene body stack (Phase 13 engine richness). The
 // zero values {VAlignTop, HAlignLeft} reproduce the pre-Phase-13 layout
 // unchanged — fully backward-compatible.
@@ -10,16 +12,33 @@ package scene
 type HAlign int
 
 const (
-	// HAlignLeft (zero value) is the default: the leaf node spans the full body
-	// width starting at the body left edge. Backward-compatible.
+	// HAlignLeft (zero value) is the default: text leaf nodes span the full
+	// body width and render left-aligned paragraphs. Backward-compatible.
 	HAlignLeft HAlign = iota
-	// HAlignCenter narrows each affected leaf node to its naturalWidth and
-	// centers it within the body region.
+	// HAlignCenter sets paragraph alignment to center on text leaf nodes
+	// (Hero, Heading, Prose, Quote). The text box keeps its full body width;
+	// each paragraph line is centered within that frame. For Chip nodes the
+	// box is physically centered instead (the pill should move, not just its
+	// text).
 	HAlignCenter
-	// HAlignRight narrows each affected leaf node to its naturalWidth and
-	// places it flush with the body right edge.
+	// HAlignRight sets paragraph alignment to right on text leaf nodes.
+	// For Chip nodes the box is physically placed at the body right edge.
 	HAlignRight
 )
+
+// hAlignToParagraph converts a scene HAlign to a pptx paragraph Alignment.
+// HAlignLeft maps to AlignLeft (the OOXML default, emitting no algn attr),
+// which preserves byte-identical output for unaligned content.
+func hAlignToParagraph(h HAlign) pptx.Alignment {
+	switch h {
+	case HAlignCenter:
+		return pptx.AlignCenter
+	case HAlignRight:
+		return pptx.AlignRight
+	default:
+		return pptx.AlignLeft
+	}
+}
 
 // String returns the horizontal alignment name.
 func (h HAlign) String() string {
