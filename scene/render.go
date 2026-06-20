@@ -614,6 +614,16 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		r.warn(slideID, "content overflows its region")
 	}
 
+	// VAlignFill: grow the flexible nodes (containers + Image/Chart) to consume
+	// the leftover body height, so the last node's bottom reaches box.Bottom().
+	// Top-pinned (startY stays box.Y) with the standard gap; only positive slack
+	// is distributed, so fill never overlaps and never fights the overflow case.
+	if align.Vertical == VAlignFill {
+		if slack := box.H - totalH; slack > 0 {
+			distributeFill(nodes, heights, slack)
+		}
+	}
+
 	out := make([]placement, 0, n)
 	y := startY
 	for i, nd := range nodes {
@@ -651,6 +661,55 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		y += h + effectiveGap
 	}
 	return out
+}
+
+// isFlexible reports whether a node grows under VAlignFill. The flexible set is
+// intrinsic (D-026): the containers (which subdivide a taller box into taller
+// cells) plus the two stretchable visuals. Text leaves and atoms stay at
+// preferred height — stretching text is meaningless — and CodeBlock is excluded
+// because growing a monospaced-code raster distorts the listing.
+func isFlexible(n SlideNode) bool {
+	switch n.(type) {
+	case Grid, TwoColumn, Card, CardSection, Table, Chart, Image:
+		return true
+	default:
+		return false
+	}
+}
+
+// distributeFill grows the flexible nodes in place so their added heights sum to
+// exactly slack (slack > 0). The share is proportional to each flexible node's
+// preferred height (the larger node grows more, relative proportions preserved),
+// with the rounding remainder assigned to the last flexible node so the total is
+// exact. When the flexible heights sum to zero, the slack is split equally. With
+// no flexible node nothing grows (the slide top-aligns). Pure integer EMU math,
+// so the result is deterministic regardless of worker scheduling.
+func distributeFill(nodes []SlideNode, heights []pptx.EMU, slack pptx.EMU) {
+	var flex []int
+	var flexH pptx.EMU
+	for i, nd := range nodes {
+		if isFlexible(nd) {
+			flex = append(flex, i)
+			flexH += heights[i]
+		}
+	}
+	if len(flex) == 0 {
+		return
+	}
+	var used pptx.EMU
+	for k, idx := range flex {
+		var add pptx.EMU
+		switch {
+		case k == len(flex)-1:
+			add = slack - used // last flexible node absorbs the rounding remainder
+		case flexH > 0:
+			add = slack * heights[idx] / flexH
+		default:
+			add = slack / pptx.EMU(len(flex)) // all flexible heights zero → equal split
+		}
+		heights[idx] += add
+		used += add
+	}
 }
 
 // nodeEffectiveHAlign returns the horizontal alignment that applies to n in

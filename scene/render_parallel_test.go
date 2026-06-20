@@ -90,6 +90,33 @@ func TestRenderDeterministic_MultiLineWrap(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_VAlignFill is the Phase-23 determinism guard: a deck
+// that grows flexible nodes to fill the frame (VAlignFill) must render
+// byte-identically across worker counts — the slack distribution is pure integer
+// math with a fixed remainder rule, so layout never depends on scheduling.
+func TestRenderDeterministic_VAlignFill(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:      string(rune('A' + (i % 26))),
+			Content: scene.Alignment{Vertical: scene.VAlignFill},
+			Nodes: []scene.SlideNode{
+				scene.Heading{Text: rt("Section"), Level: 1},
+				scene.Grid{Columns: 2, Cells: []scene.SlideNode{
+					scene.Card{Header: "a"}, scene.Card{Header: "b"},
+					scene.Card{Header: "c"}, scene.Card{Header: "d"},
+				}},
+				scene.TwoColumn{Left: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("l")}}}, Right: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("r")}}}},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("VAlignFill: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_WithAssets guards determinism when a media-bearing
 // node (code_block) is mixed into a multi-slide deck: those slides render
 // sequentially, so distinct image parts are numbered in scene order every run.

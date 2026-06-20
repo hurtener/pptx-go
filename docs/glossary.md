@@ -276,6 +276,14 @@ A shape's interior fill (builder). V1 ships `pptx.SolidFill(Color)` and
 `pptx.NoFill()`; a fill resolves its `Color` against the active `Theme` when
 applied. Gradient, pattern and picture (blip) fills are tracked for later.
 
+## Flexible node
+
+A scene node whose slot grows under `VAlignFill`: the containers (`Grid`,
+`TwoColumn`, `Card`, `CardSection`, `Table`) plus the stretchable visuals
+(`Image`, `Chart`). Text leaves and atoms are *fixed* (preferred height);
+`CodeBlock` is fixed too (growing a code raster distorts it). See `Grow-to-fit`
+and `RFC-001-pptx-go.md §10.2`.
+
 ## Flow node
 
 A scene IR leaf for a sequential step pipeline (horizontal/vertical) with
@@ -355,6 +363,15 @@ direction — `<a:lin>` (linear, by angle) or `<a:path path="circle">`
 ornaments (`radial_glow`, `glow_ring`) as true gradients rather than banded
 solids. Public API: `pptx.LinearGradient` / `pptx.RadialGradient` with
 `GradientStop`s. Joins `SolidFill` / `NoFill` as a `Fill`.
+
+## Grow-to-fit
+
+The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their
+preferred height, distributes the leftover body height to the `Flexible node`s so
+they grow to consume the frame. The share is proportional to preferred height and
+deterministic. A mechanism, not a judgment (D-026, D-052): the caller opts a
+slide into fill; the engine never decides a slide looks thin. See
+`RFC-001-pptx-go.md §10.2`.
 
 ## Header pill
 
@@ -801,6 +818,14 @@ Major version milestones. V1.0.0 is the first stable release; V2 is the
 next major. V1 promises Layer 1 + Layer 2 + image-shape charts +
 round-trip self-authored. V2 adds native `c:chart`, third-party PPTX
 read fidelity, animations, transitions, broader OOXML coverage.
+
+## VAlignFill
+
+The body-stack vertical alignment (`scene.VAlignFill`, on
+`SceneSlide.Content.Vertical`) that pins fixed leaves at the top and grows the
+`Flexible node`s to fill the remaining body height — the engine surface for
+`Grow-to-fit`. Opt-in; the zero value `VAlignTop` is unchanged. See `D-052` and
+`RFC-001-pptx-go.md §10.2`.
 
 ## Variant (theme variant)
 

@@ -186,3 +186,23 @@ body region records a `content overflows its region` `LayoutWarning` — that is
 the signal to inspect when you want to flag a slide as too full. Short,
 single-line content is allotted the same compact height as before and never
 falsely warns.
+
+### Vertical alignment and fill
+
+`SceneSlide.Content.Vertical` chooses how the body stack sits in the body
+region:
+
+- `VAlignTop` (default) — stack flush with the top edge.
+- `VAlignCenter` — float the stack to the vertical center.
+- `VAlignBottom` — flush with the bottom edge.
+- `VAlignJustify` — spread the leftover height into the inter-node gaps.
+- `VAlignFill` — pin the fixed leaves at the top and **grow the flexible nodes**
+  (the containers `Grid`, `TwoColumn`, `Card`, `CardSection`, `Table`, plus
+  `Image` and `Chart`) to consume the remaining height, so a sparse slide fills
+  its frame instead of reading thin.
+
+Under `VAlignFill` the leftover height is shared among the flexible nodes in
+proportion to their natural height, deterministically. Text leaves and atoms
+keep their size (stretching text is meaningless), and a slide with no flexible
+node simply top-aligns. This is a mechanism, not a judgment — the engine never
+decides on its own that a slide looks thin; you opt a slide into fill.
