@@ -31,9 +31,11 @@ const (
 	LayoutBlank
 )
 
-// Variant selects a named theme variant for a slide (RFC §13.3). Variant
-// selection is not yet implemented: a non-default Variant currently renders with
-// the active theme and surfaces a LayoutWarning (it is not silently dropped).
+// Variant selects a named theme variant for a slide (RFC §13.3). VariantDark
+// is implemented: it derives a per-slide dark theme and swaps the active theme
+// for the duration of that slide's composition. VariantPrint is not yet
+// implemented and surfaces a LayoutWarning rather than silently rendering with
+// the active theme.
 type Variant int
 
 const (
@@ -69,16 +71,19 @@ type Scene struct {
 }
 
 // SceneSlide is one slide in a Scene: a layout intent, the top-level node list,
-// optional speaker notes, a theme variant, and body-stack alignment. The zero
-// value for Content ({VAlignTop, HAlignLeft}) reproduces the pre-Phase-13
-// layout unchanged — fully backward-compatible.
+// optional speaker notes, a theme variant, body-stack alignment, and an optional
+// full-bleed slide background. The zero value for Content ({VAlignTop,
+// HAlignLeft}) reproduces the pre-Phase-13 layout unchanged — fully
+// backward-compatible. A zero Background (BackgroundNone) draws nothing, so
+// adding this field to existing call sites requires no change.
 type SceneSlide struct {
-	ID      string
-	Layout  LayoutKind
-	Nodes   []SlideNode
-	Notes   RichText
-	Variant Variant
-	Content Alignment // body-stack alignment; zero value = top-left (default)
+	ID         string
+	Layout     LayoutKind
+	Nodes      []SlideNode
+	Notes      RichText
+	Variant    Variant
+	Content    Alignment  // body-stack alignment; zero value = top-left (default)
+	Background Background // full-bleed slide background; zero value = no background (BackgroundNone)
 }
 
 // LayoutWarning is a non-fatal layout issue surfaced in Stats.Warnings (e.g.
@@ -373,7 +378,7 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		if err := ctx.Err(); err != nil { // honor cancellation between slides
 			return Stats{}, err
 		}
-		if workers > 1 && !slideUsesAssets(&s.Slides[i]) {
+		if workers > 1 && !slideNeedsSerial(&s.Slides[i]) {
 			free = append(free, i)
 			continue
 		}
