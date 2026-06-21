@@ -98,6 +98,10 @@ type RunStyle struct {
 	Strike      Strike
 	BaselineRel BaselineShift
 	Code        bool // inline code: monospace + a subtle tint (D-013; Chunk B)
+	// Tracking optionally overrides the type role's letter-spacing for this run,
+	// in points (signed). nil inherits the role's FontSpec.Tracking; a non-nil
+	// value (including 0) wins over the role. Emitted as a:rPr/@spc (D-060).
+	Tracking *float64
 }
 
 // ParagraphOpts configures a paragraph at creation time.
@@ -451,6 +455,16 @@ func (r *Run) Baseline() BaselineShift {
 		return baselineFrom(pr.Baseline)
 	}
 	return BaselineNone
+}
+
+// Tracking returns the run's letter-spacing in points (signed), or 0 when the
+// run carries no explicit spacing — the read inverse of the resolved
+// FontSpec.Tracking / RunStyle.Tracking (D-060).
+func (r *Run) Tracking() float64 {
+	if pr := r.run.TextProperties; pr != nil {
+		return float64(pr.Spc) / 100.0
+	}
+	return 0
 }
 
 // Color returns the run's text color and true, or nil and false when the run has

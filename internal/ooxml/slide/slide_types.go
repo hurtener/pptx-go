@@ -264,8 +264,8 @@ type XOv2DrExtent struct {
 // CT_ShapeProperties schema: xfrm, geometry, fill, line. At most one of
 // SolidFill / NoFill is set.
 type XShapeProperties struct {
-	XMLName     struct{}         `xml:"spPr"`
-	Transform2D *XTransform2D    `xml:"xfrm,omitempty"`
+	XMLName      struct{}         `xml:"spPr"`
+	Transform2D  *XTransform2D    `xml:"xfrm,omitempty"`
 	PresetGeom   *XPresetGeometry `xml:"prstGeom,omitempty"`
 	CustomGeom   *XCustomGeometry `xml:"custGeom,omitempty"`
 	SolidFill    *XSolidFill      `xml:"solidFill,omitempty"`
@@ -453,6 +453,7 @@ type XTextProperties struct {
 	FontSize   int          `xml:"sz,attr,omitempty"`
 	Bold       string       `xml:"b,attr,omitempty"`        // "1" when bold
 	Italic     string       `xml:"i,attr,omitempty"`        // "1" when italic
+	Spc        int          `xml:"spc,attr,omitempty"`      // letter-spacing, signed 1/100 pt (D-060)
 	Underline  string       `xml:"u,attr,omitempty"`        // none/sng/dbl/…
 	Strike     string       `xml:"strike,attr,omitempty"`   // noStrike/sngStrike/dblStrike
 	Baseline   int          `xml:"baseline,attr,omitempty"` // ST_Percentage (1000 = 1%)

@@ -1,6 +1,10 @@
 package pptx
 
-import "github.com/hurtener/pptx-go/internal/ooxml/slide"
+import (
+	"math"
+
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
+)
 
 // Text enum → OOXML token mappings, and the RunStyle → run-properties
 // translation. Kept apart from the builder types in text.go.
@@ -104,6 +108,18 @@ func (rs RunStyle) toProps(t *Theme) *slide.XTextProperties {
 	if spec.Size > 0 {
 		p.FontSize = int(spec.Size * 100) // OOXML sz is in 1/100 pt
 		set = true
+	}
+	// Letter-spacing (tracking): a per-run override wins over the role's value.
+	// Emitted as a:rPr/@spc in signed 1/100 pt; 0 emits nothing (D-060).
+	tracking := spec.Tracking
+	if rs.Tracking != nil {
+		tracking = *rs.Tracking
+	}
+	if tracking != 0 {
+		p.Spc = int(math.Round(tracking * 100))
+		if p.Spc != 0 {
+			set = true
+		}
 	}
 	family := spec.Family
 	if rs.Code {

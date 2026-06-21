@@ -115,6 +115,10 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
 
 ### Theme & tokens
 
+- `17-type-detail-tokens.md` — per-role letter-spacing (tracking) on `FontSpec`
+  (+ a `RunStyle` override) emitted as OOXML `a:rPr/@spc`, round-trip clean and
+  byte-identical when zero; the run-attribute starting point for the R9 type-detail
+  tokens (line-height, case follow). (R9.3.)
 - `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
   `clrMap` indirection, and font scheme map onto pptx-go's token roles.
 

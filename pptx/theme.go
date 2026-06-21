@@ -91,12 +91,17 @@ const (
 )
 
 // FontSpec is a resolved typography value: a font family, size in points,
-// weight (100–900, 400 = regular, 700 = bold), and italic flag.
+// weight (100–900, 400 = regular, 700 = bold), italic flag, and letter-spacing.
 type FontSpec struct {
 	Family string
 	Size   float64
 	Weight int
 	Italic bool
+	// Tracking is letter-spacing in points (signed): positive opens glyphs apart
+	// (wide-tracked eyebrows/labels), negative tightens them (display headlines).
+	// 0 (the zero value) emits nothing — byte-identical to an untracked run.
+	// Emitted as the OOXML a:rPr/@spc attribute (1/100 pt). (D-060.)
+	Tracking float64
 }
 
 // Bold reports whether the weight is bold (≥600).

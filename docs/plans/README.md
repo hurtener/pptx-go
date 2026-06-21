@@ -134,16 +134,33 @@ Wave 4 — Curated assets + composites Phase 12–16
 Wave 5 — Charts                       Phase 17
 Wave 6 — Reading + round-trip        Phase 18–19
 Wave 7 — Docs, skills, release       Phase 20–21
-Wave 8 — Post-V1 engine extensions   Phase 22–…
+Wave 8 — Post-V1 engine extensions   Phase 22–29
+Wave 9 — Typography & type system    Phase 30–…   (R9 engine)
+Wave 10 — Content fit & density       (R10 engine)
+Wave 11 — Rendering robustness        (R11 engine)
+Wave 12 — Component primitives        (R12 engine)
+Wave 13 — Backgrounds & finish        (R13 engine)
+Wave 14 — Coverage classes            (R14 engine)
+Wave 15 — Theme/soul engine bits      (R8 engine: dark palette, multi-accent, gradients, dark ext)
 ```
 
 Each wave ends with a checkpoint audit (`CLAUDE.md §17`). V1.0.0 ships at
-the end of Wave 7. **Wave 8** is the first post-V1 wave: caller-driven engine
+the end of Wave 7. **Wave 8** was the first post-V1 wave: caller-driven engine
 mechanisms requested by the product built on pptx-go
-(`DECKARD-PRODUCT-REQUIREMENTS.md`). Each is additive and backward-compatible —
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R1–R7). Each is additive and backward-compatible —
 a new optional capability whose zero value reproduces the prior render
 byte-for-byte (the one intentional exception is Phase 22, which changes
 multi-line text layout by design).
+
+**Waves 9–15** implement the *professional-bar* requirements
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R8–R14, "Deckard Wave 2"). The requirements
+doc tags each sub-requirement `engine` / `product` / `both`: pptx-go implements
+the **engine** mechanisms (and the engine side of `both`); the `product`-tagged
+requirements operate on Deckard's own packages (`internal/soul/`, `contracts/`,
+`exportstore/`) and are out of scope for this repo (see **D-059**). The same
+invariants hold — additive, deterministic, byte-identical when unused,
+mechanism-not-taste (D-026). Waves group by requirement family; each
+sub-requirement (or a tightly-coupled cluster) is one phase / PR.
 
 ---
 
