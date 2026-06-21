@@ -123,15 +123,28 @@ type SlideTiming struct {
 	Duration time.Duration
 }
 
-// Stats is the result of Render: per-render counts, per-slide timings, and
-// non-fatal warnings (the library's observability surface — no event protocol,
-// D-016).
+// SlideColors are the colors the engine actually resolved for one slide (D-058):
+// the canvas (base background), surface, and primary-text RGBs it rendered with —
+// including a VariantDark slide's derived dark palette. A caller uses them to
+// compute its own text/surface contrast against the real background; the engine
+// performs no contrast logic (D-026), it only reports what it resolved.
+type SlideColors struct {
+	SlideID     string
+	Canvas      pptx.RGB // resolved ColorCanvas (the slide's base background)
+	Surface     pptx.RGB // resolved ColorSurface
+	PrimaryText pptx.RGB // resolved TextPrimary
+}
+
+// Stats is the result of Render: per-render counts, per-slide timings, per-slide
+// resolved colors, and non-fatal warnings (the library's observability surface —
+// no event protocol, D-016).
 type Stats struct {
 	Slides   int
 	Shapes   int
 	Assets   int
 	Warnings []LayoutWarning
 	Timings  []SlideTiming
+	Colors   []SlideColors // per-slide resolved colors, in scene order
 }
 
 // FrameRecipe draws a device frame's bezel into a region and returns the
@@ -441,6 +454,7 @@ func Render(pres *pptx.Presentation, s Scene, opts ...RenderOption) (Stats, erro
 		}
 		stats.Warnings = append(stats.Warnings, results[i].warnings...)
 		stats.Timings = append(stats.Timings, SlideTiming{SlideID: s.Slides[i].ID, Duration: results[i].dur})
+		stats.Colors = append(stats.Colors, results[i].colors)
 	}
 	if cfg.logger != nil {
 		// Warnings are logged here, post-aggregation, so order is deterministic

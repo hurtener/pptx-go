@@ -1699,4 +1699,37 @@ currency formatting, a tone-driven ▲/▼ glyph, and value auto-fit — noted i
 
 ---
 
+## D-058 — Expose resolved per-slide colors in Stats (no contrast logic)
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** A caller (the product built on pptx-go) validates text/surface
+contrast but cannot see the colors the engine actually *resolved* per slide —
+especially for `VariantDark`, where the engine swaps to a derived dark palette
+(`darkThemeFrom`). The caller's validator checks against the light theme and
+false-flags white-on-dark. Final unit of Wave 8 (`DECKARD-PRODUCT-REQUIREMENTS.md`
+R7, LOW).
+**Decision:** Add a `SlideColors{SlideID string, Canvas, Surface, PrimaryText
+pptx.RGB}` type and a `Stats.Colors []SlideColors` field. In `composeOne`, after
+`composeSlide` returns, capture the three resolved RGBs from `sr.theme` —
+`ResolveColor(ColorCanvas)`, `ResolveColor(ColorSurface)`,
+`ResolveTextColor(TextPrimary)`. Because `composeSlide` leaves `sr.theme` as the
+derived dark theme for `VariantDark` (and the active theme otherwise), the
+captured values are exactly what the codec emitted with — the dark palette
+included. The per-slide results merge into `Stats.Colors` in `Render`'s
+scene-order loop (like `Timings`). The engine performs **no** contrast logic
+(D-026): it returns RGBs only; WCAG ratios and large-text thresholds stay the
+caller's. A `Stats` field (not a separate query API) is chosen — the lighter,
+already-established observability shape (D-016).
+**Consequences:** A caller can compute true text/surface contrast against the
+real rendered background, dark variant included, closing the false-flag gap.
+Additive and **output-invariant**: `Stats.Colors` is pure metadata, never emitted
+into the `.pptx`, so rendered bytes are byte-identical; existing callers ignore
+the field. Deterministic and scene-ordered. New observability field ⇒ a smoke
+check lands in the same PR (§4.2). **This completes Wave 8 (R1–R7).** Deferred:
+exposing more roles (accent, secondary text, surface-alt), per-node resolved
+colors, and a post-`Render` query API — noted in `docs/research/16-resolved-colors.md`.
+
+---
+
 *Append new entries below this line.*

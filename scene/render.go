@@ -44,6 +44,7 @@ type slideResult struct {
 	assets   int
 	warnings []LayoutWarning
 	dur      time.Duration
+	colors   SlideColors
 }
 
 // bodyMargin is the uniform inset from the slide edge to the body region.
@@ -58,11 +59,21 @@ func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide, idx int) slideR
 		chrome: base.chrome, chromeTotal: base.chromeTotal, slideIndex: idx}
 	start := time.Now()
 	sr.composeSlide(ps, sl)
+	// Capture the colors the slide actually rendered with. composeSlide leaves
+	// sr.theme as the derived dark theme for VariantDark (and the active theme
+	// otherwise), so these RGBs are exactly what the codec emitted with — the
+	// dark palette included (D-058). No contrast logic here (D-026).
 	return slideResult{
 		shapes:   sr.stats.Shapes,
 		assets:   sr.stats.Assets,
 		warnings: sr.stats.Warnings,
 		dur:      time.Since(start),
+		colors: SlideColors{
+			SlideID:     sl.ID,
+			Canvas:      sr.theme.ResolveColor(pptx.ColorCanvas),
+			Surface:     sr.theme.ResolveColor(pptx.ColorSurface),
+			PrimaryText: sr.theme.ResolveTextColor(pptx.TextPrimary),
+		},
 	}
 }
 

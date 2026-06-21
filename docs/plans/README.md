@@ -758,6 +758,24 @@ proven by parallel≡sequential equality).
 - A stat renders value + label (+ toned delta); a Grid of stats renders a strip;
   Stage-1 rejects an empty value; the catalog has 22 kinds; determinism holds.
 
+#### Phase 29 — resolved colors
+
+**Subsystem:** scene
+**RFC sections:** §10.1, §13.3
+**Deps:** Phase 05–06 (Stats), the `VariantDark` derived palette.
+**What lands (R7, completes Wave 8):**
+- `scene/scene.go` — a `SlideColors{SlideID, Canvas, Surface, PrimaryText}` type
+  and a `Stats.Colors []SlideColors` field, captured per slide from the theme the
+  slide actually rendered with (the derived dark palette for `VariantDark`).
+- No contrast logic in the engine — it exposes the resolved RGBs; the caller
+  computes its own ratios/thresholds.
+**Acceptance criteria:**
+- After `Render`, a caller reads one scene-ordered `SlideColors` per slide; a
+  dark slide's colors are the dark palette and differ from a light slide's; the
+  rendered bytes are unchanged; deterministic.
+
+*(Completes Wave 8 — R1–R7.)*
+
 ---
 
 ## 4. Post-V1 backlog
