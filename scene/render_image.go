@@ -123,6 +123,8 @@ func walkImages(nodes []SlideNode, fn func(Image)) {
 			walkImages(v.Body, fn)
 		case CardSection:
 			walkImages(v.Body, fn)
+		case Bento:
+			walkImages(v.cellNodes(), fn)
 		}
 	}
 }

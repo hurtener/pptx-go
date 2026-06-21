@@ -35,6 +35,7 @@ const (
 	KindGrid
 	KindCard
 	KindCardSection
+	KindBento
 )
 
 // String returns the node kind's IR name.
@@ -80,6 +81,8 @@ func (k NodeKind) String() string {
 		return "card"
 	case KindCardSection:
 		return "card_section"
+	case KindBento:
+		return "bento"
 	default:
 		return "unknown"
 	}
@@ -470,6 +473,46 @@ type Grid struct {
 }
 
 func (Grid) NodeKind() NodeKind { return KindGrid }
+
+// BentoCell is one cell of a BentoRow: its content and how many of the bento's
+// column units it spans (>= 1).
+type BentoCell struct {
+	Span int
+	Node SlideNode
+}
+
+// BentoRow is one row of a Bento: an optional left-gutter label and a left-to-
+// right sequence of span-weighted cells.
+type BentoRow struct {
+	Label string // "" = no label for this row
+	Cells []BentoCell
+}
+
+// Bento is a row-labeled grid (D-056): rows that each carry an optional left
+// label and cells of variable column span, measured against Columns shared
+// column units (a span-S cell occupies S units, so columns align across rows).
+// A row's spans sum to <= Columns. It is a container — its cells render per their
+// own policy — and is distinct from Grid (uniform columns, one child per cell).
+type Bento struct {
+	node
+	Columns int // shared column-unit count a row's spans are measured against (>= 1)
+	Rows    []BentoRow
+}
+
+func (Bento) NodeKind() NodeKind { return KindBento }
+
+// cellNodes returns every cell's node in row-major order. Used by the Stage-1
+// validation and the asset/icon/image/decoration walks so a Bento recurses like
+// any other container.
+func (b Bento) cellNodes() []SlideNode {
+	out := make([]SlideNode, 0, len(b.Rows))
+	for _, row := range b.Rows {
+		for _, cell := range row.Cells {
+			out = append(out, cell.Node)
+		}
+	}
+	return out
+}
 
 // BodyLayout selects how a card stacks its children.
 type BodyLayout int

@@ -1629,4 +1629,41 @@ R5's acceptance), noted in `docs/research/13-column-join.md`.
 
 ---
 
+## D-056 — Bento node: a row-labeled grid with variable column spans
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** Reference decks use a row-labeled bento grid — rows that each carry a
+left label and cells of variable column span on a shared column grid (a wide cell
+beside two narrow ones, the next row split differently, columns aligned). The
+existing `Grid` is uniform (N equal columns, one child per cell, no labels, no
+spans) and its `Ratio` is per-column, so it cannot express a bento. Completes
+Wave 8 unit R5 (`DECKARD-PRODUCT-REQUIREMENTS.md`), sub-unit (c); sub-units (a)+(b)
+(the TwoColumn column join) shipped in D-055.
+**Decision:** Add a new container node `Bento{Columns, Rows}`, with
+`BentoRow{Label, Cells}` and `BentoCell{Span, Node}`, rather than overload `Grid`
+(the requirement's "extend Grid.Ratio" premise doesn't hold — `Ratio` is
+per-column). `renderBento` reserves a fixed left-label gutter only when at least
+one row is labelled, splits the box into equal-height rows, and lays each row's
+cells left-to-right by **absolute** span on a shared unit width (`unitW` from
+`Columns`); a span-S cell is `S·unitW + (S−1)·gap`, so a span-1 cell is always
+one unit and columns align across rows. The geometry is a pure `bentoGeometry`
+helper (unit-tested). Stage-1 validation enforces `Columns ≥ 1`, non-empty
+rows/cells, `Span ≥ 1`, non-nil cell nodes, and row spans ≤ `Columns`. The node
+is wired through every node switch — `policyTable` (`{}`, native container),
+`validateNode`, `renderNode`, `preferredHeight`, `isFlexible` (a bento grows
+under `VAlignFill`), `nodeUsesAssets`, and the `walkIconRefs`/`walkImages`/
+`walkDecorations` recursions — via a `cellNodes()` helper that flattens cells.
+Labels use existing tokens (`TextMuted`) — no new builder API, no new token (P2).
+**Consequences:** A deck can lay out a row-labeled bento; `Grid`/`TwoColumn` are
+untouched. The catalog grows to 21 kinds and the round-trip "every node" guard
+(contiguous `KindHero..KindBento`) covers `Bento`, so a future node that forgets a
+switch fails loudly. Deterministic integer-EMU geometry; an asset-bearing cell
+still forces serial composition (cells recurse through `nodeUsesAssets`). New
+scene IR node ⇒ a smoke check + Stage-1 validation land in the same PR (§4.2).
+Deferred: content-height rows, rowspan / per-cell vertical alignment, and
+alternate gutter placement — noted in `docs/research/14-bento-grid.md`.
+
+---
+
 *Append new entries below this line.*

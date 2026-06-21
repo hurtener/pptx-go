@@ -122,6 +122,32 @@ func validateNode(n SlideNode) error {
 			return errors.New("card_section has no body")
 		}
 		return validateChildren(v.Body)
+	case Bento:
+		if v.Columns < 1 {
+			return fmt.Errorf("bento columns %d must be >= 1", v.Columns)
+		}
+		if len(v.Rows) == 0 {
+			return errors.New("bento has no rows")
+		}
+		for ri, row := range v.Rows {
+			if len(row.Cells) == 0 {
+				return fmt.Errorf("bento row %d has no cells", ri)
+			}
+			sum := 0
+			for ci, cell := range row.Cells {
+				if cell.Span < 1 {
+					return fmt.Errorf("bento row %d cell %d span %d must be >= 1", ri, ci, cell.Span)
+				}
+				if cell.Node == nil {
+					return fmt.Errorf("bento row %d cell %d: nil node", ri, ci)
+				}
+				sum += cell.Span
+			}
+			if sum > v.Columns {
+				return fmt.Errorf("bento row %d spans sum to %d, exceeds columns %d", ri, sum, v.Columns)
+			}
+		}
+		return validateChildren(v.cellNodes())
 	}
 	return nil
 }

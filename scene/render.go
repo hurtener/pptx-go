@@ -214,6 +214,8 @@ func nodeUsesAssets(n SlideNode) bool {
 		return nodesUseAssets(v.Body)
 	case CardSection:
 		return nodesUseAssets(v.Body)
+	case Bento:
+		return nodesUseAssets(v.cellNodes())
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
@@ -344,6 +346,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderCard(ps, box, v, slideID)
 	case CardSection:
 		r.renderCardSection(ps, box, v, slideID)
+	case Bento:
+		r.renderBento(ps, box, v, slideID)
 	case Flow:
 		r.renderFlow(ps, box, v, slideID)
 	case Chart:
@@ -479,6 +483,28 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case CardSection:
 		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
+	case Bento:
+		cols := v.Columns
+		if cols < 1 {
+			cols = 1
+		}
+		nRows := len(v.Rows)
+		if nRows < 1 {
+			nRows = 1
+		}
+		cellW := avail / pptx.EMU(cols) // a span-1 cell width (over-estimates taller cells, safe)
+		var maxCell pptx.EMU
+		for _, row := range v.Rows {
+			for _, cell := range row.Cells {
+				if h := preferredHeight(cell.Node, cellW, theme); h > maxCell {
+					maxCell = h
+				}
+			}
+		}
+		if maxCell == 0 {
+			maxCell = pptx.In(0.4)
+		}
+		return pptx.EMU(nRows)*maxCell + estGap*pptx.EMU(nRows-1)
 	case Flow:
 		if v.Orientation == FlowVertical {
 			n := len(v.Steps)
@@ -693,7 +719,7 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 // because growing a monospaced-code raster distorts the listing.
 func isFlexible(n SlideNode) bool {
 	switch n.(type) {
-	case Grid, TwoColumn, Card, CardSection, Table, Chart, Image:
+	case Grid, TwoColumn, Card, CardSection, Bento, Table, Chart, Image:
 		return true
 	default:
 		return false

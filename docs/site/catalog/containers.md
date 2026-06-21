@@ -66,6 +66,40 @@ grid := scene.Grid{
 }
 ```
 
+## Bento
+
+A row-labeled grid: rows that each carry an optional left label and cells of
+variable column span on a shared column grid. Unlike `Grid` (uniform columns,
+one child per cell), a `Bento` row can mix wide and narrow cells, and the spans
+align across rows. Render policy: **container**.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Columns` | `int` | Shared column units a row's spans are measured against (≥ 1) |
+| `Rows` | `[]BentoRow` | The rows (`{Label string; Cells []BentoCell}`) |
+
+Each `BentoCell` is `{Span int; Node SlideNode}` — a span-S cell occupies S of
+the `Columns` units (so a span-2 cell is twice a span-1 cell). A row's spans sum
+to ≤ `Columns`. The left-label gutter is reserved only when at least one row sets
+a `Label`.
+
+```go
+bento := scene.Bento{
+	Columns: 3,
+	Rows: []scene.BentoRow{
+		{Label: "Revenue", Cells: []scene.BentoCell{
+			{Span: 2, Node: scene.Card{Header: "ARR"}},
+			{Span: 1, Node: scene.Card{Header: "Growth"}},
+		}},
+		{Label: "Costs", Cells: []scene.BentoCell{
+			{Span: 1, Node: scene.Card{Header: "COGS"}},
+			{Span: 1, Node: scene.Card{Header: "Opex"}},
+			{Span: 1, Node: scene.Card{Header: "Margin"}},
+		}},
+	},
+}
+```
+
 ## Card
 
 An accent card: chrome (a rounded rectangle + accent stripe + optional

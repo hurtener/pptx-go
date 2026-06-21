@@ -57,6 +57,8 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 			walkIconRefs(v.Right, fn)
 		case Grid:
 			walkIconRefs(v.Cells, fn)
+		case Bento:
+			walkIconRefs(v.cellNodes(), fn)
 		}
 	}
 }
