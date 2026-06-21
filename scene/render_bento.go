@@ -13,11 +13,11 @@ import (
 // geometry (D-035).
 
 // bentoGutterW is the fixed width reserved for the left row-label gutter (only
-// when at least one row is labelled).
+// when at least one row is labeled).
 const bentoGutterW = pptx.EMU(1097280) // ~1.2"
 
 // bentoGeometry computes a bento's deterministic layout: the left-gutter width
-// (non-zero iff any row is labelled), the equal row height, and one Box per cell
+// (non-zero iff any row is labeled), the equal row height, and one Box per cell
 // (row-major). It is a pure function — no shapes emitted — so the span/alignment
 // geometry is unit-testable. Returns nil cells for a degenerate bento.
 func bentoGeometry(box pptx.Box, v Bento, gap pptx.EMU) (gutterW, rowH pptx.EMU, cells [][]pptx.Box) {

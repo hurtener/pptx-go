@@ -737,7 +737,7 @@ proven by parallel≡sequential equality).
 - `scene/render_bento.go` — rows with an optional left label and cells of
   variable column span on a shared column grid (absolute spans align columns).
 **Acceptance criteria:**
-- A row-labeled bento renders labels + span-aligned cells; an unlabelled bento
+- A row-labeled bento renders labels + span-aligned cells; an unlabeled bento
   reserves no gutter; Stage-1 rejects malformed bento; the catalog has 21 kinds
   and the every-node round-trip covers `Bento`; determinism holds.
 

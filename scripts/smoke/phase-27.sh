@@ -35,7 +35,7 @@ else
 	fail "library builds CGo-free" "go build failed"
 fi
 
-# 2. Span geometry aligns columns; gutter reserved only when labelled (criteria 1, 2).
+# 2. Span geometry aligns columns; gutter reserved only when labeled (criteria 1, 2).
 run_check "bento span widths + gutter geometry"      ./scene/ 'TestBentoGeometry'
 # 3. Labels + cells render (criterion 1).
 run_check "bento renders labels and cells"           ./scene/ 'TestBento_RendersLabelsAndCells'

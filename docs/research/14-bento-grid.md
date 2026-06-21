@@ -57,7 +57,7 @@ This is sub-unit (c) of `DECKARD-PRODUCT-REQUIREMENTS.md` R5; sub-units (a)+(b)
 - **The gutter is reserved only when used.** Reserve the left label gutter only
   when at least one row has a non-empty `Label`; otherwise the bento is a pure
   span-grid with the full width. This keeps a label-less bento from wasting space
-  and a labelled one from overlapping content.
+  and a labeled one from overlapping content.
 - **Equal-height rows, deterministic.** Rows split the box height equally (like
   `layout.Grid`); all geometry is integer EMU, so the bento is deterministic and
   parallel-safe (it registers no media itself — only an asset-bearing cell does).
@@ -73,7 +73,7 @@ This is sub-unit (c) of `DECKARD-PRODUCT-REQUIREMENTS.md` R5; sub-units (a)+(b)
    `preferredHeight`, `isFlexible` (a bento is flexible — grows under
    `VAlignFill`), `nodeUsesAssets`, and the `walk*` recursions, using
    `cellNodes()`.
-3. `renderBento`: reserve the gutter iff any row is labelled; equal-height rows;
+3. `renderBento`: reserve the gutter iff any row is labeled; equal-height rows;
    per-row absolute-span cell layout via a shared `unitW`; left labels
    vertically centered.
 4. Extend the catalog count (20 → 21 kinds) and the round-trip `everyNodeScene`

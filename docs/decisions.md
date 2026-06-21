@@ -1644,7 +1644,7 @@ Wave 8 unit R5 (`DECKARD-PRODUCT-REQUIREMENTS.md`), sub-unit (c); sub-units (a)+
 `BentoRow{Label, Cells}` and `BentoCell{Span, Node}`, rather than overload `Grid`
 (the requirement's "extend Grid.Ratio" premise doesn't hold — `Ratio` is
 per-column). `renderBento` reserves a fixed left-label gutter only when at least
-one row is labelled, splits the box into equal-height rows, and lays each row's
+one row is labeled, splits the box into equal-height rows, and lays each row's
 cells left-to-right by **absolute** span on a shared unit width (`unitW` from
 `Columns`); a span-S cell is `S·unitW + (S−1)·gap`, so a span-1 cell is always
 one unit and columns align across rows. The geometry is a pure `bentoGeometry`

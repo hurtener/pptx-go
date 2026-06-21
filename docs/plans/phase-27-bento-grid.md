@@ -25,7 +25,7 @@ layout is a structurally different layout and warrants a new node (brief 14).
 ## 3. RFC sections implemented
 
 - `RFC §11.2` — a new native container node (`Bento`) that subdivides its slot
-  into labelled rows of span-weighted cells and renders each cell through the
+  into labeled rows of span-weighted cells and renders each cell through the
   normal dispatch, composing from existing primitives (no new OOXML — P1).
 - `RFC §10.4` — Stage-1 structural validation for the new node.
 
@@ -147,9 +147,9 @@ New scene IR node ⇒ a smoke check and Stage-1 validation land in this PR
 
 ## 11. Acceptance criteria
 
-1. A `Bento` with labelled rows renders each row's left label and its cells; a
+1. A `Bento` with labeled rows renders each row's left label and its cells; a
    span-2 cell is about twice the width of a span-1 cell (columns align).
-2. A `Bento` with no labelled row reserves no gutter (cells use the full width).
+2. A `Bento` with no labeled row reserves no gutter (cells use the full width).
 3. Stage-1 rejects: `Columns < 1`, an empty row, a `Span < 1`, a nil cell node,
    and a row whose spans exceed `Columns`.
 4. `Bento` is flexible (grows under `VAlignFill`) and recurses for assets/icons/
@@ -174,7 +174,7 @@ No new package ⇒ no `coverage.json` entry; the new branches are covered by
 
 1. `OK:` library builds CGo-free.
 2. `OK:` bento renders labels + span-aligned cells (criterion 1).
-3. `OK:` no gutter when unlabelled (criterion 2).
+3. `OK:` no gutter when unlabeled (criterion 2).
 4. `OK:` Stage-1 rejects malformed bento (criterion 3).
 5. `OK:` catalog has 21 kinds / round-trip covers Bento (criterion 5).
 6. `OK:` bento render is deterministic across workers (criterion 6).

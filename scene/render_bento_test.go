@@ -23,7 +23,7 @@ func TestBentoGeometry_SpanWidths(t *testing.T) {
 	}}
 	gutterW, _, cells := bentoGeometry(bentoBox(), v, gap)
 	if gutterW == 0 {
-		t.Fatal("labelled bento should reserve a gutter")
+		t.Fatal("labeled bento should reserve a gutter")
 	}
 	if len(cells) != 2 || len(cells[0]) != 2 || len(cells[1]) != 3 {
 		t.Fatalf("unexpected cell shape: %v", cells)
@@ -46,9 +46,9 @@ func TestBentoGeometry_SpanWidths(t *testing.T) {
 	}
 }
 
-// TestBentoGeometry_NoGutterWhenUnlabelled is acceptance criterion 2: a bento
-// with no labelled row reserves no gutter and uses the full width.
-func TestBentoGeometry_NoGutterWhenUnlabelled(t *testing.T) {
+// TestBentoGeometry_NoGutterWhenUnlabeled is acceptance criterion 2: a bento
+// with no labeled row reserves no gutter and uses the full width.
+func TestBentoGeometry_NoGutterWhenUnlabeled(t *testing.T) {
 	theme := pptx.DefaultTheme()
 	gap := theme.ResolveSpace(pptx.SpaceMD)
 	v := Bento{Columns: 2, Rows: []BentoRow{
@@ -56,7 +56,7 @@ func TestBentoGeometry_NoGutterWhenUnlabelled(t *testing.T) {
 	}}
 	gutterW, _, cells := bentoGeometry(bentoBox(), v, gap)
 	if gutterW != 0 {
-		t.Errorf("unlabelled bento reserved a gutter: %d", gutterW)
+		t.Errorf("unlabeled bento reserved a gutter: %d", gutterW)
 	}
 	if cells[0][0].X != 0 {
 		t.Errorf("first cell X = %d, want 0 (no gutter)", cells[0][0].X)
