@@ -217,8 +217,8 @@ region:
 - `VAlignBottom` — flush with the bottom edge.
 - `VAlignJustify` — spread the leftover height into the inter-node gaps.
 - `VAlignFill` — pin the fixed leaves at the top and **grow the flexible nodes**
-  (the containers `Grid`, `TwoColumn`, `Card`, `CardSection`, `Table`, plus
-  `Image` and `Chart`) to consume the remaining height, so a sparse slide fills
+  (the containers `Grid`, `TwoColumn`, `Card`, `CardSection`, `Bento`, `Table`,
+  plus `Image` and `Chart`) to consume the remaining height, so a sparse slide fills
   its frame instead of reading thin.
 
 Under `VAlignFill` the leftover height is shared among the flexible nodes in

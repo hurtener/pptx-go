@@ -40,8 +40,10 @@ fi
 run_check "header band + status dot + watermark"     ./scene/ 'TestCardRichVisuals_AllThree'
 # 3. Each visual is omitted when its field is unset (criterion 2).
 run_check "visuals omitted when unset"               ./scene/ 'TestCardRichVisuals_OmittedWhenUnset|TestCardRichVisuals_IndividuallyOptional'
-# 4. A bare card stays byte-identical (criterion 3) — the existing parallel/render guards.
-run_check "bare card byte-identical / round-trips"   ./scene/ 'TestCardParallel|TestRenderCard$'
+# 4. A bare card stays byte-identical (criterion 3): the header-row constant
+#    extraction is value-identical (TestCardHeaderConstants), plus the existing
+#    parallel/render idempotency guards.
+run_check "bare card byte-identical / round-trips"   ./scene/ 'TestCardHeaderConstants|TestCardParallel|TestRenderCard$'
 # 5. Rich-card render is deterministic across workers (criterion 4).
 run_check "rich-card render is deterministic"        ./scene/ 'TestCardRichVisuals_Deterministic'
 

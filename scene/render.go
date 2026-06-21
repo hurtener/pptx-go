@@ -512,7 +512,19 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		if nRows < 1 {
 			nRows = 1
 		}
-		cellW := avail / pptx.EMU(cols) // a span-1 cell width (over-estimates taller cells, safe)
+		// Mirror bentoGeometry's content width: reserve the left label gutter when
+		// any row is labeled and subtract the inter-column gaps, so the span-1
+		// reference width is accurate and the slot is not under-sized (a too-wide
+		// reference under-counts wrapped lines). Wider-span cells still over-
+		// estimate height with this unit width, which is safe (a taller slot).
+		contentW := avail
+		for _, row := range v.Rows {
+			if row.Label != "" {
+				contentW -= bentoGutterW + estGap
+				break
+			}
+		}
+		cellW := (contentW - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU
 		for _, row := range v.Rows {
 			for _, cell := range row.Cells {
