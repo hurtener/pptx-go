@@ -179,6 +179,62 @@ func TestOverflow_FiresOnWrappedContent(t *testing.T) {
 	}
 }
 
+// TestPreferredHeight_NonProseGrow asserts the content-aware growth arithmetic
+// for the other text families (Quote, Callout, List, Table) at lines>1 — Prose is
+// covered by TestPreferredHeight_ProseGrowsWithWrap, but the per-line constants,
+// the callout inset width adjustment, and the table per-row model are otherwise
+// only exercised at single-line (where the lines-1 term is zero).
+func TestPreferredHeight_NonProseGrow(t *testing.T) {
+	theme := pptx.DefaultTheme()
+	avail := pptx.In(9)
+	long := RichText{{Text: strings.TrimSpace(strings.Repeat("lorem ipsum dolor ", 60))}}
+
+	// Quote: In(1.1) + quoteLineEst*(lines-1), wrapped at TypeH3.
+	qLines := wrappedLines(long, pptx.TypeH3, avail, theme)
+	if qLines < 2 {
+		t.Fatalf("quote fixture did not wrap (%d lines)", qLines)
+	}
+	gotQ := preferredHeight(Quote{Text: long}, avail, theme)
+	if want := pptx.In(1.1) + quoteLineEst*pptx.EMU(qLines-1); gotQ != want {
+		t.Errorf("quote height = %d, want %d", gotQ, want)
+	}
+	if gotQ <= pptx.In(1.1) {
+		t.Errorf("quote should grow beyond the single-line baseline %d, got %d", pptx.In(1.1), gotQ)
+	}
+
+	// Callout: In(1.0) + calloutLineEst*(lines-1), wrapped at the inset width.
+	cLines := wrappedLines(long, pptx.TypeBody, avail-calloutInsetEst, theme)
+	gotC := preferredHeight(Callout{Body: long}, avail, theme)
+	if want := pptx.In(1.0) + calloutLineEst*pptx.EMU(cLines-1); gotC != want {
+		t.Errorf("callout height = %d, want %d (inset-adjusted lines=%d)", gotC, want, cLines)
+	}
+	if gotC <= pptx.In(1.0) {
+		t.Errorf("callout should grow beyond the single-line baseline %d, got %d", pptx.In(1.0), gotC)
+	}
+
+	// List: a single long item grows to its wrapped line count × In(0.32).
+	lLines := wrappedLines(long, pptx.TypeBody, avail, theme)
+	gotL := preferredHeight(List{Items: []ListItem{{Text: long}}}, avail, theme)
+	if want := pptx.In(0.32) * pptx.EMU(lLines); gotL != want {
+		t.Errorf("list height = %d, want %d", gotL, want)
+	}
+	if gotL <= pptx.In(0.32) {
+		t.Errorf("list item should grow with wrap, got %d", gotL)
+	}
+
+	// Table: a long cell makes its body row taller than one line-height; height is
+	// the header row (1 line) plus the body row (the tallest cell's line count).
+	tbl := Table{Headers: []RichText{{{Text: "H"}}}, Rows: [][]RichText{{long}}}
+	tLines := wrappedLines(long, pptx.TypeBody, avail /*colW = avail/1*/, theme)
+	if tLines < 2 {
+		t.Fatalf("table cell did not wrap (%d lines)", tLines)
+	}
+	gotT := preferredHeight(tbl, avail, theme)
+	if want := pptx.In(0.4) + pptx.In(0.4)*pptx.EMU(tLines); gotT != want {
+		t.Errorf("table height = %d, want %d (header + %d-line body row)", gotT, want, tLines)
+	}
+}
+
 func hasOverflowWarning(s Stats, slideID string) bool {
 	for _, w := range s.Warnings {
 		if w.SlideID == slideID && strings.Contains(w.Message, "overflows its region") {

@@ -309,7 +309,7 @@ applied. Gradient, pattern and picture (blip) fills are tracked for later.
 ## Flexible node
 
 A scene node whose slot grows under `VAlignFill`: the containers (`Grid`,
-`TwoColumn`, `Card`, `CardSection`, `Table`) plus the stretchable visuals
+`TwoColumn`, `Card`, `CardSection`, `Bento`, `Table`) plus the stretchable visuals
 (`Image`, `Chart`). Text leaves and atoms are *fixed* (preferred height);
 `CodeBlock` is fixed too (growing a code raster distorts it). See `Grow-to-fit`
 and `RFC-001-pptx-go.md §10.2`.

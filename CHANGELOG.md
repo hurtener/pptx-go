@@ -116,6 +116,19 @@ changes.
   event per dropped element / skipped part, mirroring `ReadWarnings`), and
   `WithReadPartLimit(n)` overrides the per-part size ceiling (default 100 MB;
   `n <= 0` disables it). (D-049.)
+- Caller-driven scene layout and composition mechanisms (each additive; a zero
+  value reproduces the prior render): content-aware text height with truthful
+  overflow warnings (D-051); `VAlignFill` grows the flexible nodes to fill the
+  frame (D-052); opt-in slide chrome — `Scene.Chrome` (brand slot + page total)
+  with `SceneSlide.Section` / `PageNumber` rendering a section eyebrow and an
+  `N / total` footer outside the body region (D-053); rich `Card` visuals
+  `HeaderFill` / `StatusDot` (`*ColorRole`) and `Watermark` (D-054); a
+  `TwoColumn` seam element via `ColumnJoin` (`JoinBadge` / `JoinArrow`) +
+  `JoinLabel` (D-055); a row-labeled `Bento` grid node (`BentoRow` / `BentoCell`
+  with variable column spans) (D-056); a `Stat` leaf node — a hero number with a
+  label and an optional `Delta` toned by `DeltaTone` (D-057); and resolved
+  per-slide colors in `Stats.Colors` (`SlideColors`, the derived dark palette for
+  a dark-variant slide) so callers can run their own contrast checks (D-058).
 
 ### Fixed
 

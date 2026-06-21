@@ -111,6 +111,7 @@ const (
 	cardIconSz      = pptx.EMU(411480) // In(0.45); icon box side
 	cardEyebrowRowH = pptx.EMU(237744) // In(0.26); eyebrow (kicker) row height
 	cardTitleRowH   = pptx.EMU(365760) // In(0.40); header title row height
+	cardPillH       = pptx.EMU(274320) // In(0.30); header-pill height
 )
 
 // Rich-visual geometry (D-054).
@@ -140,6 +141,14 @@ func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 	if hasIcon && c.layout != CardLayoutIconTop {
 		if iconBottom := box.Y + pad + cardIconSz; y < iconBottom {
 			y = iconBottom
+		}
+	}
+	// The header pill shares the top header row; ensure the body starts below it
+	// too, so a pill-only (or pill-without-title) card does not stack its body
+	// over the pill (and the D-054 header band is sized to include the pill).
+	if c.pill != "" {
+		if pillBottom := box.Y + pad + cardPillH; y < pillBottom {
+			y = pillBottom
 		}
 	}
 	return y + gapSM
@@ -241,7 +250,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	// header width can reserve space for it).
 	if c.pill != "" {
 		pillW := pptx.In(1.0)
-		pillH := pptx.In(0.3)
+		pillH := cardPillH
 		if pillW > innerW {
 			pillW = innerW
 		}
@@ -285,6 +294,14 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	if hasIcon && c.layout != CardLayoutIconTop {
 		if iconBottom := box.Y + pad + iconSz; y < iconBottom {
 			y = iconBottom
+		}
+	}
+	// The header pill shares the top header row; ensure the body starts below it
+	// (mirrors cardHeaderBottom) so a pill-only / pill-without-title card does not
+	// overlap its body onto the pill.
+	if c.pill != "" {
+		if pillBottom := box.Y + pad + cardPillH; y < pillBottom {
+			y = pillBottom
 		}
 	}
 
