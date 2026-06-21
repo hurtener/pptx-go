@@ -36,6 +36,7 @@ const (
 	KindCard
 	KindCardSection
 	KindBento
+	KindStat
 )
 
 // String returns the node kind's IR name.
@@ -83,6 +84,8 @@ func (k NodeKind) String() string {
 		return "card_section"
 	case KindBento:
 		return "bento"
+	case KindStat:
+		return "stat"
 	default:
 		return "unknown"
 	}
@@ -425,6 +428,30 @@ type SectionDivider struct {
 }
 
 func (SectionDivider) NodeKind() NodeKind { return KindSectionDivider }
+
+// DeltaTone selects the color direction of a Stat's delta (D-057). The zero
+// value DeltaNeutral is muted, so a delta with no tone set reads as neutral.
+type DeltaTone int
+
+const (
+	DeltaNeutral DeltaTone = iota // muted (zero value)
+	DeltaUp                       // positive — success color
+	DeltaDown                     // negative — error color
+)
+
+// Stat is a hero big-number metric: a display-scale Value with a Label and an
+// optional directional Delta (e.g. "$2,200" / "ARR" / "+12%"). A row of Stats
+// inside a Grid forms a metric/pricing strip. The engine renders Value/Delta
+// verbatim — it formats no numbers (D-026).
+type Stat struct {
+	node
+	Value     string
+	Label     string
+	Delta     string    // "" = no delta line
+	DeltaTone DeltaTone // color direction of Delta
+}
+
+func (Stat) NodeKind() NodeKind { return KindStat }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

@@ -248,6 +248,12 @@ by `Offset`, sized by `Size`; `Bleed` permits it off the slide edge; `Opacity`
 is `background` (renders behind body) or `foreground` (renders on top) — the
 renderer imposes that z-order (RFC §10.2).
 
+## Delta tone
+
+A `Stat.Delta`'s color direction (`DeltaTone`): `DeltaUp` (success/green),
+`DeltaDown` (error/red), `DeltaNeutral` (muted, the zero value). Maps to existing
+theme tokens — no new token (D-057). See `Stat`, `RFC-001-pptx-go.md §11.1`.
+
 ## Drift audit
 
 The `scripts/drift-audit.sh` design-coherence gate (`make drift-audit`),
@@ -787,6 +793,14 @@ IR's `SceneSlide.Notes` field maps directly.
 Scene-side validation phases. Stage 1: structural correctness (well-formed
 IR, field constraints). Stage 2: mode constraint + token resolution +
 asset resolution. See `RFC-001-pptx-go.md §10.4`.
+
+## Stat
+
+A scene IR leaf node (`scene.Stat`): a hero big-number metric — a display-scale
+`Value` with a `Label` and an optional directional `Delta` (toned by `Delta
+tone`). A `Grid` of `Stat`s forms a metric/pricing strip. The engine renders the
+value/delta verbatim — it formats no numbers (D-057). Distinct from `Stats` (the
+render-result struct). See `RFC-001-pptx-go.md §11.1`.
 
 ## Stats
 

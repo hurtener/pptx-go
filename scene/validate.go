@@ -51,6 +51,10 @@ func validateNode(n SlideNode) error {
 		if v.Kind < CalloutNote || v.Kind > CalloutImportant {
 			return fmt.Errorf("invalid callout kind %d", v.Kind)
 		}
+	case Stat:
+		if v.Value == "" {
+			return errors.New("stat requires a value")
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")
