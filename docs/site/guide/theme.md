@@ -61,7 +61,10 @@ The default values below are verified against the shipped default theme.
 
 ### Typography — `TypeRole`
 
-Each role resolves to a font family, size (points), and weight.
+Each role resolves to a font family, size (points), weight, and an optional
+letter-spacing (`FontSpec.Tracking`, points, signed) — positive opens glyphs
+apart (wide-tracked eyebrows), negative tightens (display headlines); `0` emits
+nothing and a `RunStyle.Tracking` overrides it per run.
 
 | Role | Family | Size | Weight |
 | --- | --- | --- | --- |

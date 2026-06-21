@@ -889,6 +889,14 @@ A semantic role (color, type, space, radius, elevation) consumed by
 builder calls. Resolves to a concrete OOXML value via the active `Theme`.
 The canonical authoring path for visual properties (P2).
 
+## Tracking
+
+Letter-spacing on a `FontSpec` (`FontSpec.Tracking`, points, signed) — part of
+the resolved type scale, emitted as OOXML `a:rPr/@spc` (1/100 pt). Positive opens
+glyphs apart (wide-tracked eyebrows), negative tightens (display headlines); a
+`RunStyle.Tracking` overrides it per run. Zero = none (byte-identical). See
+`docs/design/THEME.md` and `D-060`.
+
 ## TwoColumn
 
 A scene IR container with two cells (`left`, `right`) and a ratio

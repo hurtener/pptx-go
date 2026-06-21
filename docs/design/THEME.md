@@ -42,6 +42,13 @@ it composes existing ones: the run's family switches to `TypeMono` and a subtle
 background tint is drawn from `ColorSurfaceAlt`. Swap either token and inline
 code re-renders accordingly.
 
+**Tracking** (letter-spacing, D-060): `FontSpec.Tracking` is a per-type-role
+value in points (signed) — positive opens glyphs apart (wide-tracked eyebrows/
+labels), negative tightens them (display headlines). It resolves as part of the
+role's `FontSpec` and is emitted as the OOXML `a:rPr/@spc` attribute (1/100 pt);
+an optional `RunStyle.Tracking *float64` overrides it per run. The zero value
+emits nothing (byte-identical to an untracked run).
+
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.

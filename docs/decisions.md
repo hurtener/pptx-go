@@ -1732,4 +1732,74 @@ colors, and a post-`Render` query API — noted in `docs/research/16-resolved-co
 
 ---
 
+## D-059 — Wave 2 (R8–R14) scope: pptx-go implements the engine mechanisms; product requirements are Deckard's
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** `DECKARD-PRODUCT-REQUIREMENTS.md` was expanded with R8–R14 ("Deckard
+Wave 2", 88 professional-bar sub-requirements derived from a reference-vs-
+recreation gap analysis). Each sub-requirement is tagged `engine`, `product`, or
+`both`. Many `product` (and the product side of `both`) requirements operate on
+Deckard's own codebase — `internal/soul/` (the soul/bootstrap/refine system),
+`contracts/`, `exportstore/`, `render/` — which does not exist in this repo;
+pptx-go is the engine (`pptx`, `scene`, `internal/…`), and D-026 keeps product
+behavior (palettes, bootstrap, the autofit loop, brand acquisition) in the
+caller.
+**Decision:** pptx-go implements the **engine** mechanisms and the **engine side
+of `both`** requirements; the `product`-tagged requirements are out of scope for
+this repo and are Deckard's to build against the new engine surface. The work is
+sequenced into waves by requirement family: **Wave 9** = R9 typography & type
+system; **Wave 10** = R10 content fit & density; **Wave 11** = R11 rendering
+robustness; **Wave 12** = R12 component primitives; **Wave 13** = R13 backgrounds
+& finish; **Wave 14** = R14 coverage classes; **Wave 15** = the R8 theme/soul
+*engine* bits (soul-driven dark palette, multi-accent palette, named brand
+gradients, dark-variant extensions). Foundational type/theme primitives (Wave 9)
+land first because R10–R14 build on them. Each engine sub-requirement (or a
+tightly-coupled cluster sharing one code change) is one phase / PR, following the
+§16 ritual; every change stays additive, deterministic, and byte-identical when
+its new field is unused. Each wave closes with the §17 adversarial checkpoint
+audit.
+**Consequences:** A clear, durable in-scope filter prevents drift into Deckard-
+only work and makes the engine surface the product will consume explicit. The
+requirements doc remains the source of per-requirement detail (gap / capability /
+spec / accept); the master plan's wave map and the per-phase plans track the
+in-scope subset. Requirements whose engine portion is already satisfied (e.g.
+R8.2's `pptx.FromTemplate` theme read, R8.10's `Stats.Colors` hook from D-058)
+are noted as such in their phase plan rather than re-implemented. Cross-cutting
+`both` requirements (e.g. R9.1 font embedding) implement only the engine half
+(collect used faces + call `Presentation.EmbedFont`), leaving the provider/
+bootstrap half to Deckard.
+
+---
+
+## D-060 — Letter-spacing (tracking) token on FontSpec, emitted as a:rPr/@spc
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** Pro decks open up eyebrows/labels with wide letter-spacing and
+tighten display headlines slightly — the single biggest "designed vs default"
+tell — but the engine had no tracking: `FontSpec` was `{Family, Size, Weight,
+Italic}`, `RunStyle` carried none, and `toProps` never emitted `a:rPr/@spc`. First
+engine unit of Wave 9 (`DECKARD-PRODUCT-REQUIREMENTS.md` R9.3, HIGH · engine;
+D-059 scope).
+**Decision:** Add `FontSpec.Tracking float64` (letter-spacing in points, signed;
+the primary per-role mechanism a soul sets) and an optional `RunStyle.Tracking
+*float64` override (nil = inherit the role; non-nil including 0 = win). `toProps`
+emits the effective tracking as `a:rPr/@spc = round(pt × 100)` (OOXML 1/100 pt)
+when non-zero; zero emits nothing. The OOXML struct gains `XTextProperties.Spc
+int` (`spc` attr, omitempty) so the attribute survives parse + re-marshal, and a
+`*Run.Tracking()` read accessor returns `Spc / 100` (G6 round-trip). Points are
+chosen over em-relative units for a direct OOXML mapping and round-trip clarity.
+**Consequences:** A soul can set per-role tracking (and a caller per-run);
+tracked-caps eyebrows and tight display are expressible and round-trip losslessly.
+Additive and deterministic: zero tracking is byte-identical (the `spc` attr is
+omitted), and `round(pt × 100)` is a pure function. New builder visual property ⇒
+a `docs/design/THEME.md` taxonomy entry (P2) lands in the same PR. Siblings
+line-height (R9.4, paragraph-level `a:lnSpc`) and case (R9.11, run-text
+transform) are separate type-detail tokens in their own phases; a scene-side
+per-run tracking override is deferred (the role-level mechanism is what the soul
+drives).
+
+---
+
 *Append new entries below this line.*
