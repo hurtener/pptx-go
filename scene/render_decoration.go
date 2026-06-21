@@ -137,6 +137,8 @@ func walkDecorations(nodes []SlideNode, fn func(Decoration)) {
 			walkDecorations(v.Body, fn)
 		case CardSection:
 			walkDecorations(v.Body, fn)
+		case Bento:
+			walkDecorations(v.cellNodes(), fn)
 		}
 	}
 }

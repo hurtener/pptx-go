@@ -231,12 +231,18 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 			collectKinds(c.Body, set)
 		case scene.CardSection:
 			collectKinds(c.Body, set)
+		case scene.Bento:
+			for _, row := range c.Rows {
+				for _, cell := range row.Cells {
+					collectKinds([]scene.SlideNode{cell.Node}, set)
+				}
+			}
 		}
 	}
 }
 
-// everyNodeScene is a scene exercising all 20 shipped scene IR node kinds (the
-// scene/policy.go policyTable set): the 16 leaf kinds and the 4 container kinds.
+// everyNodeScene is a scene exercising all 21 shipped scene IR node kinds (the
+// scene/policy.go policyTable set): the 16 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
 func everyNodeScene() scene.Scene {
@@ -306,6 +312,22 @@ func everyNodeScene() scene.Scene {
 					},
 				},
 			},
+			{
+				ID: "bento",
+				Nodes: []scene.SlideNode{
+					scene.Bento{Columns: 3, Rows: []scene.BentoRow{
+						{Label: "Row A", Cells: []scene.BentoCell{
+							{Span: 2, Node: scene.Prose{Paragraphs: []scene.RichText{rt("wide")}}},
+							{Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("narrow")}}},
+						}},
+						{Label: "Row B", Cells: []scene.BentoCell{
+							{Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("a")}}},
+							{Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("b")}}},
+							{Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("c")}}},
+						}},
+					}},
+				},
+			},
 		},
 	}
 }
@@ -320,12 +342,12 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 
 	// Mechanically assert the fixture covers every shipped node kind, so adding a
 	// node without extending this walk fails loudly (the kinds are contiguous,
-	// KindHero..KindCardSection).
+	// KindHero..KindBento).
 	kinds := map[scene.NodeKind]bool{}
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindCardSection; k++ {
+	for k := scene.KindHero; k <= scene.KindBento; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}
@@ -340,8 +362,8 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	if stats.Slides != 5 {
-		t.Fatalf("stats.Slides = %d, want 5", stats.Slides)
+	if stats.Slides != 6 {
+		t.Fatalf("stats.Slides = %d, want 6", stats.Slides)
 	}
 
 	data1, err := pres.WriteToBytes()
@@ -354,8 +376,8 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 		t.Fatalf("NewFromBytes on scene deck: %v", err)
 	}
 	slides := re.Slides()
-	if len(slides) != 5 {
-		t.Fatalf("reopened slides = %d, want 5", len(slides))
+	if len(slides) != 6 {
+		t.Fatalf("reopened slides = %d, want 6", len(slides))
 	}
 	for i, s := range slides {
 		if len(s.Shapes()) == 0 {

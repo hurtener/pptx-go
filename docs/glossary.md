@@ -85,6 +85,15 @@ A `TextFrame`'s text-fit behavior (`pptx.AutoFitNone`, `AutoFitNormal`
 [shrink font], `AutoFitShape` [grow shape]). Set via `TextFrame.AutoFit`.
 (RFC §8.4.)
 
+## Bento
+
+A scene IR container node (`scene.Bento`): rows that each carry an optional left
+label (`BentoRow.Label`) and a left-to-right sequence of cells of variable
+`Column span` (`BentoCell.Span`) measured against `Bento.Columns` shared column
+units, so columns align across rows. Distinct from `Grid` (uniform columns, one
+child per cell). A native container — cells render per their own policy (D-056).
+See `RFC-001-pptx-go.md §11.2`.
+
 ## Box
 
 `pptx.Box{X, Y, W, H int64}` — a rectangle in EMU coordinates. The
@@ -160,6 +169,13 @@ The optional element a `TwoColumn` draws centered on its seam
 `JoinBadge` (a `VS badge` — a circular `JoinLabel` straddling the seam), or
 `JoinArrow` (a right-arrow connector between the two columns). Native shapes
 reusing accent/inverse tokens (D-055). See `RFC-001-pptx-go.md §11.2`.
+
+## Column span
+
+A `BentoCell`'s width in shared column units (`Span`): a span-S cell occupies S
+of the bento's `Columns` units, so a span-2 cell is twice a span-1 cell (plus the
+inter-unit gap) and columns align across rows. See `Bento`,
+`RFC-001-pptx-go.md §11.2`.
 
 ## Connector kind
 

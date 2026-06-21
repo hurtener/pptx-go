@@ -97,6 +97,10 @@ semantics)*
   `ColumnJoin` enum (`JoinNone`/`JoinBadge`/`JoinArrow`) + `JoinLabel` draws a
   "VS"-style badge or a connector arrow on the column seam; byte-identical when
   `JoinNone`. (R5 sub-units a+b; the bento grid (c) is a separate phase.)
+- `14-bento-grid.md` — a new `Bento` IR node: rows with an optional left label
+  and cells of variable column span against a shared column grid (absolute spans
+  keep columns aligned); the new-node wiring checklist + a `cellNodes()` helper.
+  (R5 sub-unit c, completing R5.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

@@ -725,6 +725,24 @@ proven by parallel≡sequential equality).
 
 *(R5 sub-unit (c), the row-labeled bento grid, lands as a separate phase.)*
 
+#### Phase 27 — bento grid
+
+**Subsystem:** scene
+**RFC sections:** §11.2, §10.4
+**Deps:** Phase 07 (containers), Phase 22/23 (height/flex).
+**What lands (R5 sub-unit c):**
+- `scene/nodes.go` — a new `Bento` container node (`Bento{Columns, Rows}`,
+  `BentoRow{Label, Cells}`, `BentoCell{Span, Node}`), wired through every node
+  switch (policy, validation, render, flex, asset/icon/image/decoration walks).
+- `scene/render_bento.go` — rows with an optional left label and cells of
+  variable column span on a shared column grid (absolute spans align columns).
+**Acceptance criteria:**
+- A row-labeled bento renders labels + span-aligned cells; an unlabeled bento
+  reserves no gutter; Stage-1 rejects malformed bento; the catalog has 21 kinds
+  and the every-node round-trip covers `Bento`; determinism holds.
+
+*(Completes R5.)*
+
 ---
 
 ## 4. Post-V1 backlog
