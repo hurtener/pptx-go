@@ -108,7 +108,7 @@ Supporting enums and structs:
 
 | Node | Fields | Notes |
 |------|--------|-------|
-| `TwoColumn` | `Ratio ColumnRatio; Left, Right []SlideNode` | both sides must be non-empty |
+| `TwoColumn` | `Ratio ColumnRatio; Left, Right []SlideNode; Join ColumnJoin; JoinLabel string` | both sides must be non-empty. `Join` draws a centered seam element: `JoinBadge` (a "VS"-style `JoinLabel` badge) or `JoinArrow` (a connector arrow); `JoinNone` (default) draws nothing |
 | `Grid` | `Columns int (2..4); Ratio []int; Gap SpaceRole; Cells []SlideNode` | cell count must be a multiple of `Columns`; `Ratio` empty or len == `Columns` |
 | `Card` | `Header, Eyebrow, Icon, HeaderPill string; Body []SlideNode; BodyLayout BodyLayout; Fill ColorRole; Outline bool; BorderStyle BorderStyle; Size CardSize; Layout CardLayout; Elevation ElevationRole; HeaderFill, StatusDot *ColorRole; Watermark string` | accent card; all fields beyond `Header/Body/BodyLayout/Fill/Outline/Elevation` are additive (zero values reproduce the prior render). Rich visuals: `HeaderFill` (colored header band, body keeps `Fill`), `StatusDot` (top-right dot), `Watermark` (large faint label behind the body). `HeaderFill`/`StatusDot` are `*ColorRole` — take a role's address; `nil` omits |
 | `CardSection` | `Header string; Body []SlideNode` | top-level card accepting grids / two-columns / nested cards; `Body` must be non-empty |

@@ -19,6 +19,12 @@ their own policy).
 | `Ratio` | `ColumnRatio` | Left/right width split |
 | `Left` | `[]SlideNode` | Children in the left region |
 | `Right` | `[]SlideNode` | Children in the right region |
+| `Join` | `ColumnJoin` | Centered seam element: `JoinNone` (default), `JoinBadge`, `JoinArrow` |
+| `JoinLabel` | `string` | Badge text when `Join == JoinBadge` (e.g. `"VS"`) |
+
+`Join` draws an optional element straddling the seam between the columns: a
+circular "VS"-style badge (`JoinBadge` + `JoinLabel`) for comparing two cards, or
+a right-arrow connector (`JoinArrow`). `JoinNone` (the zero value) draws nothing.
 
 ```go
 two := scene.TwoColumn{

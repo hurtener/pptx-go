@@ -1595,4 +1595,38 @@ flat-bottomed band corners — all noted in `docs/research/12-rich-card-visuals.
 
 ---
 
+## D-055 — TwoColumn column join: a centered seam badge or connector
+
+**Date:** 2026-06-20
+**Status:** Settled
+**Context:** Reference decks compare two cards with a centered "VS" badge sitting
+on the seam between them, and sometimes link a column to the next with a
+connector arrow. `TwoColumn` had no concept of an element between its columns.
+Fifth unit of Wave 8 (`DECKARD-PRODUCT-REQUIREMENTS.md` R5), sub-units (a) center
+badge and (b) inter-column connector. R5's third sub-unit (c), the row-labeled
+bento grid, is a distinct new IR node and lands as its own phase — R5 explicitly
+permits separate sub-units.
+**Decision:** Add a `ColumnJoin` enum — `JoinNone` (zero), `JoinBadge`,
+`JoinArrow` — and fields `Join ColumnJoin` + `JoinLabel string` on `TwoColumn`.
+After the two column stacks render, `renderColumnJoin` draws the element centered
+on the column seam (`(left.X+left.W + right.X)/2`, vertically centered),
+overlapping both columns: for `JoinBadge`, an accent `ShapeEllipse` plus a
+centered inverse `JoinLabel` run (the "VS" badge); for `JoinArrow`, an accent
+`ShapeRightArrow` connector. Drawn after the column content so it sits on top.
+All native shapes reusing existing tokens (`ColorAccent`, `TextInverse`) — no new
+builder API, no new token. The single enum with a `JoinNone` zero cleanly
+expresses "absent" (no pointer, no companion bool), so an existing `TwoColumn` is
+byte-for-byte unchanged. No Stage-1 validation (optional visual); an empty
+`JoinLabel` with `JoinBadge` draws the badge shape without text.
+**Consequences:** A two-column compare can carry a VS badge or a connector arrow
+with two opt-in fields; the caller supplies the label and picks badge-or-arrow
+(D-026). Additive and backward-compatible (byte-identical when `JoinNone`),
+deterministic native shapes (two-column slides stay parallel-safe). New public
+scene surface (the enum + fields) ⇒ a smoke check lands in the same PR (§4.2).
+Scope: two columns only — the N-column architecture-diagram connector (arrows
+between 3+ columns) is a multi-column-container layout feature, deferred (not in
+R5's acceptance), noted in `docs/research/13-column-join.md`.
+
+---
+
 *Append new entries below this line.*

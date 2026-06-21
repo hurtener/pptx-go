@@ -709,6 +709,22 @@ proven by parallel≡sequential equality).
 - A card with all three set renders all three; each is omitted when unset.
 - A bare card is byte-identical; determinism holds under N workers.
 
+#### Phase 26 — column join
+
+**Subsystem:** scene
+**RFC sections:** §11.2
+**Deps:** Phase 07 (containers).
+**What lands (R5 sub-units a+b):**
+- `scene/nodes.go` — a `ColumnJoin` enum (`JoinNone`/`JoinBadge`/`JoinArrow`)
+  and `TwoColumn.Join` / `TwoColumn.JoinLabel`.
+- `scene/render_container.go` — a centered inter-column element on the seam: a
+  "VS"-style accent badge (ellipse + label) or a connector arrow.
+**Acceptance criteria:**
+- A two-column with a center badge renders the badge on the seam; with a
+  connector renders the arrow; `JoinNone` is byte-identical; determinism holds.
+
+*(R5 sub-unit (c), the row-labeled bento grid, lands as a separate phase.)*
+
 ---
 
 ## 4. Post-V1 backlog
