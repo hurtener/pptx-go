@@ -219,7 +219,7 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, SectionDivider, Table:
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, SectionDivider, Table:
 		return false
 	default:
 		return true
@@ -352,6 +352,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderFlow(ps, box, v, slideID)
 	case Chart:
 		r.renderChart(ps, box, v, slideID)
+	case Stat:
+		r.renderStat(ps, box, v)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -449,6 +451,13 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return pptx.In(1.0) + calloutLineEst*pptx.EMU(lines-1)
 	case Chip:
 		return pptx.In(0.4)
+	case Stat:
+		// A fixed number block: value (display) + label + optional delta line.
+		h := pptx.In(1.2)
+		if v.Delta != "" {
+			h += pptx.In(0.3)
+		}
+		return h
 	case Arrow:
 		return pptx.In(0.6)
 	case CodeBlock:

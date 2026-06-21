@@ -38,6 +38,7 @@ var policyTable = map[NodeKind]Policy{
 	KindCard:           {},
 	KindCardSection:    {},
 	KindBento:          {},
+	KindStat:           {},
 }
 
 // PolicyFor returns the rendering policy for a node kind.

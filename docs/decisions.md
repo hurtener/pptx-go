@@ -1666,4 +1666,37 @@ alternate gutter placement — noted in `docs/research/14-bento-grid.md`.
 
 ---
 
+## D-057 — Stat node: a hero big-number leaf with a toned delta
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** Pricing and metric slides use big-number stats (`$2,200`, `38%`)
+with a label and an optional delta (`+12%`, colored by direction). The scene IR
+had no hero-number node, so callers faked them with `Heading`s, losing the
+value/label/delta structure and the directional color. Sixth unit of Wave 8
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R6, LOW).
+**Decision:** Add a `Stat` **leaf** node — `Stat{Value, Label, Delta string,
+DeltaTone}` — rendered as native text (`render_stat.go`): one anchored frame with
+the `Value` at `TypeDisplay` (bold), the `Label` at `TypeCaption` (muted), and,
+when `Delta != ""`, a `TypeBodySmall` delta run colored by `deltaToneColor(tone)`.
+`DeltaTone` (`DeltaNeutral` zero / `DeltaUp` / `DeltaDown`) maps to existing
+tokens — `ColorSuccess` / `ColorError` / `TextMuted` — so a theme swap re-skins it
+and **no new token** is introduced (P2). The engine renders `Value`/`Delta`
+verbatim — it formats no numbers (D-026). A `Grid` of `Stat`s is a metric/pricing
+strip with no new container. Stage-1 requires `Value != ""` (label and delta are
+optional). As a leaf, `Stat` carries no children and no `AssetID`: its
+`policyTable` entry is `{}`, it is in the `nodeUsesAssets` "false" set (never
+forces serial), and it is **not** added to `isFlexible` (a number block does not
+stretch under `VAlignFill`) nor to any `walk*` recursion. The catalog grows to 22
+kinds, and the round-trip every-node guard (contiguous `KindHero..KindStat`)
+covers it.
+**Consequences:** Callers get a real hero-number node with directional delta
+color; a row of them in a `Grid` is a strip. Additive (a new node; existing
+scenes unchanged), deterministic native text, parallel-safe. New scene IR node ⇒
+a smoke check + Stage-1 validation land in the same PR (§4.2). Deferred: numeric/
+currency formatting, a tone-driven ▲/▼ glyph, and value auto-fit — noted in
+`docs/research/15-stat-node.md`.
+
+---
+
 *Append new entries below this line.*

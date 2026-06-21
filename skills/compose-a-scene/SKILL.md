@@ -76,6 +76,7 @@ renders as native PPTX shapes**.
 | `Callout` | `Kind CalloutKind; Title string; Body RichText` | native |
 | `Chip` | `Label string; Tone ChipTone; Color ColorRole` | native |
 | `Arrow` | `Direction ArrowDirection; Label string` | native |
+| `Stat` | `Value, Label, Delta string; DeltaTone` | native; hero big-number (value at display scale + label + optional delta). `DeltaTone` = `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted). A `Grid` of `Stat`s is a metric strip |
 | `SectionDivider` | `Eyebrow, Label string` | native (full-bleed) |
 | `Table` | `Headers []RichText; Rows [][]RichText; Caption string` | native |
 | `Flow` | `Orientation FlowOrientation; Steps []FlowStep; Connector ConnectorKind` | native |
@@ -200,6 +201,7 @@ returns a joined error so you see every problem at once. Per-node rules:
 - `Decoration`: preset kind needs a `Preset`; asset kind needs an `AssetID`;
   `Opacity` in `[0,1]`.
 - `Flow`: at least one step.
+- `Stat`: non-empty `Value` (label and delta are optional).
 - `Table`: at least one header column; every row width equals the header width.
 - `TwoColumn`: non-empty `Left` and `Right` (children validated recursively).
 - `Grid`: `Columns` in `2..4`; `Ratio` empty or length == `Columns`; non-empty

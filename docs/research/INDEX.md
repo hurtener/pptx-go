@@ -101,6 +101,10 @@ semantics)*
   and cells of variable column span against a shared column grid (absolute spans
   keep columns aligned); the new-node wiring checklist + a `cellNodes()` helper.
   (R5 sub-unit c, completing R5.)
+- `15-stat-node.md` — a new `Stat` leaf node (display-scale value + label +
+  optional toned delta) reusing the `Hero` text idiom and existing
+  success/error/muted tokens; a `Grid` of `Stat`s is a metric/pricing strip. The
+  new-leaf wiring checklist (no `walk*`/`isFlexible`). (R6.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

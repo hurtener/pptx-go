@@ -743,6 +743,21 @@ proven by parallel≡sequential equality).
 
 *(Completes R5.)*
 
+#### Phase 28 — stat node
+
+**Subsystem:** scene
+**RFC sections:** §11.1, §10.4
+**Deps:** Phase 06 (leaves), Phase 07 (Grid).
+**What lands (R6):**
+- `scene/nodes.go` — a `Stat` leaf node (`Value`, `Label`, `Delta string`,
+  `DeltaTone`) for a hero number with a label and an optional directional delta.
+- `scene/render_stat.go` — value at display scale + label + a delta colored by
+  tone (`ColorSuccess`/`ColorError`/`TextMuted`). A `Grid` of `Stat`s is a
+  metric/pricing strip.
+**Acceptance criteria:**
+- A stat renders value + label (+ toned delta); a Grid of stats renders a strip;
+  Stage-1 rejects an empty value; the catalog has 22 kinds; determinism holds.
+
 ---
 
 ## 4. Post-V1 backlog

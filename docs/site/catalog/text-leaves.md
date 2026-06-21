@@ -173,3 +173,27 @@ arrow := scene.Arrow{
 	Label:     "then",
 }
 ```
+
+## Stat
+
+A hero big-number metric: a display-scale value with a label and an optional
+directional delta. A `Grid` of `Stat`s forms a metric/pricing strip. The engine
+renders the value and delta verbatim — it formats no numbers.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Value` | `string` | The big number, rendered at display scale (e.g. `"$2,200"`) |
+| `Label` | `string` | Caption below the value |
+| `Delta` | `string` | Optional delta (e.g. `"+12%"`); `""` = no delta line |
+| `DeltaTone` | `DeltaTone` | Delta color direction: `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted, default) |
+
+```go
+strip := scene.Grid{
+	Columns: 3,
+	Cells: []scene.SlideNode{
+		scene.Stat{Value: "$2,200", Label: "ARR", Delta: "+12%", DeltaTone: scene.DeltaUp},
+		scene.Stat{Value: "38%", Label: "Margin", Delta: "-3%", DeltaTone: scene.DeltaDown},
+		scene.Stat{Value: "4.8", Label: "NPS"},
+	},
+}
+```
