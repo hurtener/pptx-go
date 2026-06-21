@@ -516,6 +516,13 @@ type Card struct {
 	Size        CardSize    // interior padding scale
 	Layout      CardLayout  // header arrangement
 	Elevation   ElevationRole
+	// Rich visuals (D-054). Optional; each zero value (nil / "") omits its
+	// element, so a card that sets none renders byte-for-byte as before. The two
+	// colors are *ColorRole, not ColorRole, because ColorRole's zero value is a
+	// real color (ColorCanvas) and cannot signal "unset".
+	HeaderFill *ColorRole // banded header region color (body keeps Fill); nil = no band
+	StatusDot  *ColorRole // small status dot, top-right corner; nil = no dot
+	Watermark  string     // large, low-opacity label drawn behind the body; "" = none
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }

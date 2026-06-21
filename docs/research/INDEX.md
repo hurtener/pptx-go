@@ -89,6 +89,10 @@ semantics)*
   bottom brand slot + `N / total` page number) drawn outside a shrunk body
   region; driven by `Scene.Chrome` + `SceneSlide` fields, native shapes reusing
   existing tokens, chrome-off byte-identical.
+- `12-rich-card-visuals.md` — additive `Card` visuals: a colored header band
+  (`HeaderFill`), a top-right status dot (`StatusDot`), and a ghosted watermark
+  label (`Watermark`); optional colors are `*ColorRole` (nil = omit), watermark
+  is true low-opacity text via `TokenColorAlpha`, byte-identical when unset.
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

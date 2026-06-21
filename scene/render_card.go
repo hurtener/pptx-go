@@ -69,18 +69,23 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 // closed-name icon registry and renders as a native custGeom shape (not media),
 // so a plain card stays parallel-safe.
 
-// cardChrome is the chrome inputs shared by Card and CardSection.
+// cardChrome is the chrome inputs shared by Card and CardSection. The rich-visual
+// fields (headerFill/statusDot/watermark, D-054) are Card-only — CardSection
+// leaves them at their zero values.
 type cardChrome struct {
-	header    string
-	eyebrow   string
-	icon      string
-	pill      string
-	fill      ColorRole
-	outline   bool
-	border    BorderStyle
-	size      CardSize
-	layout    CardLayout
-	elevation ElevationRole
+	header     string
+	eyebrow    string
+	icon       string
+	pill       string
+	fill       ColorRole
+	outline    bool
+	border     BorderStyle
+	size       CardSize
+	layout     CardLayout
+	elevation  ElevationRole
+	headerFill *ColorRole // banded header region; nil = no band
+	statusDot  *ColorRole // top-right status dot; nil = no dot
+	watermark  string     // faint label behind the body; "" = none
 }
 
 // cardPadding returns the interior inset for a card size.
@@ -96,6 +101,47 @@ func (r *renderer) cardPadding(size CardSize) pptx.EMU {
 }
 
 const cardStripeW = pptx.EMU(45720) // 4pt accent stripe
+
+// Header-row geometry, shared by renderCardChrome (emission) and cardHeaderBottom
+// (the pure header-bottom computation) so the two never drift. Values are the
+// pre-Phase-25 literals, extracted verbatim (value-identical → byte-identical).
+const (
+	cardIconSz      = pptx.EMU(411480) // In(0.45); icon box side
+	cardEyebrowRowH = pptx.EMU(237744) // In(0.26); eyebrow (kicker) row height
+	cardTitleRowH   = pptx.EMU(365760) // In(0.40); header title row height
+)
+
+// Rich-visual geometry (D-054).
+const (
+	cardStatusDotSz    = pptx.EMU(146304) // In(0.16); status-dot diameter
+	cardWatermarkAlpha = 13000            // ~13% OOXML opacity; the ghosted watermark
+)
+
+// cardHeaderBottom returns the Y at which a card's body region begins (the
+// header's bottom). It mirrors the vertical advance in renderCardChrome exactly
+// — using the same shared row-height constants — so the header band (drawn
+// before the header text) ends precisely where the body starts.
+func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
+	pad := r.cardPadding(c.size)
+	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
+	y := box.Y + pad
+	hasIcon := c.icon != ""
+	if hasIcon && c.layout == CardLayoutIconTop {
+		y += cardIconSz + gapSM
+	}
+	if c.eyebrow != "" {
+		y += cardEyebrowRowH
+	}
+	if c.header != "" {
+		y += cardTitleRowH
+	}
+	if hasIcon && c.layout != CardLayoutIconTop {
+		if iconBottom := box.Y + pad + cardIconSz; y < iconBottom {
+			y = iconBottom
+		}
+	}
+	return y + gapSM
+}
 
 // renderCardChrome draws the background, accent stripe, and header row, and
 // returns the body region (inset by padding, below the header). It is
@@ -123,6 +169,19 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	}
 	ps.AddShape(pptx.ShapeRoundRect, box, opts...)
 	r.stats.Shapes++
+
+	// 1b. Header band (D-054): a colored region across the top of the card, from
+	// the card top down to where the body begins, while the body keeps Fill.
+	// Drawn on top of the background but before the header text. Inert when unset.
+	if c.headerFill != nil {
+		if bandH := r.cardHeaderBottom(box, c) - box.Y; bandH > 0 {
+			band := pptx.Box{X: box.X, Y: box.Y, W: box.W, H: bandH}
+			ps.AddShape(pptx.ShapeRoundRect, band,
+				pptx.WithRadius(pptx.RadiusLG),
+				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(*c.headerFill))))
+			r.stats.Shapes++
+		}
+	}
 
 	// 2. Left accent stripe (the card's accent marker, RFC §12.1). Inset
 	// vertically by the corner radius so its square corners stay within the
@@ -153,7 +212,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	headerLeft := innerX
 	headerW := innerW
 
-	iconSz := pptx.In(0.45)
+	iconSz := cardIconSz
 	hasIcon := c.icon != ""
 	if hasIcon {
 		iconBox := pptx.Box{X: innerX, Y: y, W: iconSz, H: iconSz}
@@ -200,7 +259,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 
 	// Eyebrow (kicker) above the header.
 	if c.eyebrow != "" {
-		ebH := pptx.In(0.26)
+		ebH := cardEyebrowRowH
 		ebBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: ebH}
 		tf := ps.AddTextFrame(ebBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
@@ -211,7 +270,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 
 	// Header title.
 	if c.header != "" {
-		hH := pptx.In(0.4)
+		hH := cardTitleRowH
 		hBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: hH}
 		tf := ps.AddTextFrame(hBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
@@ -233,6 +292,28 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	if bodyBox.H < 0 {
 		bodyBox.H = 0
 	}
+
+	// 5. Status dot (D-054): a small filled dot in the top-right corner, inset by
+	// the padding. Drawn over the header band/text; inert when unset.
+	if c.statusDot != nil {
+		dot := pptx.Box{X: box.X + box.W - pad - cardStatusDotSz, Y: box.Y + pad, W: cardStatusDotSz, H: cardStatusDotSz}
+		ps.AddShape(pptx.ShapeEllipse, dot, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(*c.statusDot))))
+		r.stats.Shapes++
+	}
+
+	// 6. Watermark (D-054): a large, low-opacity label drawn in the body region.
+	// It is the last chrome shape, so it sits behind the body content the caller
+	// stacks next. Token-bound faintness via TokenColorAlpha (P2); inert when "".
+	if c.watermark != "" && bodyBox.H > 0 {
+		tf := ps.AddTextFrame(bodyBox).Anchor(pptx.AnchorBottom)
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignRight})
+		p.AddRun(c.watermark, pptx.RunStyle{
+			TypeRole: pptx.TypeDisplay,
+			Color:    pptx.TokenColorAlpha(pptx.ColorAccent, cardWatermarkAlpha),
+		})
+		r.stats.Shapes++
+	}
+
 	return bodyBox
 }
 
@@ -241,6 +322,7 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 		header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill,
 		fill: v.Fill, outline: v.Outline, border: v.BorderStyle, size: v.Size,
 		layout: v.Layout, elevation: v.Elevation,
+		headerFill: v.HeaderFill, statusDot: v.StatusDot, watermark: v.Watermark,
 	}, slideID)
 
 	if v.BodyLayout == BodyHorizontal && len(v.Body) > 0 {

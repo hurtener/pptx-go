@@ -693,6 +693,22 @@ proven by parallel≡sequential equality).
 - Page total and per-slide number auto-derive and are overridable.
 - Chrome disabled is byte-identical; determinism holds under N workers.
 
+#### Phase 25 — rich card visuals
+
+**Subsystem:** scene
+**RFC sections:** §11.2
+**Deps:** Phase 14 (Card), Phase 13 (token-alpha).
+**What lands:**
+- `scene/nodes.go` — three additive `Card` fields: `HeaderFill *ColorRole`
+  (colored header band, body keeps `Fill`), `StatusDot *ColorRole` (top-right
+  dot), `Watermark string` (large faint label behind the body).
+- `scene/render_card.go` — renders the band (rounded rect to the header bottom),
+  the dot (ellipse), and the watermark (low-opacity `TokenColorAlpha` run), all
+  reusing existing tokens.
+**Acceptance criteria:**
+- A card with all three set renders all three; each is omitted when unset.
+- A bare card is byte-identical; determinism holds under N workers.
+
 ---
 
 ## 4. Post-V1 backlog
