@@ -436,12 +436,26 @@ const (
 	Ratio21                    // 2:1
 )
 
-// TwoColumn splits the body into left/right regions with leaf children.
+// ColumnJoin is the optional element a TwoColumn draws centered on its seam
+// (D-055). JoinNone (zero value) draws nothing, so an existing TwoColumn renders
+// byte-for-byte unchanged.
+type ColumnJoin int
+
+const (
+	JoinNone  ColumnJoin = iota // default: nothing between the columns
+	JoinBadge                   // a circular text badge (JoinLabel), e.g. "VS"
+	JoinArrow                   // a right-arrow connector between the columns
+)
+
+// TwoColumn splits the body into left/right regions with leaf children. Join /
+// JoinLabel are additive (D-055): their zero values draw no inter-column element.
 type TwoColumn struct {
 	node
-	Ratio ColumnRatio
-	Left  []SlideNode
-	Right []SlideNode
+	Ratio     ColumnRatio
+	Left      []SlideNode
+	Right     []SlideNode
+	Join      ColumnJoin // optional element centered on the column seam; JoinNone = none
+	JoinLabel string     // badge text when Join == JoinBadge (e.g. "VS")
 }
 
 func (TwoColumn) NodeKind() NodeKind { return KindTwoColumn }

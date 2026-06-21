@@ -153,6 +153,14 @@ A semantic color role (e.g. `canvas`, `surface`, `accent`, `accent_warm`,
 `success`). Page-level surfaces resolve via the active `Theme`'s
 `ColorPalette` to an OOXML color value. See `RFC-001-pptx-go.md §7.1`.
 
+## Column join
+
+The optional element a `TwoColumn` draws centered on its seam
+(`TwoColumn.Join ColumnJoin`): `JoinNone` (nothing — the byte-identical default),
+`JoinBadge` (a `VS badge` — a circular `JoinLabel` straddling the seam), or
+`JoinArrow` (a right-arrow connector between the two columns). Native shapes
+reusing accent/inverse tokens (D-055). See `RFC-001-pptx-go.md §11.2`.
+
 ## Connector kind
 
 A `Flow`'s inter-step glyph (`ConnectorKind`): `arrow` (solid, the default),
@@ -868,6 +876,12 @@ The body-stack vertical alignment (`scene.VAlignFill`, on
 A named theme variant (`light`, `dark`, `print`, brand-specific). The
 scene's `Variant` field selects between variants the caller registered.
 Per-slide theme overrides are V2; per-scene variant is V1.
+
+## VS badge
+
+A `Column join` text badge (`TwoColumn.Join = JoinBadge` + `JoinLabel`): a
+circular accent label straddling the seam between two compared columns (e.g.
+"VS"). See `RFC-001-pptx-go.md §11.2`.
 
 ## Watermark (card)
 

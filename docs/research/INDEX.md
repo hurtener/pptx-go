@@ -93,6 +93,10 @@ semantics)*
   (`HeaderFill`), a top-right status dot (`StatusDot`), and a ghosted watermark
   label (`Watermark`); optional colors are `*ColorRole` (nil = omit), watermark
   is true low-opacity text via `TokenColorAlpha`, byte-identical when unset.
+- `13-column-join.md` — a centered inter-column element on `TwoColumn`: a
+  `ColumnJoin` enum (`JoinNone`/`JoinBadge`/`JoinArrow`) + `JoinLabel` draws a
+  "VS"-style badge or a connector arrow on the column seam; byte-identical when
+  `JoinNone`. (R5 sub-units a+b; the bento grid (c) is a separate phase.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

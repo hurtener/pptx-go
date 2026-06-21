@@ -21,6 +21,43 @@ func (r *renderer) renderTwoColumn(ps *pptx.Slide, box pptx.Box, v TwoColumn, sl
 	for _, pl := range r.stackIn(cols[1], v.Right, slideID) {
 		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
+	// Inter-column element (D-055), drawn after the column content so it sits on
+	// top of both columns, centered on the seam. Inert when Join == JoinNone.
+	if v.Join != JoinNone {
+		r.renderColumnJoin(ps, box, cols[0], cols[1], v)
+	}
+}
+
+// Column-join geometry (D-055). Pinned EMU literals so output is worker-count
+// independent (RFC §10.1).
+const (
+	joinBadgeSz = pptx.EMU(566928) // In(0.62); badge diameter
+	joinArrowW  = pptx.EMU(457200) // In(0.50); connector arrow width
+	joinArrowH  = pptx.EMU(274320) // In(0.30); connector arrow height
+)
+
+// renderColumnJoin draws the TwoColumn seam element centered on the boundary
+// between the left and right columns: a "VS"-style accent badge (ellipse +
+// centered inverse label) or an accent right-arrow connector.
+func (r *renderer) renderColumnJoin(ps *pptx.Slide, box, left, right pptx.Box, v TwoColumn) {
+	seamX := (left.X + left.W + right.X) / 2 // midpoint of the inter-column gap
+	centerY := box.Y + box.H/2
+	switch v.Join {
+	case JoinBadge:
+		bb := pptx.Box{X: seamX - joinBadgeSz/2, Y: centerY - joinBadgeSz/2, W: joinBadgeSz, H: joinBadgeSz}
+		ps.AddShape(pptx.ShapeEllipse, bb, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
+		r.stats.Shapes++
+		if v.JoinLabel != "" {
+			tf := ps.AddTextFrame(bb).Anchor(pptx.AnchorMiddle)
+			p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+			p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: pptx.TokenTextColor(pptx.TextInverse)})
+			r.stats.Shapes++
+		}
+	case JoinArrow:
+		ab := pptx.Box{X: seamX - joinArrowW/2, Y: centerY - joinArrowH/2, W: joinArrowW, H: joinArrowH}
+		ps.AddShape(pptx.ShapeRightArrow, ab, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
+		r.stats.Shapes++
+	}
 }
 
 func (r *renderer) renderGrid(ps *pptx.Slide, box pptx.Box, v Grid, slideID string) {
