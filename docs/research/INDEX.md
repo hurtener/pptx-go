@@ -105,6 +105,10 @@ semantics)*
   optional toned delta) reusing the `Hero` text idiom and existing
   success/error/muted tokens; a `Grid` of `Stat`s is a metric/pricing strip. The
   new-leaf wiring checklist (no `walk*`/`isFlexible`). (R6.)
+- `16-resolved-colors.md` — expose per-slide resolved canvas/surface/primary-text
+  colors in `Stats.Colors`, captured from the per-slide theme after compose (the
+  derived dark palette for `VariantDark`), so a caller computes its own contrast;
+  no contrast logic in the engine. (R7, final Wave 8 unit.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

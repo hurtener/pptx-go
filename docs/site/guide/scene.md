@@ -167,11 +167,31 @@ type Stats struct {
 	Assets   int
 	Warnings []LayoutWarning // non-fatal layout / asset / token issues
 	Timings  []SlideTiming   // per-slide compose duration, in scene order
+	Colors   []SlideColors   // per-slide resolved colors, in scene order
 }
 ```
 
 `LayoutWarning` carries `SlideID`, `Node`, and `Message`. There is no strict
 mode: a caller that wants warnings to be fatal inspects `Stats.Warnings` itself.
+
+### Resolved per-slide colors
+
+`Stats.Colors` reports, per slide (in scene order), the colors the engine
+actually resolved — `Canvas`, `Surface`, and `PrimaryText` as `pptx.RGB`:
+
+```go
+type SlideColors struct {
+	SlideID     string
+	Canvas      pptx.RGB
+	Surface     pptx.RGB
+	PrimaryText pptx.RGB
+}
+```
+
+For a `VariantDark` slide these are the **derived dark palette** the slide
+rendered with — so you can compute true text/surface contrast against the real
+background and apply your own thresholds. The engine does no contrast logic; it
+only reports what it resolved.
 
 ### Layout sizing and overflow
 

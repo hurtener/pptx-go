@@ -755,6 +755,15 @@ inside `scene.Render`. Listed here only to disambiguate: a pengui-slides
 "SlideDocument" maps to pptx-go's "Scene + Stats + emitted shapes",
 not to a single pptx-go type.
 
+## SlideColors
+
+An entry in `Stats.Colors`: the `SlideID` plus the resolved `Canvas`, `Surface`,
+and `PrimaryText` RGBs the engine rendered that slide with — the derived dark
+palette for a `VariantDark` slide. Lets a caller compute its own text/surface
+contrast against the real background; the engine performs no contrast logic
+(D-058, D-026). Never serialized into the PPTX. See `Stats`,
+`RFC-001-pptx-go.md §10.1`.
+
 ## SlideTiming
 
 An entry in `Stats.Timings`: the `SlideID` plus the wall-clock `Duration`

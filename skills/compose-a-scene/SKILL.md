@@ -225,6 +225,7 @@ type Stats struct {
     Assets   int
     Warnings []LayoutWarning
     Timings  []SlideTiming  // per-slide wall-clock, scene order
+    Colors   []SlideColors  // per-slide resolved Canvas/Surface/PrimaryText (RGB), scene order
 }
 
 type LayoutWarning struct { SlideID, Node, Message string }
@@ -234,6 +235,12 @@ Non-fatal issues (content overflow, a reserved variant, an unmapped layout
 falling back to blank, an unresolved asset) surface as `Warnings` — pptx-go
 **warns, it does not fail** on layout problems, and has no strict mode. A caller
 that wants warnings to be fatal inspects `Stats.Warnings` itself.
+
+`Stats.Colors` reports, per slide (scene order), the resolved `Canvas`/`Surface`/
+`PrimaryText` RGBs the engine rendered with — the **derived dark palette** for a
+`VariantDark` slide — so a caller can compute its own text/surface contrast
+against the real background. The engine does no contrast logic; it only reports
+what resolved.
 
 Slot heights are **content-aware**: a text node's height grows with the number
 of lines its text wraps to, so a long paragraph doesn't overlap the node beneath
