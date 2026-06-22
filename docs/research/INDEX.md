@@ -215,6 +215,11 @@ semantics)*
   pillX − gap − dotSz`, floored at `innerX`) so their boxes are disjoint; inert /
   byte-identical when only one is set. Disjointness by construction (shares
   `cardPillWidthOf`). (R11.6, HIGH.)
+- `38-join-badge-fit-to-label.md` — the TwoColumn join badge grows to contain its
+  label: `badgeSz = clamp(naturalWidth(label@TypeBodySmall) + 2·padX, In(0.62),
+  In(1.5))`, then `fitScale`/`FontScale` shrinks a label that still overflows the
+  cap. Fixes "One agent" breaking mid-word in the fixed `In(0.62)` ellipse; "vs"
+  keeps the base (byte-identical). (R11.7, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

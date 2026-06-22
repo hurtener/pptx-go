@@ -1210,6 +1210,24 @@ badges never collide or overflow the slide safe area.
 - With both set, the dot shifts left of the pill (disjoint boxes); a dot-only card
   keeps the corner placement (byte-identical).
 
+#### Phase 55 — join-badge fit-to-label
+
+**Subsystem:** scene — Layer 2 renderer (TwoColumn join)
+**RFC sections:** §11.2
+**Deps:** Phase 26 (D-055), Phase 43 (D-074 `fitScale`), brief 38.
+**What lands (R11.7, HIGH · engine):**
+- The TwoColumn join badge grows to contain its label: `badgeSz =
+  clamp(naturalWidth(label) + 2·padX, In(0.62), In(1.5))`, then a label still too
+  long for the cap is shrunk to one line via `fitScale`/`FontScale`. Fixes a
+  multi-word label ("One agent") breaking mid-word inside the fixed `In(0.62)`
+  ellipse.
+- A short "vs" keeps the base diameter and full size (byte-identical); the existing
+  column-join goldens pass unchanged (D-087). The arrow connector (no label) is
+  unaffected.
+**Acceptance criteria:**
+- A multi-word label grows the badge beyond the base; "vs" keeps the base; an
+  over-long label caps at the max; deterministic across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog

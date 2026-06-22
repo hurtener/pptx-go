@@ -31,9 +31,17 @@ func (r *renderer) renderTwoColumn(ps *pptx.Slide, box pptx.Box, v TwoColumn, sl
 // Column-join geometry (D-055). Pinned EMU literals so output is worker-count
 // independent (RFC §10.1).
 const (
-	joinBadgeSz = pptx.EMU(566928) // In(0.62); badge diameter
+	joinBadgeSz = pptx.EMU(566928) // In(0.62); base badge diameter
 	joinArrowW  = pptx.EMU(457200) // In(0.50); connector arrow width
 	joinArrowH  = pptx.EMU(274320) // In(0.30); connector arrow height
+)
+
+// Join-badge fit-to-label geometry (R11.7, D-087). The badge diameter grows to
+// contain its label (up to a cap); a label too long even at the cap is shrunk to
+// one line. Pinned layout metrics, not tokens.
+const (
+	joinBadgePadX  = pptx.EMU(109728)  // In(0.12); horizontal padding inside the badge
+	joinBadgeMaxSz = pptx.EMU(1371600) // In(1.50); cap on the auto-grown diameter
 )
 
 // renderColumnJoin draws the TwoColumn seam element centered on the boundary
@@ -44,7 +52,24 @@ func (r *renderer) renderColumnJoin(ps *pptx.Slide, box, left, right pptx.Box, v
 	centerY := box.Y + box.H/2
 	switch v.Join {
 	case JoinBadge:
-		bb := pptx.Box{X: seamX - joinBadgeSz/2, Y: centerY - joinBadgeSz/2, W: joinBadgeSz, H: joinBadgeSz}
+		// Fit-to-label (R11.7): grow the badge diameter to contain the label (up to
+		// joinBadgeMaxSz), so a multi-word label like "One agent" is not broken
+		// mid-word inside the fixed In(0.62) ellipse. A label that still does not fit
+		// at the cap is shrunk to one line via FontScale. A short label (e.g. "vs")
+		// keeps the base diameter and full size → byte-identical.
+		badgeSz := joinBadgeSz
+		var labelScale float64
+		if v.JoinLabel != "" {
+			natW := naturalWidth(RichText{{Text: v.JoinLabel, Style: RunStyle{TypeRole: pptx.TypeBodySmall}}}, r.theme)
+			if needed := natW + 2*joinBadgePadX; needed > badgeSz {
+				badgeSz = needed
+				if badgeSz > joinBadgeMaxSz {
+					badgeSz = joinBadgeMaxSz
+				}
+			}
+			labelScale = fitScale(natW, badgeSz-2*joinBadgePadX)
+		}
+		bb := pptx.Box{X: seamX - badgeSz/2, Y: centerY - badgeSz/2, W: badgeSz, H: badgeSz}
 		ps.AddShape(pptx.ShapeEllipse, bb, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
 		r.stats.Shapes++
 		if v.JoinLabel != "" {
@@ -57,7 +82,7 @@ func (r *renderer) renderColumnJoin(ps *pptx.Slide, box, left, right pptx.Box, v
 			}
 			tf := ps.AddTextFrame(bb).Anchor(pptx.AnchorMiddle)
 			p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-			p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: jc})
+			p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: jc, FontScale: labelScale})
 			r.stats.Shapes++
 		}
 	case JoinArrow:
