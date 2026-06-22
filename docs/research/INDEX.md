@@ -114,6 +114,11 @@ semantics)*
   colors in `Stats.Colors`, captured from the per-slide theme after compose (the
   derived dark palette for `VariantDark`), so a caller computes its own contrast;
   no contrast logic in the engine. (R7, final Wave 8 unit.)
+- `22-card-header-height.md` — make the card header row wrapped-title-aware: a
+  shared `cardHeaderColumnW`/`cardHeaderRowHeights` sizes the eyebrow/title (and
+  the D-054 band + body Y) to `wrappedLines × per-row` so a long header no longer
+  overlaps the body; single-line byte-identical; estimator parity deferred to
+  R10.10. (R10.1, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

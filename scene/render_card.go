@@ -120,23 +120,73 @@ const (
 	cardWatermarkAlpha = 13000            // ~13% OOXML opacity; the ghosted watermark
 )
 
+// cardHeaderColumnW returns the true header text column width — the inner width
+// minus the icon-left shift and the header-pill reservation — at which the
+// eyebrow and title wrap. cardHeaderRowHeights and renderCardChrome share it so
+// the wrapped-line counts (and thus the body Y, the header band, and the emitted
+// text frames) never drift.
+func (r *renderer) cardHeaderColumnW(box pptx.Box, c cardChrome) pptx.EMU {
+	pad := r.cardPadding(c.size)
+	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
+	innerW := box.W - cardStripeW - 2*pad
+	if innerW < 0 {
+		innerW = 0
+	}
+	headerW := innerW
+	if c.icon != "" && c.layout != CardLayoutIconTop {
+		headerW = innerW - cardIconSz - gapSM
+	}
+	if c.pill != "" {
+		pillW := pptx.In(1.0)
+		if pillW > innerW {
+			pillW = innerW
+		}
+		if reserve := pillW + gapSM; headerW > reserve {
+			headerW -= reserve
+		}
+	}
+	if headerW < 0 {
+		headerW = 0
+	}
+	return headerW
+}
+
+// cardHeaderRowHeights returns the wrapped heights of the eyebrow and title rows
+// (R10.1, D-070): each is the per-line constant times the number of lines the
+// text wraps to at the header column width, so a header that wraps to N lines no
+// longer collides with the body. A single-line eyebrow/title yields exactly the
+// legacy fixed row height (byte-identical). Either is 0 when its text is empty.
+func (r *renderer) cardHeaderRowHeights(box pptx.Box, c cardChrome) (eyebrowH, titleH pptx.EMU) {
+	headerW := r.cardHeaderColumnW(box, c)
+	if c.eyebrow != "" {
+		lines := wrappedLines(RichText{{Text: c.eyebrow}}, pptx.TypeCaption, headerW, r.theme)
+		eyebrowH = cardEyebrowRowH * pptx.EMU(lines)
+	}
+	if c.header != "" {
+		lines := wrappedLines(RichText{{Text: c.header}}, pptx.TypeH3, headerW, r.theme)
+		titleH = cardTitleRowH * pptx.EMU(lines)
+	}
+	return eyebrowH, titleH
+}
+
 // cardHeaderBottom returns the Y at which a card's body region begins (the
 // header's bottom). It mirrors the vertical advance in renderCardChrome exactly
-// — using the same shared row-height constants — so the header band (drawn
-// before the header text) ends precisely where the body starts.
+// — using the same shared row heights (wrapped-aware, R10.1) — so the header
+// band (drawn before the header text) ends precisely where the body starts.
 func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 	pad := r.cardPadding(c.size)
 	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
+	eyebrowH, titleH := r.cardHeaderRowHeights(box, c)
 	y := box.Y + pad
 	hasIcon := c.icon != ""
 	if hasIcon && c.layout == CardLayoutIconTop {
 		y += cardIconSz + gapSM
 	}
 	if c.eyebrow != "" {
-		y += cardEyebrowRowH
+		y += eyebrowH
 	}
 	if c.header != "" {
-		y += cardTitleRowH
+		y += titleH
 	}
 	if hasIcon && c.layout != CardLayoutIconTop {
 		if iconBottom := box.Y + pad + cardIconSz; y < iconBottom {
@@ -219,6 +269,9 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	if innerW < 0 {
 		innerW = 0
 	}
+	// Wrapped header row heights (R10.1) — shared with cardHeaderBottom so the
+	// emitted text frames, the header band, and the body Y agree.
+	eyebrowH, titleH := r.cardHeaderRowHeights(box, c)
 	y := box.Y + pad
 	headerLeft := innerX
 	headerW := innerW
@@ -268,26 +321,25 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 		}
 	}
 
-	// Eyebrow (kicker) above the header.
+	// Eyebrow (kicker) above the header — sized to its wrapped line count (R10.1).
 	if c.eyebrow != "" {
-		ebH := cardEyebrowRowH
-		ebBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: ebH}
+		ebBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: eyebrowH}
 		tf := ps.AddTextFrame(ebBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
 		p.AddRun(c.eyebrow, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextAccent)})
 		r.stats.Shapes++
-		y += ebH
+		y += eyebrowH
 	}
 
-	// Header title.
+	// Header title — sized to its wrapped line count so a long title never
+	// collides with the body (R10.1).
 	if c.header != "" {
-		hH := cardTitleRowH
-		hBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: hH}
+		hBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: titleH}
 		tf := ps.AddTextFrame(hBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
 		p.AddRun(c.header, pptx.RunStyle{TypeRole: pptx.TypeH3, Bold: true})
 		r.stats.Shapes++
-		y += hH
+		y += titleH
 	}
 
 	// For icon-left, make sure the body starts below the icon too.

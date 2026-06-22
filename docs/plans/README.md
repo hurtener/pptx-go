@@ -891,6 +891,31 @@ Phase 36 (fallback, D-066).
 
 ---
 
+### Wave 10 — Content fit & density
+
+The R10 (`DECKARD-PRODUCT-REQUIREMENTS.md`) engine units: pro slides pack dense
+content compactly and fill the frame without overflowing or floating. Opens with
+the two CRITICAL off-slide/overlap fixes (R10.1 card-header height, R10.2
+fit-to-region compression).
+
+#### Phase 39 — content-aware card header height
+
+**Subsystem:** scene — Layer 2 renderer (card chrome / layout)
+**RFC sections:** §10.1, §12.1
+**Deps:** brief 09 (`wrappedLines`), the D-054 card chrome.
+**What lands (R10.1, CRITICAL · engine):**
+- `cardHeaderColumnW` + `cardHeaderRowHeights` size the card eyebrow/title (and
+  the D-054 header band + the body region top) to `wrappedLines × per-row`, so a
+  header that wraps to N lines no longer collides with the body.
+- Single-line headers are byte-identical to the legacy fixed advance; the slot
+  estimate (`cardChromeEst`) parity is deferred to R10.10.
+**Acceptance criteria:**
+- A long header in a 1/3-width card advances the body top below the wrapped header
+  bottom (no overlap) and sizes the header band to the wrapped height; a
+  single-line header is byte-identical; deterministic.
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native

@@ -197,9 +197,11 @@ only reports what it resolved.
 
 The renderer sizes each node's slot to its content: a text node's height grows
 with the number of lines its text wraps to in the available width, so stacked
-nodes don't overlap when a paragraph runs long. This estimate is deterministic
-(it never depends on worker count) and is an *allotment*, not a prediction of
-PowerPoint's exact on-screen reflow.
+nodes don't overlap when a paragraph runs long. A card's header (and eyebrow) is
+sized the same way — a long title that wraps to several lines in a narrow card
+pushes the body down below the wrapped header rather than overlapping it. This
+estimate is deterministic (it never depends on worker count) and is an
+*allotment*, not a prediction of PowerPoint's exact on-screen reflow.
 
 Because the height is content-aware, a slide whose text genuinely exceeds the
 body region records a `content overflows its region` `LayoutWarning` — that is
