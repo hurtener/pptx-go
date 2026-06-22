@@ -102,6 +102,11 @@ type FontSpec struct {
 	// 0 (the zero value) emits nothing — byte-identical to an untracked run.
 	// Emitted as the OOXML a:rPr/@spc attribute (1/100 pt). (D-060.)
 	Tracking float64
+	// LineHeight is the role's line spacing as a percent of single (100 = single,
+	// 120 = 1.2×); tight display sets ~100–105, body ~120–135. 0 (the zero value)
+	// and 100 emit nothing — byte-identical. The scene renderer applies it to a
+	// node's paragraphs; emitted as OOXML a:pPr/a:lnSpc/a:spcPct. (D-061.)
+	LineHeight float64
 }
 
 // Bold reports whether the weight is bold (≥600).

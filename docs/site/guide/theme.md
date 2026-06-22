@@ -61,10 +61,13 @@ The default values below are verified against the shipped default theme.
 
 ### Typography — `TypeRole`
 
-Each role resolves to a font family, size (points), weight, and an optional
+Each role resolves to a font family, size (points), weight, an optional
 letter-spacing (`FontSpec.Tracking`, points, signed) — positive opens glyphs
 apart (wide-tracked eyebrows), negative tightens (display headlines); `0` emits
-nothing and a `RunStyle.Tracking` overrides it per run.
+nothing and a `RunStyle.Tracking` overrides it per run — and an optional
+line-height (`FontSpec.LineHeight`, percent of single; tight display ~100–105,
+body ~120–135) applied to a node's paragraphs (`ParagraphOpts.LineHeight`
+overrides per paragraph); `0`/`100` emit nothing.
 
 | Role | Family | Size | Weight |
 | --- | --- | --- | --- |

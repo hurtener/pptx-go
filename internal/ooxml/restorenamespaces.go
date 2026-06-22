@@ -227,4 +227,5 @@ var elementNS = map[string]string{
 	"tbl": "a", "tblPr": "a", "tblGrid": "a", "gridCol": "a", "tr": "a", "tc": "a",
 	"tcPr": "a", "tableStyleId": "a", "lnL": "a", "lnR": "a", "lnT": "a", "lnB": "a",
 	"buChar": "a", "buAutoNum": "a", "buNone": "a", "defRPr": "a", "defRgbClrModel": "a",
+	"lnSpc": "a", "spcPct": "a", // paragraph line spacing (D-061)
 }

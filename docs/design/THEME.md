@@ -49,6 +49,15 @@ role's `FontSpec` and is emitted as the OOXML `a:rPr/@spc` attribute (1/100 pt);
 an optional `RunStyle.Tracking *float64` overrides it per run. The zero value
 emits nothing (byte-identical to an untracked run).
 
+**Line height** (leading, D-061): `FontSpec.LineHeight` is a per-type-role line
+spacing as a percent of single (100 = single, 120 = 1.2×) — tight display
+(~100–105), readable body (~120–135). The scene renderer applies a node's role
+line-height to its paragraphs, emitted as OOXML `a:pPr/a:lnSpc/a:spcPct`
+(1/1000 percent); `pptx.ParagraphOpts.LineHeight` is the builder-level override.
+0 or 100 emit nothing (byte-identical). (Estimator-accuracy — feeding leading
+into the wrapped-height model — is a later refinement; this token delivers the
+visual leading.)
+
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.

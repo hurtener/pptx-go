@@ -2,6 +2,7 @@ package pptx
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 )
@@ -109,6 +110,10 @@ type ParagraphOpts struct {
 	Align  Alignment
 	Level  int
 	Bullet BulletKind
+	// LineHeight is the paragraph's line spacing as a percent of single
+	// (100 = single, 120 = 1.2×); 0 and 100 emit nothing (byte-identical).
+	// Emitted as OOXML a:pPr/a:lnSpc/a:spcPct (D-061).
+	LineHeight float64
 }
 
 // TextFrame is a shape-level rich-text container (RFC §8.4). Create one with
@@ -174,6 +179,11 @@ func (tf *TextFrame) AddParagraph(opts ParagraphOpts) *Paragraph {
 	}
 	if opts.Bullet != BulletNone {
 		p.Bullet(opts.Bullet)
+	}
+	// Line spacing: emit a:lnSpc/a:spcPct only when set to a non-single value, so
+	// the default (0 or 100) stays byte-identical (D-061).
+	if opts.LineHeight != 0 && opts.LineHeight != 100 {
+		p.pr().LnSpc = &slide.XLnSpc{SpcPct: &slide.XSpcPct{Val: int(math.Round(opts.LineHeight * 1000))}}
 	}
 	return p
 }
@@ -378,6 +388,15 @@ func (p *Paragraph) Alignment() Alignment {
 func (p *Paragraph) Level() int {
 	if pr := p.x().Pr; pr != nil {
 		return pr.Level
+	}
+	return 0
+}
+
+// LineHeight returns the paragraph's line spacing as a percent of single, or 0
+// when none is set — the read inverse of ParagraphOpts.LineHeight (D-061).
+func (p *Paragraph) LineHeight() float64 {
+	if pr := p.x().Pr; pr != nil && pr.LnSpc != nil && pr.LnSpc.SpcPct != nil {
+		return float64(pr.LnSpc.SpcPct.Val) / 1000.0
 	}
 	return 0
 }

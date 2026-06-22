@@ -78,12 +78,16 @@ Colors for text runs. Construct with `pptx.TokenTextColor(role)`.
 ### Typography — `TypeRole` → `Theme.Typography[role]` (`FontSpec`)
 
 A `FontSpec` is `{Family string; Size float64; Weight int; Italic bool; Tracking
-float64}`. Weight
+float64; LineHeight float64}`. Weight
 is 100–900 (400 = regular, 700 = bold); `FontSpec.Bold()` reports `Weight >=
 600`. `Tracking` is letter-spacing in points (signed): positive opens glyphs
 apart (wide-tracked eyebrows), negative tightens (display headlines), emitted as
 OOXML `a:rPr/@spc`; `0` emits nothing, and a `RunStyle.Tracking *float64`
-overrides it per run. Select a role via `RunStyle{TypeRole: role}`. Defaults
+overrides it per run. `LineHeight` is line spacing as a percent of single
+(tight display ~100–105, body ~120–135), applied to a node's paragraphs and
+emitted as `a:pPr/a:lnSpc/a:spcPct`; `0`/`100` emit nothing, and
+`ParagraphOpts.LineHeight` overrides per paragraph. Select a role via
+`RunStyle{TypeRole: role}`. Defaults
 below use heading font `Calibri Light`, body font `Calibri`, mono font `Consolas`.
 
 | Role | Family | Size (pt) | Weight |
