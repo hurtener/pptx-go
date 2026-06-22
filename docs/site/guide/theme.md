@@ -71,7 +71,12 @@ body ~120–135) applied to a node's paragraphs (`ParagraphOpts.LineHeight`
 overrides per paragraph); `0`/`100` emit nothing. A role may also declare a case
 transform (`FontSpec.Case`: `CaseUpper`/`CaseSmallCaps`) rendered via `a:rPr/@cap`
 — the run text stays original-case while the display is cased; pairs with
-tracking for tracked-caps eyebrows.
+tracking for tracked-caps eyebrows. A role may also declare an ordered fallback
+chain (`FontSpec.Fallback []string`): when a `FontSource` is registered and it
+cannot resolve the role's primary family, the run's typeface is rewritten at save
+to the first family in `[Family] + Fallback` the source resolves — a controlled
+near-match rather than an arbitrary host default; empty (or no `FontSource`) is
+byte-identical.
 
 | Role | Family | Size | Weight |
 | --- | --- | --- | --- |

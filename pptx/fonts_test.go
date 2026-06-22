@@ -269,3 +269,132 @@ func TestAutoEmbedWarnsOnMissing(t *testing.T) {
 		t.Errorf("missing-face warning not logged:\n%s", log)
 	}
 }
+
+// ----------------------------------------------------------------------------
+// Phase 36 — font fallback chain (R9.6, D-066)
+// ----------------------------------------------------------------------------
+
+// fallbackTheme builds a theme whose TypeH1 family is heading with the given
+// fallback chain and body role family.
+func fallbackTheme(heading, body string, fallback ...string) *pptx.Theme {
+	theme := pptx.NewTheme(pptx.WithFonts(heading, body))
+	spec := theme.Typography[pptx.TypeH1]
+	spec.Fallback = fallback
+	theme.Typography[pptx.TypeH1] = spec
+	return theme
+}
+
+// fallbackDeck builds a one-slide deck with an H1 run in the heading face.
+func fallbackDeck(t *testing.T, theme *pptx.Theme, opts ...pptx.Option) *pptx.Presentation {
+	t.Helper()
+	all := append([]pptx.Option{pptx.WithTheme(theme)}, opts...)
+	pres := pptx.New(all...)
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	tf.AddParagraph(pptx.ParagraphOpts{}).AddRun("Title", pptx.RunStyle{TypeRole: pptx.TypeH1})
+	return pres
+}
+
+func slideXML(t *testing.T, pres *pptx.Presentation) string {
+	t.Helper()
+	pkg := reopenPackage(t, pres)
+	defer func() { _ = pkg.Close() }()
+	part := pkg.GetPartByStr("/ppt/slides/slide1.xml")
+	if part == nil {
+		t.Fatal("slide1.xml missing")
+	}
+	return string(part.Blob())
+}
+
+func TestFontFallbackSubstitutesUnavailablePrimary(t *testing.T) {
+	// Source has the fallback (Georgia) but not the primary (Playfair Display).
+	src := mapFontSource{"Georgia": []byte("GEORGIA")}
+	pres := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia"),
+		pptx.WithFontSource(src))
+
+	xml := slideXML(t, pres)
+	if !strings.Contains(xml, `typeface="Georgia"`) {
+		t.Errorf("run not substituted to the fallback face:\n%s", xml)
+	}
+	if strings.Contains(xml, `typeface="Playfair Display"`) {
+		t.Errorf("unavailable primary still emitted:\n%s", xml)
+	}
+	// Embedding off: no font parts shipped.
+	if got := countFontParts(t, pres); got != 0 {
+		t.Errorf("fallback (embedding off) shipped %d font parts, want 0", got)
+	}
+}
+
+func TestFontFallbackPrimaryWinsWhenAvailable(t *testing.T) {
+	// Source resolves the primary — it must win, no substitution.
+	src := mapFontSource{"Playfair Display": []byte("PLAYFAIR"), "Georgia": []byte("GEORGIA")}
+	pres := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia"),
+		pptx.WithFontSource(src))
+
+	xml := slideXML(t, pres)
+	if !strings.Contains(xml, `typeface="Playfair Display"`) {
+		t.Errorf("available primary not kept:\n%s", xml)
+	}
+	if strings.Contains(xml, `typeface="Georgia"`) {
+		t.Errorf("substituted to fallback though the primary resolved:\n%s", xml)
+	}
+}
+
+func TestFontFallbackByteIdenticalWhenUnused(t *testing.T) {
+	baseline, err := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter")).WriteToBytes()
+	if err != nil {
+		t.Fatalf("baseline: %v", err)
+	}
+	// (a) Fallback declared but NO FontSource → byte-identical.
+	noSrc, err := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia")).WriteToBytes()
+	if err != nil {
+		t.Fatalf("no-source: %v", err)
+	}
+	if !bytes.Equal(baseline, noSrc) {
+		t.Error("a declared fallback with no FontSource changed output")
+	}
+	// (b) FontSource registered but NO fallback declared → byte-identical.
+	src := mapFontSource{"Georgia": []byte("GEORGIA")}
+	noFb, err := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter"), pptx.WithFontSource(src)).WriteToBytes()
+	if err != nil {
+		t.Fatalf("no-fallback: %v", err)
+	}
+	if !bytes.Equal(baseline, noFb) {
+		t.Error("a registered FontSource with no declared fallback changed output")
+	}
+}
+
+func TestFontFallbackDeterministicIdempotent(t *testing.T) {
+	src := mapFontSource{"Georgia": []byte("GEORGIA")}
+	pres := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia"),
+		pptx.WithFontSource(src))
+	a, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("save 1: %v", err)
+	}
+	b, err := pres.WriteToBytes() // second save of the same (mutated) deck
+	if err != nil {
+		t.Fatalf("save 2: %v", err)
+	}
+	if !bytes.Equal(a, b) {
+		t.Errorf("two saves differ (not idempotent): %d vs %d bytes", len(a), len(b))
+	}
+}
+
+func TestFontFallbackEmbedsResolvedFace(t *testing.T) {
+	// Fallback + embedding: the resolved fallback face is embedded, not the primary.
+	src := mapFontSource{"Georgia": []byte("GEORGIA"), "Inter": []byte("INTER")}
+	pres := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia"),
+		pptx.WithFontSource(src), pptx.WithFontEmbedding())
+
+	if got := countFontParts(t, pres); got != 1 {
+		t.Fatalf("font parts = %d, want 1 (Georgia)", got)
+	}
+	xml := presXML(t, pres)
+	if !strings.Contains(xml, `typeface="Georgia"`) {
+		t.Errorf("resolved fallback face not embedded:\n%s", xml)
+	}
+	if strings.Contains(xml, `typeface="Playfair Display"`) {
+		t.Errorf("unavailable primary embedded:\n%s", xml)
+	}
+}

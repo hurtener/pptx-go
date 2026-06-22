@@ -119,6 +119,14 @@ type FontSpec struct {
 	// faces advance differently from the default sans). 0 (the zero value) uses
 	// the built-in ~0.5 sans fallback — byte-identical estimate. (D-064.)
 	AvgCharWidth float64
+	// Fallback is an ordered list of substitute families for this role. When a
+	// FontSource is registered and it cannot resolve Family, the write-time
+	// fallback pass emits the first Fallback entry the source can resolve (instead
+	// of letting the host pick an arbitrary default), so output degrades to a
+	// controlled near-match. Empty (the zero value) means no fallback —
+	// byte-identical. The chosen face is recorded as the run's a:latin typeface
+	// (OOXML run fonts are single-valued). (D-066.)
+	Fallback []string
 }
 
 // TextCase is a type role's case transform, rendered as the OOXML a:rPr/@cap

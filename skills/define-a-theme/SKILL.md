@@ -78,7 +78,8 @@ Colors for text runs. Construct with `pptx.TokenTextColor(role)`.
 ### Typography — `TypeRole` → `Theme.Typography[role]` (`FontSpec`)
 
 A `FontSpec` is `{Family string; Size float64; Weight int; Italic bool; Tracking
-float64; LineHeight float64; Case TextCase; AvgCharWidth float64}`. Weight
+float64; LineHeight float64; Case TextCase; AvgCharWidth float64; Fallback
+[]string}`. Weight
 is 100–900 (400 = regular, 700 = bold); `FontSpec.Bold()` reports `Weight >=
 600`. `Tracking` is letter-spacing in points (signed): positive opens glyphs
 apart (wide-tracked eyebrows), negative tightens (display headlines), emitted as
@@ -92,7 +93,11 @@ emitted as `a:pPr/a:lnSpc/a:spcPct`; `0`/`100` emit nothing, and
 (`RunStyle.Case` overrides per run); pairs with `Tracking` for tracked-caps
 eyebrows. `AvgCharWidth` is the face's average glyph advance (fraction of size)
 for the wrap/overflow estimator only — set a measured factor for a serif/display
-face; `0` uses the `~0.5` sans fallback (it never renders). Select a role via
+face; `0` uses the `~0.5` sans fallback (it never renders). `Fallback` is an
+ordered substitute chain: when a `FontSource` is registered and it cannot resolve
+the role's primary `Family`, the run's typeface is rewritten at save to the first
+family in `[Family] + Fallback` the source resolves (a controlled near-match, not
+a host default); empty or no `FontSource` is byte-identical. Select a role via
 `RunStyle{TypeRole: role}`. Defaults
 below use heading font `Calibri Light`, body font `Calibri`, mono font `Consolas`.
 

@@ -148,6 +148,96 @@ func (p *Presentation) autoEmbedFonts() {
 	}
 }
 
+// fallbackRoles is the fixed iteration order for building the fallback
+// resolution map, so the map (and any substitution) is deterministic.
+var fallbackRoles = []TypeRole{
+	TypeDisplay, TypeH1, TypeH2, TypeH3, TypeH4, TypeH5,
+	TypeBody, TypeBodySmall, TypeCaption, TypeMono, TypeCode,
+}
+
+// resolveFontFallbacks realizes the declared per-role fallback chains (R9.6,
+// D-066). When a FontSource is registered and a role's primary family cannot be
+// resolved by it, the run's single-valued a:latin typeface is rewritten to the
+// first family in [Family] + Fallback the source can resolve — so output
+// degrades to a controlled near-match instead of an arbitrary host default. It
+// is a no-op (and zero FontSource calls, byte-identical) when no FontSource is
+// registered or no role declares a Fallback. It runs before syncSlides so the
+// serialized runs carry the resolved face, and before autoEmbedFonts so the
+// embedded bytes match. The caller holds p.mu.
+func (p *Presentation) resolveFontFallbacks() {
+	if p.fontSource == nil {
+		return
+	}
+	theme := p.theme
+	if theme == nil {
+		theme = DefaultTheme()
+	}
+
+	// Cheap early-out: nothing to do unless some role declares a fallback chain.
+	declared := false
+	for _, role := range fallbackRoles {
+		if len(theme.ResolveType(role).Fallback) > 0 {
+			declared = true
+			break
+		}
+	}
+	if !declared {
+		return
+	}
+
+	// Probe the source for family availability, memoized (a family is "available"
+	// when its regular cut resolves).
+	avail := map[string]bool{}
+	resolvable := func(family string) bool {
+		if family == "" {
+			return false
+		}
+		if v, ok := avail[family]; ok {
+			return v
+		}
+		data, err := p.fontSource.Resolve(family, "", 400)
+		ok := err == nil && len(data) > 0
+		avail[family] = ok
+		return ok
+	}
+
+	// Build primary -> resolved face, first-seen (lowest role) wins.
+	mapping := map[string]string{}
+	for _, role := range fallbackRoles {
+		spec := theme.ResolveType(role)
+		if len(spec.Fallback) == 0 || spec.Family == "" {
+			continue
+		}
+		if _, done := mapping[spec.Family]; done {
+			continue
+		}
+		if resolvable(spec.Family) {
+			continue // primary available — it wins, no substitution
+		}
+		for _, fb := range spec.Fallback {
+			if fb != spec.Family && resolvable(fb) {
+				mapping[spec.Family] = fb
+				break
+			}
+		}
+	}
+	if len(mapping) == 0 {
+		return
+	}
+
+	rewritten := 0
+	for _, s := range p.slides {
+		if s == nil || s.part == nil {
+			continue
+		}
+		rewritten += s.part.RewriteFontFaces(mapping)
+	}
+	if p.logger != nil && rewritten > 0 {
+		p.logger.Debug("pptx: font fallback substituted faces",
+			"faces", len(mapping), "runs", rewritten)
+	}
+}
+
 // ensurePresentationOPCPart returns the /ppt/presentation.xml OPC part,
 // creating it (from the current presentation model) if it is not yet in the
 // package, so relationships can be attached before Save. Caller holds p.mu.
