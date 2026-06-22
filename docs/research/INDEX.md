@@ -189,6 +189,13 @@ semantics)*
   label, and the Stat value, so chrome text is legible on any fill/variant. Resolves
   the D-058 tension under D-026 (a mechanism the caller overrides, not a policy).
   (R11.2, CRITICAL.)
+- `34-container-slide-bounds-clamp.md` — a `clampToSafeArea(box)` guard at the
+  `renderBento`/`renderGrid`/`renderCard` entry caps a container's box so its bottom
+  never exceeds the slide safe area (`= bodyRegion()`: slide − margins − chrome
+  bands), warning once on clamp. Fires only on strict overflow → fitting layouts
+  (and `VAlignFill` to the region bottom) are byte-identical; a pure integer cap →
+  deterministic. Defense-in-depth complementary to the opt-in `VAlignFit` (which
+  reflows; this caps). (R11.3, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

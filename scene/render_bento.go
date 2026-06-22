@@ -148,6 +148,7 @@ func (r *renderer) bentoWeightedRowHeights(box pptx.Box, v Bento, gap pptx.EMU) 
 }
 
 func (r *renderer) renderBento(ps *pptx.Slide, box pptx.Box, v Bento, slideID string) {
+	box = r.clampToSafeArea(box, slideID) // R11.3: never divide a box that runs off-slide
 	gap := r.theme.ResolveSpace(pptx.SpaceMD)
 	var rowHs []pptx.EMU
 	if v.WeightedRows {

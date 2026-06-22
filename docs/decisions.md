@@ -2653,4 +2653,44 @@ both light and dark, not the reported bug. No public API change.
 
 ---
 
+## D-083 — Container slide-bounds clamp (safe-area invariant)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A Bento / Grid / Card handed a box whose bottom exceeds the slide's
+printable area — because an over-full body stack (`VAlignTop`) placed its slot
+low/tall, or a tall fixed-height container was requested — divides that box as
+given and draws cells off the bottom edge, clipping them and overlapping the chrome
+footer (recreation slides 6, 7). `bentoGeometry`/`layout.Grid` compute
+`rowH = box.H/nRows` from whatever box they are handed, with no clamp to the
+printable region. `VAlignFit` (R10.2/D-071) compresses such a stack, but it is
+opt-in; the default top-anchored stack still overflows. R11.3
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, CRITICAL · engine).
+**Decision:** Add `safeArea()` — a named alias of the chrome-aware `bodyRegion()`
+(slide − content margins − the eyebrow/footer chrome bands) — and a
+`clampToSafeArea(box, slideID)` guard called at the entry of `renderBento`,
+`renderGrid`, and `renderCard`. When `box.Bottom() > safeArea().Bottom()` the box's
+`H` is capped to `safeArea().Bottom() − box.Y` and a single warning
+(`container overflow: content exceeds the slide safe area, clamped`) is logged; when
+the box already fits (or its bottom is exactly the safe-area bottom) it is returned
+unchanged. Pure integer cap → deterministic at any worker count.
+**Why a cap, not a reflow:** the clamp is the deterministic *invariant* (nothing
+draws below the safe area); reflowing an over-full stack to fit legibly is the
+opt-in `VAlignFit` job. The two compose — `VAlignFit` makes content fit when asked,
+the clamp guarantees it never draws off-canvas regardless — and keeping the clamp a
+pure cap is what makes the default path byte-identical. Firing only on strict `>`
+means fitting layouts, `VAlignFill` (which grows *to* the region bottom), and a
+sole container handed the full body region (`Bottom() == safeArea.Bottom()`) are
+all unchanged. Nesting does not double-warn: an outer clamp shrinks the box so the
+containers it lays out get sub-boxes inside the clamped region and never
+individually overflow → one warning, at the outermost container.
+**Consequences:** Off-slide / footer-overlapping container content is fixed for any
+dense bento or tall card grid; the full existing golden suite passes unchanged
+(fitting content byte-identical); a parallel determinism guard asserts byte-
+identical output across worker counts. The only user-observable change is an
+additional `LayoutWarning` on overflow, surfaced through the existing
+`Stats.Warnings`. No public API change.
+
+---
+
 *Append new entries below this line.*

@@ -224,6 +224,14 @@ the signal to inspect when you want to flag a slide as too full. Short,
 single-line content is allotted the same compact height as before and never
 falsely warns.
 
+A container (`Bento`, `Grid`, `Card`) is additionally clamped to the slide
+**safe area** — the body region minus any reserved chrome bands — so it can never
+draw cells below the slide onto the footer, even when an over-full stack pushes it
+down. When that clamp fires it records a `container overflow … clamped`
+`LayoutWarning`; a container that already fits is byte-identical (no clamp, no
+warning). To make over-full content fit *legibly* rather than just capping it, opt
+the slide into `VAlignFit` (below).
+
 ### Vertical alignment and fill
 
 `SceneSlide.Content.Vertical` chooses how the body stack sits in the body
