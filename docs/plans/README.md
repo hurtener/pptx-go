@@ -1265,6 +1265,23 @@ badges never collide or overflow the slide safe area.
 - The gutter fits/clamps to the widest label; the geometry reserves exactly
   `bentoGutterWidthOf`; the widest label fits inside it; labeled bentos deterministic.
 
+#### Phase 58 — list bullet hanging indent
+
+**Subsystem:** scene — Layer 2 renderer (List leaf)
+**RFC sections:** §11.1, §8.4
+**Deps:** Phase 47 (R10.9 / D-078 `IndentTight`), Phase 39 (R10.1), brief 41.
+**What lands (R11.10, MED · engine):**
+- The `IndentTight` bullet hanging indent becomes proportional: `listTightIndent() =
+  listTightIndentBase × bodySize / 14`, anchored byte-identical to `In(0.25)` at the
+  default 14 pt body and scaling with the body type size, so the bullet-to-text gap
+  stays tight and proportional at any size instead of a fixed value.
+- The override mechanism (`ParagraphOpts.BulletIndent` / `List.Indent`) is from
+  R10.9/D-078; the list start Y respects the grown card header via R10.1. `bulletIndent`
+  becomes a method (it needs the body size); `IndentNormal` is byte-identical (D-090).
+**Acceptance criteria:**
+- The tight indent is exactly `In(0.25)` at 14 pt (R10.9 `marL="228600"` guard passes),
+  scales with the body size, and stays tighter than the 0.5" default.
+
 ---
 
 ## 4. Post-V1 backlog

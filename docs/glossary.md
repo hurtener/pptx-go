@@ -777,10 +777,12 @@ OOXML `buChar`/`buAutoNum`/`buNone` with a hanging indent. (RFC §8.4.)
 
 The scene `List.Indent` preset (`scene.IndentNormal` / `scene.IndentTight`, D-078)
 controlling a list's bullet hanging-indent density. `IndentNormal` (zero) is
-byte-identical to the default; `IndentTight` tightens the marker-to-text offset to
-`In(0.25)` (vs the 0.5" default) so dense lists sit tight to their markers,
-consistently across items and levels. Plumbed through `renderList` to the builder's
-`BulletIndent`. Pinned presets, not theme tokens. See `RFC-001-pptx-go.md §11.1`.
+byte-identical to the default; `IndentTight` tightens the marker-to-text offset so
+dense lists sit tight to their markers, consistently across items and levels. The
+tight indent is **proportional to the body type size** — anchored to `In(0.25)` at
+the default 14 pt body and scaling with it — so the bullet-to-text gap stays tight at
+any size (R11.10, `D-090`). Plumbed through `renderList` to the builder's
+`BulletIndent`. Pinned calibration, not a theme token. See `RFC-001-pptx-go.md §11.1`.
 
 ## Paragraph
 
