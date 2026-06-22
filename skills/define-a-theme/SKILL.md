@@ -164,6 +164,11 @@ applies functional options. Unset roles keep their defaults. The options:
   rewrites the `Typography` families: heading roles (`TypeDisplay`–`TypeH5`) get
   `heading`, mono roles (`TypeMono`, `TypeCode`) are left on the mono face, the
   rest get `body`.
+- `pptx.WithDisplayFont(family string)` — sets `Theme.DisplayFont`, a distinct
+  face for the `TypeDisplay` role (the big editorial face), independent of
+  `heading`. Order-independent with `WithFonts`; omitting it leaves `TypeDisplay`
+  on `HeadingFont` (byte-identical). Lets a brand pair a serif display with a
+  separate sans heading.
 
 ```go
 theme := pptx.NewTheme(

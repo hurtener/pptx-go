@@ -254,6 +254,14 @@ A `Stat.Delta`'s color direction (`DeltaTone`): `DeltaUp` (success/green),
 `DeltaDown` (error/red), `DeltaNeutral` (muted, the zero value). Maps to existing
 theme tokens — no new token (D-057). See `Stat`, `RFC-001-pptx-go.md §11.1`.
 
+## Display font
+
+The optional third font-scheme face on a `Theme` (`Theme.DisplayFont`, set via
+`WithDisplayFont`) used by the `TypeDisplay` role — the big editorial face,
+independent of `HeadingFont`. Empty = `TypeDisplay` inherits `HeadingFont`
+(byte-identical). Lets a brand pair a serif display with a separate sans for
+headings. See `docs/design/THEME.md`, `D-063`.
+
 ## Drift audit
 
 The `scripts/drift-audit.sh` design-coherence gate (`make drift-audit`),

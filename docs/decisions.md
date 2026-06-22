@@ -1862,4 +1862,33 @@ need a text rewrite and are deferred.
 
 ---
 
+## D-063 — Display font: a first-class TypeDisplay face distinct from HeadingFont
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** Pro decks pair a serif **display** face for hero/section titles with
+a separate sans for headings/labels, but `pptx.Theme` had only `HeadingFont` +
+`BodyFont`, so a brand could not cleanly say "serif display, different sans
+heading"; `TypeDisplay` always inherited `HeadingFont`. Wave 9 unit
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R9.2, HIGH; engine half — D-059).
+**Decision:** Add `Theme.DisplayFont string` and a `WithDisplayFont(family)`
+`ThemeOption`. When `DisplayFont` is non-empty, the `TypeDisplay` role's family is
+it; when empty, `TypeDisplay` inherits `HeadingFont` (byte-identical to a 2-font
+theme). `WithFonts(heading, body)` keeps its signature (no break) and is made
+`DisplayFont`-aware (it sets `TypeDisplay` from `DisplayFont` when present), so
+`WithDisplayFont` and `WithFonts` are order-independent. Only `TypeDisplay` maps
+to the display face (H1–H5 stay on `HeadingFont`), matching the reference's
+serif-display / separate-heading split. The family flows through the existing run
+`a:latin` emit, so a display run renders (and round-trips) with the display
+typeface — no OOXML or scene change.
+**Consequences:** A soul can assign three independent font tiers (display /
+heading-body / mono) and refine one without disturbing the others. Additive and
+deterministic: `DefaultTheme().DisplayFont` is empty → `TypeDisplay` stays on
+`HeadingFont`, byte-identical. New theme font-scheme field ⇒ a `docs/design/
+THEME.md` entry (P2). The product (Deckard) wires `DisplayFont` into bootstrap/
+the soul (the `product` side of R9.2); pptx-go provides the theme mechanism. The
+per-role `Typography[role].Family` override remains the escape hatch.
+
+---
+
 *Append new entries below this line.*

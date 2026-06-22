@@ -190,6 +190,10 @@ type Elevations map[ElevationRole]Elevation
 type Theme struct {
 	Name        string
 	HeadingFont string
+	// DisplayFont, when non-empty, is the family for the TypeDisplay role (the big
+	// editorial face), independent of HeadingFont. Empty (the zero value) makes
+	// TypeDisplay inherit HeadingFont — byte-identical to a 2-font theme. (D-063.)
+	DisplayFont string
 	BodyFont    string
 	Colors      ColorPalette
 	Typography  Typography
@@ -215,14 +219,30 @@ func WithFonts(heading, body string) ThemeOption {
 	return func(t *Theme) {
 		t.HeadingFont, t.BodyFont = heading, body
 		for role, spec := range t.Typography {
-			if role <= TypeH5 {
+			switch {
+			case role == TypeDisplay && t.DisplayFont != "":
+				spec.Family = t.DisplayFont // a distinct display face wins for TypeDisplay
+			case role <= TypeH5:
 				spec.Family = heading
-			} else if role == TypeMono || role == TypeCode {
+			case role == TypeMono || role == TypeCode:
 				// mono untouched
-			} else {
+			default:
 				spec.Family = body
 			}
 			t.Typography[role] = spec
+		}
+	}
+}
+
+// WithDisplayFont sets a distinct display face for the TypeDisplay role (the big
+// editorial face), independent of the heading face (D-063). Order-independent
+// with WithFonts. Omitting it leaves TypeDisplay on HeadingFont (byte-identical).
+func WithDisplayFont(family string) ThemeOption {
+	return func(t *Theme) {
+		t.DisplayFont = family
+		if spec, ok := t.Typography[TypeDisplay]; ok {
+			spec.Family = family
+			t.Typography[TypeDisplay] = spec
 		}
 	}
 }
