@@ -55,6 +55,15 @@ role's `FontSpec` and is emitted as the OOXML `a:rPr/@spc` attribute (1/100 pt);
 an optional `RunStyle.Tracking *float64` overrides it per run. The zero value
 emits nothing (byte-identical to an untracked run).
 
+**Font scale** (shrink-to-fit, D-074): `RunStyle.FontScale` is a per-run
+multiplier on the resolved type-role size — the run-level escape hatch the scene
+shrink-to-fit (`AutoFit`) path uses. The role's size token stays the source of
+truth (a theme swap re-skins the base, then this scales it), so it does not weaken
+P2; there is no per-role `FontScale` token. The zero value (and 1) leaves the size
+unchanged (byte-identical); a value in (0,1) emits the reduced `a:rPr/@sz`, which
+round-trips via `Run.FontSize`. Quantized and floored deterministically by the
+scene `AutoFit` mechanism — the engine never shrinks on its own.
+
 **Line height** (leading, D-061): `FontSpec.LineHeight` is a per-type-role line
 spacing as a percent of single (100 = single, 120 = 1.2×) — tight display
 (~100–105), readable body (~120–135). The scene renderer applies a node's role

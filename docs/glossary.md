@@ -68,6 +68,16 @@ bytes at render time by an `AssetResolver`. pengui-slides uses
 missing asset surfaces as a `LayoutWarning` (or render-fatal if the
 asset was required). See `RFC §10.6`.
 
+## AutoFit (shrink-to-fit)
+
+The opt-in `AutoFit bool` on the display nodes (`Hero`, `Stat`, `Heading`, D-074):
+when the display run's estimated `naturalWidth` exceeds its box, the engine
+downscales its font (via `FontScale`) so it fits one line, quantized to a fixed
+step and floored at a 0.60 ratio. Never upscales; the zero value (off) and
+already-fitting text are byte-identical. The engine never shrinks on its own —
+the caller opts a node in. See `Fit-to-region compression` (the vertical analogue)
+and `RFC-001-pptx-go.md §10.2`.
+
 ## Bleed
 
 A `Decoration` placement that extends past the slide canvas edge,
@@ -420,6 +430,15 @@ caller invokes `EmbedFont` explicitly for each face; the opt-in
 embedding every face a deck actually uses. (D-019, D-065, `RFC §7.6`.)
 Registered in V1 via `pres.SetFontSource(...)`; the functional
 `pptx.WithFontSource(...)` option arrives with the builder spine (D-030).
+
+## FontScale
+
+`pptx.RunStyle.FontScale` — a per-run multiplier on the resolved type-role size
+(D-074). The role's `Size` token stays the source of truth; `FontScale` only
+scales it, so a theme swap still re-skins the base. The zero value (and 1) leaves
+the size unchanged (byte-identical); a value in (0,1) emits the reduced
+`a:rPr/@sz`, round-tripping via `Run.FontSize`. The scene `AutoFit` (shrink-to-fit)
+path computes it deterministically; there is no per-role `FontScale` token.
 
 ## FontSpec
 

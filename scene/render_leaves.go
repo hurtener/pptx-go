@@ -11,7 +11,7 @@ func (r *renderer) renderHero(ps *pptx.Slide, box pptx.Box, v Hero, hAlign HAlig
 	opts := pptx.ParagraphOpts{Align: pAlign}
 	tf := ps.AddTextFrame(box).Anchor(pptx.AnchorMiddle)
 	r.plainPara(tf, v.Eyebrow, pptx.TypeCaption, opts)
-	r.plainPara(tf, v.Title, pptx.TypeDisplay, opts)
+	r.plainParaScaled(tf, v.Title, pptx.TypeDisplay, opts, r.displayRunScale(v.AutoFit, v.Title, pptx.TypeDisplay, box.W))
 	r.plainPara(tf, v.Subtitle, pptx.TypeBody, opts)
 	r.stats.Shapes++
 }
@@ -30,7 +30,11 @@ func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading, hAlign
 	tf := ps.AddTextFrame(box)
 	role := headingRole(v.Level)
 	p := tf.AddParagraph(pptx.ParagraphOpts{Align: hAlignToParagraph(hAlign), LineHeight: r.lineH(role)})
-	r.addRichText(ps, p, v.Text, role)
+	var scale float64
+	if v.AutoFit {
+		scale = fitScale(naturalWidthAt(v.Text, role, r.theme), box.W)
+	}
+	r.addRichTextScaled(ps, p, v.Text, role, scale)
 	r.stats.Shapes++
 }
 
@@ -139,13 +143,28 @@ func (r *renderer) lineH(role pptx.TypeRole) float64 {
 }
 
 func (r *renderer) plainPara(tf *pptx.TextFrame, text string, role pptx.TypeRole, opts pptx.ParagraphOpts) {
+	r.plainParaScaled(tf, text, role, opts, 0)
+}
+
+// plainParaScaled is plainPara with a per-run FontScale (the AutoFit shrink-to-fit
+// path, R10.5). A scale of 0 leaves the run at its role size — byte-identical.
+func (r *renderer) plainParaScaled(tf *pptx.TextFrame, text string, role pptx.TypeRole, opts pptx.ParagraphOpts, scale float64) {
 	if text == "" {
 		return
 	}
 	if opts.LineHeight == 0 {
 		opts.LineHeight = r.lineH(role) // a node's role drives its leading (D-061)
 	}
-	tf.AddParagraph(opts).AddRun(text, pptx.RunStyle{TypeRole: role})
+	tf.AddParagraph(opts).AddRun(text, pptx.RunStyle{TypeRole: role, FontScale: scale})
+}
+
+// displayRunScale returns the FontScale for a single-line display run of text at
+// role within boxW when autofit is on (else 0 = no scaling). Pure/deterministic.
+func (r *renderer) displayRunScale(autofit bool, text string, role pptx.TypeRole, boxW pptx.EMU) float64 {
+	if !autofit || text == "" {
+		return 0
+	}
+	return fitScale(naturalWidth(RichText{{Text: text, Style: RunStyle{TypeRole: role}}}, r.theme), boxW)
 }
 
 func (r *renderer) resolve(id AssetID) ([]byte, string, error) {

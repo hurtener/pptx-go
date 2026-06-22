@@ -971,6 +971,25 @@ fit-to-region compression).
 - `BodyVAlign=Bottom` pins the last body node's bottom to the card body bottom;
   `Justify` spreads inter-item gaps; `Top` is byte-identical; deterministic.
 
+#### Phase 43 — display text shrink-to-fit
+
+**Subsystem:** scene — Layer 2 renderer (+ a `pptx` run override)
+**RFC sections:** §8.4, §10.2
+**Deps:** Phase 22 (`naturalWidth`), Phase 28 (Stat), Phase 40 (D-071), brief 26.
+**What lands (R10.5, HIGH · engine):**
+- An opt-in `AutoFit bool` on the display nodes (`Hero`, `Stat`, `Heading`) and a
+  new per-run `RunStyle.FontScale` multiplier. When a display run's estimated
+  `naturalWidth` exceeds its box, a pure `fitScale` quantizes `boxW/naturalWidth`
+  down to a 0.025 step (floored at 0.60) and emits the reduced `a:rPr/@sz`, so a
+  too-wide title or price fits one line instead of wrapping.
+- Never upscales; `FontScale=0` / `AutoFit=false` / already-fitting text are
+  byte-identical; the scale keeps the role size token as source of truth (P2) and
+  round-trips via `Run.FontSize()`.
+**Acceptance criteria:**
+- An over-wide Stat/price value fits its column at a font ≥ ratioMin×base;
+  fitting text and AutoFit-off are byte-identical; a scaled run round-trips its
+  size; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -11,7 +11,8 @@ func (r *renderer) renderStat(ps *pptx.Slide, box pptx.Box, v Stat) {
 	tf := ps.AddTextFrame(box).Anchor(pptx.AnchorMiddle)
 
 	vp := tf.AddParagraph(pptx.ParagraphOpts{})
-	vp.AddRun(v.Value, pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true})
+	scale := r.displayRunScale(v.AutoFit, v.Value, pptx.TypeDisplay, box.W)
+	vp.AddRun(v.Value, pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true, FontScale: scale})
 
 	if v.Label != "" {
 		lp := tf.AddParagraph(pptx.ParagraphOpts{})

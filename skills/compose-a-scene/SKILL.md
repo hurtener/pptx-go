@@ -67,16 +67,16 @@ renders as native PPTX shapes**.
 
 | Node | Fields | Render |
 |------|--------|--------|
-| `Hero` | `Eyebrow, Title, Subtitle string` | native |
+| `Hero` | `Eyebrow, Title, Subtitle string; AutoFit bool` | native; `AutoFit` shrinks the title to fit one line when it would overflow |
 | `Prose` | `Paragraphs []RichText` | native |
-| `Heading` | `Text RichText; Level int` (1..6) | native |
+| `Heading` | `Text RichText; Level int (1..6); AutoFit bool` | native; `AutoFit` shrinks the heading to fit one line when it would overflow |
 | `List` | `Kind ListKind; Items []ListItem` | native |
 | `Divider` | `Spacing SpaceRole` | native |
 | `Quote` | `Text RichText; Attribution string` | native |
 | `Callout` | `Kind CalloutKind; Title string; Body RichText` | native |
 | `Chip` | `Label string; Tone ChipTone; Color ColorRole` | native |
 | `Arrow` | `Direction ArrowDirection; Label string` | native |
-| `Stat` | `Value, Label, Delta string; DeltaTone` | native; hero big-number (value at display scale + label + optional delta). `DeltaTone` = `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted). A `Grid` of `Stat`s is a metric strip |
+| `Stat` | `Value, Label, Delta string; DeltaTone; AutoFit bool` | native; hero big-number (value at display scale + label + optional delta). `DeltaTone` = `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted). A `Grid` of `Stat`s is a metric strip. `AutoFit` (opt-in) shrinks a long value/price to fit its column on one line, down to 60% of the display size; off / fitting values are byte-identical |
 | `SectionDivider` | `Eyebrow, Label string` | native (full-bleed) |
 | `Table` | `Headers []RichText; Rows [][]RichText; Caption string` | native |
 | `Flow` | `Orientation FlowOrientation; Steps []FlowStep; Connector ConnectorKind` | native |

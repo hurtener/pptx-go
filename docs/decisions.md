@@ -2299,4 +2299,43 @@ reuses the Phase-13 alignment engine and `D-071` (VAlignFit).
 
 ---
 
+## D-074 — Display text shrink-to-fit (AutoFit + RunStyle.FontScale)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A display-class run (Hero title, Stat value, big price, Heading) was
+rendered at a fixed `TypeRole` size and wrapped or clipped when wider than its box
+(the recreation's "$4,000+" wrapped to two lines in a narrow pricing column;
+titles on slides 4/5 wrapped where the reference keeps one line). R10.5
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** Two additive pieces. (1) **Builder:** a per-run
+`RunStyle.FontScale float64` multiplier on the resolved type-role size. In
+`toProps`, `size := spec.Size; if rs.FontScale > 0 { size = spec.Size ×
+rs.FontScale }`; the result is emitted as `a:rPr/@sz` and round-trips via
+`Run.FontSize`. The role's size token stays the source of truth (a theme swap
+re-skins the base, then this scales it), so P2 is intact; there is no per-role
+`FontScale` token. (2) **Scene:** an opt-in `AutoFit bool` on `Hero`, `Stat`, and
+`Heading`, plus a pure `fitScale(natW, boxW)` that returns 0 when the text already
+fits, else `floor(boxW·10000/natW)` quantized **down** to a 0.025 step and floored
+at a 0.60 ratio — expressed as a fraction in `[0.60, 1)`. The renderer sets the
+display run's `FontScale = fitScale(naturalWidth(display text at its role),
+box.W)`; `addRichText` is factored into `addRichTextScaled` so a multi-run Heading
+scales as a unit. All integer / quantized basis-point math — no measurement, pure
+function of `(text, role, boxW, theme)`.
+**Consequences:** An over-wide display run downscales to fit its box on one line
+at a font no smaller than 60 % of the role size (an extreme overflow caps at the
+floor and accepts residual). `FontScale` never upscales. The zero `FontScale` (and
+`AutoFit=false`, and already-fitting text where `fitScale` returns 0) is
+byte-identical: `size = spec.Size` exactly and no scale is applied — the existing
+Hero/Stat/Heading render tests pass unchanged through the new path. **Scope
+(§5/§4.3):** `AutoFit` is limited to the display class (`Hero`/`Stat`/`Heading`)
+the spec names; `Chip`/`Arrow`/table-cell labels are out of scope but reuse the
+same `fitScale` + `FontScale` mechanism if a later req wants them. AutoFit changes
+only the emitted font size (horizontal fit) — it does **not** alter
+`preferredHeight`; vertical fit stays R10.2/R10.10's concern. Reuses `D-064`
+(`naturalWidth`); mirrors `D-071`/`D-072`'s quantized-scale-to-a-pinned-floor
+shape.
+
+---
+
 *Append new entries below this line.*

@@ -22,6 +22,7 @@ subtitle. Render policy: **native**.
 | `Eyebrow` | `string` | Small kicker label above the title |
 | `Title` | `string` | The main cover title |
 | `Subtitle` | `string` | Optional supporting line below the title |
+| `AutoFit` | `bool` | Shrink the title to fit one line when it would overflow |
 
 ```go
 hero := scene.Hero{
@@ -30,6 +31,10 @@ hero := scene.Hero{
 	Subtitle: "Results, risks, and outlook",
 }
 ```
+
+Set `AutoFit` to keep a long title on one line: when the title's estimated width
+exceeds the box, the engine downscales its font (to no less than 60% of the role
+size) instead of letting it wrap. A title that already fits is unchanged.
 
 ## Prose
 
@@ -57,6 +62,7 @@ levels). Render policy: **native**.
 | --- | --- | --- |
 | `Text` | `RichText` | The heading text |
 | `Level` | `int` | Heading level, 1..6 |
+| `AutoFit` | `bool` | Shrink the heading to fit one line when it would overflow |
 
 ```go
 heading := scene.Heading{
@@ -186,6 +192,11 @@ renders the value and delta verbatim — it formats no numbers.
 | `Label` | `string` | Caption below the value |
 | `Delta` | `string` | Optional delta (e.g. `"+12%"`); `""` = no delta line |
 | `DeltaTone` | `DeltaTone` | Delta color direction: `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted, default) |
+| `AutoFit` | `bool` | Shrink the value to fit its column when a long number/price would overflow |
+
+In a narrow pricing column a long value like `"$4,000+"` can wrap to two lines.
+Set `AutoFit` and the engine downscales the value font (to no less than 60% of the
+display size) so it fits one line. A value that already fits is unchanged.
 
 ```go
 strip := scene.Grid{
