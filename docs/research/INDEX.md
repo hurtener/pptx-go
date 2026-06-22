@@ -226,6 +226,12 @@ semantics)*
   wraps and crowds the caption. Gated on `AutoFit` (D-074 opt-in) → AutoFit-off and
   AutoFit-on-fitting are byte-identical; the existing AutoFit tests stay green.
   Stack-height clamp deferred (needs `slideID`). (R11.8, HIGH.)
+- `40-bento-rowlabel-gutter-fit.md` — a shared `bentoGutterWidthOf(theme, v)` =
+  clamp(max `naturalWidth(label@TypeCaption)` + 2·padX, In(0.8), In(1.6)) sizes the
+  bento row-label gutter to its widest label, used by both `bentoColumns` (layout)
+  and the `preferredHeight` Bento estimate (parity). Fixes "Control plane" wrapping
+  in the fixed `In(1.2)` gutter; `theme` threaded into the bento geometry. (R11.9,
+  MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

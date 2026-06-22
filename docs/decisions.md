@@ -2845,4 +2845,33 @@ existing `Stat.AutoFit` field now drives a role ladder for the value).
 
 ---
 
+## D-089 — Bento row-label gutter fit-to-label
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The bento row-label gutter is a fixed `bentoGutterW = In(1.2)`;
+"Control plane" wraps awkwardly to two lines in it and "The core" sits near the
+footer (recreation slide 6) — the gutter width is unrelated to the actual label
+widths. R11.9 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine).
+**Decision:** Add `bentoGutterWidthOf(theme, v) = clamp(max over rows of
+naturalWidth(label @ TypeCaption) + 2·bentoGutterPadX, bentoGutterMinW,
+bentoGutterMaxW)` (0 when no row is labeled) with `bentoGutterMinW = In(0.8)`,
+`bentoGutterMaxW = In(1.6)`, `bentoGutterPadX = In(0.1)`. Call it from **both**
+`bentoColumns` (the drawn gutter) and the `preferredHeight` Bento case (the slot
+estimate), so the layout and the estimate use the same gutter — closing the parity
+the fixed constant left. `theme` is threaded into the `bentoColumns` / `bentoGeometry`
+free functions (their white-box tests already build a `pptx.DefaultTheme()`; the
+renderer passes `r.theme`).
+**Not byte-identical, by design:** the gutter resizes for most label sets (a 1-char
+label → `In(0.8)`, "Control plane" → its fitted width) and the unit column width
+changes with it. R11.9 does not require byte-identity; determinism holds (pure integer
+`naturalWidth`), and the existing bento tests assert gutter-presence, span ratios, and
+equal-row heights — all gutter-width-independent — so they pass unchanged.
+**Consequences:** A bento row label sizes its gutter to fit, for any label set; a
+short label gets a tight gutter, a long one caps rather than starving the cells. No
+public API change, no new token; the existing labeled-bento determinism tests cover
+the rendered path.
+
+---
+
 *Append new entries below this line.*

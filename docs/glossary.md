@@ -122,7 +122,10 @@ label (`BentoRow.Label`) and a left-to-right sequence of cells of variable
 units, so columns align across rows. Distinct from `Grid` (uniform columns, one
 child per cell). A native container — cells render per their own policy (D-056).
 Rows are equal-height by default; the opt-in `Bento weighted rows` mode sizes
-them to content. See `RFC-001-pptx-go.md §11.2`.
+them to content. The left row-label **gutter sizes to its widest label**
+(`naturalWidth(label) + padding`, clamped to a min/max), used by both the layout and
+the slot estimate, so a label like "Control plane" no longer wraps in a fixed gutter
+(R11.9, `D-089`). See `RFC-001-pptx-go.md §11.2`.
 
 ## Bento weighted rows
 

@@ -1247,6 +1247,24 @@ badges never collide or overflow the slide safe area.
   line at each width (above the floor); AutoFit-off keeps the full display size;
   deterministic.
 
+#### Phase 57 — bento row-label gutter fit
+
+**Subsystem:** scene — Layer 2 renderer (Bento container)
+**RFC sections:** §11.2
+**Deps:** Phase 27 (D-056 Bento), Phase 22 (`naturalWidth`), brief 40.
+**What lands (R11.9, MED · engine):**
+- A shared `bentoGutterWidthOf(theme, v)` sizes the bento row-label gutter to its
+  widest label (`naturalWidth(label) + 2·padX`, clamped to `[In(0.8), In(1.6)]`),
+  used by both `bentoColumns` (the drawn gutter) and the `preferredHeight` Bento
+  estimate (so layout and estimate agree). Fixes "Control plane" wrapping awkwardly
+  in the fixed `In(1.2)` gutter; a short label gets a tight gutter.
+- `theme` is threaded into the bento geometry functions. Not byte-identical by design
+  (the gutter resizes); determinism holds and the existing bento tests
+  (gutter-presence / span ratios / equal heights) pass unchanged (D-089).
+**Acceptance criteria:**
+- The gutter fits/clamps to the widest label; the geometry reserves exactly
+  `bentoGutterWidthOf`; the widest label fits inside it; labeled bentos deterministic.
+
 ---
 
 ## 4. Post-V1 backlog
