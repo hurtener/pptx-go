@@ -795,6 +795,39 @@ proven by parallel≡sequential equality).
 
 ---
 
+### Wave 9 — Typography & type system
+
+The R9 (`DECKARD-PRODUCT-REQUIREMENTS.md`) engine units. Phases 30–34 land the
+"designed type" foundation — letter-spacing (R9.3, D-060), line-height (R9.4,
+D-061), case transform (R9.11, D-062), display-face role (R9.2, D-063), and
+per-face width metrics (R9.5, D-064). Phase 35 closes the font cluster's gating
+unit; R9.6–R9.8 (fallback stack, emphasis-as-italic, weight-aware embedding)
+follow.
+
+#### Phase 35 — font-embedding pipeline
+
+**Subsystem:** pptx — Layer 1 builder (font embedding)
+**RFC sections:** §7.6
+**Deps:** Phase 33 (display-face role, D-063); the `EmbedFont`/`FontSource`
+mechanism (D-019).
+**What lands (R9.1, engine half — D-059):**
+- `pptx.WithFontEmbedding()` — an opt-in save-time pass that walks every slide's
+  runs, collects the distinct `(family, bold, italic)` faces in stable sorted
+  order, and `EmbedFont`s each via the registered `FontSource`.
+- `internal/ooxml/slide.SlidePart.UsedFontFaces()` — the codec-side run walk
+  (shape + table-cell text bodies).
+- `internal/ooxml/presentation.PresentationPart.HasEmbeddedFace()` — dedup vs a
+  manual `EmbedFont`.
+- Warn-don't-fail on a missing face; byte-identical when off / no source;
+  deterministic part order regardless of worker count.
+**Acceptance criteria:**
+- A themed deck with a `FontSource` + `WithFontEmbedding` embeds every used face;
+  two saves are byte-identical; the flag off (or no source) is byte-identical to
+  the prior output; a manual `EmbedFont` is not duplicated; a missing face warns
+  and the Save still succeeds.
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native

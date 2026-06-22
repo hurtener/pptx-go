@@ -32,7 +32,8 @@ The construction options:
 | `WithFormat(Format)` | Slide canvas aspect ratio: `Slides16x9` (default) or `Slides4x3`. |
 | `WithTheme(*Theme)` | Active theme that drives token resolution. See [themes & tokens](/guide/theme). |
 | `WithLogger(*slog.Logger)` | Structured logger. Emits a write-boundary event on save; emits read degradations on the read constructors. No logger = no logs. |
-| `WithFontSource(FontSource)` | Registers the source `EmbedFont` resolves font bytes from. |
+| `WithFontSource(FontSource)` | Registers the source `EmbedFont` (and the auto font-embedding pass) resolves font bytes from. |
+| `WithFontEmbedding()` | At save, automatically embed every font face the deck uses via the registered `FontSource`. No-op without a source; byte-identical when off. See [embedding fonts](#embedding-fonts). |
 | `WithReadPartLimit(int64)` | Per-part decompressed size ceiling for the read constructors (no-op on `New`). See [reading decks](/guide/reading). |
 | `FromTemplate(*Presentation)` | Seeds the deck from a brand-kit template: its theme, masters, and layouts are adopted. |
 
@@ -196,6 +197,37 @@ intro.Include(s)
 
 Slides left unassigned fall into an implicit leading "Default Section" so the
 section list spans every slide.
+
+## Embedding fonts
+
+A deck themed with a brand display or heading face only renders with that face on
+machines where it is installed — unless the face's bytes ship inside the `.pptx`.
+Register a `FontSource` (it resolves a `(name, style, weight)` to font bytes) and
+turn on the automatic embedding pass:
+
+```go
+p := pptx.New(
+	pptx.WithTheme(brandTheme),       // names e.g. "Playfair Display" / "Inter"
+	pptx.WithFontSource(myFontStore), // resolves family bytes
+	pptx.WithFontEmbedding(),         // embed every used face at save
+)
+// …add slides…
+p.Save("deck.pptx") // every face the deck actually uses is embedded
+```
+
+At save the pass walks every run, collects the distinct used faces — by family,
+bold, and italic — in a stable sorted order, and embeds each via the source. It
+is:
+
+- **a no-op without a `FontSource`** (and byte-identical to the prior output when
+  `WithFontEmbedding` is off);
+- **warn-don't-fail** — a face the source cannot resolve logs a warning and is
+  skipped; the save still succeeds;
+- **idempotent** — a face you embedded by hand with `EmbedFont(name, style,
+  weight)` is not embedded twice;
+- **deterministic** — two saves of the same deck are byte-identical.
+
+For a single face, call `EmbedFont(name, style, weight)` directly.
 
 ## Saving
 

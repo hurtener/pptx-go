@@ -57,6 +57,11 @@ compatibility across PowerPoint versions)*
 - `08-roundtrip-read.md` — the read-side public model (`Slide.Shapes()` + read
   accessors on the builder types) needed to reconstruct an opened deck per
   RFC §16, backed by pure `X*`→public mappings over the already-parsed tree.
+- `18-font-embedding-pipeline.md` — an opt-in save-time pass (`WithFontEmbedding`)
+  that walks every slide's runs, collects the distinct `(family, bold, italic)`
+  faces in stable sorted order, and `EmbedFont`s each via the registered
+  `FontSource`; warn-don't-fail on a missing face, idempotent vs manual
+  `EmbedFont`, byte-identical when off / no source. (R9.1, engine half.)
 
 *(candidates: rich-text auto-fit modes in OOXML practice, table merged-cell
 semantics)*

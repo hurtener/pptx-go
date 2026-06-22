@@ -342,16 +342,28 @@ One pill in a `Flow` (`FlowStep`): a label + optional detail line + optional
 icon (a closed-name icon resolved through the curated registry, like a card's).
 Rendered as a lighter rounded pill — not the full card chrome (D-044).
 
+## Font-embedding pass
+
+The opt-in save-time pass enabled by `pptx.WithFontEmbedding()` that walks
+every slide's runs, collects the distinct used faces — `(family, bold,
+italic)` — in a stable sorted order, and `EmbedFont`s each via the
+registered `FontSource`, so a deck themed with a brand display/heading face
+ships those faces. It is a no-op without a `FontSource`, warns (does not
+fail) on a face the source cannot resolve, is idempotent against manual
+`EmbedFont` calls, and is byte-identical to the prior output when off.
+(D-065, R9.1, `RFC §7.6`.)
+
 ## FontSource
 
 `pptx.FontSource` — the caller-injected interface that resolves a
 font name + style + weight to bytes. Registered via
 `pptx.WithFontSource(...)`. The presentation's `EmbedFont(name, style,
-weight)` method uses it to write font-embedding parts. No auto-embed
-default: the caller invokes `EmbedFont` explicitly for each font to
-embed. (D-019, `RFC §7.6`.) Registered in V1 via
-`pres.SetFontSource(...)`; the functional `pptx.WithFontSource(...)`
-option arrives with the builder spine (D-030).
+weight)` method uses it to write font-embedding parts. By default the
+caller invokes `EmbedFont` explicitly for each face; the opt-in
+`Font-embedding pass` (`pptx.WithFontEmbedding()`) automates this by
+embedding every face a deck actually uses. (D-019, D-065, `RFC §7.6`.)
+Registered in V1 via `pres.SetFontSource(...)`; the functional
+`pptx.WithFontSource(...)` option arrives with the builder spine (D-030).
 
 ## FontSpec
 

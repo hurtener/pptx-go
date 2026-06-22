@@ -83,6 +83,11 @@ type Presentation struct {
 	// fontSource resolves font bytes for EmbedFont (nil = no source). D-019.
 	fontSource FontSource
 
+	// fontEmbedding enables the automatic save-time font-embedding pass
+	// (autoEmbedFonts), set via WithFontEmbedding (R9.1, D-065). Off (the
+	// default) the pass makes zero EmbedFont calls and output is byte-identical.
+	fontEmbedding bool
+
 	// theme is the active theme driving token resolution (default
 	// DefaultTheme). Set via WithTheme or SetTheme.
 	theme *Theme
@@ -763,6 +768,9 @@ func (p *Presentation) prepareForWrite() error {
 	}
 	p.syncMedia()
 	p.syncSections()
+	// Auto-embed used faces before serializing presentation.xml so the
+	// embeddedFontLst + font relationships are in place (R9.1, D-065).
+	p.autoEmbedFonts()
 	if err := p.syncPresentationPart(); err != nil {
 		return err
 	}
