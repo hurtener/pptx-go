@@ -1155,6 +1155,25 @@ badges never collide or overflow the slide safe area.
   emitted cell stays inside the safe area; a fitting container is byte-identical with
   no warning; deterministic across worker counts.
 
+#### Phase 52 — content-region reserves chrome (verify-and-close)
+
+**Subsystem:** scene — Layer 2 renderer (body region / chrome)
+**RFC sections:** §10, §13.3
+**Deps:** Phase 24 (D-053 chrome / `bodyRegion`), Phase 51 (D-083 clamp), brief 35.
+**What lands (R11.4, HIGH · engine):**
+- A verify-and-close: `bodyRegion()` already reserves the eyebrow + footer bands
+  when chrome is on (D-053) and the body stack lays out inside it; the overflow hole
+  that defeated it in the recreation is closed by R11.3's safe-area clamp (D-083).
+  R11.4 needs only its acceptance, not a reimplementation (D-084).
+- The acceptance test asserts the chrome-on body region is disjoint from both bands
+  (recomputed from the chrome constants), chrome-off is the plain margin box
+  (byte-identical), and a clamped container stays above the footer band. No renderer
+  change.
+**Acceptance criteria:**
+- On a chromed slide, body region top ≥ eyebrow band bottom and body region bottom ≤
+  footer band top; chrome-off body region is the plain margin box; a clamped
+  container stays above the footer.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -2693,4 +2693,36 @@ additional `LayoutWarning` on overflow, surfaced through the existing
 
 ---
 
+## D-084 — R11.4 closed by D-053 + D-083 (content-region reserves chrome)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** R11.4 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) requires the
+body content region to reserve the section-eyebrow band (top) and the footer/
+page-number band (bottom) when chrome is enabled, so no body content occupies the
+chrome rows (recreation slides 6, 7 drew content over the footer).
+**Decision:** Close R11.4 as **already implemented by D-053** (the `bodyRegion()`
+shrink) **and made overflow-proof by D-083** (the safe-area clamp), with no renderer
+change. `bodyRegion()` already adds `chromeEyebrowH + chromeBandGap` to the top inset
+and `chromeFooterH + chromeBandGap` to the bottom inset — the chrome composer's own
+constants (single source of truth with `chrome.go`) — and the body stack is laid out
+inside it (`layout()`), so the region is disjoint from the bands by construction
+(`chromeBandGap` exceeds the eyebrow's `chromeRuleH`). The recreation's footer
+overlap was not a missing reservation but an *over-full stack* placing nodes below
+the reserved region; D-083's `clampToSafeArea` (safe area = `bodyRegion()`) now caps
+containers to the reserved region, and `VAlignFit` reflows over-full stacks, so the
+reservation is honored under hostile content. The close is the named acceptance —
+`render_chrome_region_test.go` — asserting (1) the chrome-on body region is disjoint
+from both bands (recomputed from the chrome constants, not from `bodyRegion`, so a
+drift would fail it); (2) chrome-off `bodyRegion` is the plain margin box
+(byte-identical); (3) a container handed an overflowing box on a chromed slide is
+clamped above the footer band (R11.4 × R11.3).
+**Consequences:** R11.4 is closed; the chrome-overlap class is regression-guarded.
+No public API change, no new token, no OOXML change. Pre-existing minor behavior
+(noted, unchanged): `bodyRegion` reserves the top eyebrow band whenever chrome is
+enabled even on a slide with no `Section` — a conservative over-reservation from
+D-053.
+
+---
+
 *Append new entries below this line.*
