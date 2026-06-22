@@ -161,6 +161,12 @@ semantics)*
   0.85`), so a sparse cover/closing reads balanced instead of clustered-plus-void;
   distinct from Justify (no margins) and Center (fixed gaps); `VAlignTop`/`Center`
   byte-identical; per-node gap weighting stays the caller's. (R10.8, MED.)
+- `30-list-bullet-indent-density.md` — a per-paragraph `ParagraphOpts.BulletIndent`
+  override (builder) + a `List.Indent` preset (`IndentNormal`/`IndentTight`)
+  plumbed through `renderList`: `IndentTight` tightens the bullet hanging indent to
+  `In(0.25)` (vs the `0.5"` default) so lists read dense instead of loose; pinned
+  presets (no token), default byte-identical, emitted `marL`/`indent` round-trip.
+  (R10.9, MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

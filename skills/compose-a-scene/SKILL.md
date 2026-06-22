@@ -70,7 +70,7 @@ renders as native PPTX shapes**.
 | `Hero` | `Eyebrow, Title, Subtitle string; AutoFit bool` | native; `AutoFit` shrinks the title to fit one line when it would overflow |
 | `Prose` | `Paragraphs []RichText` | native |
 | `Heading` | `Text RichText; Level int (1..6); AutoFit bool` | native; `AutoFit` shrinks the heading to fit one line when it would overflow |
-| `List` | `Kind ListKind; Items []ListItem` | native |
+| `List` | `Kind ListKind; Items []ListItem; Indent ListIndent` | native; `Indent` = `IndentNormal` (default) / `IndentTight` — tight halves the bullet marker-to-text gap (to `In(0.25)`) for dense lists; default byte-identical |
 | `Divider` | `Spacing SpaceRole` | native |
 | `Quote` | `Text RichText; Attribution string` | native |
 | `Callout` | `Kind CalloutKind; Title string; Body RichText` | native |

@@ -720,11 +720,28 @@ binding. See `CLAUDE.md §16`.
 The local gate (`make preflight`) that runs build + per-phase smoke +
 drift-audit. The pre-commit hook and CI enforce it. Non-negotiable.
 
+## BulletIndent
+
+`pptx.ParagraphOpts.BulletIndent` — a per-paragraph override of a bulleted
+paragraph's hanging indent (the marker-to-text offset), in EMU (D-078). The zero
+value keeps the default 0.5" hanging indent (byte-identical); a positive value
+sets a tighter (or wider) marker gap, emitted as `a:pPr/@marL` + `@indent`. The
+scene `List indent` presets drive it. Applies only when a bullet is set.
+
 ## BulletKind
 
 A paragraph bullet style on the builder (`pptx.BulletNone`, `BulletDisc`,
 `BulletNumber`, `BulletCheckbox`). Set via `Paragraph.Bullet`; emits the
 OOXML `buChar`/`buAutoNum`/`buNone` with a hanging indent. (RFC §8.4.)
+
+## List indent (density)
+
+The scene `List.Indent` preset (`scene.IndentNormal` / `scene.IndentTight`, D-078)
+controlling a list's bullet hanging-indent density. `IndentNormal` (zero) is
+byte-identical to the default; `IndentTight` tightens the marker-to-text offset to
+`In(0.25)` (vs the 0.5" default) so dense lists sit tight to their markers,
+consistently across items and levels. Plumbed through `renderList` to the builder's
+`BulletIndent`. Pinned presets, not theme tokens. See `RFC-001-pptx-go.md §11.1`.
 
 ## Paragraph
 

@@ -2437,4 +2437,36 @@ pre-description gap orders its nodes or inserts a spacer. Reuses `D-075`'s
 
 ---
 
+## D-078 — List bullet indent density (List.Indent + ParagraphOpts.BulletIndent)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `Paragraph.Bullet` hard-coded a 0.5" hanging indent (`MarL = 457200`,
+`Indent = −457200`), so every list marker sat a wide fixed gap from its text —
+lists read loose and sparse (the recreation's "Understand/Operate/Execute" and the
+slide-3 checklist show a very wide marker-to-text gap). R10.9
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine).
+**Decision:** Two additive pieces. (1) **Builder:** a per-paragraph
+`ParagraphOpts.BulletIndent EMU`. In `AddParagraph`, when a bullet is set and
+`BulletIndent > 0`, override the `MarL`/`Indent` that `Bullet` assigned with
+`MarL = BulletIndent`, `Indent = −BulletIndent`, so the marker-to-text offset
+becomes `BulletIndent` uniformly (emitted as `a:pPr/@marL` + `@indent`). (2)
+**Scene:** a `ListIndent` enum (`IndentNormal` = 0 / default, `IndentTight`) +
+`List.Indent`; `renderList` passes `BulletIndent = bulletIndent(v.Indent)` —
+`0` for normal, the pinned `listTightIndent = In(0.25)` for tight (about half the
+0.5" default). The presets are pinned and deterministic; there is no per-role
+token (a bullet hanging indent is a layout mechanism, not a visual style token —
+P2's token-default rule is for color/typography/spacing/radius/elevation).
+**Consequences:** A tight list shows a smaller, consistent marker-to-text offset
+across all items and levels (the override is level-independent, matching the prior
+behavior); the emitted `marL`/`indent` round-trip through the slide XML. The zero
+`BulletIndent` (and `IndentNormal`) keeps the builder's default 0.5" hanging
+indent — byte-identical; the existing list render tests pass unchanged. The
+`ParagraphOpts.BulletIndent` seam accepts any EMU, so a direct `pptx` caller can
+set a continuous value; the scene exposes presets per the spec. Mirrors `D-061`'s
+(`LineHeight`) per-paragraph-metric pattern (byte-identical at zero, emits an
+`a:pPr` attribute).
+
+---
+
 *Append new entries below this line.*
