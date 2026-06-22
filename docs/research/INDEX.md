@@ -237,6 +237,12 @@ semantics)*
   byte-identical to `In(0.25)` at the default 14 pt and scaling with the body size.
   The mechanism (`BulletIndent`/`IndentTight`) is from R10.9/D-078; the list start Y
   respects the grown card header via R10.1. (R11.10, MED.)
+- `42-decoration-watermark-anticollision.md` — verify-and-close of R11.11: the card
+  watermark is already emitted before the body (z-order behind) at ~13% opacity, and
+  background decorations are z-order-behind too (D-054). R11.11's acceptance is an OR
+  (residual region OR behind-at-low-alpha); the engine takes the second branch, so
+  the close is the acceptance test (z-order-behind, low-alpha, inert-when-unset), not
+  the optional residual-region restriction. (R11.11, LOW.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

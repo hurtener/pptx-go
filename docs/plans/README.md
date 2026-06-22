@@ -1282,6 +1282,21 @@ badges never collide or overflow the slide safe area.
 - The tight indent is exactly `In(0.25)` at 14 pt (R10.9 `marL="228600"` guard passes),
   scales with the body size, and stays tighter than the 0.5" default.
 
+#### Phase 59 — decoration/watermark anti-collision (verify-and-close)
+
+**Subsystem:** scene — Layer 2 renderer (card watermark / decorations)
+**RFC sections:** §10.2, §12.1
+**Deps:** Phase 25 (D-054 watermark), brief 42.
+**What lands (R11.11, LOW · engine):**
+- A verify-and-close: the card watermark is already emitted before the body (z-order
+  behind) at ~13% opacity, and background decorations are z-order-behind too (D-054).
+  R11.11's acceptance is an OR (residual region OR behind-at-low-alpha); the engine
+  takes the second branch, so the close is the acceptance test, not the optional
+  residual-region restriction (D-091). No renderer change.
+**Acceptance criteria:**
+- The watermark text is emitted before the body content (z-order behind), carries a
+  low ~13% alpha, and is inert (no alpha run) when unset.
+
 ---
 
 ## 4. Post-V1 backlog
