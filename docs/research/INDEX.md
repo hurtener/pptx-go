@@ -232,6 +232,11 @@ semantics)*
   and the `preferredHeight` Bento estimate (parity). Fixes "Control plane" wrapping
   in the fixed `In(1.2)` gutter; `theme` threaded into the bento geometry. (R11.9,
   MED.)
+- `41-list-bullet-hanging-indent.md` — make the `IndentTight` bullet hanging indent
+  proportional: `listTightIndent() = listTightIndentBase × bodySize / 14`, anchored
+  byte-identical to `In(0.25)` at the default 14 pt and scaling with the body size.
+  The mechanism (`BulletIndent`/`IndentTight`) is from R10.9/D-078; the list start Y
+  respects the grown card header via R10.1. (R11.10, MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

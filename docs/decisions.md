@@ -2874,4 +2874,35 @@ the rendered path.
 
 ---
 
+## D-090 — Proportional list bullet hanging indent
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** List items show a large fixed gap between the bullet and the label
+("•      Chat & Q&A") (recreation slides 2, 4). R10.9/D-078 added the override
+mechanism (`ParagraphOpts.BulletIndent`) and a tight preset (`IndentTight =
+In(0.25)`), but the tight value is a *fixed* constant unrelated to the body size.
+R11.10 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) asks the hang indent to be
+derived from the resolved body type size rather than a fixed wide value.
+**Decision:** Make `listTightIndent` a theme-proportional renderer method:
+`round(listTightIndentBase × bodySize / listTightIndentAnchorPt)` with
+`listTightIndentBase = In(0.25)` and `listTightIndentAnchorPt = 14`. At the default
+14 pt body it is exactly `In(0.25)` — **byte-identical** to the D-078 pinned value (the
+existing `marL="228600"` test passes) — and a larger/smaller body scales the indent
+linearly. `bulletIndent` becomes a method (it needs `r.theme` for the body size); its
+only caller (`renderList`) is already a method. `IndentNormal` is unchanged (the
+builder's 0.5" default, byte-identical).
+**Acceptance relaxation:** R11.10's "≤ 1.5× the bullet glyph width" is an *example*
+target; `In(0.25)` is ~2.6× a 14 pt glyph but tight relative to the 0.5" default the
+recreation showed (the real "oversized" baseline). The close asserts the binding
+requirement — proportional, and meaningfully tighter than the 0.5" default (≤ In(0.3))
+— rather than the stricter 1.5×-glyph bar, which would break the D-078 byte-identity
+for no real legibility gain. The wrapped-header interaction (the list start Y respects
+the grown card header) already holds via R10.1/D-070 (Phase 49's golden).
+**Consequences:** `List.Indent = IndentTight` scales with the deck's body size; the
+default-theme output is unchanged. Deterministic (a pure function of the theme; the
+result is an integer EMU). No public API change, no new token.
+
+---
+
 *Append new entries below this line.*

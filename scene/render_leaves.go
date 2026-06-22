@@ -38,17 +38,30 @@ func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading, hAlign
 	r.stats.Shapes++
 }
 
-// listTightIndent is the IndentTight bullet hanging indent (marker-to-text
-// offset): In(0.25), about half the builder's 0.5" default, so dense lists sit
-// tight to their markers. Pinned for determinism.
-const listTightIndent = pptx.EMU(228600) // In(0.25)
+// IndentTight bullet hanging-indent calibration (R10.9 base, R11.10 proportional).
+// The marker-to-text offset is anchored to In(0.25) at the default 14 pt body and
+// scales linearly with the resolved body type size, so the bullet-to-text gap stays
+// tight and proportional at any body size instead of a fixed oversized gap.
+const (
+	listTightIndentBase     = pptx.EMU(228600) // In(0.25) at the anchor size
+	listTightIndentAnchorPt = 14.0             // body pt the base is calibrated for
+)
+
+// listTightIndent returns the IndentTight hanging indent for the active theme's body
+// size: listTightIndentBase × bodySize / 14. At the default 14 pt body it is exactly
+// In(0.25) (byte-identical to the R10.9 pinned value); a larger body scales it up
+// proportionally. Deterministic (pure function of the theme).
+func (r *renderer) listTightIndent() pptx.EMU {
+	size := r.theme.ResolveType(pptx.TypeBody).Size
+	return pptx.EMU(float64(listTightIndentBase)*size/listTightIndentAnchorPt + 0.5)
+}
 
 // bulletIndent maps a ListIndent preset to a ParagraphOpts.BulletIndent: 0 for
-// IndentNormal (the builder keeps its default — byte-identical), listTightIndent
-// for IndentTight.
-func bulletIndent(i ListIndent) pptx.EMU {
+// IndentNormal (the builder keeps its default — byte-identical), the proportional
+// tight indent for IndentTight.
+func (r *renderer) bulletIndent(i ListIndent) pptx.EMU {
 	if i == IndentTight {
-		return listTightIndent
+		return r.listTightIndent()
 	}
 	return 0
 }
@@ -56,7 +69,7 @@ func bulletIndent(i ListIndent) pptx.EMU {
 func (r *renderer) renderList(ps *pptx.Slide, box pptx.Box, v List) {
 	tf := ps.AddTextFrame(box)
 	bullet := listBullet(v.Kind)
-	indent := bulletIndent(v.Indent)
+	indent := r.bulletIndent(v.Indent)
 	for _, item := range v.Items {
 		p := tf.AddParagraph(pptx.ParagraphOpts{Bullet: bullet, Level: item.Level, LineHeight: r.lineH(pptx.TypeBody), BulletIndent: indent})
 		r.addRichText(ps, p, item.Text, pptx.TypeBody)
