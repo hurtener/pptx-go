@@ -94,6 +94,15 @@ const (
 	// of inflating one node. With no flexible node, or when the stack already
 	// fills the region, it is equivalent to VAlignTop. Deterministic integer EMU.
 	VAlignFillCapped
+	// VAlignBalanced distributes a sparse stack's slack as an even rhythm — a top
+	// margin plus widened inter-node gaps (the slack split across the n+1 spaces of
+	// the stack) — with an optical-center bias that seats the stack slightly above
+	// geometric center. Unlike VAlignJustify (all slack into gaps, no margins) and
+	// VAlignCenter (all slack into equal margins, fixed gaps), it spreads whitespace
+	// across both, so a sparse cover or closing reads balanced rather than clustered
+	// with a large void. With no slack it is equivalent to VAlignTop. Deterministic
+	// integer EMU.
+	VAlignBalanced
 )
 
 // String returns the vertical alignment name.
@@ -111,6 +120,8 @@ func (v VAlign) String() string {
 		return "fit"
 	case VAlignFillCapped:
 		return "fill-capped"
+	case VAlignBalanced:
+		return "balanced"
 	default:
 		return "top"
 	}

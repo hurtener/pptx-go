@@ -2403,4 +2403,38 @@ pinned-floor pattern.
 
 ---
 
+## D-077 — Balanced vertical rhythm (VAlignBalanced)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** On sparse slides the body stack used fixed inter-node gaps, so the
+elements clustered with a large void — the recreation cover clusters
+eyebrow/title/subtitle in the middle then drops the description far below; the
+closing leaves the lower frame empty. `VAlignJustify` spreads slack into the gaps
+but pins the stack edge-to-edge (no margins); `VAlignCenter` adds margins but keeps
+fixed gaps. R10.8 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine).
+**Decision:** Add an opt-in `VAlignBalanced` value to the `VAlign` enum (after
+`VAlignFillCapped`). When the stack has positive slack, `alignedStackIn` computes
+`unit = slack/(n+1)` and distributes it across the stack's `n+1` spaces — a top
+margin plus widened inter-node gaps (`effectiveGap = gap + unit`) — with an
+optical-center upward bias: the top margin is `balancedOpticalBP = 8500` (85 %) of
+an even unit, so the stack seats slightly above geometric center (the freed space
+falls to the bottom margin). This reuses the `(n+1)`-even-unit residual primitive
+from `VAlignFillCapped` (D-075). All integer / basis-point math — deterministic
+regardless of worker count.
+**Consequences:** A sparse cover/closing reads as an even rhythm (margins +
+widened gaps, no single large void) optically centered, instead of clustered. It
+is distinct from `VAlignJustify` (all slack into gaps) and `VAlignCenter` (all
+slack into equal margins). `VAlignTop`/`VAlignCenter`/`VAlignJustify` are untouched
+(byte-identical); the enum value is appended, so existing `VAlign` values and the
+zero value are unchanged; with no slack `VAlignBalanced` is `VAlignTop`.
+**Deviation (§4.3):** the spec's "gaps weighted by a pinned ratio (larger gap
+before a description block)" is left to the caller — knowing which node is a
+"description block" is content taste (D-026); the engine ships the even rhythm +
+the optical-center bias (its pinned ratio), and a caller that wants a larger
+pre-description gap orders its nodes or inserts a spacer. Reuses `D-075`'s
+`(n+1)`-unit primitive.
+
+---
+
 *Append new entries below this line.*

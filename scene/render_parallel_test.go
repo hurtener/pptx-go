@@ -172,6 +172,29 @@ func TestRenderDeterministic_VAlignFillCapped(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_VAlignBalanced guards the R10.8 balanced rhythm: a deck
+// of sparse balanced slides must render byte-identically across worker counts (the
+// even-rhythm + optical-bias math is integer / basis point).
+func TestRenderDeterministic_VAlignBalanced(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:      string(rune('A' + (i % 26))),
+			Content: scene.Alignment{Vertical: scene.VAlignBalanced},
+			Nodes: []scene.SlideNode{
+				scene.Hero{Eyebrow: "FY26", Title: "Cover"},
+				scene.Heading{Text: rt("Subtitle"), Level: 2},
+				scene.Prose{Paragraphs: []scene.RichText{rt("A short description line.")}},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("VAlignBalanced: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_WithAssets guards determinism when a media-bearing
 // node (code_block) is mixed into a multi-slide deck: those slides render
 // sequentially, so distinct image parts are numbered in scene order every run.

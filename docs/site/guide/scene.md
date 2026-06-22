@@ -227,6 +227,9 @@ region:
 - `VAlignFillCapped` — like `VAlignFill`, but each flexible node grows by at most
   a pinned factor of its preferred height, so a near-empty node can't balloon; the
   leftover slack becomes **even spacing** instead.
+- `VAlignBalanced` — distribute a sparse stack's slack as an **even rhythm** (top
+  margin + widened gaps), optically centered — for a sparse cover or closing that
+  would otherwise cluster with a large void.
 
 Under `VAlignFill` the leftover height is shared among the flexible nodes in
 proportion to their natural height, deterministically. Text leaves and atoms
@@ -253,6 +256,16 @@ factor of its preferred height (it can at most double) and turns the leftover
 slack into balanced whitespace — an even top margin and widened inter-node gaps —
 so a sparse-plus-dense mix reads evenly instead of as one oversized card. Uncapped
 `VAlignFill` is unchanged (see [D-075](/reference/decisions)).
+
+`VAlignBalanced` is for the sparse text slide — a cover or a closing — where the
+default fixed gaps cluster the elements and leave a large empty band. It splits the
+slack across the whole stack (a top margin plus widened inter-node gaps) so the
+content reads as an even rhythm, and biases it slightly above geometric center
+(optical centering). Unlike `VAlignJustify` (slack only in the gaps, content
+edge-to-edge) and `VAlignCenter` (margins but fixed gaps), it spreads whitespace
+across both. `VAlignTop`/`VAlignCenter` are unchanged; ordering nodes or inserting
+a spacer is how you place a larger gap before a specific block
+(see [D-077](/reference/decisions)).
 
 ### Slide chrome
 
