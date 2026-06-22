@@ -2469,4 +2469,46 @@ set a continuous value; the scene exposes presets per the spec. Mirrors `D-061`'
 
 ---
 
+## D-079 — Estimate/actual parity (wrapped card chrome + bento span width)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `preferredHeight`'s slot estimates diverged from the composed
+geometry, so overflow detection and the fit pass operated on wrong numbers:
+`cardChromeEst` was a fixed ~1.2" regardless of a wrapped multi-line header (the
+parity R10.1/D-070 explicitly deferred), and the bento estimate measured every
+cell at the unit column width even though a wide-span cell renders wider and wraps
+less. R10.10 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** (1) The Card/CardSection `preferredHeight` becomes
+`cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + body + estGap`, where
+`cardHeaderExtraHeight` is the extra eyebrow/title lines beyond the first — each at
+its per-row constant (`cardEyebrowRowH`/`cardTitleRowH`), measured at the card's
+true header column width via the shared `cardHeaderColumnWOf`. A single-line (or
+empty) header gives an increment of 0, so the estimate is **byte-identical**; a
+multi-line header grows the slot to account for the wrapped header (the R10.1
+deferral, sharing the same constants). (2) The Bento `preferredHeight` measures
+each cell at its actual span width `span·unitW + estGap·(span−1)` instead of the
+unit width; a span-1 cell yields `unitW` (byte-identical), a wide-span cell wraps
+less so its over-counted estimate shrinks to the accurate value. The card-header
+helpers (`cardPadding`/`cardPaddingFor`/`cardHeaderColumnW`) are refactored to
+theme-taking free functions (`cardPaddingBase`/`cardPaddingScaled`/
+`cardHeaderColumnWOf`) with thin `*renderer` method wrappers, so the estimators
+share the composers' logic without changing any composer or test call site.
+**Consequences:** The overflow warning and `VAlignFit` now operate on estimates
+that match what the composers emit (within one line-height for the representative
+wrapped-header card and wide-span bento cell). Single-line headers and span-1
+bento cells are byte-identical (the increment is 0 / span width equals unit
+width); the existing card/bento determinism + height tests pass unchanged. No new
+public API — `cardChromeEst`/`estGap` stay pinned constants and the change is an
+internal accuracy improvement (the only user-visible effect is a more accurate
+overflow warning, a taller slot for wrapped-header cards, and a tighter slot for
+wide-span bento cells). **Deviation (§4.3):** the spec also asks the card body
+inset estimate to match `cardPadding`; `cardBodyInsetEst` is left pinned because
+matching it would change the body wrap count → single-line output, and the chrome
++ span-width fixes already deliver the within-one-line-height accuracy — exact
+inset parity is a future refinement. Closes the `cardChromeEst` parity deferred by
+`D-070`; mirrors `D-072`'s span-width (`cellWidth`) geometry.
+
+---
+
 *Append new entries below this line.*

@@ -173,6 +173,10 @@ type Stats struct {
 
 `LayoutWarning` carries `SlideID`, `Node`, and `Message`. There is no strict
 mode: a caller that wants warnings to be fatal inspects `Stats.Warnings` itself.
+The engine's slot estimators match what it actually composes — a card's height
+budget accounts for a wrapped multi-line header, and a bento measures each cell at
+its real span width — so the `content overflows its region` warning is trustworthy
+for any content (and the `VAlignFit` fit pass operates on accurate numbers).
 
 ### Resolved per-slide colors
 

@@ -167,6 +167,13 @@ semantics)*
   `In(0.25)` (vs the `0.5"` default) so lists read dense instead of loose; pinned
   presets (no token), default byte-identical, emitted `marL`/`indent` round-trip.
   (R10.9, MED.)
+- `31-estimate-actual-parity.md` — align the slot estimators with the composers:
+  the Card/CardSection `preferredHeight` adds a wrapped-header increment
+  (`cardChromeEst` + extra eyebrow/title lines, baseline kept so single-line is
+  byte-identical) and the Bento estimate measures each cell at its actual span
+  width (span-1 byte-identical, wide-span no longer over-counts), so overflow
+  detection / the fit pass are trustworthy; closes the R10.1-deferred
+  `cardChromeEst` parity. (R10.10, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
