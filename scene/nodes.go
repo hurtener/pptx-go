@@ -613,6 +613,12 @@ type Card struct {
 	HeaderFill *ColorRole // banded header region color (body keeps Fill); nil = no band
 	StatusDot  *ColorRole // small status dot, top-right corner; nil = no dot
 	Watermark  string     // large, low-opacity label drawn behind the body; "" = none
+	// BodyVAlign selects the vertical distribution of the card body within the
+	// card body region (the same VAlign modes as the slide body stack:
+	// Center / Bottom / Justify / Fill / Fit). The zero value VAlignTop is
+	// top-anchored — byte-identical to the pre-R10.4 render. Applies to the
+	// vertical body layout only (BodyLayout != BodyHorizontal). (D-073.)
+	BodyVAlign VAlign
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }

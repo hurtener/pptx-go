@@ -954,6 +954,23 @@ fit-to-region compression).
   row taller and fits the region; equal-mode and single-density bentos are
   byte-identical; deterministic at any worker count.
 
+#### Phase 42 — card body vertical distribution
+
+**Subsystem:** scene — Layer 2 renderer (Card)
+**RFC sections:** §11.2, §10
+**Deps:** Phase 13 (`alignedStackIn`), Phase 14 (Card), Phase 40 (D-071), brief 25.
+**What lands (R10.4, HIGH · engine):**
+- A new opt-in `Card.BodyVAlign VAlign`. The card's vertical body routes through
+  the existing `alignedStackIn` (center / bottom / justify / fill / fit) on the
+  card body box instead of the top-anchored `stackIn`, so secondary content can
+  pin to the card bottom or fill the frame — no more dead space in tall cards.
+- The zero value (`VAlignTop`) is byte-identical to today (the alignment engine
+  already matches `stackIn` for the zero Alignment). Card only; CardSection
+  deferred.
+**Acceptance criteria:**
+- `BodyVAlign=Bottom` pins the last body node's bottom to the card body bottom;
+  `Justify` spreads inter-item gaps; `Top` is byte-identical; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -132,6 +132,12 @@ semantics)*
   byte-identical; the `bentoGeometry` refactor factors out `bentoColumns`/
   `cellWidth` and returns per-row Y/H. Grid analog + estimator parity deferred.
   (R10.3, HIGH.)
+- `25-card-body-vertical-distribution.md` — opt-in `Card.BodyVAlign VAlign`: route
+  the card's vertical body through the existing `alignedStackIn` (center/bottom/
+  justify/fill/fit) on the card body box instead of top-anchored `stackIn`, so
+  secondary content can pin to the bottom or fill the card; zero value (Top) is
+  byte-identical (the alignment engine already matches `stackIn` for the zero
+  Alignment). Card only; CardSection deferred. (R10.4, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

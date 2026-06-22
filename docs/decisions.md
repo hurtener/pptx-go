@@ -2268,4 +2268,35 @@ shape.
 
 ---
 
+## D-073 — Card body vertical distribution (Card.BodyVAlign)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `renderCard` always laid a card's vertical body out top-anchored via
+`stackIn`, so secondary content floated in the upper card with large dead space
+below (the recreation's Vision/Mission lists, the slide-8 path cards, and the
+slide-9 pricing cards left ~40–60% of the card blank). R10.4
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** Add an additive `Card.BodyVAlign VAlign`. `renderCard`'s vertical
+body now routes through the existing body-stack alignment engine —
+`r.alignedStackIn(body, v.Body, slideID, Alignment{Vertical: v.BodyVAlign})` —
+instead of `r.stackIn`. This gives the card body the full `VAlign` set on its own
+body box: `VAlignCenter` offsets the start Y, `VAlignBottom` pins the last node to
+the body bottom, `VAlignJustify` widens the inter-node gaps, `VAlignFill` grows
+flexible body nodes (`distributeFill`), and `VAlignFit` (D-071) compresses an
+over-full body. The `BodyHorizontal` column path is unchanged.
+**Consequences:** A card can pin secondary content to its bottom or spread it to
+fill, eliminating dead space. The zero value (`VAlignTop`) is byte-identical to
+the prior top-anchored layout: `alignedStackIn` with `{VAlignTop, HAlignLeft}`
+emits the same per-node boxes as `stackIn` and warns on the algebraically
+identical condition (`totalH > box.H` ⟺ last-bottom > `box.Bottom()`), as its
+godoc already documents. An additive field — `Card` keeps its shape; the existing
+card golden/determinism tests pass unchanged through the new path. **Deviation
+(§4.3):** `BodyVAlign` is added to `Card` only; `CardSection` (whose body is
+containers, not leaves) keeps top-anchored `stackIn` — a `CardSection.BodyVAlign`
+is a separable, lower-value follow-up. Extends `D-043` (Card additive fields);
+reuses the Phase-13 alignment engine and `D-071` (VAlignFit).
+
+---
+
 *Append new entries below this line.*

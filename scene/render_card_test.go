@@ -218,3 +218,66 @@ func TestCardAccentBorderDropsStripe(t *testing.T) {
 		t.Errorf("BorderAccent card missing the accent border line:\n%s", xml)
 	}
 }
+
+// TestCardBodyVAlign_Wiring (R10.4): Card.BodyVAlign flows into the render — a
+// bottom-distributed card body differs from the default top-anchored one, and a
+// Top (zero-value) card is byte-identical to a card that leaves the field unset.
+func TestCardBodyVAlign_Wiring(t *testing.T) {
+	mk := func(va scene.VAlign) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "c",
+			Nodes: []scene.SlideNode{scene.Card{
+				Header:     "Plan",
+				BodyVAlign: va,
+				Body: []scene.SlideNode{
+					scene.Prose{Paragraphs: []scene.RichText{rt("$99")}},
+					scene.List{Items: []scene.ListItem{{Text: rt("seats")}, {Text: rt("support")}}},
+				},
+			}},
+		}}}
+	}
+	topData, _ := render(t, mk(scene.VAlignTop))
+	botData, _ := render(t, mk(scene.VAlignBottom))
+	if bytes.Equal(topData, botData) {
+		t.Error("BodyVAlign=Bottom produced the same bytes as Top — the field is not wired into renderCard")
+	}
+	// Zero value == explicit VAlignTop.
+	unset := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "c",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Plan",
+			Body: []scene.SlideNode{
+				scene.Prose{Paragraphs: []scene.RichText{rt("$99")}},
+				scene.List{Items: []scene.ListItem{{Text: rt("seats")}, {Text: rt("support")}}},
+			},
+		}},
+	}}}
+	unsetData, _ := render(t, unset)
+	if !bytes.Equal(topData, unsetData) {
+		t.Error("explicit BodyVAlign=Top is not byte-identical to leaving the field unset")
+	}
+}
+
+// TestCardBodyVAlign_Deterministic (R10.4): a deck of bottom-distributed card
+// bodies renders byte-identically across worker counts.
+func TestCardBodyVAlign_Deterministic(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 12; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + i)),
+			Nodes: []scene.SlideNode{scene.Card{
+				Header:     "Plan",
+				BodyVAlign: scene.VAlignBottom,
+				Body: []scene.SlideNode{
+					scene.Prose{Paragraphs: []scene.RichText{rt("$99")}},
+					scene.List{Items: []scene.ListItem{{Text: rt("a")}, {Text: rt("b")}}},
+				},
+			}},
+		})
+	}
+	seq, _ := render(t, sc, scene.WithWorkers(1))
+	par, _ := render(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Errorf("card BodyVAlign deck: parallel render differs from sequential (%d vs %d bytes)", len(par), len(seq))
+	}
+}
