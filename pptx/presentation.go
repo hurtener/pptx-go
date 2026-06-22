@@ -763,6 +763,10 @@ func (p *Presentation) prepareForWrite() error {
 	if err := p.syncNotes(); err != nil {
 		return err
 	}
+	// Realize declared font fallback chains before slides serialize, so the
+	// emitted runs (and any subsequent embedding) carry the resolved face (R9.6,
+	// D-066). Self-gated: a no-op without a FontSource or a declared fallback.
+	p.resolveFontFallbacks()
 	if err := p.syncSlides(); err != nil {
 		return err
 	}

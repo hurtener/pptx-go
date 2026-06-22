@@ -69,3 +69,49 @@ func (s *SlidePart) UsedFontFaces() []FontFace {
 	}
 	return out
 }
+
+// RewriteFontFaces rewrites every run's Latin typeface that matches a key in
+// mapping to the mapped face, in place, over the same text bodies UsedFontFaces
+// walks (shape + table cells). It realizes the declared font fallback chain
+// (R9.6, D-066): the chosen face is recorded as the run's single-valued a:latin
+// typeface. A nil/empty mapping is a no-op. It reports the number of runs
+// rewritten.
+func (s *SlidePart) RewriteFontFaces(mapping map[string]string) int {
+	if s == nil || len(mapping) == 0 {
+		return 0
+	}
+	n := 0
+	rewrite := func(tb *XTextBody) {
+		if tb == nil {
+			return
+		}
+		for pi := range tb.Paragraphs {
+			for _, r := range tb.Paragraphs[pi].Runs() {
+				pr := r.TextProperties
+				if pr == nil || pr.Latin == nil {
+					continue
+				}
+				if to, ok := mapping[pr.Latin.Typeface]; ok && to != pr.Latin.Typeface {
+					pr.Latin.Typeface = to
+					n++
+				}
+			}
+		}
+	}
+	for _, child := range s.SpTree().Children {
+		switch c := child.(type) {
+		case *XSp:
+			rewrite(c.TextBody)
+		case *XGraphicFrame:
+			if c.Graphic == nil || c.Graphic.GraphicData == nil || c.Graphic.GraphicData.Table == nil {
+				continue
+			}
+			for ri := range c.Graphic.GraphicData.Table.Rows {
+				for ci := range c.Graphic.GraphicData.Table.Rows[ri].Cells {
+					rewrite(c.Graphic.GraphicData.Table.Rows[ri].Cells[ci].TextBody)
+				}
+			}
+		}
+	}
+	return n
+}

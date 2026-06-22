@@ -826,6 +826,27 @@ mechanism (D-019).
   the prior output; a manual `EmbedFont` is not duplicated; a missing face warns
   and the Save still succeeds.
 
+#### Phase 36 — font fallback chain
+
+**Subsystem:** pptx — Layer 1 builder (theme/typography + font embedding)
+**RFC sections:** §7.6
+**Deps:** Phase 35 (font-embedding pass, D-065); the `FontSource` mechanism (D-019).
+**What lands (R9.6, engine half — D-059):**
+- `pptx.FontSpec.Fallback []string` — a per-role ordered substitute chain.
+- A save-time `resolveFontFallbacks` pass: when a `FontSource` cannot resolve a
+  role's primary family, the run's single-valued `a:latin` is rewritten to the
+  first family in `[Family] + Fallback` the source resolves (a controlled
+  near-match instead of a host default).
+- `internal/ooxml/slide.SlidePart.RewriteFontFaces()` — the codec-side rewrite.
+- Self-gated (no `FontSource` or no declared chain ⇒ byte-identical); the
+  availability oracle is the `FontSource`; deterministic + idempotent across saves.
+**Acceptance criteria:**
+- A deck whose primary face the source cannot resolve renders in the declared
+  fallback (not the host default); the primary wins when the source resolves it;
+  an empty chain or no `FontSource` is byte-identical; two saves are
+  byte-identical; with embedding on, the resolved fallback face is what is
+  embedded.
+
 ---
 
 ## 4. Post-V1 backlog

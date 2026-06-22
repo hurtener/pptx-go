@@ -1969,4 +1969,48 @@ PR (§14/§19).
 
 ---
 
+## D-066 — Font fallback chain: FontSpec.Fallback resolved to the emitted face at write time
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `pptx.FontSpec.Family` is a single string with no fallback. When a
+brand face is neither installed nor embedded, PowerPoint and any rasterizer
+silently substitute an arbitrary host font — so a deck that names "Playfair
+Display" but ships without it looks like generic Arial rather than a controlled
+near-serif. A soul had no way to say "if my display face is unavailable, fall back
+to *this* specific serif." OOXML run fonts (`a:latin`) are single-valued, so a
+fallback cannot be emitted as a list — it must be *realized* at write time. Wave 9
+unit (`DECKARD-PRODUCT-REQUIREMENTS.md` R9.6, MED · both; engine half — D-059).
+**Decision:** Add `FontSpec.Fallback []string` (ordered substitute families; empty
+= none) and a save-time `resolveFontFallbacks` pass (in `prepareForWrite`, before
+`syncSlides`/`autoEmbedFonts`). A registered `FontSource` is the **availability
+oracle**: a family whose regular cut the source resolves is treated as available,
+one it cannot as unavailable. The pass builds a deterministic `primary → resolved`
+map from the active theme (roles iterated in a fixed order `TypeDisplay…TypeCode`,
+first-seen wins): for each role with a declared `Fallback`, the effective chain is
+`[Family] + Fallback` and the resolved face is the first entry the source
+resolves; the primary wins when available. Every run whose `a:latin` typeface
+equals a substituted primary is rewritten to the resolved face
+(`slide.SlidePart.RewriteFontFaces`). The pass is **self-gated**: a no-op (and
+zero `FontSource` calls) when no `FontSource` is registered or no role declares a
+`Fallback`, so output is byte-identical when unused.
+**Consequences:** A soul declares per-role fallback families and a deck whose
+primary face is unavailable renders in the declared substitute (identical across
+machines) instead of the host default; with embedding on the resolved face is what
+gets embedded (the pass runs before `autoEmbedFonts`), and it ties R9.7 (no italic
+cut → fall back rather than faux-italic). Additive and deterministic: empty chain
+/ no source is byte-identical, the role order pins the map, and the substitution
+is idempotent (after the first save a run carries the *fallback* family, which is
+not a primary key, so a second save is a no-op — two saves are byte-identical).
+Adding a slice to `FontSpec` makes it non-comparable (`==`); a `ResolveType`
+determinism test switched to `reflect.DeepEqual`. Mechanism, not taste: the engine
+carries and resolves the chain; the chain contents are the soul's (D-026). The
+*resolved* face round-trips via the existing `Run.Font()`; `Fallback` itself is a
+theme-time config (like `AvgCharWidth`, D-064), documented in `docs/design/
+THEME.md`, not a persisted OOXML field. New visual-affecting type-scale field ⇒ a
+THEME.md entry + a smoke check land in the same PR (§14/§19). **Deferred:**
+theme-scheme (major/minor) fallback for runs that inherit the theme font.
+
+---
+
 *Append new entries below this line.*

@@ -73,6 +73,17 @@ overrides per run. `CaseNone` emits nothing (byte-identical). The engine provide
 the mechanism only — making the default caption role uppercase is the soul's
 choice (D-026), not the engine default.
 
+**Font fallback chain** (D-066): `FontSpec.Fallback []string` is a per-type-role
+ordered list of substitute families. When a `FontSource` is registered and it
+cannot resolve the role's primary `Family`, the write-time fallback pass rewrites
+the run's single-valued `a:latin` typeface to the first family in `[Family]` +
+`Fallback` the source can resolve — a controlled near-match instead of an
+arbitrary host default. Empty (the zero value) and "no `FontSource`" are
+byte-identical; resolution is deterministic and idempotent. The chain *contents*
+are the soul's choice; the engine carries and resolves it. A type-scale config
+input, not a persisted OOXML field (the *resolved* face round-trips via the run's
+`a:latin`).
+
 **Average char width** (estimator metric, D-064): `FontSpec.AvgCharWidth` is the
 role face's average glyph advance as a fraction of font size, used **only by the
 deterministic wrap/overflow estimator** (it never renders). A soul sets a
@@ -130,19 +141,27 @@ its slot. Roles without a slot keep their default after a load.
 | major font | `Theme.HeadingFont` | heading typography |
 | minor font | `Theme.BodyFont` | body typography |
 
-## Font embedding (mechanism, no default — D-019)
+## Font embedding (mechanism — D-019, D-065)
 
 A theme references font *names*; PowerPoint renders them only if installed
-or embedded. pptx-go embeds on demand and never automatically:
+or embedded. pptx-go embeds on demand from a caller-injected `FontSource`,
+either one face at a time or — opt-in — every face a deck uses:
 
 ```go
 pres.SetFontSource(src)              // caller-injected FontSource
 pres.EmbedFont("Inter", "bold", 700) // explicit, per face
+
+// or, automatically, at save (D-065):
+pptx.New(pptx.WithFontSource(src), pptx.WithFontEmbedding())
 ```
 
 `EmbedFont` writes a `*.fntdata` part, relates it to `presentation.xml`, and
-records it in `<p:embeddedFontLst>`. With no `EmbedFont` call, nothing is
-embedded. Subsetting (embed only used glyphs) is V1.x.
+records it in `<p:embeddedFontLst>`. `WithFontEmbedding()` runs a save-time
+pass that walks every run, collects the distinct used faces (family, bold,
+italic) in a stable sorted order, and `EmbedFont`s each — a no-op without a
+`FontSource`, warn-don't-fail on a face that can't resolve, idempotent
+against manual `EmbedFont`, and byte-identical when off. Subsetting (embed
+only used glyphs) and per-numeric-weight files are V1.x.
 
 > The lazy `Color` interface and the `pptx.TokenColor(role)` / `pptx.RGB(...)`
 > builder constructors arrive with the builder spine (D-030); until then the

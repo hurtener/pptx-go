@@ -124,6 +124,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   (+ a `RunStyle` override) emitted as OOXML `a:rPr/@spc`, round-trip clean and
   byte-identical when zero; the run-attribute starting point for the R9 type-detail
   tokens (line-height, case follow). (R9.3.)
+- `19-font-fallback-stack.md` — a per-role `FontSpec.Fallback []string` realized
+  at write time: a registered `FontSource` is the availability oracle, and a run's
+  single-valued `a:latin` is rewritten to the first resolvable family in
+  `[Family] + Fallback`; byte-identical when unused, deterministic, idempotent.
+  (R9.6, engine half.)
 - `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
   `clrMap` indirection, and font scheme map onto pptx-go's token roles.
 

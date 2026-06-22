@@ -57,7 +57,7 @@ func TestUsedFontFacesDistinctAndOrdered(t *testing.T) {
 func TestUsedFontFacesIgnoresUnsetLatin(t *testing.T) {
 	s := NewSlidePart(1)
 	s.AppendShapeChild(textBoxWithRuns(2,
-		&XTextRun{Text: "no rPr"},                                 // nil TextProperties
+		&XTextRun{Text: "no rPr"}, // nil TextProperties
 		&XTextRun{Text: "no latin", TextProperties: &XTextProperties{Bold: "1"}}, // no Latin
 		faceRun("explicit", "Inter", false, false),
 	))
@@ -86,6 +86,50 @@ func TestUsedFontFacesWalksTableCells(t *testing.T) {
 	want := []FontFace{{Typeface: "Lora", Italic: true}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("UsedFontFaces (table) = %#v, want %#v", got, want)
+	}
+}
+
+func TestRewriteFontFaces(t *testing.T) {
+	s := NewSlidePart(1)
+	s.AppendShapeChild(textBoxWithRuns(2,
+		faceRun("a", "Playfair Display", false, false),
+		faceRun("b", "Playfair Display", true, false),
+		faceRun("c", "Inter", false, false), // untouched
+		&XTextRun{Text: "no latin"},         // skipped
+	))
+	// Table cell run also rewritten.
+	cell := XTableCell{TextBody: &XTextBody{
+		Paragraphs: []XTextParagraph{{Content: []any{faceRun("d", "Playfair Display", false, false)}}},
+	}}
+	s.AppendShapeChild(&XGraphicFrame{Graphic: &XGraphic{GraphicData: &XGraphicData{
+		Table: &XTable{Rows: []XTableRow{{Cells: []XTableCell{cell}}}},
+	}}})
+
+	n := s.RewriteFontFaces(map[string]string{"Playfair Display": "Georgia"})
+	if n != 3 {
+		t.Errorf("rewrote %d runs, want 3", n)
+	}
+	got := s.UsedFontFaces()
+	want := []FontFace{
+		{Typeface: "Georgia", Bold: false},
+		{Typeface: "Georgia", Bold: true},
+		{Typeface: "Inter"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("after rewrite UsedFontFaces = %#v, want %#v", got, want)
+	}
+
+	// Idempotent: a second pass with the same mapping rewrites nothing.
+	if n2 := s.RewriteFontFaces(map[string]string{"Playfair Display": "Georgia"}); n2 != 0 {
+		t.Errorf("second rewrite changed %d runs, want 0", n2)
+	}
+	// Nil/empty mapping and nil part are no-ops.
+	if n3 := s.RewriteFontFaces(nil); n3 != 0 {
+		t.Errorf("nil mapping rewrote %d runs, want 0", n3)
+	}
+	var nilPart *SlidePart
+	if n4 := nilPart.RewriteFontFaces(map[string]string{"x": "y"}); n4 != 0 {
+		t.Errorf("nil part rewrote %d runs, want 0", n4)
 	}
 }
 

@@ -353,6 +353,18 @@ fail) on a face the source cannot resolve, is idempotent against manual
 `EmbedFont` calls, and is byte-identical to the prior output when off.
 (D-065, R9.1, `RFC §7.6`.)
 
+## Font fallback chain
+
+`FontSpec.Fallback []string` — an ordered list of substitute families for a
+type role. When a `FontSource` is registered and it cannot resolve the
+role's primary `Family`, the write-time fallback pass rewrites the run's
+single-valued `a:latin` typeface to the first family in `[Family]` +
+`Fallback` the source can resolve, so output degrades to a controlled
+near-match instead of an arbitrary host default. Empty (the zero value) and
+"no `FontSource`" are byte-identical; resolution is deterministic and
+idempotent across saves. The chain *contents* are the soul's choice; the
+engine provides the carry-and-resolve mechanism (D-066, R9.6, `RFC §7.6`).
+
 ## FontSource
 
 `pptx.FontSource` — the caller-injected interface that resolves a

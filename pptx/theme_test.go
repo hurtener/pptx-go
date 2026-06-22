@@ -1,6 +1,7 @@
 package pptx_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/hurtener/pptx-go/pptx"
@@ -61,7 +62,7 @@ func TestResolutionDeterministic(t *testing.T) {
 		if th.ResolveColor(pptx.ColorAccent) != th.ResolveColor(pptx.ColorAccent) {
 			t.Fatal("ResolveColor not deterministic")
 		}
-		if th.ResolveType(pptx.TypeH1) != th.ResolveType(pptx.TypeH1) {
+		if !reflect.DeepEqual(th.ResolveType(pptx.TypeH1), th.ResolveType(pptx.TypeH1)) {
 			t.Fatal("ResolveType not deterministic")
 		}
 	}
