@@ -254,7 +254,7 @@ with it (single-line headers are unchanged).
 
 `SceneSlide.Content.Vertical` aligns the body stack: `VAlignTop` (default),
 `VAlignCenter`, `VAlignBottom`, `VAlignJustify`, `VAlignFill`, `VAlignFillCapped`,
-and `VAlignFit`. `VAlignFill` pins fixed leaves at the top and **grows the flexible
+`VAlignBalanced`, and `VAlignFit`. `VAlignFill` pins fixed leaves at the top and **grows the flexible
 nodes** — the containers (`Grid`, `TwoColumn`, `Card`, `CardSection`, `Bento`,
 `Table`) plus `Image`/`Chart` — to consume the remaining height, so a sparse slide
 fills its frame. The leftover height is shared proportionally and
@@ -262,7 +262,10 @@ deterministically; text leaves keep their size, and a slide with no flexible nod
 just top-aligns. `VAlignFillCapped` is the same but caps each flexible node's
 growth at a pinned factor of its preferred height (at most double), turning the
 leftover slack into even spacing — so a near-empty card can't balloon while a dense
-one starves.
+one starves. `VAlignBalanced` distributes a sparse stack's slack as an even rhythm
+(top margin + widened gaps), optically centered — for a sparse cover/closing that
+would otherwise cluster with a large void (distinct from `VAlignJustify`, which
+puts all slack into the gaps with no margins).
 
 `VAlignFit` is the compression inverse, for the **over-full** slide: when the
 body stack is taller than its region, it shrinks the stack to fit instead of

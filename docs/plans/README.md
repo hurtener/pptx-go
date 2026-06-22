@@ -1025,6 +1025,25 @@ fit-to-region compression).
 - A tighter scale measurably reduces the inset and grows the body (≥ padMin); an
   extreme scale floors at padMin; default is byte-identical; deterministic.
 
+#### Phase 46 — balanced vertical rhythm
+
+**Subsystem:** scene — Layer 2 renderer (body-stack alignment)
+**RFC sections:** §10
+**Deps:** Phase 13 (alignment), Phase 44 (D-075), brief 29.
+**What lands (R10.8, MED · engine):**
+- A new opt-in `VAlignBalanced` body-stack mode. It distributes a sparse stack's
+  slack as an even rhythm — `unit = slack/(n+1)` into a top margin and widened
+  inter-node gaps — with an optical-center upward bias (top margin = 85% of an
+  even unit), so a sparse cover/closing reads balanced instead of clustered with a
+  large void. Distinct from `VAlignJustify` (no margins) and `VAlignCenter` (fixed
+  gaps).
+- `VAlignTop`/`VAlignCenter`/`VAlignJustify` are untouched; per-node gap weighting
+  stays the caller's (D-026).
+**Acceptance criteria:**
+- A 3-node sparse stack under balanced mode has a non-zero top margin + widened
+  gaps that distribute the slack (no single void), sits above geometric center,
+  and stays in the box; Top/Center byte-identical; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

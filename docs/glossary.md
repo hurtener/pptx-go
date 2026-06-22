@@ -1060,6 +1060,19 @@ the deterministic `Fit-to-region compression` pass — the compression inverse o
 `VAlignFill`. Opt-in; byte-identical to `VAlignTop` when the content already
 fits. See `D-071` and `RFC-001-pptx-go.md §10`.
 
+## VAlignBalanced
+
+The body-stack vertical alignment (`scene.VAlignBalanced`, on
+`SceneSlide.Content.Vertical`) that distributes a sparse stack's slack as an even
+rhythm (D-077): the slack splits across the `n+1` spaces of the stack into a top
+margin and widened inter-node gaps, with an optical-center bias (top margin = 85%
+of an even unit) that seats the stack slightly above geometric center. Unlike
+`VAlignJustify` (all slack into gaps, no margins) and `VAlignCenter` (equal
+margins, fixed gaps), it spreads whitespace across both, so a sparse cover or
+closing reads balanced rather than clustered with a large void. With no slack it
+is `VAlignTop`. Per-node gap weighting is the caller's (D-026). See `D-077` and
+`RFC-001-pptx-go.md §10`.
+
 ## VAlignFillCapped
 
 The body-stack vertical alignment (`scene.VAlignFillCapped`, on

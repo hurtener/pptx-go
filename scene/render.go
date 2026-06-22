@@ -750,6 +750,19 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		}
 	}
 
+	// VAlignBalanced (R10.8): distribute a sparse stack's slack as an even rhythm —
+	// a top margin plus widened inter-node gaps (slack split across the n+1 spaces)
+	// — with an optical-center upward bias (the top margin is balancedOpticalBP of
+	// an even unit, so the stack seats slightly above geometric center). Integer
+	// math, worker-count independent.
+	if align.Vertical == VAlignBalanced {
+		if slack := box.H - totalH; slack > 0 {
+			unit := slack / pptx.EMU(n+1)
+			startY = box.Y + unit*balancedOpticalBP/10000
+			effectiveGap = gap + unit
+		}
+	}
+
 	out := make([]placement, 0, n)
 	y := startY
 	for i, nd := range nodes {
@@ -842,6 +855,11 @@ func distributeFill(nodes []SlideNode, heights []pptx.EMU, slack pptx.EMU) {
 // most this fraction (in basis points) of its preferred height is ADDED, so a
 // node grows to at most (1 + fillGrowthMaxBP/10000)× its preferred height.
 const fillGrowthMaxBP = 10000 // +1.0× preferred (at most double)
+
+// balancedOpticalBP is the optical-center bias for VAlignBalanced: the top margin
+// is this fraction (basis points) of an even spacing unit, so the stack seats
+// slightly above geometric center (the freed space falls to the bottom margin).
+const balancedOpticalBP = 8500 // top margin = 85% of an even unit
 
 // distributeFillCapped grows the flexible nodes toward their proportional share
 // of slack, but caps each node's growth at fillGrowthMaxBP × its preferred

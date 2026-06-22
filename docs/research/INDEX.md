@@ -155,6 +155,12 @@ semantics)*
   pinned `SpaceXS` `padMin`; a tighter scale shrinks the interior inset and grows
   the body, token-resolved (P2, no literals); zero/default byte-identical;
   auto-tighten-in-fit deferred. (R10.7, MED.)
+- `29-balanced-vertical-rhythm.md` — opt-in `VAlignBalanced`: distribute a sparse
+  stack's slack into an even rhythm — `unit = slack/(n+1)` into a top margin and
+  widened inter-node gaps — with an optical-center upward bias (`top = unit ×
+  0.85`), so a sparse cover/closing reads balanced instead of clustered-plus-void;
+  distinct from Justify (no margins) and Center (fixed gaps); `VAlignTop`/`Center`
+  byte-identical; per-node gap weighting stays the caller's. (R10.8, MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
