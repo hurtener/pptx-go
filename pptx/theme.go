@@ -113,6 +113,12 @@ type FontSpec struct {
 	// it at display. CaseNone (the zero value) emits nothing — byte-identical.
 	// (D-062.)
 	Case TextCase
+	// AvgCharWidth is the role face's average glyph advance as a fraction of the
+	// font size, used only by the deterministic wrap/overflow estimator (it never
+	// renders). A soul sets a measured factor for its bundled face (serif/display
+	// faces advance differently from the default sans). 0 (the zero value) uses
+	// the built-in ~0.5 sans fallback — byte-identical estimate. (D-064.)
+	AvgCharWidth float64
 }
 
 // TextCase is a type role's case transform, rendered as the OOXML a:rPr/@cap

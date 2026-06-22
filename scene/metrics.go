@@ -40,8 +40,14 @@ func naturalWidth(rt RichText, theme *pptx.Theme) pptx.EMU {
 			continue
 		}
 		spec := theme.ResolveType(run.Style.TypeRole)
+		// Per-face factor (D-064): the role's measured AvgCharWidth when set, else
+		// the built-in sans fallback (0.5) — byte-identical for an unset face.
+		factor := spec.AvgCharWidth
+		if factor <= 0 {
+			factor = avgCharWidthFactor
+		}
 		// avgW: average char width in EMU, truncated to integer (deterministic).
-		avgW := pptx.EMU(spec.Size * avgCharWidthFactor * emuPerPointMetrics)
+		avgW := pptx.EMU(spec.Size * factor * emuPerPointMetrics)
 		total += avgW * pptx.EMU(len(run.Text))
 	}
 	return total
