@@ -75,22 +75,24 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 // fields (headerFill/statusDot/watermark, D-054) are Card-only — CardSection
 // leaves them at their zero values.
 type cardChrome struct {
-	header     string
-	eyebrow    string
-	icon       string
-	pill       string
-	fill       ColorRole
-	outline    bool
-	border     BorderStyle
-	size       CardSize
-	layout     CardLayout
-	elevation  ElevationRole
-	headerFill *ColorRole // banded header region; nil = no band
-	statusDot  *ColorRole // top-right status dot; nil = no dot
-	watermark  string     // faint label behind the body; "" = none
+	header       string
+	eyebrow      string
+	icon         string
+	pill         string
+	fill         ColorRole
+	outline      bool
+	border       BorderStyle
+	size         CardSize
+	layout       CardLayout
+	elevation    ElevationRole
+	headerFill   *ColorRole // banded header region; nil = no band
+	statusDot    *ColorRole // top-right status dot; nil = no dot
+	watermark    string     // faint label behind the body; "" = none
+	paddingScale int        // basis-point multiplier on the size padding; 0/10000 = unchanged (D-076)
 }
 
-// cardPadding returns the interior inset for a card size.
+// cardPadding returns the size-resolved interior inset for a card size (the base,
+// before any PaddingScale). Token-bound (P2).
 func (r *renderer) cardPadding(size CardSize) pptx.EMU {
 	switch size {
 	case CardSizeSM:
@@ -100,6 +102,23 @@ func (r *renderer) cardPadding(size CardSize) pptx.EMU {
 	default:
 		return r.theme.ResolveSpace(pptx.SpaceMD)
 	}
+}
+
+// cardPaddingFor returns a card's interior inset: the size-resolved base padding
+// (cardPadding) scaled by c.paddingScale (basis points; 0 or 10000 = unchanged),
+// floored at a pinned minimum (SpaceXS) so a tightened card never collapses its
+// inset. Deterministic integer math; the base and the floor both resolve through
+// theme spacing tokens — no literals (P2, D-076).
+func (r *renderer) cardPaddingFor(c cardChrome) pptx.EMU {
+	base := r.cardPadding(c.size)
+	if c.paddingScale <= 0 || c.paddingScale == 10000 {
+		return base
+	}
+	pad := base * pptx.EMU(c.paddingScale) / 10000
+	if min := r.theme.ResolveSpace(pptx.SpaceXS); pad < min {
+		pad = min
+	}
+	return pad
 }
 
 const cardStripeW = pptx.EMU(45720) // 4pt accent stripe
@@ -126,7 +145,7 @@ const (
 // the wrapped-line counts (and thus the body Y, the header band, and the emitted
 // text frames) never drift.
 func (r *renderer) cardHeaderColumnW(box pptx.Box, c cardChrome) pptx.EMU {
-	pad := r.cardPadding(c.size)
+	pad := r.cardPaddingFor(c)
 	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
 	innerW := box.W - cardStripeW - 2*pad
 	if innerW < 0 {
@@ -174,7 +193,7 @@ func (r *renderer) cardHeaderRowHeights(box pptx.Box, c cardChrome) (eyebrowH, t
 // — using the same shared row heights (wrapped-aware, R10.1) — so the header
 // band (drawn before the header text) ends precisely where the body starts.
 func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
-	pad := r.cardPadding(c.size)
+	pad := r.cardPaddingFor(c)
 	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
 	eyebrowH, titleH := r.cardHeaderRowHeights(box, c)
 	y := box.Y + pad
@@ -262,7 +281,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	}
 
 	// 3. Header region, inset by padding (past the stripe).
-	pad := r.cardPadding(c.size)
+	pad := r.cardPaddingFor(c)
 	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
 	innerX := box.X + cardStripeW + pad
 	innerW := box.W - cardStripeW - 2*pad
@@ -394,6 +413,7 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 		fill: v.Fill, outline: v.Outline, border: v.BorderStyle, size: v.Size,
 		layout: v.Layout, elevation: v.Elevation,
 		headerFill: v.HeaderFill, statusDot: v.StatusDot, watermark: v.Watermark,
+		paddingScale: v.PaddingScale,
 	}, slideID)
 
 	if v.BodyLayout == BodyHorizontal && len(v.Body) > 0 {

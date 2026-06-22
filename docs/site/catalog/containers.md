@@ -146,6 +146,7 @@ stack), `CardLayoutIconTop` (icon above it).
 | `StatusDot` | `*ColorRole` | Small status dot, top-right corner; `nil` = none |
 | `Watermark` | `string` | Large, low-opacity label behind the body; `""` = none |
 | `BodyVAlign` | `VAlign` | Vertical distribution of the body within the card (`Top`/`Center`/`Bottom`/`Justify`/`Fill`/`Fit`); zero `Top` = top-anchored |
+| `PaddingScale` | `int` | Basis-point multiplier on the size-resolved interior padding (0/10000 = unchanged; tighten a dense card, floored at a minimum) |
 
 By default a card body is top-anchored, so a short body floats in the upper card
 with empty space below. Set `BodyVAlign` to distribute it: `VAlignBottom` pins

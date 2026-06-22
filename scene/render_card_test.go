@@ -281,3 +281,37 @@ func TestCardBodyVAlign_Deterministic(t *testing.T) {
 		t.Errorf("card BodyVAlign deck: parallel render differs from sequential (%d vs %d bytes)", len(par), len(seq))
 	}
 }
+
+// TestCardPaddingScale_Wiring (R10.7): Card.PaddingScale flows into the render —
+// a tightened card differs from the default, and PaddingScale=0 is byte-identical
+// to leaving the field unset.
+func TestCardPaddingScale_Wiring(t *testing.T) {
+	mk := func(scale int) []byte {
+		sc := scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "c",
+			Nodes: []scene.SlideNode{scene.Card{
+				Header:       "Dense",
+				Size:         scene.CardSizeLG,
+				PaddingScale: scale,
+				Body:         []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("body")}}},
+			}},
+		}}}
+		data, _ := render(t, sc)
+		return data
+	}
+	if bytes.Equal(mk(0), mk(5000)) {
+		t.Error("PaddingScale=5000 produced the same bytes as default — not wired into renderCard")
+	}
+	unset := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "c",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Dense",
+			Size:   scene.CardSizeLG,
+			Body:   []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("body")}}},
+		}},
+	}}}
+	unsetData, _ := render(t, unset)
+	if !bytes.Equal(mk(0), unsetData) {
+		t.Error("PaddingScale=0 is not byte-identical to leaving the field unset")
+	}
+}

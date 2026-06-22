@@ -103,6 +103,10 @@ byte-identical. A layout-estimator input on the type scale, not a visual token.
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.
+  A scene `Card` resolves its interior padding from these (`CardSize` →
+  `SpaceSM/MD/XL`); the opt-in `Card.PaddingScale` (basis points, D-076) scales
+  that resolved value to tighten a dense card, floored at the `SpaceXS` minimum —
+  a token-bound density control, no literal.
 - Radius: `RadiusNone`, `RadiusSM`, `RadiusMD`, `RadiusLG`, `RadiusFull`.
   Consumed by `Slide.AddShape(ShapeRoundRect, box, WithRadius(role))`: the
   absolute radius token resolves against the active theme and is converted to
