@@ -137,6 +137,60 @@ func TestFitCompress_Deterministic(t *testing.T) {
 	}
 }
 
+// TestFitCompress_SingleNode (checkpoint NH1): the n==1 path (gapCount==0) — a
+// single over-tall node is compressed to fit by the height step alone.
+func TestFitCompress_SingleNode(t *testing.T) {
+	r := newTestRenderer(t)
+	box := fitBox() // H = In(5)
+	gap := r.theme.ResolveSpace(pptx.SpaceMD)
+	heights := []pptx.EMU{pptx.In(8)}
+	effGap := r.fitCompress(heights, pptx.In(8), gap, box)
+	if effGap != gap {
+		t.Errorf("single node: effGap = %d, want unchanged gap %d (no inter-node gaps)", effGap, gap)
+	}
+	if heights[0] > box.H {
+		t.Errorf("single node not compressed to fit: %d > box.H %d", heights[0], box.H)
+	}
+	if heights[0] >= pptx.In(8) {
+		t.Errorf("single node should have shrunk from In(8), got %d", heights[0])
+	}
+}
+
+// TestFitCompress_TwentyFivePercentBand (checkpoint NH3): the R10.2 headline
+// acceptance — a stack ~25% over the region fits at the pinned steps.
+func TestFitCompress_TwentyFivePercentBand(t *testing.T) {
+	r := newTestRenderer(t)
+	box := fitBox() // H = In(5)
+	gap := r.theme.ResolveSpace(pptx.SpaceMD)
+	// bodyH ≈ 1.25 × box.H across 3 nodes.
+	heights := []pptx.EMU{pptx.In(2.1), pptx.In(2.1), pptx.In(2.05)} // Σ = In(6.25) = 1.25·In(5)
+	bodyH := heights[0] + heights[1] + heights[2]
+	effGap := r.fitCompress(heights, bodyH, gap, box)
+	var total pptx.EMU
+	for _, h := range heights {
+		total += h
+	}
+	total += effGap * 2
+	if total > box.H {
+		t.Errorf("~25%% overflow did not fit: post-compression total %d > box.H %d", total, box.H)
+	}
+}
+
+// TestFitCompress_ExtremeOverflowStillWarns (checkpoint NH2): a VAlignFit stack
+// over-full beyond the 0.60 floor still fires the overflow warning (the floor
+// caps compression, so residual overflow surfaces honestly).
+func TestFitCompress_ExtremeOverflowStillWarns(t *testing.T) {
+	r := newTestRenderer(t)
+	nodes := make([]SlideNode, 14)
+	for i := range nodes {
+		nodes[i] = Callout{Body: RichText{{Text: "row"}}}
+	}
+	_ = r.layout(nodes, "fit", Alignment{Vertical: VAlignFit})
+	if !hasOverflowWarning(r.stats, "fit") {
+		t.Error("an extreme-overflow VAlignFit stack should still warn (floor caps compression)")
+	}
+}
+
 // TestFitCompress_PlacementFitsWithinRegion is the R10.2 acceptance: an over-full
 // (≤~25%) body stack rendered with VAlignFit places its last node bottom at or
 // above the region bottom (no off-slide content), and the overflow warning is

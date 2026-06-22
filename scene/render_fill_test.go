@@ -226,6 +226,20 @@ func TestFillCapped_EvenSpacingWithinBox(t *testing.T) {
 	}
 }
 
+// TestDistributeFillCapped_ZeroPrefFlex (checkpoint NH5): flexible nodes present
+// but all with zero preferred height (flexH<=0) — the guard returns 0 (no cap
+// room), nothing grows.
+func TestDistributeFillCapped_ZeroPrefFlex(t *testing.T) {
+	nodes := []SlideNode{Image{}, Image{}} // flexible
+	heights := []pptx.EMU{0, 0}
+	if used := distributeFillCapped(nodes, heights, pptx.In(4)); used != 0 {
+		t.Errorf("zero-pref flex: used %d, want 0 (no cap room)", used)
+	}
+	if heights[0] != 0 || heights[1] != 0 {
+		t.Errorf("zero-pref flex grew: %v", heights)
+	}
+}
+
 // TestVAlignFillCapped_String guards the enum name.
 func TestVAlignFillCapped_String(t *testing.T) {
 	if got := VAlignFillCapped.String(); got != "fill-capped" {

@@ -332,8 +332,10 @@ func (p *Paragraph) Align(a Alignment) *Paragraph
 func (p *Paragraph) Alignment() Alignment
 func (p *Paragraph) Bullet(kind BulletKind) *Paragraph
 func (p *Paragraph) BulletStyle() BulletKind
+func (p *Paragraph) BulletIndent() EMU
 func (p *Paragraph) Indent(level int) *Paragraph
 func (p *Paragraph) Level() int
+func (p *Paragraph) LineHeight() float64
 func (p *Paragraph) Runs() []*Run
 ```
 
@@ -363,15 +365,23 @@ type RunStyle struct {
 	Underline   Underline
 	Strike      Strike
 	BaselineRel BaselineShift
-	Code        bool // inline code: mono + subtle tint (D-013)
+	Code        bool      // inline code: mono + subtle tint (D-013)
+	Tracking    *float64  // per-run letter-spacing override, pt; nil inherits the role (D-060)
+	Case        *TextCase // per-run case override; nil inherits the role (D-062)
+	FontScale   float64   // per-run multiplier on the role size; 0/1 = unchanged (D-074)
 }
 
 type ParagraphOpts struct {
-	Align  Alignment
-	Level  int
-	Bullet BulletKind
+	Align        Alignment
+	Level        int
+	Bullet       BulletKind
+	LineHeight   float64 // line spacing as a percent of single; 0/100 = unchanged (D-061)
+	BulletIndent EMU     // bullet hanging indent (marker-to-text offset); 0 = default 0.5" (D-078)
 }
 ```
+
+Each added field is additive: its zero value emits nothing and reproduces the
+prior output byte-for-byte.
 
 ### Text enums
 

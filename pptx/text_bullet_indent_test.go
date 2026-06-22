@@ -74,19 +74,45 @@ func TestBulletIndent_DefaultByteIdentical(t *testing.T) {
 	}
 }
 
-// TestBulletIndent_RoundTrips: the tight marL/indent survive a reopen (preserved
-// in the slide XML).
+// TestBulletIndent_RoundTrips (G6): the tight marL/indent survive a reopen, read
+// back both as raw XML and via the Paragraph.BulletIndent accessor (the inverse
+// of ParagraphOpts.BulletIndent).
 func TestBulletIndent_RoundTrips(t *testing.T) {
 	data := bulletDeck(t, pptx.ParagraphOpts{Bullet: pptx.BulletDisc, BulletIndent: 228600})
 	re, err := pptx.NewFromBytes(data)
 	if err != nil {
 		t.Fatalf("NewFromBytes: %v", err)
 	}
+	// Go-model accessor round-trip.
+	tf, ok := re.Slides()[0].Shapes()[0].TextFrame()
+	if !ok {
+		t.Fatal("reopened shape has no text frame")
+	}
+	if got := tf.Paragraphs()[0].BulletIndent(); got != 228600 {
+		t.Errorf("reopened Paragraph.BulletIndent() = %d, want 228600", got)
+	}
+	// Raw-XML round-trip (re-emit).
 	out, err := re.WriteToBytes()
 	if err != nil {
 		t.Fatalf("re-WriteToBytes: %v", err)
 	}
 	if !strings.Contains(bulletSlideXML(t, out), `marL="228600"`) {
 		t.Error("reopened deck lost the tight marL=\"228600\"")
+	}
+}
+
+// TestBulletIndent_AccessorDefault: a default-indent bulleted paragraph reports
+// the 0.5" marL; a non-bulleted paragraph reports 0.
+func TestBulletIndent_AccessorDefault(t *testing.T) {
+	p := pptx.New()
+	s := p.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: 5000000, H: 1000000})
+	bulleted := tf.AddParagraph(pptx.ParagraphOpts{Bullet: pptx.BulletDisc})
+	plain := tf.AddParagraph(pptx.ParagraphOpts{})
+	if got := bulleted.BulletIndent(); got != 457200 {
+		t.Errorf("default bulleted BulletIndent() = %d, want 457200 (0.5\")", got)
+	}
+	if got := plain.BulletIndent(); got != 0 {
+		t.Errorf("plain paragraph BulletIndent() = %d, want 0", got)
 	}
 }

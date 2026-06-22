@@ -39,9 +39,28 @@ func TestCardBodyVAlign_TopByteIdentical(t *testing.T) {
 		t.Fatalf("placement count differs: aligned=%d stackIn=%d", len(top), len(plain))
 	}
 	for i := range plain {
-		if top[i].box != plain[i].box {
-			t.Errorf("placement[%d] box differs: aligned=%+v stackIn=%+v", i, top[i].box, plain[i].box)
+		if top[i].box != plain[i].box || top[i].hAlign != plain[i].hAlign {
+			t.Errorf("placement[%d] differs: aligned=%+v stackIn=%+v", i, top[i], plain[i])
 		}
+	}
+}
+
+// TestCardBodyVAlign_PerNodeAlignHonored (checkpoint NH13): routing the card body
+// through alignedStackIn means a body node's per-node Align override now takes
+// effect (the old stackIn ignored it) — a deliberate improvement, not a
+// regression. The byte-identity guarantee holds only when no body node sets Align.
+func TestCardBodyVAlign_PerNodeAlignHonored(t *testing.T) {
+	r := newTestRenderer(t)
+	box := cardBodyBox()
+	body := []SlideNode{Heading{Text: RichText{{Text: "Centered"}}, Level: 3, Align: HAlignCenter}}
+
+	pls := r.alignedStackIn(box, body, "s", Alignment{Vertical: VAlignTop})
+	if pls[0].hAlign != HAlignCenter {
+		t.Errorf("card body node's per-node Align not honored: hAlign = %v, want center", pls[0].hAlign)
+	}
+	// The legacy stackIn would have left it HAlignLeft.
+	if old := r.stackIn(box, body, "s"); old[0].hAlign != HAlignLeft {
+		t.Errorf("stackIn precondition: expected HAlignLeft, got %v", old[0].hAlign)
 	}
 }
 

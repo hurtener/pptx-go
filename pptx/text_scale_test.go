@@ -76,6 +76,40 @@ func TestRunFontScale_ZeroByteIdentical(t *testing.T) {
 	}
 }
 
+// TestRunFontScale_PreservesOtherProps: FontScale only reduces the size — the
+// other rPr attributes (bold) still emit on the same run.
+func TestRunFontScale_PreservesOtherProps(t *testing.T) {
+	xml := scaleSlideXML(t, scaleDeck(t, pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true, FontScale: 0.6}))
+	base := pptx.DefaultTheme().ResolveType(pptx.TypeDisplay).Size
+	if !strings.Contains(xml, fmt.Sprintf(`sz="%d"`, int(base*0.6*100))) {
+		t.Error("FontScale+Bold run lost its reduced sz")
+	}
+	if !strings.Contains(xml, `b="1"`) {
+		t.Errorf("FontScale+Bold run lost its bold attribute; xml:\n%s", xml)
+	}
+}
+
+// TestRunFontScale_DirtyQuantumRoundTrips: a 0.025-step scale that does not land
+// on a whole 1/100-pt (e.g. 0.65) emits a deterministic truncated sz that
+// round-trips via Run.FontSize. Documents the truncate (int()) convention shared
+// with the unscaled sz path (D-080).
+func TestRunFontScale_DirtyQuantumRoundTrips(t *testing.T) {
+	base := pptx.DefaultTheme().ResolveType(pptx.TypeDisplay).Size
+	wantSz := int(base * 0.65 * 100) // truncate, matching the unscaled sz emission
+	data := scaleDeck(t, pptx.RunStyle{TypeRole: pptx.TypeDisplay, FontScale: 0.65})
+	if !strings.Contains(scaleSlideXML(t, data), fmt.Sprintf(`sz="%d"`, wantSz)) {
+		t.Errorf("FontScale 0.65 should emit the truncated sz=%d", wantSz)
+	}
+	re, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	tf, _ := re.Slides()[0].Shapes()[0].TextFrame()
+	if got := tf.Paragraphs()[0].Runs()[0].FontSize(); got != float64(wantSz)/100.0 {
+		t.Errorf("reopened FontSize() = %v, want %v", got, float64(wantSz)/100.0)
+	}
+}
+
 // TestRunFontScale_RoundTrip (G6): a scaled run reopens with the reduced
 // Run.FontSize.
 func TestRunFontScale_RoundTrip(t *testing.T) {

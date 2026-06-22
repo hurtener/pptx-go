@@ -76,6 +76,44 @@ func TestPreferredHeight_BentoSpanWidth(t *testing.T) {
 	}
 }
 
+// TestOverflow_WrappedHeaderCardFires (Phase 48 criterion 4 / checkpoint MF4): a
+// card whose header wraps in a narrow column overflows a too-small region (the
+// estimate now accounts for the wrapped header) and warns; the same card in an
+// adequate region does not (no false positive).
+func TestOverflow_WrappedHeaderCardFires(t *testing.T) {
+	longHeader := strings.Repeat("Platform White Label ", 6)
+	card := Card{Header: longHeader, Body: []SlideNode{Prose{Paragraphs: []RichText{{{Text: "body line"}}}}}}
+
+	// Narrow + short region: the wrapped header makes preferredHeight exceed it.
+	rSmall := newTestRenderer(t)
+	rSmall.stackIn(pptx.Box{X: 0, Y: 0, W: pptx.In(2.5), H: pptx.In(1.0)}, []SlideNode{card}, "small")
+	if !hasOverflowWarning(rSmall.stats, "small") {
+		t.Error("wrapped-header card in a too-small region should warn")
+	}
+
+	// Same narrow width but ample height: no overflow, no false positive.
+	rBig := newTestRenderer(t)
+	rBig.stackIn(pptx.Box{X: 0, Y: 0, W: pptx.In(2.5), H: pptx.In(20)}, []SlideNode{card}, "big")
+	if hasOverflowWarning(rBig.stats, "big") {
+		t.Error("wrapped-header card in an ample region should NOT warn (false positive)")
+	}
+}
+
+// TestCardHeaderExtraHeight_Eyebrow (checkpoint NH6): a wrapping eyebrow (no
+// header) contributes an increment that is a positive multiple of cardEyebrowRowH.
+func TestCardHeaderExtraHeight_Eyebrow(t *testing.T) {
+	theme := pptx.DefaultTheme()
+	avail := pptx.In(2.0) // narrow → the eyebrow wraps
+	c := cardChrome{eyebrow: strings.Repeat("operating layer kicker ", 4)}
+	extra := cardHeaderExtraHeight(theme, avail, c)
+	if extra <= 0 {
+		t.Fatal("wrapping eyebrow produced no increment")
+	}
+	if extra%cardEyebrowRowH != 0 {
+		t.Errorf("eyebrow increment %d is not a multiple of cardEyebrowRowH %d", extra, cardEyebrowRowH)
+	}
+}
+
 // TestPreferredHeight_BentoSpanOneByteIdentical: a bento with only span-1 cells is
 // byte-identical to the unit-width estimate (the span fix only affects span>1).
 func TestPreferredHeight_BentoSpanOneByteIdentical(t *testing.T) {

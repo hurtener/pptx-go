@@ -86,6 +86,29 @@ func TestBalanced_TopCenterByteIdentical(t *testing.T) {
 	}
 }
 
+// TestBalanced_SingleNode (checkpoint NH4): a single sparse node is optically
+// centered — a non-zero top margin, the node within the box, and the top margin
+// below the bottom margin (above geometric center).
+func TestBalanced_SingleNode(t *testing.T) {
+	r := newTestRenderer(t)
+	body := r.bodyRegion()
+	pls := r.layout([]SlideNode{Hero{Title: "Solo"}}, "s", Alignment{Vertical: VAlignBalanced})
+	if len(pls) != 1 {
+		t.Fatalf("want 1 placement, got %d", len(pls))
+	}
+	top := pls[0].box.Y - body.Y
+	bottom := body.Bottom() - (pls[0].box.Y + pls[0].box.H)
+	if top <= 0 {
+		t.Fatalf("single node: expected a positive top margin, got %d", top)
+	}
+	if pls[0].box.Y+pls[0].box.H > body.Bottom() {
+		t.Errorf("single node spills below the region")
+	}
+	if top >= bottom {
+		t.Errorf("single node optical bias: top margin %d should be < bottom %d", top, bottom)
+	}
+}
+
 // TestVAlignBalanced_String guards the enum name.
 func TestVAlignBalanced_String(t *testing.T) {
 	if got := VAlignBalanced.String(); got != "balanced" {

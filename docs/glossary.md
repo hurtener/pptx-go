@@ -155,10 +155,12 @@ vertically. See `RFC-001-pptx-go.md §11.2`.
 ## Card BodyVAlign
 
 The opt-in `Card.BodyVAlign VAlign` field (D-073): the vertical distribution of a
-card's body within the card body region — `VAlignTop` (default, top-anchored),
-`VAlignCenter`, `VAlignBottom` (pin to the body bottom), `VAlignJustify` (spread
-the inter-item gaps), `VAlignFill` (grow flexible body nodes), or `VAlignFit`
-(compress an over-full body). The card body routes through the same
+card's body within the card body region — any of the eight `VAlign` modes:
+`VAlignTop` (default, top-anchored), `VAlignCenter`, `VAlignBottom` (pin to the
+body bottom), `VAlignJustify` (spread the inter-item gaps), `VAlignFill` (grow
+flexible body nodes), `VAlignFillCapped` (capped grow + even spacing),
+`VAlignBalanced` (even rhythm, optical-center), or `VAlignFit` (compress an
+over-full body). The card body routes through the same
 `alignedStackIn` engine as the slide body stack; the zero value reproduces the
 top-anchored layout byte-for-byte. Applies to the vertical body only
 (`BodyLayout != BodyHorizontal`). See `RFC-001-pptx-go.md §11.2`.

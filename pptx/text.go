@@ -424,6 +424,17 @@ func (p *Paragraph) LineHeight() float64 {
 	return 0
 }
 
+// BulletIndent returns the paragraph's bullet hanging indent (the marker-to-text
+// offset) in EMU, or 0 when no bullet indent is set — the read inverse of
+// ParagraphOpts.BulletIndent (D-078). A bulleted paragraph reports its marL
+// (0.5" by default, or the BulletIndent override).
+func (p *Paragraph) BulletIndent() EMU {
+	if pr := p.x().Pr; pr != nil {
+		return EMU(pr.MarL)
+	}
+	return 0
+}
+
 // BulletStyle returns the paragraph's bullet style — the read inverse of Bullet
 // (BulletNone when unset or explicitly suppressed).
 func (p *Paragraph) BulletStyle() BulletKind {
