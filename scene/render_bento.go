@@ -13,25 +13,55 @@ import (
 // emits no shape of its own beyond the labels — each cell renders through the
 // normal dispatch. Deterministic integer-EMU geometry (D-035).
 
-// bentoGutterW is the fixed width reserved for the left row-label gutter (only
-// when at least one row is labeled).
-const bentoGutterW = pptx.EMU(1097280) // ~1.2"
+// Bento row-label gutter geometry. bentoGutterMinW / bentoGutterMaxW bound the
+// fit-to-label gutter (R11.9); bentoGutterPadX is the padding each side of the
+// widest label. Pinned layout metrics (not tokens).
+const (
+	bentoGutterMinW = pptx.EMU(731520)  // In(0.80); minimum gutter width
+	bentoGutterMaxW = pptx.EMU(1463040) // In(1.60); maximum gutter width
+	bentoGutterPadX = pptx.EMU(91440)   // In(0.10); padding each side of a row label
+)
+
+// bentoGutterWidthOf returns the left row-label gutter width (R11.9, D-089): 0 when
+// no row is labeled, else the widest row label's natural width plus padding, clamped
+// to [bentoGutterMinW, bentoGutterMaxW], so the gutter tracks its labels instead of
+// a fixed ~1.2" — a short label gets a tight gutter, a long one no longer wraps
+// awkwardly. Shared by bentoColumns (layout) and preferredHeight (the slot estimate)
+// so the two agree. Deterministic (pure integer naturalWidth).
+func bentoGutterWidthOf(theme *pptx.Theme, v Bento) pptx.EMU {
+	var maxLabelW pptx.EMU
+	labeled := false
+	for _, row := range v.Rows {
+		if row.Label != "" {
+			labeled = true
+			if w := naturalWidth(RichText{{Text: row.Label, Style: RunStyle{TypeRole: pptx.TypeCaption}}}, theme); w > maxLabelW {
+				maxLabelW = w
+			}
+		}
+	}
+	if !labeled {
+		return 0
+	}
+	g := maxLabelW + 2*bentoGutterPadX
+	if g < bentoGutterMinW {
+		g = bentoGutterMinW
+	}
+	if g > bentoGutterMaxW {
+		g = bentoGutterMaxW
+	}
+	return g
+}
 
 // bentoColumns computes a bento's shared horizontal geometry: the left-gutter
-// width (non-zero iff any row is labeled), the content origin X, and the unit
-// column width. Pure integer-EMU; shared by bentoGeometry and the weighted
+// width (fit-to-label, non-zero iff any row is labeled), the content origin X, and
+// the unit column width. Pure integer-EMU; shared by bentoGeometry and the weighted
 // row-height pass so the two never drift.
-func bentoColumns(box pptx.Box, v Bento, gap pptx.EMU) (gutterW, contentX, unitW pptx.EMU) {
+func bentoColumns(box pptx.Box, v Bento, gap pptx.EMU, theme *pptx.Theme) (gutterW, contentX, unitW pptx.EMU) {
 	cols := v.Columns
 	if cols < 1 {
 		cols = 1
 	}
-	for _, row := range v.Rows {
-		if row.Label != "" {
-			gutterW = bentoGutterW
-			break
-		}
-	}
+	gutterW = bentoGutterWidthOf(theme, v)
 	contentX = box.X
 	contentW := box.W
 	if gutterW > 0 {
@@ -64,13 +94,13 @@ func cellWidth(span int, unitW, gap pptx.EMU) pptx.EMU {
 // content-weighted mode; when nil/mismatched, every row gets the equal height
 // (box.H − gaps)/nRows, reproducing the pre-R10.3 layout byte-for-byte. Returns
 // nil for a degenerate bento.
-func bentoGeometry(box pptx.Box, v Bento, gap pptx.EMU, rowHs []pptx.EMU) (gutterW pptx.EMU, rowYs, heights []pptx.EMU, cells [][]pptx.Box) {
+func bentoGeometry(box pptx.Box, v Bento, gap pptx.EMU, rowHs []pptx.EMU, theme *pptx.Theme) (gutterW pptx.EMU, rowYs, heights []pptx.EMU, cells [][]pptx.Box) {
 	cols := v.Columns
 	nRows := len(v.Rows)
 	if cols < 1 || nRows == 0 {
 		return 0, nil, nil, nil
 	}
-	gutterW, contentX, unitW := bentoColumns(box, v, gap)
+	gutterW, contentX, unitW := bentoColumns(box, v, gap, theme)
 
 	heights = make([]pptx.EMU, nRows)
 	if len(rowHs) == nRows {
@@ -115,7 +145,7 @@ func (r *renderer) bentoWeightedRowHeights(box pptx.Box, v Bento, gap pptx.EMU) 
 	if nRows == 0 {
 		return nil
 	}
-	_, _, unitW := bentoColumns(box, v, gap)
+	_, _, unitW := bentoColumns(box, v, gap, r.theme)
 
 	pref := make([]pptx.EMU, nRows)
 	var sum pptx.EMU
@@ -154,7 +184,7 @@ func (r *renderer) renderBento(ps *pptx.Slide, box pptx.Box, v Bento, slideID st
 	if v.WeightedRows {
 		rowHs = r.bentoWeightedRowHeights(box, v, gap)
 	}
-	gutterW, rowYs, heights, cells := bentoGeometry(box, v, gap, rowHs)
+	gutterW, rowYs, heights, cells := bentoGeometry(box, v, gap, rowHs, r.theme)
 	if cells == nil {
 		return
 	}

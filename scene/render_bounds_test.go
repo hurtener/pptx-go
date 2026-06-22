@@ -62,7 +62,7 @@ func TestBentoBoxesWithinSafeArea(t *testing.T) {
 		{Cells: []BentoCell{{Span: 1, Node: Card{Header: "e"}}, {Span: 1, Node: Card{Header: "f"}}}},
 	}}
 	gap := r.theme.ResolveSpace(pptx.SpaceMD)
-	_, _, _, cells := bentoGeometry(box, v, gap, nil)
+	_, _, _, cells := bentoGeometry(box, v, gap, nil, r.theme)
 	for ri := range cells {
 		for ci := range cells[ri] {
 			if cells[ri][ci].Bottom() > sa.Bottom() {

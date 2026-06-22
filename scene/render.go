@@ -560,11 +560,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		// reference under-counts wrapped lines). Wider-span cells still over-
 		// estimate height with this unit width, which is safe (a taller slot).
 		contentW := avail
-		for _, row := range v.Rows {
-			if row.Label != "" {
-				contentW -= bentoGutterW + estGap
-				break
-			}
+		if gutterW := bentoGutterWidthOf(theme, v); gutterW > 0 {
+			contentW -= gutterW + estGap
 		}
 		unitW := (contentW - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU

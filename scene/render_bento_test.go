@@ -21,7 +21,7 @@ func TestBentoGeometry_SpanWidths(t *testing.T) {
 		{Label: "A", Cells: []BentoCell{{Span: 2, Node: Prose{}}, {Span: 1, Node: Prose{}}}},
 		{Label: "B", Cells: []BentoCell{{Span: 1, Node: Prose{}}, {Span: 1, Node: Prose{}}, {Span: 1, Node: Prose{}}}},
 	}}
-	gutterW, _, _, cells := bentoGeometry(bentoBox(), v, gap, nil)
+	gutterW, _, _, cells := bentoGeometry(bentoBox(), v, gap, nil, theme)
 	if gutterW == 0 {
 		t.Fatal("labeled bento should reserve a gutter")
 	}
@@ -54,7 +54,7 @@ func TestBentoGeometry_NoGutterWhenUnlabeled(t *testing.T) {
 	v := Bento{Columns: 2, Rows: []BentoRow{
 		{Cells: []BentoCell{{Span: 1, Node: Prose{}}, {Span: 1, Node: Prose{}}}},
 	}}
-	gutterW, _, _, cells := bentoGeometry(bentoBox(), v, gap, nil)
+	gutterW, _, _, cells := bentoGeometry(bentoBox(), v, gap, nil, theme)
 	if gutterW != 0 {
 		t.Errorf("unlabeled bento reserved a gutter: %d", gutterW)
 	}
@@ -82,7 +82,7 @@ func TestBentoGeometry_EqualModeByteIdentical(t *testing.T) {
 		{Label: "B", Cells: []BentoCell{{Span: 1, Node: Prose{}}, {Span: 1, Node: Prose{}}}},
 		{Label: "C", Cells: []BentoCell{{Span: 1, Node: Prose{}}, {Span: 1, Node: Prose{}}}},
 	}}
-	_, rowYs, heights, cells := bentoGeometry(box, v, gap, nil)
+	_, rowYs, heights, cells := bentoGeometry(box, v, gap, nil, theme)
 	nRows := len(v.Rows)
 	wantRowH := (box.H - gap*pptx.EMU(nRows-1)) / pptx.EMU(nRows)
 	for ri := range v.Rows {
@@ -130,7 +130,7 @@ func TestBentoWeightedRows_DenseTallerAndFits(t *testing.T) {
 		t.Errorf("weighted rows overflow: %d > box.H %d", total, box.H)
 	}
 	// Geometry honors the weighted heights and keeps the last row inside the box.
-	_, _, _, cells := bentoGeometry(box, v, gap, hs)
+	_, _, _, cells := bentoGeometry(box, v, gap, hs, r.theme)
 	last := cells[len(cells)-1][0]
 	if b := last.Y + last.H; b > box.Bottom() {
 		t.Errorf("last row bottom %d exceeds box bottom %d", b, box.Bottom())
