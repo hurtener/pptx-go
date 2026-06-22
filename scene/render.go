@@ -349,6 +349,18 @@ func (r *renderer) stackIn(box pptx.Box, nodes []SlideNode, slideID string) []pl
 // this node; text leaf renderers (Hero/Heading/Prose/Quote) use it to set
 // ParagraphOpts.Align. Container and visual nodes ignore it.
 func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID string, hAlign HAlign) {
+	// Safe-area clamp (R11.3, generalized in R11.12/D-092): cap every content node's
+	// box so its bottom never exceeds the slide safe area — not just top-level
+	// containers (Bento/Grid/Card) but also a leaf that an over-full card body or
+	// stack would push off-slide. Full-slide overlays — Decoration (which may bleed
+	// off-canvas by design) and SectionDivider — are exempt; they are not body
+	// content. Byte-identical when the box already fits (the clamp is a no-op).
+	switch n.(type) {
+	case Decoration, SectionDivider:
+		// full-slide overlay / intentional bleed — not clamped
+	default:
+		box = r.clampToSafeArea(box, slideID)
+	}
 	switch v := n.(type) {
 	case Hero:
 		r.renderHero(ps, box, v, hAlign)

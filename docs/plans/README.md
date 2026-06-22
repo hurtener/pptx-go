@@ -1297,6 +1297,26 @@ badges never collide or overflow the slide safe area.
 - The watermark text is emitted before the body content (z-order behind), carries a
   low ~13% alpha, and is inert (no alpha run) when unset.
 
+#### Phase 60 — adversarial content-fit fixtures
+
+**Subsystem:** scene — Layer 2 renderer (test harness + safe-area clamp)
+**RFC sections:** §10, §10.1
+**Deps:** Phases 49–59 (the Wave-11 per-component guards), brief 43.
+**What lands (R11.12, HIGH · both — engine side):**
+- A reusable adversarial harness rendering every component × {light, dark} under
+  hostile content (long headers, over-long pill/badge/row labels, oversized stat
+  values, many list items, dark fills), asserting the structural invariants: every
+  emitted box on the canvas (parsed from the XML — no recorder), header band ≤ body
+  top, fit-required text one line, chrome contrast ≥ 4.5:1, deterministic.
+- The suite **surfaced and fixed** an off-canvas card-body-leaf overflow: the R11.3
+  safe-area clamp is generalized to `renderNode` (every content node, exempting
+  full-slide `Decoration`/`SectionDivider` overlays), subsuming the three per-container
+  clamps. Byte-identical when content fits; an over-full card body is capped + warns
+  (legible compression stays the opt-in `VAlignFit`/`BodyVAlign` path) (D-092).
+**Acceptance criteria:**
+- Every box on-canvas under hostile content; header band above body; fit-text one
+  line; contrast passes; byte-identical across worker counts; existing goldens pass.
+
 ---
 
 ## 4. Post-V1 backlog

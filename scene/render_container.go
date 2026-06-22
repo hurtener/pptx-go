@@ -93,7 +93,8 @@ func (r *renderer) renderColumnJoin(ps *pptx.Slide, box, left, right pptx.Box, v
 }
 
 func (r *renderer) renderGrid(ps *pptx.Slide, box pptx.Box, v Grid, slideID string) {
-	box = r.clampToSafeArea(box, slideID) // R11.3: never tile cells off the slide bottom
+	// box is already clamped to the safe area by renderNode (R11.3/R11.12) before it
+	// is subdivided, so cells never tile off the slide bottom.
 	gap := r.theme.ResolveSpace(pptx.SpaceMD)
 	cells := layout.Grid(box, v.Columns, v.Ratio, gap, len(v.Cells))
 	for i, n := range v.Cells {
