@@ -210,6 +210,11 @@ semantics)*
   shrunk to one line via the R10.5 `fitScale`/`FontScale`. Fixes a long pill
   ("CUSTOMIZABLE") wrapping inside a fixed `In(1.0)` chip. Pure integer →
   deterministic. (R11.5, HIGH.)
+- `37-chrome-element-anti-collision.md` — when a card has both a header pill and a
+  status dot (both top-right anchored), place the dot left of the pill (`dotX =
+  pillX − gap − dotSz`, floored at `innerX`) so their boxes are disjoint; inert /
+  byte-identical when only one is set. Disjointness by construction (shares
+  `cardPillWidthOf`). (R11.6, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

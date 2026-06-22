@@ -1193,6 +1193,23 @@ badges never collide or overflow the slide safe area.
   header reservation equals the drawn pill width; pills render byte-identically
   across worker counts.
 
+#### Phase 54 — chrome-element anti-collision
+
+**Subsystem:** scene — Layer 2 renderer (card chrome)
+**RFC sections:** §12.1
+**Deps:** Phase 25 (D-054), Phase 53 (D-085 `cardPillWidthOf`), brief 37.
+**What lands (R11.6, HIGH · engine):**
+- When a card carries both a header pill and a status dot (both top-right anchored),
+  the dot is placed left of the pill (`dotX = pillX − gapSM − cardStatusDotSz`,
+  floored at `innerX`) so their boxes are disjoint — instead of both anchoring to
+  the same corner and overlapping (recreation slide 9).
+- Inert and byte-identical when only one of the two is set (the dot keeps its corner
+  placement); disjointness is by construction (shares `cardPillWidthOf` with the
+  drawn pill) (D-086).
+**Acceptance criteria:**
+- With both set, the dot shifts left of the pill (disjoint boxes); a dot-only card
+  keeps the corner placement (byte-identical).
+
 ---
 
 ## 4. Post-V1 backlog
