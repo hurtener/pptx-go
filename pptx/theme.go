@@ -107,6 +107,47 @@ type FontSpec struct {
 	// and 100 emit nothing — byte-identical. The scene renderer applies it to a
 	// node's paragraphs; emitted as OOXML a:pPr/a:lnSpc/a:spcPct. (D-061.)
 	LineHeight float64
+	// Case is the role's case transform (e.g. CaseUpper for tracked-caps
+	// eyebrows). It is rendered via the OOXML a:rPr/@cap attribute, so the run
+	// text stays original-case (round-trips) and PowerPoint/the rasterizer caps
+	// it at display. CaseNone (the zero value) emits nothing — byte-identical.
+	// (D-062.)
+	Case TextCase
+}
+
+// TextCase is a type role's case transform, rendered as the OOXML a:rPr/@cap
+// attribute (the run text is preserved; the display is cased). The zero value
+// CaseNone leaves text exactly as authored.
+type TextCase int
+
+const (
+	CaseNone     TextCase = iota // as authored (no cap attribute)
+	CaseUpper                    // all caps — a:rPr cap="all"
+	CaseSmallCaps                // small caps — a:rPr cap="small"
+)
+
+// capAttr returns the OOXML cap attribute value, or "" for CaseNone.
+func (c TextCase) capAttr() string {
+	switch c {
+	case CaseUpper:
+		return "all"
+	case CaseSmallCaps:
+		return "small"
+	default:
+		return ""
+	}
+}
+
+// textCaseFromCap is capAttr's read inverse.
+func textCaseFromCap(v string) TextCase {
+	switch v {
+	case "all":
+		return CaseUpper
+	case "small":
+		return CaseSmallCaps
+	default:
+		return CaseNone
+	}
 }
 
 // Bold reports whether the weight is bold (≥600).

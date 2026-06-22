@@ -507,6 +507,14 @@ A scene IR node that doesn't contain children. Listed in
 A shape's outline (builder): width (EMU), `Color`, and optional preset dash.
 Like `Fill`, its color resolves against the active `Theme`.
 
+## Case (type)
+
+A type role's case transform on a `FontSpec` (`FontSpec.Case`: `CaseNone` /
+`CaseUpper` / `CaseSmallCaps`) — rendered via OOXML `a:rPr/@cap` (`all`/`small`),
+so the run text stays original-case (round-trips) while the display is cased. A
+`RunStyle.Case` overrides per run; `CaseNone` = none (byte-identical). Pairs with
+`Tracking` for the tracked-caps eyebrow. See `docs/design/THEME.md`, `D-062`.
+
 ## Line height
 
 Paragraph leading on a `FontSpec` (`FontSpec.LineHeight`, percent of single;

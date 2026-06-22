@@ -466,6 +466,7 @@ type XTextProperties struct {
 	Bold       string       `xml:"b,attr,omitempty"`        // "1" when bold
 	Italic     string       `xml:"i,attr,omitempty"`        // "1" when italic
 	Spc        int          `xml:"spc,attr,omitempty"`      // letter-spacing, signed 1/100 pt (D-060)
+	Cap        string       `xml:"cap,attr,omitempty"`      // case transform: none/small/all (D-062)
 	Underline  string       `xml:"u,attr,omitempty"`        // none/sng/dbl/…
 	Strike     string       `xml:"strike,attr,omitempty"`   // noStrike/sngStrike/dblStrike
 	Baseline   int          `xml:"baseline,attr,omitempty"` // ST_Percentage (1000 = 1%)

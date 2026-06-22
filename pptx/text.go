@@ -103,6 +103,10 @@ type RunStyle struct {
 	// in points (signed). nil inherits the role's FontSpec.Tracking; a non-nil
 	// value (including 0) wins over the role. Emitted as a:rPr/@spc (D-060).
 	Tracking *float64
+	// Case optionally overrides the type role's case transform for this run. nil
+	// inherits the role's FontSpec.Case; a non-nil value (including CaseNone)
+	// wins. Emitted as a:rPr/@cap (D-062).
+	Case *TextCase
 }
 
 // ParagraphOpts configures a paragraph at creation time.
@@ -484,6 +488,16 @@ func (r *Run) Tracking() float64 {
 		return float64(pr.Spc) / 100.0
 	}
 	return 0
+}
+
+// Case returns the run's case transform, or CaseNone when none is set — the read
+// inverse of the resolved FontSpec.Case / RunStyle.Case (D-062). The run's Text()
+// is unchanged (the transform is a display attribute).
+func (r *Run) Case() TextCase {
+	if pr := r.run.TextProperties; pr != nil {
+		return textCaseFromCap(pr.Cap)
+	}
+	return CaseNone
 }
 
 // Color returns the run's text color and true, or nil and false when the run has

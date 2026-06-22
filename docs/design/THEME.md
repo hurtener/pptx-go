@@ -58,6 +58,15 @@ line-height to its paragraphs, emitted as OOXML `a:pPr/a:lnSpc/a:spcPct`
 into the wrapped-height model — is a later refinement; this token delivers the
 visual leading.)
 
+**Case** (case transform, D-062): `FontSpec.Case` is a per-type-role case
+transform (`CaseNone` / `CaseUpper` / `CaseSmallCaps`) — pairs with tracking for
+the canonical tracked-caps eyebrow. It is rendered via the OOXML `a:rPr/@cap`
+attribute (`all` / `small`), so the run **text stays original-case** (and
+round-trips) while the display is cased; an optional `RunStyle.Case *TextCase`
+overrides per run. `CaseNone` emits nothing (byte-identical). The engine provides
+the mechanism only — making the default caption role uppercase is the soul's
+choice (D-026), not the engine default.
+
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.
