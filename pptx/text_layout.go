@@ -138,6 +138,17 @@ func (rs RunStyle) toProps(t *Theme) *slide.XTextProperties {
 	if family != "" {
 		p.Latin = &slide.XLatinFont{Typeface: family}
 		set = true
+		// Carry the resolved numeric weight (in memory only) for the weight-aware
+		// embedding pass (R9.8, D-068): it lets the embedder request the actual
+		// weight file for the bucket rather than a synthetic 400/700.
+		w := spec.Weight
+		if w == 0 {
+			w = 400
+		}
+		if rs.Bold && w < 700 {
+			w = 700
+		}
+		p.Weight = w
 	}
 	if rs.Code {
 		// A subtle background tint sourced from the theme (D-013).

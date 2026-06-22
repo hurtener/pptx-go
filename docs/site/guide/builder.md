@@ -216,13 +216,16 @@ p.Save("deck.pptx") // every face the deck actually uses is embedded
 ```
 
 At save the pass walks every run, collects the distinct used faces — by family,
-bold, and italic — in a stable sorted order, and embeds each via the source. It
+weight, and italic — in a stable sorted order, and embeds each via the source. It
 is:
 
 - **a no-op without a `FontSource`** (and byte-identical to the prior output when
   `WithFontEmbedding` is off);
 - **warn-don't-fail** — a face the source cannot resolve logs a warning and is
   skipped; the save still succeeds;
+- **weight-aware** — it embeds the actual resolved weight file per OOXML cut
+  (the four regular/bold/italic/boldItalic slots), so a medium (500) role ships
+  the medium file rather than a synthetic 400;
 - **idempotent** — a face you embedded by hand with `EmbedFont(name, style,
   weight)` is not embedded twice;
 - **deterministic** — two saves of the same deck are byte-identical.

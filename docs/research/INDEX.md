@@ -134,6 +134,10 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   work is italic-aware fallback (resolve per `(family, italic)`, so an italic run
   lacking an italic cut falls back rather than faux-italicizing a sans) + the
   `<p:font>` embedded-list prefix fix. (R9.7, engine half.)
+- `21-weight-aware-embedding.md` — track the resolved numeric weight per run
+  (`XTextProperties.Weight`, `xml:"-"`) so the embedding pass ships the actual
+  weight file per OOXML bucket (nearest-nominal when weights collide) instead of a
+  synthetic 400/700; embeds one file per bucket (the 4-cut limit). (R9.8, engine.)
 - `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
   `clrMap` indirection, and font scheme map onto pptx-go's token roles.
 

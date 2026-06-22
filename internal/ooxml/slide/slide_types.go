@@ -474,6 +474,13 @@ type XTextProperties struct {
 	Highlight  *XHighlight  `xml:"highlight,omitempty"`
 	Latin      *XLatinFont  `xml:"latin,omitempty"`
 	HlinkClick *XHlinkClick `xml:"hlinkClick,omitempty"`
+
+	// Weight is the run's resolved numeric font weight (100–900), carried in
+	// memory for the weight-aware embedding pass (R9.8). It is never serialized
+	// (OOXML run properties have no numeric weight — only the b/i bits) nor
+	// parsed, so it is byte-identical and round-trip-neutral; a parsed deck leaves
+	// it 0 and the embedder infers 700/400 from Bold.
+	Weight int `xml:"-"`
 }
 
 // XHighlight is the run highlight (<a:highlight><a:srgbClr/></a:highlight>) —

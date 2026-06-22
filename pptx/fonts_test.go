@@ -388,6 +388,101 @@ func TestFontFallbackDeterministicIdempotent(t *testing.T) {
 }
 
 // ----------------------------------------------------------------------------
+// Phase 38 — weight-aware font embedding (R9.8, D-068)
+// ----------------------------------------------------------------------------
+
+// weightFontSource resolves per (family, weight) — so a test can prove the
+// embedder requested the actual resolved weight file. Key is "family|weight".
+type weightFontSource map[string][]byte
+
+func (m weightFontSource) Resolve(name, style string, weight int) ([]byte, error) {
+	if b, ok := m[fmt.Sprintf("%s|%d", name, weight)]; ok {
+		return b, nil
+	}
+	return nil, pptx.ErrFontNotFound
+}
+
+// weightThemeDeck builds a one-slide deck whose body role uses family at weight,
+// with a FontSource + embedding enabled.
+func weightThemeDeck(t *testing.T, family string, weight int, src pptx.FontSource, opts ...pptx.Option) *pptx.Presentation {
+	t.Helper()
+	theme := pptx.NewTheme(pptx.WithFonts(family, family))
+	spec := theme.Typography[pptx.TypeBody]
+	spec.Weight = weight
+	theme.Typography[pptx.TypeBody] = spec
+	all := append([]pptx.Option{pptx.WithTheme(theme), pptx.WithFontSource(src), pptx.WithFontEmbedding()}, opts...)
+	pres := pptx.New(all...)
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	tf.AddParagraph(pptx.ParagraphOpts{}).AddRun("body", pptx.RunStyle{TypeRole: pptx.TypeBody})
+	return pres
+}
+
+func firstFontBytes(t *testing.T, pres *pptx.Presentation) []byte {
+	t.Helper()
+	pkg := reopenPackage(t, pres)
+	defer func() { _ = pkg.Close() }()
+	part := pkg.GetPartByStr("/ppt/fonts/font1.fntdata")
+	if part == nil {
+		t.Fatal("font1.fntdata missing")
+	}
+	return part.Blob()
+}
+
+func TestWeightAwareEmbedsResolvedWeightFile(t *testing.T) {
+	// A medium (500) body role must ship the medium file, not a synthetic 400.
+	src := weightFontSource{"Inter|400": []byte("INTER-400"), "Inter|500": []byte("INTER-500")}
+	pres := weightThemeDeck(t, "Inter", 500, src)
+	if got := countFontParts(t, pres); got != 1 {
+		t.Fatalf("font parts = %d, want 1", got)
+	}
+	if b := firstFontBytes(t, pres); string(b) != "INTER-500" {
+		t.Errorf("embedded weight file = %q, want INTER-500 (the resolved medium)", b)
+	}
+}
+
+func TestWeightAwareSingleWeightOneFile(t *testing.T) {
+	src := weightFontSource{"Inter|400": []byte("INTER-400")}
+	pres := weightThemeDeck(t, "Inter", 400, src)
+	if got := countFontParts(t, pres); got != 1 {
+		t.Errorf("single-weight deck embedded %d files, want 1", got)
+	}
+}
+
+func TestWeightAwareCoalescesBucket(t *testing.T) {
+	// Two non-bold weights of one family collide on the regular bucket; the one
+	// nearest the nominal 400 wins, one file ships, and the coalescing is logged.
+	src := weightFontSource{"Inter|400": []byte("INTER-400"), "Inter|500": []byte("INTER-500")}
+	theme := pptx.NewTheme(pptx.WithFonts("Inter", "Inter"))
+	body := theme.Typography[pptx.TypeBody]
+	body.Weight = 400
+	theme.Typography[pptx.TypeBody] = body
+	cap := theme.Typography[pptx.TypeCaption]
+	cap.Family, cap.Weight = "Inter", 500
+	theme.Typography[pptx.TypeCaption] = cap
+
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src),
+		pptx.WithFontEmbedding(), pptx.WithLogger(logger))
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p.AddRun("body", pptx.RunStyle{TypeRole: pptx.TypeBody})
+	p.AddRun("CAP", pptx.RunStyle{TypeRole: pptx.TypeCaption})
+
+	if got := countFontParts(t, pres); got != 1 {
+		t.Fatalf("coalesced bucket embedded %d files, want 1", got)
+	}
+	if b := firstFontBytes(t, pres); string(b) != "INTER-400" {
+		t.Errorf("coalesced winner = %q, want INTER-400 (nearest nominal)", b)
+	}
+	if log := buf.String(); !strings.Contains(log, "coalesced") {
+		t.Errorf("coalescing not logged:\n%s", log)
+	}
+}
+
+// ----------------------------------------------------------------------------
 // Phase 37 — italic-aware font fallback (R9.7, D-067)
 // ----------------------------------------------------------------------------
 

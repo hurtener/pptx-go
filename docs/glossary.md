@@ -345,13 +345,17 @@ Rendered as a lighter rounded pill — not the full card chrome (D-044).
 ## Font-embedding pass
 
 The opt-in save-time pass enabled by `pptx.WithFontEmbedding()` that walks
-every slide's runs, collects the distinct used faces — `(family, bold,
+every slide's runs, collects the distinct used faces — `(family, weight,
 italic)` — in a stable sorted order, and `EmbedFont`s each via the
 registered `FontSource`, so a deck themed with a brand display/heading face
-ships those faces. It is a no-op without a `FontSource`, warns (does not
-fail) on a face the source cannot resolve, is idempotent against manual
-`EmbedFont` calls, and is byte-identical to the prior output when off.
-(D-065, R9.1, `RFC §7.6`.)
+ships those faces. It is **weight-aware** (D-068): it embeds the actual
+resolved weight file per OOXML bucket (the four regular/bold/italic/boldItalic
+cuts), choosing the weight nearest the bucket nominal when several collide, so
+a soul's medium (500) regular role ships the medium file rather than a
+synthetic 400. It is a no-op without a `FontSource`, warns (does not fail) on
+a face the source cannot resolve, is idempotent against manual `EmbedFont`
+calls, and is byte-identical to the prior output when off. (D-065, D-068,
+R9.1/R9.8, `RFC §7.6`.)
 
 ## Font fallback chain
 

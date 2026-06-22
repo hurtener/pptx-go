@@ -157,11 +157,15 @@ pptx.New(pptx.WithFontSource(src), pptx.WithFontEmbedding())
 
 `EmbedFont` writes a `*.fntdata` part, relates it to `presentation.xml`, and
 records it in `<p:embeddedFontLst>`. `WithFontEmbedding()` runs a save-time
-pass that walks every run, collects the distinct used faces (family, bold,
+pass that walks every run, collects the distinct used faces (family, weight,
 italic) in a stable sorted order, and `EmbedFont`s each — a no-op without a
 `FontSource`, warn-don't-fail on a face that can't resolve, idempotent
-against manual `EmbedFont`, and byte-identical when off. Subsetting (embed
-only used glyphs) and per-numeric-weight files are V1.x.
+against manual `EmbedFont`, and byte-identical when off. It is weight-aware
+(D-068): it embeds the actual resolved weight file per OOXML bucket (the four
+regular/bold/italic/boldItalic cuts), so a medium (500) role ships the medium
+file, not a synthetic 400. PowerPoint exposes only four cuts per family, so the
+engine embeds one file per bucket (a caller whose rasterizer needs finer cuts
+calls `EmbedFont` directly). Subsetting (embed only used glyphs) is V1.x.
 
 > The lazy `Color` interface and the `pptx.TokenColor(role)` / `pptx.RGB(...)`
 > builder constructors arrive with the builder spine (D-030); until then the

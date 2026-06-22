@@ -69,11 +69,13 @@ scaffold (master + layout + theme), ready for slides immediately.
 **Embedding brand fonts.** A theme that names a non-system face (e.g. a serif
 display) only renders with it where it is installed — unless its bytes ship in
 the `.pptx`. Register a `FontSource` and add `WithFontEmbedding()`: at save the
-builder walks every run, collects the distinct used faces (by family, bold,
-italic) in a stable order, and embeds each via the source. It is a no-op without
-a source, warn-don't-fail on a face that can't resolve, idempotent against a
-manual `EmbedFont(name, style, weight)`, deterministic (two saves are
-byte-identical), and byte-identical to the prior output when off.
+builder walks every run, collects the distinct used faces (by family, weight,
+italic) in a stable order, and embeds each via the source. It is weight-aware —
+it embeds the actual resolved weight file per OOXML cut (a medium 500 role ships
+the medium file, not a synthetic 400) — a no-op without a source, warn-don't-fail
+on a face that can't resolve, idempotent against a manual `EmbedFont(name, style,
+weight)`, deterministic (two saves are byte-identical), and byte-identical to the
+prior output when off.
 
 ### Add slides
 

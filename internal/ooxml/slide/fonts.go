@@ -6,15 +6,17 @@ package slide
 // distinct typefaces explicitly set on runs. Group shapes carry no text in the
 // V1 model, so they are not traversed.
 
-// FontFace is one distinct text face used on a slide: a Latin typeface plus its
-// bold/italic flags. The emitted run property (a:rPr) carries only b/i, not a
-// numeric weight, so a face buckets into the four OOXML embeddedFont slots
-// (regular / bold / italic / boldItalic) — this is the unit the embedding pass
-// embeds.
+// FontFace is one distinct text face used on a slide: a Latin typeface, its
+// bold/italic flags, and its resolved numeric weight (R9.8). The emitted run
+// property (a:rPr) carries only b/i, so for OOXML embedding a face still buckets
+// into the four embeddedFont slots (regular / bold / italic / boldItalic); the
+// weight lets the embedding pass resolve the correct physical weight file for a
+// bucket (e.g. a 500 "medium" regular, not a synthetic 400).
 type FontFace struct {
 	Typeface string
 	Bold     bool
 	Italic   bool
+	Weight   int
 }
 
 // UsedFontFaces returns the distinct faces explicitly set on the slide's runs,
@@ -39,10 +41,20 @@ func (s *SlidePart) UsedFontFaces() []FontFace {
 				if pr == nil || pr.Latin == nil || pr.Latin.Typeface == "" {
 					continue
 				}
+				bold := pr.Bold == "1"
+				weight := pr.Weight
+				if weight == 0 { // parsed/round-tripped deck: infer from the bold bit
+					if bold {
+						weight = 700
+					} else {
+						weight = 400
+					}
+				}
 				f := FontFace{
 					Typeface: pr.Latin.Typeface,
-					Bold:     pr.Bold == "1",
+					Bold:     bold,
 					Italic:   pr.Italic == "1",
+					Weight:   weight,
 				}
 				if seen[f] {
 					continue

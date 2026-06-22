@@ -2060,4 +2060,45 @@ extend to it and to numeric weight (R9.8).
 
 ---
 
+## D-068 — Weight-aware font embedding: embed the actual weight file per OOXML bucket
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** Brands use a weight ladder (300/400/500/700). The embedding pass
+(D-065) keyed the used-face set on `(family, bold, italic)` from each run's `rPr`
+— which carries only `b`/`i`, no numeric weight — and embedded a *synthetic*
+weight (`700` if bold else `400`). So a soul's `500` "medium" role collapsed to the
+regular bucket and shipped the 400 file, not the medium it asked for. Wave 9 unit
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R9.8, MED · both; engine half — D-059), the
+last R9 engine requirement (R9.12 subsetting deferred to V2).
+**Decision:** Track the resolved numeric weight per run: add
+`slide.XTextProperties.Weight int` with `xml:"-"` (in-memory only — OOXML run
+props have no numeric weight; never serialized or parsed, so byte-identical and
+round-trip-neutral). `toProps` sets it to the effective weight (the role's
+`FontSpec.Weight`, bumped to ≥700 for a per-run bold override). `slide.FontFace`
+gains `Weight` and `UsedFontFaces` populates it (inferring `700/400` from the bold
+bit when `Weight==0`, e.g. a parsed deck). `autoEmbedFonts` collects the distinct
+`(family, weight, italic)` set, groups by OOXML bucket
+`(family, weight≥600, italic)`, and per bucket embeds the **actual** weight
+nearest the bucket's nominal (`400` regular, `700` bold; ties → the lower weight)
+via `EmbedFont` — so the provider returns the correct physical file. When several
+used weights collide on one bucket the extra ones are coalesced (logged at Debug).
+Deterministic bucket ordering preserves byte-identical part/rel ids.
+**Consequences:** A soul's medium/light weights ship the right file within each of
+PowerPoint's four cuts per family; additive and deterministic (no `FontSource` /
+embedding off → byte-identical; the weight never flips `toProps`'s emit flag, so
+unstyled runs still emit no `rPr`). **Deviation (§4.3) from R9.8's literal "embeds
+three distinct files" acceptance:** the engine embeds **one file per OOXML bucket**
+(the four `embeddedFont` slots), not one per numeric weight. Embedding additional
+same-bucket weight files purely so an *external rasterizer* can pick a finer weight
+would create `embeddedFontLst`-unreferenced font parts, risking the no-repair-
+prompt guarantee (D-020) for zero PowerPoint benefit (PowerPoint exposes only four
+cuts). Per D-026 that rasterizer concern is the caller's — a caller can call
+`EmbedFont` for extra cuts explicitly. The weight-keyed collector and the resolver
+callback (D-067) are shaped to support multi-file-per-bucket later if the
+unreferenced-part question is resolved. **Deferred:** subsetting + OS/2 `fsType`
+(R9.12 → V2).
+
+---
+
 *Append new entries below this line.*
