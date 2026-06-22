@@ -2757,4 +2757,30 @@ guard asserts byte-identical pill output across worker counts.
 
 ---
 
+## D-086 — Card chrome anti-collision (status dot × header pill)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A card's header pill (right-aligned, top of the header row) and its
+status dot (top-right corner) are positioned independently — both right edges resolve
+to `box.X + box.W − pad` and both sit at the top — so when both are set they overlap
+(recreation slide 9: a "POPULAR" pill with the dot on its right edge). R11.6
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** In the status-dot block of `renderCardChrome`, when both `c.pill != ""`
+and `c.statusDot != nil`, place the dot to the left of the pill:
+`dotX = max(innerX, pillX − gapSM − cardStatusDotSz)` where
+`pillX = innerX + innerW − cardPillWidthOf(theme, pill, innerW)`. The dot's right
+edge is then `pillX − gapSM`, a gap to the left of the pill's left edge, so the two
+boxes are disjoint by construction for any pill length (the dot derives from the same
+`cardPillWidthOf` the pill is drawn with). When only one of the two is set the dot
+keeps its corner placement (`box.X + box.W − pad − cardStatusDotSz`) → **byte-
+identical** (the existing rich-visuals goldens set the dot without a pill, so they are
+unchanged). The `innerX` floor keeps the dot on-card for a pathologically wide pill.
+**Scope:** the pill × dot top-right pair only; the watermark (bottom-anchored, behind
+the body) is a separate z-order/region concern for R11.11.
+**Consequences:** A card with both a header pill and a status dot renders them
+side-by-side without overlap, for any pill label. No public API change, no new token.
+
+---
+
 *Append new entries below this line.*

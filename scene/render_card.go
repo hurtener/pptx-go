@@ -467,7 +467,19 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	// 5. Status dot (D-054): a small filled dot in the top-right corner, inset by
 	// the padding. Drawn over the header band/text; inert when unset.
 	if c.statusDot != nil {
-		dot := pptx.Box{X: box.X + box.W - pad - cardStatusDotSz, Y: box.Y + pad, W: cardStatusDotSz, H: cardStatusDotSz}
+		dotX := box.X + box.W - pad - cardStatusDotSz
+		// Anti-collision (R11.6, D-086): the dot and the header pill both anchor to
+		// the top-right and would overlap. When both are set, place the dot to the
+		// left of the pill (a gap apart) so their boxes are disjoint. Byte-identical
+		// when only one of the two is set (dot stays in the corner).
+		if c.pill != "" {
+			pillX := innerX + innerW - cardPillWidthOf(r.theme, c.pill, innerW)
+			dotX = pillX - gapSM - cardStatusDotSz
+			if dotX < innerX {
+				dotX = innerX
+			}
+		}
+		dot := pptx.Box{X: dotX, Y: box.Y + pad, W: cardStatusDotSz, H: cardStatusDotSz}
 		ps.AddShape(pptx.ShapeEllipse, dot, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(*c.statusDot))))
 		r.stats.Shapes++
 	}
