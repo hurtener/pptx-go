@@ -144,6 +144,12 @@ semantics)*
   `RunStyle.FontScale` multiplier emits the reduced `@sz` so a too-wide title or
   price fits one line; never upscales; default OFF byte-identical; the scale keeps
   the role size token as source of truth (P2). (R10.5, HIGH.)
+- `27-fill-cap-no-overgrow.md` — opt-in `VAlignFillCapped`: a bounded
+  `distributeFill` that grows each flexible node by at most `growthMax×preferredH`
+  so a sparse node can't balloon; the residual slack becomes balanced spacing
+  (even top margin + widened inter-node gaps, `residual/(n+1)`), reusing the
+  Justify/Fit offset-and-gap mechanism; uncapped `VAlignFill` byte-identical.
+  (R10.6, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

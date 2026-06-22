@@ -146,6 +146,32 @@ func TestRenderDeterministic_VAlignFit(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_VAlignFillCapped guards the R10.6 capped fill: a deck of
+// sparse capped-fill slides must render byte-identically across worker counts (the
+// growth cap and the balanced-spacing residual are integer / basis-point math).
+func TestRenderDeterministic_VAlignFillCapped(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:      string(rune('A' + (i % 26))),
+			Content: scene.Alignment{Vertical: scene.VAlignFillCapped},
+			Nodes: []scene.SlideNode{
+				scene.Heading{Text: rt("Section"), Level: 1},
+				scene.Grid{Columns: 2, Cells: []scene.SlideNode{
+					scene.Card{Header: "a"}, scene.Card{Header: "b"},
+					scene.Card{Header: "c"}, scene.Card{Header: "d"},
+				}},
+				scene.Card{Header: "sparse"},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("VAlignFillCapped: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_WithAssets guards determinism when a media-bearing
 // node (code_block) is mixed into a multi-slide deck: those slides render
 // sequentially, so distinct image parts are numbered in scene order every run.

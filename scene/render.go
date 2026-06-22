@@ -734,6 +734,22 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		}
 	}
 
+	// VAlignFillCapped (R10.6): like VAlignFill but each flexible node grows by at
+	// most a pinned factor of its preferred height, so a sparse node cannot
+	// balloon. The slack beyond the caps (residual) is distributed as balanced
+	// spacing — an even top margin plus widened inter-node gaps (residual/(n+1)) —
+	// instead of inflating one node. Integer math, worker-count independent.
+	if align.Vertical == VAlignFillCapped {
+		if slack := box.H - totalH; slack > 0 {
+			used := distributeFillCapped(nodes, heights, slack)
+			if residual := slack - used; residual > 0 {
+				space := residual / pptx.EMU(n+1)
+				startY = box.Y + space
+				effectiveGap = gap + space
+			}
+		}
+	}
+
 	out := make([]placement, 0, n)
 	y := startY
 	for i, nd := range nodes {
@@ -820,6 +836,44 @@ func distributeFill(nodes []SlideNode, heights []pptx.EMU, slack pptx.EMU) {
 		heights[idx] += add
 		used += add
 	}
+}
+
+// fillGrowthMaxBP caps how much a flexible node grows under VAlignFillCapped: at
+// most this fraction (in basis points) of its preferred height is ADDED, so a
+// node grows to at most (1 + fillGrowthMaxBP/10000)× its preferred height.
+const fillGrowthMaxBP = 10000 // +1.0× preferred (at most double)
+
+// distributeFillCapped grows the flexible nodes toward their proportional share
+// of slack, but caps each node's growth at fillGrowthMaxBP × its preferred
+// height, so a sparse node cannot balloon. It mutates heights in place and
+// returns the total height actually consumed by growth (≤ slack); the caller
+// distributes the residual (slack − used) as balanced spacing. With no flexible
+// node (or all flexible heights zero — no cap room) nothing grows and it returns
+// 0. Pure integer / basis-point math, so the result is deterministic regardless
+// of worker scheduling.
+func distributeFillCapped(nodes []SlideNode, heights []pptx.EMU, slack pptx.EMU) pptx.EMU {
+	var flex []int
+	var flexH pptx.EMU
+	for i, nd := range nodes {
+		if isFlexible(nd) {
+			flex = append(flex, i)
+			flexH += heights[i]
+		}
+	}
+	if len(flex) == 0 || flexH <= 0 {
+		return 0
+	}
+	var used pptx.EMU
+	for _, idx := range flex {
+		share := slack * heights[idx] / flexH            // proportional, floored
+		capAdd := heights[idx] * fillGrowthMaxBP / 10000 // ceiling for this node
+		if share > capAdd {
+			share = capAdd
+		}
+		heights[idx] += share
+		used += share
+	}
+	return used
 }
 
 // fitCompress applies the R10.2 deterministic fit-to-region compression to an

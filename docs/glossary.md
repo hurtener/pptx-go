@@ -1050,6 +1050,17 @@ the deterministic `Fit-to-region compression` pass — the compression inverse o
 `VAlignFill`. Opt-in; byte-identical to `VAlignTop` when the content already
 fits. See `D-071` and `RFC-001-pptx-go.md §10`.
 
+## VAlignFillCapped
+
+The body-stack vertical alignment (`scene.VAlignFillCapped`, on
+`SceneSlide.Content.Vertical`) that is `VAlignFill` with a ceiling (D-075): each
+`Flexible node` grows by at most a pinned factor of its preferred height
+(`fillGrowthMaxBP`, +1.0×), so a near-empty node cannot balloon. The leftover
+slack beyond the caps becomes balanced spacing — an even top margin and widened
+inter-node gaps (`residual/(n+1)`) — instead of inflating one node. With no
+flexible node, or no slack, it is equivalent to `VAlignTop`; uncapped
+`VAlignFill` is unchanged. See `D-075` and `RFC-001-pptx-go.md §10`.
+
 ## Variant (theme variant)
 
 A named theme variant (`light`, `dark`, `print`, brand-specific). The

@@ -224,6 +224,9 @@ region:
   its frame instead of reading thin.
 - `VAlignFit` — the compression inverse: when the stack is **taller** than the
   region, **shrink it to fit** instead of letting content spill off-slide.
+- `VAlignFillCapped` — like `VAlignFill`, but each flexible node grows by at most
+  a pinned factor of its preferred height, so a near-empty node can't balloon; the
+  leftover slack becomes **even spacing** instead.
 
 Under `VAlignFill` the leftover height is shared among the flexible nodes in
 proportion to their natural height, deterministically. Text leaves and atoms
@@ -242,6 +245,14 @@ A stack that already fits is byte-identical to `VAlignTop`; if the content is so
 over-full that even the floors can't absorb it, the overflow warning still fires.
 The math is integer-EMU, so the result is identical regardless of worker count
 (see [D-071](/reference/decisions)).
+
+`VAlignFillCapped` bounds the opposite extreme. Plain `VAlignFill` grows flexible
+nodes proportionally with no ceiling, so a near-empty card can balloon to consume
+all the slack. `VAlignFillCapped` caps each flexible node's growth at a pinned
+factor of its preferred height (it can at most double) and turns the leftover
+slack into balanced whitespace — an even top margin and widened inter-node gaps —
+so a sparse-plus-dense mix reads evenly instead of as one oversized card. Uncapped
+`VAlignFill` is unchanged (see [D-075](/reference/decisions)).
 
 ### Slide chrome
 

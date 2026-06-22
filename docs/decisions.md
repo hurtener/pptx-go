@@ -2338,4 +2338,36 @@ shape.
 
 ---
 
+## D-075 — Fill cap / no over-grow (VAlignFillCapped)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `VAlignFill` grows flexible nodes proportionally to their preferred
+height with no ceiling, so a near-empty node balloons (the recreation's "Canvas"
+card grew to an enormous height holding one sentence while the dense rows
+overflowed). R10.6 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** Add an opt-in `VAlignFillCapped` value to the `VAlign` enum (after
+`VAlignFit`). It calls a new `distributeFillCapped(nodes, heights, slack)` that
+grows each flexible node by its proportional share *capped* at `fillGrowthMaxBP ×
+its preferred height` (`fillGrowthMaxBP = 10000` → at most +1.0×, i.e. a node can
+at most double), and returns the total growth used (`≤ slack`). `alignedStackIn`
+then distributes the residual (`slack − used`) as balanced spacing — `space =
+residual/(n+1)` added to the top margin (`startY`) and to each inter-node gap
+(`effectiveGap`) — reusing the Justify/Fit offset-and-gap mechanism, so the
+leftover reads as even whitespace rather than one oversized node. All integer /
+basis-point math — deterministic regardless of worker count.
+**Consequences:** A sparse node in a capped-fill stack grows by no more than its
+cap and the surplus becomes even spacing; the placed stack stays within the box
+(`used ≤ slack`, floored spacing). Uncapped `VAlignFill` is untouched (still calls
+the unchanged `distributeFill`) — byte-identical; the enum value is appended, so
+all existing `VAlign` values and the zero value are unchanged. **Deviation
+(§4.3):** a pinned `growthMax` is used, not the spec's alternative per-node
+`MaxGrow` — a per-node cap would touch every flexible node type for marginal
+benefit; `distributeFillCapped` can take a per-node cap later. Orthogonal to
+`D-071` (VAlignFit compresses an over-full stack; this bounds an under-full one).
+Extends `D-052` (`VAlignFill`/`distributeFill`); mirrors `D-071`'s opt-in-new-mode
+shape.
+
+---
+
 *Append new entries below this line.*

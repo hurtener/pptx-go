@@ -87,6 +87,13 @@ const (
 	// count. The card-interior-padding and display-type-scale sub-steps are
 	// layered in by separate engine units.
 	VAlignFit
+	// VAlignFillCapped is VAlignFill with a ceiling: each flexible node grows by
+	// at most a pinned factor of its preferred height, so a near-empty node cannot
+	// balloon to consume all the slack. The leftover slack beyond the caps becomes
+	// balanced spacing — an even top margin and widened inter-node gaps — instead
+	// of inflating one node. With no flexible node, or when the stack already
+	// fills the region, it is equivalent to VAlignTop. Deterministic integer EMU.
+	VAlignFillCapped
 )
 
 // String returns the vertical alignment name.
@@ -102,6 +109,8 @@ func (v VAlign) String() string {
 		return "fill"
 	case VAlignFit:
 		return "fit"
+	case VAlignFillCapped:
+		return "fill-capped"
 	default:
 		return "top"
 	}
