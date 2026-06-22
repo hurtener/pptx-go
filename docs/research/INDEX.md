@@ -220,6 +220,12 @@ semantics)*
   In(1.5))`, then `fitScale`/`FontScale` shrinks a label that still overflows the
   cap. Fixes "One agent" breaking mid-word in the fixed `In(0.62)` ellipse; "vs"
   keeps the base (byte-identical). (R11.7, HIGH.)
+- `39-stat-value-overflow-guard.md` — a pinned role ladder for the Stat value
+  (`statValueFit`): walk `[TypeDisplay, TypeH1, TypeH2]` and pick the first that fits
+  one line, else the floor + a `fitScale` shrink — so a wide value ("$4,000+") never
+  wraps and crowds the caption. Gated on `AutoFit` (D-074 opt-in) → AutoFit-off and
+  AutoFit-on-fitting are byte-identical; the existing AutoFit tests stay green.
+  Stack-height clamp deferred (needs `slideID`). (R11.8, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

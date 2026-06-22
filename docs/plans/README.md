@@ -1228,6 +1228,25 @@ badges never collide or overflow the slide safe area.
 - A multi-word label grows the badge beyond the base; "vs" keeps the base; an
   over-long label caps at the max; deterministic across worker counts.
 
+#### Phase 56 — stat-value overflow guard
+
+**Subsystem:** scene — Layer 2 renderer (Stat leaf)
+**RFC sections:** §11.1, §10.2
+**Deps:** Phase 28 (D-057 Stat), Phase 43 (D-074 `fitScale`/AutoFit), brief 39.
+**What lands (R11.8, HIGH · engine):**
+- `statValueFit` keeps a Stat value on one line via a pinned role ladder
+  (`TypeDisplay → TypeH1 → TypeH2`): pick the first role whose value fits one line,
+  else the `TypeH2` floor plus a `fitScale` shrink. So a wide value ("$4,000+") no
+  longer wraps and crowds the caption beneath it.
+- Gated on `AutoFit` (the D-074 opt-in): AutoFit-off and AutoFit-on-fitting are
+  byte-identical (`TypeDisplay`, no scale); the ladder applies only to AutoFit-on
+  wide values. The existing AutoFit render / determinism tests stay green. The
+  optional value+label+delta stack-height clamp is deferred (D-088).
+**Acceptance criteria:**
+- The value steps `Display → H1 → H2 → floor+scale` as the box narrows and fits one
+  line at each width (above the floor); AutoFit-off keeps the full display size;
+  deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -1014,8 +1014,11 @@ asset resolution. See `RFC-001-pptx-go.md §10.4`.
 A scene IR leaf node (`scene.Stat`): a hero big-number metric — a display-scale
 `Value` with a `Label` and an optional directional `Delta` (toned by `Delta
 tone`). A `Grid` of `Stat`s forms a metric/pricing strip. The engine renders the
-value/delta verbatim — it formats no numbers (D-057). Distinct from `Stats` (the
-render-result struct). See `RFC-001-pptx-go.md §11.1`.
+value/delta verbatim — it formats no numbers (D-057). With `AutoFit`, the `Value`
+stays on **one line** via a pinned role ladder (`TypeDisplay → H1 → H2`, then a font
+shrink at the floor), so a wide value like "$4,000+" never wraps and crowds the
+caption (R11.8, `D-088`); `AutoFit`-off keeps the full display size (byte-identical).
+Distinct from `Stats` (the render-result struct). See `RFC-001-pptx-go.md §11.1`.
 
 ## Stats
 
