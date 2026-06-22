@@ -15,6 +15,7 @@ brand := pptx.NewTheme(
 	pptx.WithName("Acme"),
 	pptx.WithAccent("2563EB"),                  // override the accent surface color
 	pptx.WithFonts("Poppins", "Inter"),         // heading + body families
+	pptx.WithDisplayFont("Playfair Display"),   // optional distinct display face for TypeDisplay
 )
 
 clone := brand.Clone() // deep copy; themes are reusable, mutate the copy

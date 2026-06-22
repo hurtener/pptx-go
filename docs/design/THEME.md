@@ -37,7 +37,13 @@ in the new visual language.
 `TypeMono`, `TypeCode`.
 
 A rich-text `Run`'s typography comes from its `RunStyle.TypeRole` (size +
-family). **Inline code** (`RunStyle.Code = true`, D-013) is not a new token —
+family). The theme carries three font-scheme faces: `HeadingFont` (display +
+headings), `BodyFont`, and the optional `DisplayFont` (D-063) — when set,
+`TypeDisplay` uses `DisplayFont` (the big editorial face) instead of
+`HeadingFont`, so a brand can pair a serif display with a separate sans for
+headings. `WithFonts(heading, body)` + `WithDisplayFont(family)` set them
+(order-independent); omitting `DisplayFont` leaves `TypeDisplay` on `HeadingFont`
+(byte-identical). **Inline code** (`RunStyle.Code = true`, D-013) is not a new token —
 it composes existing ones: the run's family switches to `TypeMono` and a subtle
 background tint is drawn from `ColorSurfaceAlt`. Swap either token and inline
 code re-renders accordingly.
