@@ -77,11 +77,19 @@ align across rows. Render policy: **container**.
 | --- | --- | --- |
 | `Columns` | `int` | Shared column units a row's spans are measured against (≥ 1) |
 | `Rows` | `[]BentoRow` | The rows (`{Label string; Cells []BentoCell}`) |
+| `WeightedRows` | `bool` | Opt-in: size each row to its content (clamped to fit) instead of equal rows |
 
 Each `BentoCell` is `{Span int; Node SlideNode}` — a span-S cell occupies S of
 the `Columns` units (so a span-2 cell is twice a span-1 cell). A row's spans sum
 to ≤ `Columns`. The left-label gutter is reserved only when at least one row sets
 a `Label`.
+
+By default every bento row gets an equal share of the height. When a sparse row
+and a dense row share a bento that wastes the sparse row's band and starves the
+dense one. Set `WeightedRows: true` to size each row to its content's preferred
+height instead — the dense row grows, the sparse row shrinks, and if the rows
+would overflow they are scaled down together so the bento always fits its region.
+The default (equal rows) is unchanged.
 
 ```go
 bento := scene.Bento{
