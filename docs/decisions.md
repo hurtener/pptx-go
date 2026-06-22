@@ -2150,4 +2150,36 @@ read-side round-trip, and font subsetting.
 
 ---
 
+## D-070 — Content-aware card header height (wrapped-title-aware)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A card's header row advanced by a fixed `cardEyebrowRowH`/
+`cardTitleRowH` in both `cardHeaderBottom` (body-Y) and `renderCardChrome` (the
+emitted header frame + the D-054 band). A header that wraps to two lines in a
+narrow card left the body starting at the single-line bottom — the second header
+line overlapped the body. First CRITICAL unit of Wave 10
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R10.1, engine; opens R10 content-fit).
+**Decision:** Add two shared helpers in `scene/render_card.go`:
+`cardHeaderColumnW(box,c)` (the true header text column = innerW − icon-left shift
+− header-pill reservation) and `cardHeaderRowHeights(box,c)` (eyebrow/title
+height = the per-row constant × `wrappedLines(text, role, headerW, theme)`).
+`cardHeaderBottom` and `renderCardChrome` both route through them, so the body Y,
+the D-054 header band (sized off `cardHeaderBottom`), and the emitted eyebrow/
+title text frames all agree and a wrapped header never collides with the body.
+`wrappedLines` (brief 09) is the existing deterministic `ceil(naturalWidth/avail)`
+estimator; a plain header string wraps as `RichText{{Text: s}}`.
+**Consequences:** Long card headers lay out below their wrapped height (no
+overlap); the header band sizes to the wrapped height. Additive and
+deterministic: `wrappedLines` returns 1 for fitting text, so a single-line header
+is byte-identical (same boxes, band, body Y) — only wrapping headers change (the
+fix). The per-line advance stays the fixed `cardTitleRowH`/`cardEyebrowRowH`
+constant (not D-061 leading-derived), preserving the R9.4 estimator deferral.
+**Deferred to R10.10 (estimate-actual-parity):** making `preferredHeight`'s
+`cardChromeEst` (a fixed ~1.2") wrapped-header-aware — this phase fixes the
+*composed* geometry (the CRITICAL overlap); the slot-size estimate parity follows
+(same visual-first / estimator-later split as D-061).
+
+---
+
 *Append new entries below this line.*

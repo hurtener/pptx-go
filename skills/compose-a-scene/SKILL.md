@@ -247,7 +247,10 @@ of lines its text wraps to, so a long paragraph doesn't overlap the node beneath
 it, and a slide whose text genuinely exceeds the body region records a
 `content overflows its region` warning (the signal to flag a slide as too full).
 The estimate is deterministic; short single-line content is allotted the same
-compact height and never falsely warns.
+compact height and never falsely warns. A `Card`/`CardSection` header (and
+eyebrow) is likewise wrapped-aware: a header that wraps to several lines in a
+narrow card pushes the body down below the wrapped header instead of colliding
+with it (single-line headers are unchanged).
 
 `SceneSlide.Content.Vertical` aligns the body stack: `VAlignTop` (default),
 `VAlignCenter`, `VAlignBottom`, `VAlignJustify`, and `VAlignFill`. `VAlignFill`
