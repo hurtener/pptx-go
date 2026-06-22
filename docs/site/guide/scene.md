@@ -194,8 +194,19 @@ type SlideColors struct {
 
 For a `VariantDark` slide these are the **derived dark palette** the slide
 rendered with — so you can compute true text/surface contrast against the real
-background and apply your own thresholds. The engine does no contrast logic; it
-only reports what it resolved.
+background and apply your own thresholds.
+
+### Chrome text auto-contrast
+
+Card and container chrome text picks a legible color from the surface behind it:
+a card header, eyebrow, header pill, the `TwoColumn` join-badge label, and a
+`Stat` value render light on a dark fill or a `VariantDark` slide and dark on a
+light surface — so a header is never black-on-dark and a same-hue eyebrow never
+disappears into its band. It is deterministic and **byte-identical on a light
+surface** (a light deck renders exactly as before), and it is a mechanism, not a
+taste: pass an explicit run `Color` to override it. The engine still encodes no
+opinion — it chooses the contrast-correct token by a fixed luminance rule and
+reports the resolved colors through `Stats.Colors`.
 
 ### Layout sizing and overflow
 

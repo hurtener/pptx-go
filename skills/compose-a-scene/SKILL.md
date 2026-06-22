@@ -239,8 +239,17 @@ that wants warnings to be fatal inspects `Stats.Warnings` itself.
 `Stats.Colors` reports, per slide (scene order), the resolved `Canvas`/`Surface`/
 `PrimaryText` RGBs the engine rendered with — the **derived dark palette** for a
 `VariantDark` slide — so a caller can compute its own text/surface contrast
-against the real background. The engine does no contrast logic; it only reports
-what resolved.
+against the real background.
+
+Card and container **chrome text auto-contrasts** against the surface behind it:
+a card header, eyebrow, header pill, the TwoColumn join-badge label, and a `Stat`
+value pick a light text color on a dark fill / dark-variant slide and the normal
+dark default on a light surface, so a header is never black-on-dark and a same-hue
+eyebrow never goes invisible. This is a deterministic, byte-identical-on-light
+**mechanism**, not a policy — supply an explicit run `Color` to override it, and a
+light-surface deck renders exactly as before. (The engine still encodes no taste:
+it picks the contrast-correct token by a fixed luminance rule and reports the
+resolved colors via `Stats.Colors`.)
 
 Slot heights are **content-aware**: a text node's height grows with the number
 of lines its text wraps to, so a long paragraph doesn't overlap the node beneath

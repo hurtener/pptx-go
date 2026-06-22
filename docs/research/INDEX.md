@@ -181,6 +181,14 @@ semantics)*
   long multi-line header swept across all `CardSize × CardLayout` combos asserting
   `body.Y >= header band bottom` and band containment, single-line byte-identical.
   No renderer change. (R11.1, CRITICAL.)
+- `33-card-text-auto-contrast.md` — a deterministic auto-contrast mechanism
+  (`onCardSurface(bg)`): pinned sRGB relative luminance (a 256-entry integer table
+  built once at init) picks a light text token on a dark surface and nil (the dark
+  default, byte-identical) on a light one; the eyebrow keeps its accent only when it
+  clears 4.5:1, else falls back. Wired into card header/eyebrow/pill, the join-badge
+  label, and the Stat value, so chrome text is legible on any fill/variant. Resolves
+  the D-058 tension under D-026 (a mechanism the caller overrides, not a policy).
+  (R11.2, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
