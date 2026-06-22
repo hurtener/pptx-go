@@ -870,6 +870,25 @@ Phase 36 (fallback, D-066).
   cut; the embedded `<p:font>` carries the `p:` prefix; byte-identical when
   unused; deterministic.
 
+#### Phase 38 — weight-aware font embedding
+
+**Subsystem:** pptx — Layer 1 builder (font embedding)
+**RFC sections:** §7.6
+**Deps:** Phase 35 (embedding, D-065).
+**What lands (R9.8, engine half — D-059; final R9 unit, R9.12 → V2):**
+- Per-run resolved weight tracking: `slide.XTextProperties.Weight` (`xml:"-"`,
+  never serialized) set by `toProps`; `slide.FontFace.Weight` populated by
+  `UsedFontFaces` (inferred from the bold bit when 0).
+- `autoEmbedFonts` keys on `(family, weight, italic)` and embeds the actual
+  weight file nearest each OOXML bucket's nominal (400/700), so a medium (500)
+  role ships the medium file; colliding weights coalesce per bucket (logged).
+**Acceptance criteria:**
+- A medium-weight role embeds the medium file (the provider is asked for the
+  resolved weight); a single-weight deck embeds one file; colliding weights
+  coalesce to the nearest-nominal winner; byte-identical when unused;
+  deterministic. (Embedding one file per OOXML bucket, not per numeric weight —
+  D-068.)
+
 ---
 
 ## 4. Post-V1 backlog

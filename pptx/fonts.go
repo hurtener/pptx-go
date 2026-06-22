@@ -83,22 +83,42 @@ func (p *Presentation) embedFontLocked(name, style string, weight int) error {
 	return nil
 }
 
-// autoEmbedFonts is the opt-in save-time pass (R9.1, D-065): it walks every
-// slide's runs, collects the distinct used faces in a stable sorted order, and
-// embeds each via the registered FontSource. It is a no-op unless
-// WithFontEmbedding is set and a FontSource is registered, so the default
-// output is byte-identical. A face the source cannot resolve is warned (not
-// fatal); a face already embedded (e.g. by a manual EmbedFont) is skipped, so
-// the pass is idempotent. The caller holds p.mu (it runs inside
-// prepareForWrite).
+// embedBucket identifies one OOXML embeddedFont slot: a typeface and whether the
+// cut is bold and/or italic (the four slots regular/bold/italic/boldItalic).
+type embedBucket struct {
+	family string
+	bold   bool
+	italic bool
+}
+
+// nominalWeight returns the canonical weight for a bucket — 700 for a bold
+// bucket, 400 otherwise — used to pick the nearest used weight when several map
+// to the same slot.
+func (b embedBucket) nominalWeight() int {
+	if b.bold {
+		return 700
+	}
+	return 400
+}
+
+// autoEmbedFonts is the opt-in save-time pass (R9.1, D-065) with weight-aware
+// file selection (R9.8, D-068): it walks every slide's runs, collects the
+// distinct used faces (family, weight, italic), and embeds — per OOXML
+// embeddedFont bucket (the four regular/bold/italic/boldItalic slots) — the
+// actual weighted file nearest the bucket's nominal weight, so a soul's medium
+// (500) regular role ships the medium file rather than a synthetic 400. It is a
+// no-op unless WithFontEmbedding is set and a FontSource is registered, so the
+// default output is byte-identical. A face the source cannot resolve is warned
+// (not fatal); a bucket already recorded (e.g. by a manual EmbedFont) is skipped,
+// so the pass is idempotent. When several used weights collide on one bucket the
+// extra ones are coalesced (PowerPoint exposes only four cuts per family) and
+// logged. The caller holds p.mu (it runs inside prepareForWrite).
 func (p *Presentation) autoEmbedFonts() {
 	if !p.fontEmbedding || p.fontSource == nil {
 		return
 	}
 
-	// Collect the distinct faces across all slides into a set, then sort so the
-	// font parts and relationship ids are byte-identical regardless of slide
-	// render order or worker count.
+	// Collect the distinct (family, weight, italic) faces across all slides.
 	seen := map[slide.FontFace]bool{}
 	var faces []slide.FontFace
 	for _, s := range p.slides {
@@ -113,39 +133,79 @@ func (p *Presentation) autoEmbedFonts() {
 			faces = append(faces, f)
 		}
 	}
-	sort.Slice(faces, func(i, j int) bool {
-		a, b := faces[i], faces[j]
-		if a.Typeface != b.Typeface {
-			return a.Typeface < b.Typeface
-		}
-		if a.Bold != b.Bold {
-			return !a.Bold // regular before bold
-		}
-		return !a.Italic && b.Italic // upright before italic
-	})
 
+	// Group into OOXML buckets; per bucket pick the weight nearest the nominal
+	// (ties → the lower weight) and count how many distinct weights collided.
+	type pick struct {
+		weight int
+		count  int
+	}
+	buckets := map[embedBucket]*pick{}
 	for _, f := range faces {
-		weight := 400
-		if f.Bold {
-			weight = 700
-		}
-		style := ""
-		if f.Italic {
-			style = "italic"
-		}
-		// Skip a face already recorded (manual EmbedFont) — keep the pass
-		// idempotent. The slot key matches what AddEmbeddedFont records.
-		if p.presentationPart.HasEmbeddedFace(f.Typeface, embeddings.StyleFor(weight, f.Italic)) {
+		b := embedBucket{family: f.Typeface, bold: f.Weight >= 600, italic: f.Italic}
+		cur, ok := buckets[b]
+		if !ok {
+			buckets[b] = &pick{weight: f.Weight, count: 1}
 			continue
 		}
-		if err := p.embedFontLocked(f.Typeface, style, weight); err != nil {
+		cur.count++
+		nominal := b.nominalWeight()
+		better := abs(f.Weight-nominal) < abs(cur.weight-nominal) ||
+			(abs(f.Weight-nominal) == abs(cur.weight-nominal) && f.Weight < cur.weight)
+		if better {
+			cur.weight = f.Weight
+		}
+	}
+
+	// Embed in a deterministic order so font parts and rel ids are byte-identical
+	// regardless of slide render order or worker count.
+	keys := make([]embedBucket, 0, len(buckets))
+	for b := range buckets {
+		keys = append(keys, b)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		a, b := keys[i], keys[j]
+		if a.family != b.family {
+			return a.family < b.family
+		}
+		if a.bold != b.bold {
+			return !a.bold // regular before bold
+		}
+		return !a.italic && b.italic // upright before italic
+	})
+
+	for _, b := range keys {
+		pk := buckets[b]
+		style := ""
+		if b.italic {
+			style = "italic"
+		}
+		// Skip a bucket already recorded (manual EmbedFont) — keep the pass
+		// idempotent. The slot key matches what AddEmbeddedFont records.
+		if p.presentationPart.HasEmbeddedFace(b.family, embeddings.StyleFor(pk.weight, b.italic)) {
+			continue
+		}
+		if err := p.embedFontLocked(b.family, style, pk.weight); err != nil {
 			if p.logger != nil {
 				p.logger.Warn("pptx: font embedding skipped face",
-					"family", f.Typeface, "bold", f.Bold, "italic", f.Italic, "err", err)
+					"family", b.family, "bold", b.bold, "italic", b.italic, "weight", pk.weight, "err", err)
 			}
 			continue
 		}
+		if pk.count > 1 && p.logger != nil {
+			p.logger.Debug("pptx: font weights coalesced into one embedded cut",
+				"family", b.family, "bold", b.bold, "italic", b.italic,
+				"embedded", pk.weight, "weights", pk.count)
+		}
 	}
+}
+
+// abs returns the absolute value of x.
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // fallbackRoles is the fixed iteration order for building the fallback

@@ -45,9 +45,9 @@ func TestUsedFontFacesDistinctAndOrdered(t *testing.T) {
 
 	got := s.UsedFontFaces()
 	want := []FontFace{
-		{Typeface: "Playfair Display", Bold: false, Italic: false},
-		{Typeface: "Playfair Display", Bold: true, Italic: false},
-		{Typeface: "Inter", Bold: false, Italic: false},
+		{Typeface: "Playfair Display", Bold: false, Italic: false, Weight: 400},
+		{Typeface: "Playfair Display", Bold: true, Italic: false, Weight: 700},
+		{Typeface: "Inter", Bold: false, Italic: false, Weight: 400},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("UsedFontFaces = %#v, want %#v", got, want)
@@ -62,7 +62,7 @@ func TestUsedFontFacesIgnoresUnsetLatin(t *testing.T) {
 		faceRun("explicit", "Inter", false, false),
 	))
 	got := s.UsedFontFaces()
-	want := []FontFace{{Typeface: "Inter"}}
+	want := []FontFace{{Typeface: "Inter", Weight: 400}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("UsedFontFaces = %#v, want %#v (only explicit Latin faces)", got, want)
 	}
@@ -83,7 +83,7 @@ func TestUsedFontFacesWalksTableCells(t *testing.T) {
 	s.AppendShapeChild(gf)
 
 	got := s.UsedFontFaces()
-	want := []FontFace{{Typeface: "Lora", Italic: true}}
+	want := []FontFace{{Typeface: "Lora", Italic: true, Weight: 400}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("UsedFontFaces (table) = %#v, want %#v", got, want)
 	}
@@ -117,9 +117,9 @@ func TestRewriteFontFaces(t *testing.T) {
 	}
 	got := s.UsedFontFaces()
 	want := []FontFace{
-		{Typeface: "Georgia", Bold: false},
-		{Typeface: "Georgia", Bold: true},
-		{Typeface: "Inter"},
+		{Typeface: "Georgia", Bold: false, Weight: 400},
+		{Typeface: "Georgia", Bold: true, Weight: 700},
+		{Typeface: "Inter", Weight: 400},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("after rewrite UsedFontFaces = %#v, want %#v", got, want)
@@ -157,11 +157,32 @@ func TestRewriteFontFacesItalicAware(t *testing.T) {
 	}
 	got := s.UsedFontFaces()
 	want := []FontFace{
-		{Typeface: "Display", Italic: false},
-		{Typeface: "Georgia", Italic: true},
+		{Typeface: "Display", Italic: false, Weight: 400},
+		{Typeface: "Georgia", Italic: true, Weight: 400},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("after italic-aware rewrite = %#v, want %#v", got, want)
+	}
+}
+
+func TestUsedFontFacesCarriesWeight(t *testing.T) {
+	s := NewSlidePart(1)
+	withW := &XTextProperties{Latin: &XLatinFont{Typeface: "Inter"}, Weight: 500}
+	boldNoW := &XTextProperties{Latin: &XLatinFont{Typeface: "Inter"}, Bold: "1"} // Weight 0 → infer 700
+	regNoW := &XTextProperties{Latin: &XLatinFont{Typeface: "Inter"}}             // Weight 0 → infer 400
+	s.AppendShapeChild(textBoxWithRuns(2,
+		&XTextRun{Text: "m", TextProperties: withW},
+		&XTextRun{Text: "b", TextProperties: boldNoW},
+		&XTextRun{Text: "r", TextProperties: regNoW},
+	))
+	got := s.UsedFontFaces()
+	want := []FontFace{
+		{Typeface: "Inter", Weight: 500},
+		{Typeface: "Inter", Bold: true, Weight: 700},
+		{Typeface: "Inter", Weight: 400},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("UsedFontFaces weights = %#v, want %#v", got, want)
 	}
 }
 
