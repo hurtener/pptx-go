@@ -231,6 +231,29 @@ func TestRenderDeterministic_PillFit(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_JoinBadgeFit guards R11.7: TwoColumns with varied-length
+// join labels (some grown, some capped + shrunk) must render byte-identically across
+// worker counts — the badge diameter and label scale are pure integer math.
+func TestRenderDeterministic_JoinBadgeFit(t *testing.T) {
+	labels := []string{"vs", "One agent", "an extremely long join connector label", "or"}
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{scene.TwoColumn{
+				Join: scene.JoinBadge, JoinLabel: labels[i%len(labels)],
+				Left:  []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("l")}}},
+				Right: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("r")}}},
+			}},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("join badge fit: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_VAlignFillCapped guards the R10.6 capped fill: a deck of
 // sparse capped-fill slides must render byte-identically across worker counts (the
 // growth cap and the balanced-spacing residual are integer / basis-point math).

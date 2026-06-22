@@ -233,7 +233,11 @@ The optional element a `TwoColumn` draws centered on its seam
 (`TwoColumn.Join ColumnJoin`): `JoinNone` (nothing — the byte-identical default),
 `JoinBadge` (a `VS badge` — a circular `JoinLabel` straddling the seam), or
 `JoinArrow` (a right-arrow connector between the two columns). Native shapes
-reusing accent/inverse tokens (D-055). See `RFC-001-pptx-go.md §11.2`.
+reusing accent/inverse tokens (D-055). The `JoinBadge` **sizes to its label** —
+the diameter grows to contain the `JoinLabel` (up to a cap, then the label is shrunk
+to one line) so a multi-word label renders intact instead of breaking mid-word; a
+short label like "vs" keeps the base diameter (byte-identical) (R11.7, `D-087`). See
+`RFC-001-pptx-go.md §11.2`.
 
 ## Column span
 

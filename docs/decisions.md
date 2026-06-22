@@ -2783,4 +2783,32 @@ side-by-side without overlap, for any pill label. No public API change, no new t
 
 ---
 
+## D-087 — Join-badge fit-to-label
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The TwoColumn join badge is drawn at a fixed `joinBadgeSz = In(0.62)`
+ellipse with a centered label; a label like "One agent" breaks mid-word into "One /
+age / nt" inside it (recreation slide 8). R11.7 (`DECKARD-PRODUCT-REQUIREMENTS.md`,
+HIGH · engine).
+**Decision:** In the `JoinBadge` case of `renderColumnJoin`, grow the badge to
+contain its label: `badgeSz = clamp(naturalWidth(label @ TypeBodySmall) +
+2·joinBadgePadX, joinBadgeSz, joinBadgeMaxSz)` with `joinBadgePadX = In(0.12)` and a
+pinned cap `joinBadgeMaxSz = In(1.5)`; a label that still does not fit at the cap is
+shrunk to one line via `FontScale = fitScale(natW, badgeSz − 2·joinBadgePadX)` (the
+R10.5/D-074 primitive). Keep the ellipse + centered label.
+**Deviation from the spec's "clamp to the inter-column gap":** the badge deliberately
+*overlaps* both columns (it straddles the seam; the actual inter-column gap is only
+~`SpaceMD`), so clamping the diameter to that gap would collapse the badge. A pinned
+`joinBadgeMaxSz` cap is used instead, with `fitScale` handling the overflow tail.
+**Byte-identical for short labels:** "vs" measures `~0.2"`, so `needed < joinBadgeSz`
+→ the base diameter is kept and `fitScale` returns 0 (no scale); the badge and run are
+unchanged, and the existing column-join goldens (which use "vs") pass unchanged.
+**Consequences:** Any short connector label renders intact and centered inside the
+badge for any length; `JoinArrow` (no label) is unaffected. No public API change, no
+new token; a parallel determinism guard asserts byte-identical badge output across
+worker counts.
+
+---
+
 *Append new entries below this line.*
