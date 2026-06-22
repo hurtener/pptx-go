@@ -48,6 +48,18 @@ func WithFontSource(src FontSource) Option {
 	}
 }
 
+// WithFontEmbedding enables the automatic font-embedding pass (R9.1, D-065). At
+// save, the builder walks every slide's runs, collects the distinct used faces
+// — (family, bold, italic) — in a stable sorted order, and embeds each via the
+// registered FontSource, so a deck themed with a brand display/heading face
+// ships those faces and renders with them on any machine. It is a no-op without
+// a FontSource (use WithFontSource), warns (does not fail) on a face the source
+// cannot resolve, and is idempotent against manual EmbedFont calls. Off, the
+// output is byte-identical to the prior behavior.
+func WithFontEmbedding() Option {
+	return func(p *Presentation) { p.fontEmbedding = true }
+}
+
 // WithLogger injects a structured logger (RFC §18, D-042). When set, the
 // builder emits a Debug write-boundary event on each write/save, and a read
 // constructor emits a Warn event per non-fatal degradation (a dropped element

@@ -58,12 +58,22 @@ WithFormat(f Format)            // Slides16x9 (default) | Slides4x3
 WithTheme(t *Theme)             // active theme (default DefaultTheme())
 WithLogger(l *slog.Logger)      // structured events; nil = no logs
 WithFontSource(src FontSource)  // resolves bytes for embedded fonts
+WithFontEmbedding()             // auto-embed every used face at save (needs WithFontSource)
 WithReadPartLimit(n int64)      // read-only: per-part size ceiling (default 100 MB)
 FromTemplate(brand *Presentation) // seed theme + masters + layouts from a brand deck
 ```
 
 `New()` with no options is a 16:9 deck themed with `DefaultTheme()` and a valid
 scaffold (master + layout + theme), ready for slides immediately.
+
+**Embedding brand fonts.** A theme that names a non-system face (e.g. a serif
+display) only renders with it where it is installed — unless its bytes ship in
+the `.pptx`. Register a `FontSource` and add `WithFontEmbedding()`: at save the
+builder walks every run, collects the distinct used faces (by family, bold,
+italic) in a stable order, and embeds each via the source. It is a no-op without
+a source, warn-don't-fail on a face that can't resolve, idempotent against a
+manual `EmbedFont(name, style, weight)`, deterministic (two saves are
+byte-identical), and byte-identical to the prior output when off.
 
 ### Add slides
 

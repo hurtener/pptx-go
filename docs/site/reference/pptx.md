@@ -41,6 +41,7 @@ func WithFormat(f Format) Option        // slide canvas format (16:9, 4:3)
 func WithTheme(t *Theme) Option         // active theme
 func WithLogger(l *slog.Logger) Option  // structured logging (no global logger)
 func WithFontSource(src FontSource) Option // font byte resolver for EmbedFont
+func WithFontEmbedding() Option          // auto-embed every used face at save (needs a FontSource)
 func WithReadPartLimit(n int64) Option  // per-part read ceiling (n <= 0 = unlimited)
 func FromTemplate(brand *Presentation) Option // adopt a brand kit (clone + strip slides)
 ```
@@ -99,7 +100,12 @@ func (p *Presentation) ReadWarnings() []ReadWarning
 func (p *Presentation) Clone() (*Presentation, error)
 func (p *Presentation) Close() error
 ```
-`EmbedFont` embeds a font resolved via the configured `FontSource`.
+`EmbedFont` embeds a single font face resolved via the configured `FontSource`.
+For a deck themed with a brand display/heading face, prefer
+`WithFontEmbedding()`: at save it walks every slide's runs, collects the distinct
+used faces, and `EmbedFont`s each via the registered `FontSource` — a no-op
+without a source, warn-don't-fail on a missing face, idempotent against manual
+`EmbedFont`, and byte-identical when off.
 `ReadWarnings` returns the non-fatal degradations noted while opening a
 (third-party) deck (D-048). `Clone` deep-copies the deck.
 

@@ -3,9 +3,11 @@ package pptx
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/embeddings"
+	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
 )
 
@@ -44,7 +46,14 @@ func (p *Presentation) SetFontSource(src FontSource) {
 func (p *Presentation) EmbedFont(name, style string, weight int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	return p.embedFontLocked(name, style, weight)
+}
 
+// embedFontLocked is the body of EmbedFont without the lock; the caller holds
+// p.mu. It is shared by the public EmbedFont wrapper and the automatic
+// embedding pass (autoEmbedFonts), which runs inside the already-locked
+// prepareForWrite path.
+func (p *Presentation) embedFontLocked(name, style string, weight int) error {
 	if p.fontSource == nil {
 		return ErrNoFontSource
 	}
@@ -72,6 +81,71 @@ func (p *Presentation) EmbedFont(name, style string, weight int) error {
 	italic := strings.EqualFold(style, "italic") || strings.EqualFold(style, "oblique")
 	p.presentationPart.AddEmbeddedFont(name, embeddings.StyleFor(weight, italic), rel.RID())
 	return nil
+}
+
+// autoEmbedFonts is the opt-in save-time pass (R9.1, D-065): it walks every
+// slide's runs, collects the distinct used faces in a stable sorted order, and
+// embeds each via the registered FontSource. It is a no-op unless
+// WithFontEmbedding is set and a FontSource is registered, so the default
+// output is byte-identical. A face the source cannot resolve is warned (not
+// fatal); a face already embedded (e.g. by a manual EmbedFont) is skipped, so
+// the pass is idempotent. The caller holds p.mu (it runs inside
+// prepareForWrite).
+func (p *Presentation) autoEmbedFonts() {
+	if !p.fontEmbedding || p.fontSource == nil {
+		return
+	}
+
+	// Collect the distinct faces across all slides into a set, then sort so the
+	// font parts and relationship ids are byte-identical regardless of slide
+	// render order or worker count.
+	seen := map[slide.FontFace]bool{}
+	var faces []slide.FontFace
+	for _, s := range p.slides {
+		if s == nil || s.part == nil {
+			continue
+		}
+		for _, f := range s.part.UsedFontFaces() {
+			if seen[f] {
+				continue
+			}
+			seen[f] = true
+			faces = append(faces, f)
+		}
+	}
+	sort.Slice(faces, func(i, j int) bool {
+		a, b := faces[i], faces[j]
+		if a.Typeface != b.Typeface {
+			return a.Typeface < b.Typeface
+		}
+		if a.Bold != b.Bold {
+			return !a.Bold // regular before bold
+		}
+		return !a.Italic && b.Italic // upright before italic
+	})
+
+	for _, f := range faces {
+		weight := 400
+		if f.Bold {
+			weight = 700
+		}
+		style := ""
+		if f.Italic {
+			style = "italic"
+		}
+		// Skip a face already recorded (manual EmbedFont) — keep the pass
+		// idempotent. The slot key matches what AddEmbeddedFont records.
+		if p.presentationPart.HasEmbeddedFace(f.Typeface, embeddings.StyleFor(weight, f.Italic)) {
+			continue
+		}
+		if err := p.embedFontLocked(f.Typeface, style, weight); err != nil {
+			if p.logger != nil {
+				p.logger.Warn("pptx: font embedding skipped face",
+					"family", f.Typeface, "bold", f.Bold, "italic", f.Italic, "err", err)
+			}
+			continue
+		}
+	}
 }
 
 // ensurePresentationOPCPart returns the /ppt/presentation.xml OPC part,

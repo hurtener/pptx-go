@@ -53,6 +53,21 @@ func (p *PresentationPart) EmbeddedFontCount() int {
 	return len(p.embeddedFonts)
 }
 
+// HasEmbeddedFace reports whether a face for the given typeface and style slot
+// ("regular" | "bold" | "italic" | "boldItalic") is already recorded. The
+// automatic embedding pass uses it to skip a face a caller embedded by hand,
+// keeping the pass idempotent against manual EmbedFont calls.
+func (p *PresentationPart) HasEmbeddedFace(typeface, style string) bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, e := range p.embeddedFonts {
+		if e.Typeface == typeface && e.Style == style {
+			return true
+		}
+	}
+	return false
+}
+
 // buildEmbeddedFontList groups the recorded entries by typeface (preserving
 // first-seen order) into the XML model. Returns nil when there are none.
 func buildEmbeddedFontList(entries []EmbeddedFontEntry) *XEmbeddedFontList {

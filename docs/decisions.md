@@ -1922,4 +1922,51 @@ a family name, but is not needed for the mechanism and is deferred.
 
 ---
 
+## D-065 — Automatic font-embedding pass: WithFontEmbedding collects used faces and EmbedFonts each
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A brand deck's identity is its type, but the engine only had the
+per-face embedding *mechanism* (`pptx/fonts.go`: the `FontSource` interface +
+`Presentation.EmbedFont` + `WithFontSource`, D-019) — nothing walked the deck and
+embedded the faces it actually uses, so a caller had to enumerate and `EmbedFont`
+every `(family, style, weight)` by hand. A theme that names a non-system display
+face (D-063 routes it through the run `a:latin`) emitted the typeface name but not
+the bytes, so PowerPoint and any rasterizer substituted a host sans. Gating unit
+of the Wave 9 font cluster (`DECKARD-PRODUCT-REQUIREMENTS.md` R9.1, CRITICAL ·
+both; D-059 puts the engine half — collect used faces + call `EmbedFont` — in
+pptx-go, leaving the `FontProvider`/soul half to Deckard).
+**Decision:** Add an opt-in `pptx.WithFontEmbedding()` Option and an
+`autoEmbedFonts` save-time pass run inside `prepareForWrite` (before
+`syncPresentationPart`). The pass is gated on `fontEmbedding && fontSource != nil`
+— off, or with no source, it makes zero `EmbedFont` calls and output is
+**byte-identical**. It walks every slide's runs via a new
+`slide.SlidePart.UsedFontFaces()` (the codec-side traversal mirroring
+`DroppedDescendants`: shape + table-cell text bodies), collecting the distinct
+`(family, bold, italic)` faces — the **only** information an emitted `a:rPr`
+carries (it has `b`/`i`, not a numeric weight), i.e. the four OOXML
+`embeddedFont` slots. Faces are merged into a set and **sorted by `(family,
+bold, italic)`** so the `fontN.fntdata` parts and relationship ids are
+byte-identical regardless of render order or worker count. Each face maps to
+`weight 700/400` + `style "italic"/""` and is embedded via a new lock-free
+`embedFontLocked` (the body of `EmbedFont`; caller holds `p.mu`, matching
+`ensurePresentationOPCPart`). A face already recorded (a manual `EmbedFont`) is
+skipped via `presentation.PresentationPart.HasEmbeddedFace(typeface, slot)`
+(idempotent). A face the source cannot resolve is **warned, not fatal** (same
+contract as `register-an-asset`); the Save succeeds with the faces that resolved
+and the rest fall through to the host's substitution / fallback chain (R9.6).
+**Consequences:** A caller flips one option and a brand-themed deck ships and
+renders with its faces on any machine. Additive and deterministic: off / no
+source is byte-identical, the sort pins part order, and the pass never fails a
+Save. Runs that inherit the theme major/minor fonts (no per-run `a:latin`) are
+**not** embedded by this pass — embedding the theme-scheme faces would require
+resolving the active theme and is a possible follow-on; the per-run faces are
+where a brand display/heading face lands, which is the R9.1 goal. **Deferred:**
+subsetting + OS/2 `fsType` license bits (R9.12, LOW → V2) and true per-numeric-
+weight embedding (R9.8, needs weight tracked at `AddRun`). New public API ⇒ a
+smoke check (`scripts/smoke/phase-35.sh`) and docs/skill updates land in the same
+PR (§14/§19).
+
+---
+
 *Append new entries below this line.*
