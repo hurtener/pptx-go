@@ -243,6 +243,12 @@ semantics)*
   (residual region OR behind-at-low-alpha); the engine takes the second branch, so
   the close is the acceptance test (z-order-behind, low-alpha, inert-when-unset), not
   the optional residual-region restriction. (R11.11, LOW.)
+- `43-adversarial-content-fit-fixtures.md` — a reusable torture harness rendering
+  every component × {light, dark} under hostile content; invariant (2) parses every
+  `<a:off>`/`<a:ext>` and asserts on-canvas (no recorder needed), (1)/(3)/(4) via the
+  fit/contrast helpers. The suite surfaced an off-canvas card-body-leaf overflow,
+  fixed by generalizing the R11.3 safe-area clamp to `renderNode` (exempting
+  full-slide overlays; subsumes the three container clamps). (R11.12, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

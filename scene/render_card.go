@@ -501,7 +501,8 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 }
 
 func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID string) {
-	box = r.clampToSafeArea(box, slideID) // R11.3: a tall card never draws past the safe area
+	// box is already clamped to the safe area by renderNode (R11.3/R11.12), so a tall
+	// card never draws past the safe area.
 	body := r.renderCardChrome(ps, box, cardChrome{
 		header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill,
 		fill: v.Fill, outline: v.Outline, border: v.BorderStyle, size: v.Size,

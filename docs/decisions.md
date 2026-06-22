@@ -2933,4 +2933,41 @@ safe one. No public API change, no new token.
 
 ---
 
+## D-092 — Adversarial content-fit harness + leaf safe-area clamp
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The recreation's overlaps reproduced only under real, long, or dark
+content; the existing tests pass because their fixtures use short, light, single-line
+content. There was no torture suite proving each component renders correctly under
+hostile content. R11.12 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both — engine side
+per D-059) asks for a reusable acceptance harness asserting the structural invariants.
+**Decision:** Ship an adversarial harness (`render_adversarial_test.go` +
+`render_adversarial_invariants_test.go`): an `adversarialScene()` exercising every
+component × {light, dark} under hostile content, asserting (1) header band ≤ body top
+(`cardHeaderBottom` ≤ `renderCardChrome` body Y), (2) **every emitted box on the
+canvas** — parsed directly from each slide's `<a:off>`/`<a:ext>` pairs, no test-only
+recorder needed (so it cannot perturb byte output), (3) fit-required chrome text on
+one line (`cardPillWidthOf`/`statValueFit`/`fitScale`), (4) chrome contrast ≥ 4.5:1
+(`onCardSurface`/`contrastRatioT10`), plus a worker-count determinism guard.
+**The suite surfaced a real bug, fixed in this PR (§17).** A `Grid` of cards whose
+bodies held a tall hostile `List` placed a body *leaf* below the card and off the slide
+canvas — the R11.3 clamp clamps the *container* box but not a leaf an over-full card
+body pushes past it. **Fix:** generalize the R11.3 safe-area clamp from the three
+container composers to the single `renderNode` dispatch point, clamping **every
+content node's** box, while exempting the full-slide overlays `Decoration` (which may
+bleed off-canvas by design) and `SectionDivider`. This subsumes the three per-container
+clamps (removed — one clamp point, one warning) and additionally caps an over-full card
+body / stack leaf. Byte-identical when the box already fits (the clamp is a no-op, so
+the full existing golden suite passes); pure integer → deterministic; the Phase-51
+clamp tests still pass.
+**Density vs bounds (D-026).** The clamp *caps the box* (the off-canvas invariant) and
+*warns* (the overflow `LayoutWarning`); legibly *compressing* an over-full card body
+remains the opt-in `VAlignFit` / `Card.BodyVAlign` path — the product drives density.
+**Consequences:** Every component is regression-guarded against the fixed-size class
+under hostile content, in CI (`make preflight`); a leaf can no longer draw off-slide.
+No public API change, no new token.
+
+---
+
 *Append new entries below this line.*
