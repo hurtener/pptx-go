@@ -2811,4 +2811,38 @@ worker counts.
 
 ---
 
+## D-088 — Stat-value overflow guard (role ladder)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A Stat renders its value at a fixed `TypeDisplay` with no width
+awareness; a wide value like "$4,000+" wraps to "$4,000 / +" and the stray line
+pushes down and crowds the caption beneath it (recreation slide 9). R11.8
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** Add `statValueFit(autofit, value, boxW) (TypeRole, float64)`: a pinned
+role ladder `[TypeDisplay, TypeH1, TypeH2]` — return the first role whose value fits
+one line (`wrappedLines == 1`), else the `TypeH2` floor plus `fitScale(naturalWidthAt
+(value, TypeH2), boxW)` to shrink it to one line. `renderStat` emits the value at the
+returned role and `FontScale`. **Gated on `AutoFit`** (the R10.5/D-074 opt-in): when
+AutoFit is off, or the value already fits at `TypeDisplay`, it returns
+`(TypeDisplay, 0)` — byte-identical to the pre-R11.8 render. This refines R10.5's Stat
+shrink: instead of scaling the font *within* `TypeDisplay`, step through real type
+roles (40 → 32 → 28 pt) first, then sub-role scale only at the floor.
+**Why gate on AutoFit:** an always-on ladder would change an AutoFit-off wide value,
+but D-074 made shrink opt-in and a test pins "AutoFit-off Stat emits the full display
+sz". Gating keeps AutoFit-off and AutoFit-on-fitting byte-identical, and applies the
+ladder only to AutoFit-on wide values — the cases the caller asked to fit (the
+product drives AutoFit per D-026). The existing `TestAutoFit_Stat_EmitsReducedSz` /
+`_OffByteIdentical` / `_Deterministic` stay green.
+**Deferred:** the optional value+label+delta stack-height clamp (the spec's "also
+clamp") needs a `slideID` plumbed into `renderStat` to warn; the one-line value
+guarantee already removes the reported caption-crowding (the wrapped value was the
+cause). The `fitScale` 0.60 floor is a legibility bound — a sub-~0.85" box may still
+overflow at the floor (accepted per the spec's "or a floor is reached").
+**Consequences:** A wide Stat value renders on one line for any box width (above the
+floor) when AutoFit is set, without crowding the caption. No public API change (the
+existing `Stat.AutoFit` field now drives a role ladder for the value).
+
+---
+
 *Append new entries below this line.*
