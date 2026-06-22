@@ -631,11 +631,11 @@ func maxEMU(a, b pptx.EMU) pptx.EMU {
 	return b
 }
 
-// alignedStackIn is the body-stack layout with Phase-13 alignment applied.
-// It is the sole caller of the alignment logic; container renderers (TwoColumn,
-// Grid, Card, CardSection) continue to call stackIn so their sub-layouts are
-// unaffected by slide-level alignment (spec: "OUT of scope — top-level body
-// stack only").
+// alignedStackIn is the body-stack layout with Phase-13 alignment applied. It
+// serves the top-level slide body stack and (R10.4) a Card's vertical body when
+// it opts into Card.BodyVAlign; the other container renderers (TwoColumn, Grid,
+// CardSection) still call stackIn so their sub-layouts are unaffected by
+// slide-level alignment.
 //
 // With the zero Alignment {VAlignTop, HAlignLeft} and no per-node Align
 // overrides, alignedStackIn produces placements byte-identical to stackIn

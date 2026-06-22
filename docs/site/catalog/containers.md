@@ -145,6 +145,14 @@ stack), `CardLayoutIconTop` (icon above it).
 | `HeaderFill` | `*ColorRole` | Colored header band (body keeps `Fill`); `nil` = none |
 | `StatusDot` | `*ColorRole` | Small status dot, top-right corner; `nil` = none |
 | `Watermark` | `string` | Large, low-opacity label behind the body; `""` = none |
+| `BodyVAlign` | `VAlign` | Vertical distribution of the body within the card (`Top`/`Center`/`Bottom`/`Justify`/`Fill`/`Fit`); zero `Top` = top-anchored |
+
+By default a card body is top-anchored, so a short body floats in the upper card
+with empty space below. Set `BodyVAlign` to distribute it: `VAlignBottom` pins
+secondary content (a badge, a CTA) to the card bottom, `VAlignJustify` spreads the
+items to fill, `VAlignFill` grows flexible body nodes, and `VAlignFit` compresses
+an over-full body. The zero value (`VAlignTop`) is byte-identical to the prior
+layout. Applies to the vertical body only (not `BodyHorizontal`).
 
 `HeaderFill` and `StatusDot` are `*ColorRole` (not `ColorRole`) so their `nil`
 zero value means "omit" — a plain `ColorRole` zero is a real color (`canvas`).

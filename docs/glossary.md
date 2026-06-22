@@ -139,7 +139,19 @@ single substrate for all higher-level content authoring. See
 
 A scene IR container node — accent strip + optional icon / eyebrow /
 header-pill, with leaf children. Renders as a native PPTX shape group.
-See `RFC-001-pptx-go.md §11.2`.
+The body is top-anchored by default; the opt-in `Card BodyVAlign` distributes it
+vertically. See `RFC-001-pptx-go.md §11.2`.
+
+## Card BodyVAlign
+
+The opt-in `Card.BodyVAlign VAlign` field (D-073): the vertical distribution of a
+card's body within the card body region — `VAlignTop` (default, top-anchored),
+`VAlignCenter`, `VAlignBottom` (pin to the body bottom), `VAlignJustify` (spread
+the inter-item gaps), `VAlignFill` (grow flexible body nodes), or `VAlignFit`
+(compress an over-full body). The card body routes through the same
+`alignedStackIn` engine as the slide body stack; the zero value reproduces the
+top-anchored layout byte-for-byte. Applies to the vertical body only
+(`BodyLayout != BodyHorizontal`). See `RFC-001-pptx-go.md §11.2`.
 
 ## Card chrome
 
