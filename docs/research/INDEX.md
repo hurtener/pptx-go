@@ -196,6 +196,13 @@ semantics)*
   (and `VAlignFill` to the region bottom) are byte-identical; a pure integer cap →
   deterministic. Defense-in-depth complementary to the opt-in `VAlignFit` (which
   reflows; this caps). (R11.3, CRITICAL.)
+- `35-content-region-reserves-chrome.md` — verify-and-close of R11.4: the chrome-
+  aware `bodyRegion()` already reserves the eyebrow + footer bands (D-053) and the
+  body stack lays out inside it; the overflow hole that defeated it is closed by the
+  R11.3 clamp (D-083). The close is the acceptance — the chrome-on body region is
+  disjoint from both bands (recomputed from the chrome constants), chrome-off is the
+  plain margin box (byte-identical), and a clamped container stays above the footer.
+  No renderer change. (R11.4, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
