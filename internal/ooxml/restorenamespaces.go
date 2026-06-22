@@ -194,7 +194,7 @@ var elementNS = map[string]string{
 	"sldIdLst": "p", "sldId": "p",
 	"sldMasterIdLst": "p", "sldMasterId": "p",
 	"notesMasterId": "p", "notesMasterIdLst": "p", "sldLayoutIdLst": "p", "sldLayoutId": "p",
-	"embeddedFontLst": "p", "embeddedFont": "p",
+	"embeddedFontLst": "p", "embeddedFont": "p", "font": "p",
 	"regular": "p", "bold": "p", "italic": "p", "boldItalic": "p",
 	"sld": "p", "sldLayout": "p", "sldMaster": "p",
 	"cSld": "p", "clrMap": "p", "clrMapOvr": "p", "bg": "p", "bgPr": "p", "bgRef": "p",

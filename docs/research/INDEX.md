@@ -129,6 +129,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   single-valued `a:latin` is rewritten to the first resolvable family in
   `[Family] + Fallback`; byte-identical when unused, deterministic, idempotent.
   (R9.6, engine half.)
+- `20-emphasis-italic-display.md` — the display-italic guarantee is already
+  delivered (D-063 family + D-065 embeds the italic cut); the incremental engine
+  work is italic-aware fallback (resolve per `(family, italic)`, so an italic run
+  lacking an italic cut falls back rather than faux-italicizing a sans) + the
+  `<p:font>` embedded-list prefix fix. (R9.7, engine half.)
 - `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
   `clrMap` indirection, and font scheme map onto pptx-go's token roles.
 

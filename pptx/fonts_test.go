@@ -181,6 +181,12 @@ func TestAutoEmbedShipsUsedFaces(t *testing.T) {
 			t.Errorf("embeddedFontLst missing %q:\n%s", face, xml)
 		}
 	}
+	// The <p:font> child must carry the p: prefix in the emitted bytes — a bare
+	// <font> is invalid OOXML and PowerPoint cannot bind the embedded face (the
+	// reader matches by local name and would hide this).
+	if !strings.Contains(xml, "<p:font typeface=") {
+		t.Errorf("embedded font element not p:-prefixed (bare <font> is invalid):\n%s", xml)
+	}
 }
 
 func TestAutoEmbedDeterministic(t *testing.T) {
@@ -378,6 +384,70 @@ func TestFontFallbackDeterministicIdempotent(t *testing.T) {
 	}
 	if !bytes.Equal(a, b) {
 		t.Errorf("two saves differ (not idempotent): %d vs %d bytes", len(a), len(b))
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Phase 37 — italic-aware font fallback (R9.7, D-067)
+// ----------------------------------------------------------------------------
+
+// styleFontSource resolves per (family, style) — so it can model a family that
+// ships a regular cut but no italic cut. Key is "family|style" (style "" or
+// "italic").
+type styleFontSource map[string][]byte
+
+func (m styleFontSource) Resolve(name, style string, weight int) ([]byte, error) {
+	if b, ok := m[name+"|"+style]; ok {
+		return b, nil
+	}
+	return nil, pptx.ErrFontNotFound
+}
+
+func TestEmphasisItalicFallback(t *testing.T) {
+	// "Display" ships regular but NOT italic; "Georgia" ships italic.
+	src := styleFontSource{
+		"Display|":       []byte("DISPLAY-REG"),
+		"Georgia|italic": []byte("GEORGIA-ITALIC"),
+		"Georgia|":       []byte("GEORGIA-REG"),
+	}
+	theme := fallbackTheme("Display", "Inter", "Georgia")
+	pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src))
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p.AddRun("Heading ", pptx.RunStyle{TypeRole: pptx.TypeH1})               // upright
+	p.AddRun("emphasis", pptx.RunStyle{TypeRole: pptx.TypeH1, Italic: true}) // italic
+
+	xml := slideXML(t, pres)
+	// Upright run keeps the primary (its regular cut resolves)…
+	if !strings.Contains(xml, `typeface="Display"`) {
+		t.Errorf("upright run did not keep the primary face:\n%s", xml)
+	}
+	// …while the italic run falls back to a face with an italic cut.
+	if !strings.Contains(xml, `typeface="Georgia"`) {
+		t.Errorf("italic run did not fall back to an italic-capable face:\n%s", xml)
+	}
+}
+
+func TestEmphasisDisplayItalicEmbedded(t *testing.T) {
+	// The already-satisfied guarantee (D-063 + D-065): an italic run at the
+	// display role embeds the display face's italic cut.
+	src := styleFontSource{"Cardo|": []byte("CARDO-REG"), "Cardo|italic": []byte("CARDO-ITALIC")}
+	theme := pptx.NewTheme(pptx.WithDisplayFont("Cardo"))
+	pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src), pptx.WithFontEmbedding())
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	tf.AddParagraph(pptx.ParagraphOpts{}).
+		AddRun("Editorial", pptx.RunStyle{TypeRole: pptx.TypeDisplay, Italic: true})
+
+	xml := presXML(t, pres)
+	if !strings.Contains(xml, `typeface="Cardo"`) {
+		t.Errorf("display face not embedded:\n%s", xml)
+	}
+	// The display role is bold by default, so an italic display run embeds the
+	// boldItalic bucket — either way an italic cut is present.
+	if !strings.Contains(strings.ToLower(xml), "italic") {
+		t.Errorf("italic cut not present in embeddedFontLst:\n%s", xml)
 	}
 }
 

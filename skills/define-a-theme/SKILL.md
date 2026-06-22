@@ -97,7 +97,10 @@ face; `0` uses the `~0.5` sans fallback (it never renders). `Fallback` is an
 ordered substitute chain: when a `FontSource` is registered and it cannot resolve
 the role's primary `Family`, the run's typeface is rewritten at save to the first
 family in `[Family] + Fallback` the source resolves (a controlled near-match, not
-a host default); empty or no `FontSource` is byte-identical. Select a role via
+a host default); empty or no `FontSource` is byte-identical. Resolution is
+italic-aware — an italic run whose family lacks an italic cut falls back to an
+italic-capable face (not a faux-italic), while upright runs keep the primary.
+Select a role via
 `RunStyle{TypeRole: role}`. Defaults
 below use heading font `Calibri Light`, body font `Calibri`, mono font `Consolas`.
 
