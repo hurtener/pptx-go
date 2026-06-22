@@ -79,10 +79,18 @@ A list with no items fails Stage-1 validation. Render policy: **native**.
 
 `ListKind` values: `ListBullet`, `ListNumber`, `ListChecklist`.
 
+`ListIndent` values: `IndentNormal` (default), `IndentTight`.
+
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `Kind` | `ListKind` | Marker style (bullet / number / checklist) |
 | `Items` | `[]ListItem` | The list entries |
+| `Indent` | `ListIndent` | Bullet hanging-indent density; `IndentTight` packs markers tighter to their text |
+
+By default the bullet marker sits a 0.5" hanging indent from its text. Set
+`Indent: scene.IndentTight` to halve that gap (to `In(0.25)`) so a list reads
+dense and aligned instead of loose — consistently across all items and levels. The
+default (`IndentNormal`) is unchanged.
 
 `ListItem` fields:
 

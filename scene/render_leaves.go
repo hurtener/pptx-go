@@ -38,11 +38,27 @@ func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading, hAlign
 	r.stats.Shapes++
 }
 
+// listTightIndent is the IndentTight bullet hanging indent (marker-to-text
+// offset): In(0.25), about half the builder's 0.5" default, so dense lists sit
+// tight to their markers. Pinned for determinism.
+const listTightIndent = pptx.EMU(228600) // In(0.25)
+
+// bulletIndent maps a ListIndent preset to a ParagraphOpts.BulletIndent: 0 for
+// IndentNormal (the builder keeps its default — byte-identical), listTightIndent
+// for IndentTight.
+func bulletIndent(i ListIndent) pptx.EMU {
+	if i == IndentTight {
+		return listTightIndent
+	}
+	return 0
+}
+
 func (r *renderer) renderList(ps *pptx.Slide, box pptx.Box, v List) {
 	tf := ps.AddTextFrame(box)
 	bullet := listBullet(v.Kind)
+	indent := bulletIndent(v.Indent)
 	for _, item := range v.Items {
-		p := tf.AddParagraph(pptx.ParagraphOpts{Bullet: bullet, Level: item.Level, LineHeight: r.lineH(pptx.TypeBody)})
+		p := tf.AddParagraph(pptx.ParagraphOpts{Bullet: bullet, Level: item.Level, LineHeight: r.lineH(pptx.TypeBody), BulletIndent: indent})
 		r.addRichText(ps, p, item.Text, pptx.TypeBody)
 	}
 	r.stats.Shapes++

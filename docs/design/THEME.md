@@ -114,6 +114,10 @@ byte-identical. A layout-estimator input on the type scale, not a visual token.
   50% full-capsule). `RadiusFull` yields a pill; the option is ignored on
   non-`roundRect` geometries.
 - Elevation: `ElevationFlat`, `ElevationRaised`, `ElevationElevated`.
+- List bullet indent is **not** a token: the scene `List.Indent` presets
+  (`IndentNormal`/`IndentTight`, D-078) map to a pinned bullet hanging indent
+  (`In(0.25)` for tight vs the 0.5" default) via `pptx.ParagraphOpts.BulletIndent`.
+  A layout mechanism, not a theme color/spacing token.
 
 ## Default theme
 

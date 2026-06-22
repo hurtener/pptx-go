@@ -125,6 +125,11 @@ type ParagraphOpts struct {
 	// (100 = single, 120 = 1.2×); 0 and 100 emit nothing (byte-identical).
 	// Emitted as OOXML a:pPr/a:lnSpc/a:spcPct (D-061).
 	LineHeight float64
+	// BulletIndent overrides a bulleted paragraph's hanging indent (the
+	// marker-to-text offset). The zero value keeps the default 0.5" hanging indent
+	// (byte-identical); a positive value sets a tighter (or wider) marker gap.
+	// Applies only when Bullet is set; emitted as a:pPr/@marL + @indent (D-078).
+	BulletIndent EMU
 }
 
 // TextFrame is a shape-level rich-text container (RFC §8.4). Create one with
@@ -190,6 +195,13 @@ func (tf *TextFrame) AddParagraph(opts ParagraphOpts) *Paragraph {
 	}
 	if opts.Bullet != BulletNone {
 		p.Bullet(opts.Bullet)
+		// A non-zero BulletIndent overrides the default 0.5" hanging indent set by
+		// Bullet, tightening (or widening) the marker-to-text offset (D-078).
+		if opts.BulletIndent > 0 {
+			pr := p.pr()
+			pr.MarL = int(opts.BulletIndent)
+			pr.Indent = -int(opts.BulletIndent)
+		}
 	}
 	// Line spacing: emit a:lnSpc/a:spcPct only when set to a non-single value, so
 	// the default (0 or 100) stays byte-identical (D-061).

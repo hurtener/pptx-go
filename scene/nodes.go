@@ -169,11 +169,25 @@ type ListItem struct {
 	Checked bool // checklist items
 }
 
+// ListIndent selects a list's bullet hanging-indent density (the marker-to-text
+// offset). The zero value IndentNormal preserves the default; IndentTight packs
+// the markers closer to their text for dense lists. (D-078.)
+type ListIndent int
+
+const (
+	IndentNormal ListIndent = iota
+	IndentTight
+)
+
 // List is a bullet / numbered / checklist block.
 type List struct {
 	node
 	Kind  ListKind
 	Items []ListItem
+	// Indent selects the bullet hanging-indent density. IndentNormal (zero) is
+	// byte-identical to the pre-R10.9 render; IndentTight tightens the
+	// marker-to-text offset consistently across all items and levels. (D-078.)
+	Indent ListIndent
 }
 
 func (List) NodeKind() NodeKind { return KindList }

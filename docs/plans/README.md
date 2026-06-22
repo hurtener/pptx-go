@@ -1044,6 +1044,22 @@ fit-to-region compression).
   gaps that distribute the slack (no single void), sits above geometric center,
   and stays in the box; Top/Center byte-identical; deterministic.
 
+#### Phase 47 — list bullet indent density
+
+**Subsystem:** scene — Layer 2 renderer (+ a `pptx` paragraph option)
+**RFC sections:** §8.4, §11.1
+**Deps:** Phase 03 (text builder), Phase 11 (List), brief 30.
+**What lands (R10.9, MED · engine):**
+- A new `pptx.ParagraphOpts.BulletIndent` (the bullet hanging indent; 0 = the
+  default 0.5") and a scene `List.Indent` preset (`IndentNormal`/`IndentTight`).
+  `IndentTight` tightens the marker-to-text offset to `In(0.25)` so lists read
+  dense instead of loose, consistently across items and levels.
+- Pinned presets (no token); `IndentNormal`/`BulletIndent=0` byte-identical; the
+  emitted `marL`/`indent` round-trip.
+**Acceptance criteria:**
+- A tight list shows a smaller, consistent marker-to-text offset; the default is
+  byte-identical; the emitted indent round-trips; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog
