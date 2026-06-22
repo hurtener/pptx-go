@@ -2905,4 +2905,32 @@ result is an integer EMU). No public API change, no new token.
 
 ---
 
+## D-091 — R11.11 closed by D-054 (watermark/decoration z-order-behind + low alpha)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The D-054 card watermark is anchored inside the body box at low opacity;
+R11.11 (`DECKARD-PRODUCT-REQUIREMENTS.md`, LOW · engine) asks that watermarks and
+decorations never reduce body legibility under dense content.
+**Decision:** Close R11.11 as **already implemented by D-054**, with no renderer
+change. The watermark is emitted as the last chrome shape in `renderCardChrome`,
+*before* the body content `renderCard` draws — so it is **behind** the body in z-order
+— at `cardWatermarkAlpha = 13000` (~13% opacity); background decorations
+(`LayerBackground`) are likewise emitted before the body in `layout()`. R11.11's
+acceptance is an explicit **OR** — the watermark "occupies only the residual empty
+region **OR** is drawn behind content at a legible alpha" — and the engine already
+takes the second branch (opaque body text paints on top of a 13% ghost). The
+**optional** residual-region restriction is intentionally **not** adopted: it would
+couple the chrome to the body's wrapped-line estimate and change the watermark
+position for a LOW cosmetic gain, where z-order + low alpha already guarantees
+legibility. The close is the acceptance test (`render_watermark_zorder_test.go`): the
+watermark text is emitted before the body text (z-order behind), carries the low ~13%
+alpha, and is inert (no `<a:alpha>` run) when unset.
+**Consequences:** R11.11 is closed; the watermark/decoration legibility invariant is
+regression-guarded. A caller wanting the watermark confined to empty space can place
+it as a foreground decoration instead; the engine's default (behind, low alpha) is the
+safe one. No public API change, no new token.
+
+---
+
 *Append new entries below this line.*
