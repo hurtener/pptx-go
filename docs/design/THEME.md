@@ -15,7 +15,7 @@ in the new visual language.
 |---|---|---|
 | Surface color | `ColorRole` | `RGB` (6-hex) |
 | Text color | `TextColorRole` | `RGB` (6-hex) |
-| Typography | `TypeRole` | `FontSpec` (family, size pt, weight, italic) |
+| Typography | `TypeRole` | `FontSpec` (family, size pt, weight, italic, tracking, line-height, case, avg-char-width, fallback) |
 | Spacing | `SpaceRole` | `EMU` |
 | Radius | `RadiusRole` | `EMU` |
 | Elevation | `ElevationRole` | `Elevation` (blur, offset, color, alpha) |

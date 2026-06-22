@@ -2097,7 +2097,56 @@ cuts). Per D-026 that rasterizer concern is the caller's — a caller can call
 `EmbedFont` for extra cuts explicitly. The weight-keyed collector and the resolver
 callback (D-067) are shaped to support multi-file-per-bucket later if the
 unreferenced-part question is resolved. **Deferred:** subsetting + OS/2 `fsType`
-(R9.12 → V2).
+(R9.12 → V2). **Limitation (Wave-9 checkpoint):** the numeric weight is
+`xml:"-"` — carried in memory for the authoring session only. A deck written then
+re-opened (`NewFromBytes`) loses the numeric weight, so a subsequent embedding
+pass infers `700/400` from the bold bit; weight-aware embedding is an in-memory-
+authoring property, not a round-trip one. Serializing numeric weight is a
+Wave-10+ decision.
+
+---
+
+## D-069 — Wave 9 checkpoint: exclusive save lock + font-pipeline hygiene
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The §17 adversarial checkpoint of Wave 9 (Phases 30–38, typography +
+font cluster) found one genuine correctness cluster plus documentation/test gaps.
+The save methods (`Save`/`Write`/`WriteToBytes`/`SaveStream`) held `p.mu.RLock`,
+yet `prepareForWrite` mutates shared builder state — and the Wave-9 font work made
+that mutation heavier: `autoEmbedFonts` did a non-atomic `p.fontCounter++` (every
+other counter is atomic) and `resolveFontFallbacks` rewrites run structs in place.
+Under concurrent saves of the *same* `*Presentation` (an advertised path —
+`Write`'s godoc said "high-concurrency streaming output") this is a `-race`-
+detectable data race.
+**Decision:** (1) The four save entry points take `p.mu.Lock` (exclusive) instead
+of `RLock`: `prepareForWrite` mutates, so concurrent saves of one presentation
+serialize (saves of distinct presentations are independent; no callee re-acquires
+`p.mu`, so no deadlock). Godoc now says to `WriteToBytes` once and share the bytes
+(or `Clone`) for high-concurrency fan-out of a single deck. (2) `p.fontCounter`
+increments via `atomic.AddInt32`, matching `slideCounter`/`relCounter`/
+`chartCounter`. (3) The font-fallback run rewrite is documented as an intentional
+in-memory mutation (after a substituting save, `Run.Font` reports the resolved
+face; this keeps the pass idempotent). (4) Documentation truth-ups:
+`FontSource.Resolve` bytes are embedded **verbatim** — no size cap, no
+signature/format validation (the caller's responsibility, parallel to image/SVG
+bytes under §7); a `FontSource` may be called from the save path and must be safe
+for concurrent use when shared across presentations; role-level
+`FontSpec.LineHeight` is applied by the **scene** layer (a direct `pptx` user sets
+`ParagraphOpts.LineHeight`); plus the weight-aware embedding re-open limitation
+(D-068). (5) Test hardening landed in the same `chore(checkpoint)` PR: a `-race`
+concurrent-save guard; combined single-run attributes (tracking+case+bold+color)
+and run-overrides-role; the exhausted-fallback-chain branch; a four-cut family
+embed-order determinism check; and byte-level/negative OOXML assertions
+(`a:lnSpc`/`a:spcPct`, `p:bold`/`p:italic` prefixing, and that `weight=` never
+leaks onto `a:rPr`).
+**Consequences:** Concurrent same-instance saves are correct (serialized) and the
+`-race` suite proves it; the font pipeline's counter and mutation are sound. No
+public API change (the lock is internal; the godoc clarifies concurrency). Wave 9
+is closed as healthy: the typography token additions remain additive,
+byte-identical when unused, and OOXML-valid. Phase plans 30–34 flipped to `Done`.
+Deferred to V1.x/V2: weight serialization, an embedded-font public read accessor +
+read-side round-trip, and font subsetting.
 
 ---
 

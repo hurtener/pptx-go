@@ -3,7 +3,7 @@
 **Subsystem:** pptx — Layer 1 builder (theme/typography)
 **RFC sections:** §7 (theme tokens / font scheme)
 **Deps:** Phase 02 (theme). External: none.
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -120,11 +120,11 @@ func WithDisplayFont(family string) ThemeOption
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for `pptx`.
-- [ ] `scripts/smoke/phase-33.sh` reports `OK ≥ 3` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] `make lint` clean.
-- [ ] Glossary + `docs/design/THEME.md` updated.
-- [ ] Decision entry D-063 added.
-- [ ] Docs site + `define-a-theme` skill updated (§19).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for `pptx`.
+- [x] `scripts/smoke/phase-33.sh` reports `OK ≥ 3` and `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] `make lint` clean.
+- [x] Glossary + `docs/design/THEME.md` updated.
+- [x] Decision entry D-063 added.
+- [x] Docs site + `define-a-theme` skill updated (§19).

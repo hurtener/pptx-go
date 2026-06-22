@@ -3,7 +3,7 @@
 **Subsystem:** pptx — Layer 1 builder (`RFC §3.3`, §7 theme/typography)
 **RFC sections:** §7 (theme tokens), §9 (rich text / runs)
 **Deps:** Phase 02 (theme + FontSpec), Phase 04 (rich text). External: none.
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -158,11 +158,11 @@ round-trip golden land in this PR.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for `pptx`.
-- [ ] `scripts/smoke/phase-30.sh` reports `OK ≥ 4` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] `make lint` clean.
-- [ ] Glossary + `docs/design/THEME.md` updated.
-- [ ] Decision entries D-059 + D-060 added.
-- [ ] Docs site + `define-a-theme` skill updated (§19).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for `pptx`.
+- [x] `scripts/smoke/phase-30.sh` reports `OK ≥ 4` and `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] `make lint` clean.
+- [x] Glossary + `docs/design/THEME.md` updated.
+- [x] Decision entries D-059 + D-060 added.
+- [x] Docs site + `define-a-theme` skill updated (§19).

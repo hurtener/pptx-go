@@ -67,8 +67,13 @@ letter-spacing (`FontSpec.Tracking`, points, signed) — positive opens glyphs
 apart (wide-tracked eyebrows), negative tightens (display headlines); `0` emits
 nothing and a `RunStyle.Tracking` overrides it per run — and an optional
 line-height (`FontSpec.LineHeight`, percent of single; tight display ~100–105,
-body ~120–135) applied to a node's paragraphs (`ParagraphOpts.LineHeight`
-overrides per paragraph); `0`/`100` emit nothing. A role may also declare a case
+body ~120–135). Role `LineHeight` is applied by the **scene** layer to a node's
+paragraphs; a direct `pptx` builder user sets it per paragraph via
+`ParagraphOpts.LineHeight` (a paragraph has no type role). `0`/`100` emit nothing.
+A role may also carry an average-advance metric for the wrap estimator
+(`FontSpec.AvgCharWidth`, fraction of font size; `0` uses the built-in ~0.5 sans
+factor) — it tunes content-aware height for serif/display faces and never renders.
+A role may also declare a case
 transform (`FontSpec.Case`: `CaseUpper`/`CaseSmallCaps`) rendered via `a:rPr/@cap`
 — the run text stays original-case while the display is cased; pairs with
 tracking for tracked-caps eyebrows. A role may also declare an ordered fallback

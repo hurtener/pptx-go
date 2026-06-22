@@ -389,8 +389,12 @@ Registered in V1 via `pres.SetFontSource(...)`; the functional
 ## FontSpec
 
 A resolved typography value: font `Family`, `Size` (points), `Weight`
-(100–900; ≥600 is bold), and `Italic`. `Theme.ResolveType(TypeRole)`
-returns one.
+(100–900; ≥600 is bold), and `Italic`, plus the Wave-9 type-detail fields —
+`Tracking` (letter-spacing, D-060), `LineHeight` (leading, applied by the
+scene layer, D-061), `Case` (transform, D-062), `AvgCharWidth` (estimator
+metric, D-064), and `Fallback` (substitute chain, D-066). `Theme.ResolveType(
+TypeRole)` returns one. (Slices make it non-comparable — compare with
+`reflect.DeepEqual`.)
 
 ## Footer page number
 

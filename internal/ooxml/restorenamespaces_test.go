@@ -39,11 +39,12 @@ func TestRestorePrefixesElements(t *testing.T) {
 // including the <p:font> typeface child — are all p:-prefixed (a bare <font> is
 // invalid OOXML and PowerPoint cannot bind the embedded face). R9.1/R9.7 fix.
 func TestRestoreEmbeddedFontList(t *testing.T) {
-	bare := `<embeddedFontLst><embeddedFont><font typeface="Cardo"/><regular rid="rId6"/><boldItalic rid="rId7"/></embeddedFont></embeddedFontLst>`
+	bare := `<embeddedFontLst><embeddedFont><font typeface="Cardo"/><regular rid="rId6"/><bold rid="rId7"/><italic rid="rId8"/><boldItalic rid="rId9"/></embeddedFont></embeddedFontLst>`
 	got := restore(t, bare)
 	for _, want := range []string{
 		`<p:embeddedFontLst `, `<p:embeddedFont>`, `<p:font typeface="Cardo"/>`,
-		`<p:regular r:id="rId6"/>`, `<p:boldItalic r:id="rId7"/>`,
+		`<p:regular r:id="rId6"/>`, `<p:bold r:id="rId7"/>`,
+		`<p:italic r:id="rId8"/>`, `<p:boldItalic r:id="rId9"/>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in:\n%s", want, got)
@@ -51,6 +52,18 @@ func TestRestoreEmbeddedFontList(t *testing.T) {
 	}
 	if strings.Contains(got, `<font `) {
 		t.Errorf("bare <font> survived (must be p:font):\n%s", got)
+	}
+}
+
+// TestRestoreLineSpacing proves the paragraph line-spacing elements (D-061) are
+// a:-prefixed — a bare <lnSpc>/<spcPct> is invalid OOXML.
+func TestRestoreLineSpacing(t *testing.T) {
+	bare := `<pPr><lnSpc><spcPct val="102000"/></lnSpc></pPr>`
+	got := restore(t, bare)
+	for _, want := range []string{`<a:pPr `, `<a:lnSpc>`, `<a:spcPct val="102000"/>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
 	}
 }
 
