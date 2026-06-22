@@ -1831,4 +1831,35 @@ delivers the visual leading; the estimator-accuracy refinement follows.
 
 ---
 
+## D-062 — Case-transform token: FontSpec.Case → a:rPr/@cap (text preserved)
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** Reference eyebrows/section labels are uppercase as a *style* decision
+(paired with wide tracking); today a caller must pre-uppercase the literal string,
+so casing is inconsistent and not theme-controlled. There was no case token in
+`FontSpec`/`RunStyle`. Wave 9 unit (`DECKARD-PRODUCT-REQUIREMENTS.md` R9.11, LOW ·
+engine; D-059).
+**Decision:** Add `FontSpec.Case TextCase` (`CaseNone`/`CaseUpper`/`CaseSmallCaps`)
+and an optional `RunStyle.Case *TextCase` override (nil = inherit role). `toProps`
+emits the OOXML `a:rPr/@cap` attribute (`all`/`small`) — chosen over rewriting the
+run text so the **run text stays original-case** (the transform is a display
+attribute that PowerPoint/the rasterizer applies), which round-trips both the text
+and the case. A `*Run.Case()` read accessor returns the inverse. `cap` is an
+attribute on the already-prefixed `rPr` element, so (unlike line-height's new
+`lnSpc` element, D-061) no `RestoreNamespaces` registration is needed. Like
+tracking (D-060) it is run-level and flows automatically through `toProps` from
+the resolved role — no scene-renderer change.
+**Consequences:** A soul can set per-role case (e.g. `TypeCaption = CaseUpper`)
+and eyebrow text is cased by the theme without the caller pre-uppercasing;
+combined with tracking it reproduces the tracked-caps eyebrow. Additive and
+deterministic: `CaseNone` emits nothing (byte-identical), and the **engine does
+not** uppercase the default caption role — making the default caption uppercase is
+the soul's choice (D-026), not the engine default, so `pptx.DefaultTheme()` is
+unchanged. Round-trips losslessly (text + cap). New builder visual property ⇒
+`docs/design/THEME.md` entry (P2). Lower/title-case (not OOXML `cap` values) would
+need a text rewrite and are deferred.
+
+---
+
 *Append new entries below this line.*

@@ -121,6 +121,16 @@ func (rs RunStyle) toProps(t *Theme) *slide.XTextProperties {
 			set = true
 		}
 	}
+	// Case transform: a per-run override wins over the role's value. Emitted as
+	// a:rPr/@cap (none/small/all); CaseNone emits nothing (D-062).
+	textCase := spec.Case
+	if rs.Case != nil {
+		textCase = *rs.Case
+	}
+	if capv := textCase.capAttr(); capv != "" {
+		p.Cap = capv
+		set = true
+	}
 	family := spec.Family
 	if rs.Code {
 		family = t.ResolveType(TypeMono).Family // inline code is monospace (D-013)

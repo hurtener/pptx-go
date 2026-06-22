@@ -67,7 +67,10 @@ apart (wide-tracked eyebrows), negative tightens (display headlines); `0` emits
 nothing and a `RunStyle.Tracking` overrides it per run — and an optional
 line-height (`FontSpec.LineHeight`, percent of single; tight display ~100–105,
 body ~120–135) applied to a node's paragraphs (`ParagraphOpts.LineHeight`
-overrides per paragraph); `0`/`100` emit nothing.
+overrides per paragraph); `0`/`100` emit nothing. A role may also declare a case
+transform (`FontSpec.Case`: `CaseUpper`/`CaseSmallCaps`) rendered via `a:rPr/@cap`
+— the run text stays original-case while the display is cased; pairs with
+tracking for tracked-caps eyebrows.
 
 | Role | Family | Size | Weight |
 | --- | --- | --- | --- |
