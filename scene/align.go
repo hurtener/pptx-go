@@ -75,6 +75,18 @@ const (
 	// height, so a sparse slide fills its frame instead of reading thin. With no
 	// flexible node, or when slack ≤ 0, it is equivalent to VAlignTop.
 	VAlignFill
+	// VAlignFit is the compression inverse of VAlignFill: an opt-in fit-to-region
+	// mode for over-full slides. When the body stack's preferred height exceeds
+	// the region, the renderer applies a single deterministic compression pass —
+	// it shrinks the inter-node gaps toward a pinned floor (SpaceXS) and, if still
+	// overflowing, proportionally scales every node's slot height toward a pinned
+	// ratio floor — so the last node's bottom lands inside the region instead of
+	// clipping off-slide. When the content already fits, VAlignFit is
+	// byte-identical to VAlignTop (top-pinned, standard gap). All math is integer
+	// EMU / basis-point, so the result is deterministic regardless of worker
+	// count. The card-interior-padding and display-type-scale sub-steps are
+	// layered in by separate engine units.
+	VAlignFit
 )
 
 // String returns the vertical alignment name.
@@ -88,6 +100,8 @@ func (v VAlign) String() string {
 		return "justify"
 	case VAlignFill:
 		return "fill"
+	case VAlignFit:
+		return "fit"
 	default:
 		return "top"
 	}

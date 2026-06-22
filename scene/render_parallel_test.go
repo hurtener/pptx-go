@@ -117,6 +117,35 @@ func TestRenderDeterministic_VAlignFill(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_VAlignFit guards the R10.2 fit-to-region compression:
+// a deck of deliberately over-full VAlignFit slides must render byte-identically
+// at 1 and 8 workers (the compression is integer/basis-point math, worker-count
+// independent).
+func TestRenderDeterministic_VAlignFit(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:      string(rune('A' + (i % 26))),
+			Content: scene.Alignment{Vertical: scene.VAlignFit},
+			Nodes: []scene.SlideNode{
+				scene.Heading{Text: rt("Section"), Level: 1},
+				scene.Prose{Paragraphs: []scene.RichText{rt("p1"), rt("p2"), rt("p3")}},
+				scene.List{Items: []scene.ListItem{{Text: rt("a")}, {Text: rt("b")}, {Text: rt("c")}}},
+				scene.Grid{Columns: 2, Cells: []scene.SlideNode{
+					scene.Card{Header: "a"}, scene.Card{Header: "b"},
+					scene.Card{Header: "c"}, scene.Card{Header: "d"},
+				}},
+				scene.Callout{Body: rt("note")},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("VAlignFit: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_WithAssets guards determinism when a media-bearing
 // node (code_block) is mixed into a multi-slide deck: those slides render
 // sequentially, so distinct image parts are numbered in scene order every run.

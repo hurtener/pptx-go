@@ -2182,4 +2182,48 @@ constant (not D-061 leading-derived), preserving the R9.4 estimator deferral.
 
 ---
 
+## D-071 — Fit-to-region compression (VAlignFit)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** When a slide's body stack was taller than its region, the scene
+renderer placed the overflowing nodes off-box and only recorded a
+`content overflows its region` warning — the content clipped below the slide
+edge (the recreation drew its bottom bento row partially off-canvas yet shipped).
+`alignedStackIn` had no mechanism to make an over-full stack fit. Second CRITICAL
+of Wave 10 (`DECKARD-PRODUCT-REQUIREMENTS.md` R10.2, engine).
+**Decision:** Add an opt-in `VAlignFit` value to the `VAlign` enum (the
+compression inverse of `VAlignFill`), set via `SceneSlide.Content.Vertical`. When
+the mode is `VAlignFit` and the stack overflows (`totalH > box.H`),
+`alignedStackIn` calls a new renderer method `fitCompress(heights, bodyH, gap,
+box)` that runs two pinned steps in priority order: (1) shrink the inter-node gap
+toward `gapMin = ResolveSpace(SpaceXS)` — `effGap = clamp((box.H - bodyH)/(n-1),
+gapMin, gap)`; (2) if still overflowing at the gap floor, scale every slot height
+by a single basis-point factor `sBP = clamp(avail*10000/bodyH, 6000, 10000)`
+(where `avail = box.H - effGap*(n-1)`) toward the pinned ratio floor `sMin=0.60`.
+It mutates `heights` in place and returns the compressed gap; placement is
+top-pinned. The overflow warning is recomputed against the post-compression
+geometry for `VAlignFit` (a successful fit suppresses it; an overflow the floors
+cannot absorb still surfaces), while every non-Fit mode keeps the verbatim
+`totalH > box.H` warn. All math is integer EMU / basis-point — a pure function of
+the heights, the gap, and `box.H` — so output is identical regardless of worker
+count.
+**Consequences:** An over-full `VAlignFit` slide (up to ~25% overflow) lands its
+last node bottom ≤ region bottom using only the pinned steps; a stack that
+already fits is byte-identical to `VAlignTop` (the compression branch is skipped),
+and with the flag off no path changes. The enum value is appended, so all
+existing `VAlign` iota values and the zero value (`VAlignTop`) are unchanged.
+`fitCompress` ships as a reusable theme-aware primitive but only `alignedStackIn`
+(the top-level body stack — the CRITICAL off-slide-clip site) calls it this
+phase. **Deviation (§4.3) from R10.2's literal spec:** the card-interior-padding
+sub-step (→ `padMin`) and the explicit display-type-scale step are deferred to
+R10.7 (`density-aware-card-padding`, an auto-tighten step inside the same pass)
+and R10.5 (`display-text-shrink-to-fit`) respectively, per the R10.2 spec's own
+cross-references; container-internal fit (bento rows, card body) is deferred to
+R10.3 / R10.4, which will reuse the `fitCompress` primitive and pinned floors.
+The gap + slot-height steps satisfy the ≤25%-overflow acceptance on their own.
+Extends `D-052` (`VAlignFill`); builds on `D-070` (content-aware card header).
+
+---
+
 *Append new entries below this line.*

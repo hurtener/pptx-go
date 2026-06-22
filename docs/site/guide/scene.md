@@ -222,12 +222,26 @@ region:
   (the containers `Grid`, `TwoColumn`, `Card`, `CardSection`, `Bento`, `Table`,
   plus `Image` and `Chart`) to consume the remaining height, so a sparse slide fills
   its frame instead of reading thin.
+- `VAlignFit` — the compression inverse: when the stack is **taller** than the
+  region, **shrink it to fit** instead of letting content spill off-slide.
 
 Under `VAlignFill` the leftover height is shared among the flexible nodes in
 proportion to their natural height, deterministically. Text leaves and atoms
 keep their size (stretching text is meaningless), and a slide with no flexible
 node simply top-aligns. This is a mechanism, not a judgment — the engine never
 decides on its own that a slide looks thin; you opt a slide into fill.
+
+`VAlignFit` is for the opposite problem. When a body stack's preferred height
+exceeds its region, the default modes place the overflow below the slide edge
+(and record a `content overflows its region` warning). Opt a slide into
+`VAlignFit` and the engine applies a single deterministic compression pass: it
+first tightens the inter-node gaps toward a pinned floor, then — only if the
+stack still overflows — proportionally scales every node's slot height toward a
+pinned ratio floor (60% of preferred), so the last node lands inside the frame.
+A stack that already fits is byte-identical to `VAlignTop`; if the content is so
+over-full that even the floors can't absorb it, the overflow warning still fires.
+The math is integer-EMU, so the result is identical regardless of worker count
+(see [D-071](/reference/decisions)).
 
 ### Slide chrome
 

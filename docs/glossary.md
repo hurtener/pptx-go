@@ -316,6 +316,17 @@ builder (`Image.SetFit`); re-exported as `scene.Fit` on the scene `image`
 node (D-039). Aspect-aware cover/contain are **not** in V1 — they need pixel
 dimensions, forbidden by §7.
 
+## Fit-to-region compression
+
+The deterministic engine pass behind `VAlignFit`: when a body stack's preferred
+height exceeds its region, it shrinks the inter-node gaps toward a pinned floor
+(`SpaceXS`), then — if still overflowing — proportionally scales every node's
+slot height toward a pinned ratio floor (0.60), so the last node lands inside the
+region instead of clipping off-slide. The compression inverse of `Grow-to-fit`;
+integer-EMU / basis-point, worker-count independent; byte-identical when the
+content already fits. The card-padding and display-type-scale sub-steps are
+layered in by later engine units. See `D-071` and `RFC-001-pptx-go.md §10`.
+
 ## Fill
 
 A shape's interior fill (builder). V1 ships `pptx.SolidFill(Color)` and
@@ -987,6 +998,14 @@ The body-stack vertical alignment (`scene.VAlignFill`, on
 `Flexible node`s to fill the remaining body height — the engine surface for
 `Grow-to-fit`. Opt-in; the zero value `VAlignTop` is unchanged. See `D-052` and
 `RFC-001-pptx-go.md §10.2`.
+
+## VAlignFit
+
+The body-stack vertical alignment (`scene.VAlignFit`, on
+`SceneSlide.Content.Vertical`) that, when the stack overflows its region, applies
+the deterministic `Fit-to-region compression` pass — the compression inverse of
+`VAlignFill`. Opt-in; byte-identical to `VAlignTop` when the content already
+fits. See `D-071` and `RFC-001-pptx-go.md §10`.
 
 ## Variant (theme variant)
 

@@ -119,6 +119,12 @@ semantics)*
   the D-054 band + body Y) to `wrappedLines × per-row` so a long header no longer
   overlaps the body; single-line byte-identical; estimator parity deferred to
   R10.10. (R10.1, CRITICAL.)
+- `23-fit-to-region-compression.md` — opt-in `VAlignFit`: when the body stack
+  overflows its region, a deterministic `fitCompress` pass floors the inter-node
+  gap toward `SpaceXS` then proportionally scales slot heights toward a pinned
+  `sMin=0.60` ratio, so the last node lands inside the frame instead of clipping
+  off-slide; byte-identical when off or when content fits; the card-padding /
+  type-scale sub-steps are deferred to R10.7 / R10.5. (R10.2, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

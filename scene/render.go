@@ -689,9 +689,30 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		}
 	}
 
+	// VAlignFit (R10.2): deterministic fit-to-region compression. When the body
+	// stack overflows, shrink the inter-node gaps toward a pinned floor, then —
+	// if still overflowing — compress slot heights toward a pinned ratio floor,
+	// so the last node lands inside the region instead of clipping off-slide.
+	// Top-pinned (startY stays box.Y). Fitting content is left untouched, so a
+	// stack that already fits is byte-identical to VAlignTop. Mutates heights.
+	if align.Vertical == VAlignFit && totalH > box.H {
+		effectiveGap = r.fitCompress(heights, bodyH, gap, box)
+	}
+
 	// Overflow warning: same semantics as stackIn (fires when the content
 	// is taller than the box, regardless of how vertical alignment clamped it).
-	if totalH > box.H {
+	// For VAlignFit the check is recomputed against the post-compression
+	// geometry, so a successful fit suppresses the warning (and an overflow that
+	// the pinned floors cannot fully absorb still surfaces honestly).
+	overflowing := totalH > box.H
+	if align.Vertical == VAlignFit && overflowing {
+		var fitted pptx.EMU
+		for _, h := range heights {
+			fitted += h
+		}
+		overflowing = fitted+effectiveGap*gapCount > box.H
+	}
+	if overflowing {
 		r.warn(slideID, "content overflows its region")
 	}
 
@@ -791,6 +812,72 @@ func distributeFill(nodes []SlideNode, heights []pptx.EMU, slack pptx.EMU) {
 		heights[idx] += add
 		used += add
 	}
+}
+
+// fitCompress applies the R10.2 deterministic fit-to-region compression to an
+// over-full body stack (the VAlignFit mode). It runs two pinned steps:
+//
+//  1. Shrink the inter-node gap from gap toward gapMin (the SpaceXS floor) so
+//     the reclaimed gap space absorbs the overflow.
+//  2. If the stack still overflows at gapMin, scale every node's slot height by
+//     a single factor toward a pinned ratio floor (sMin), so the bodies shrink
+//     proportionally and the last node's bottom lands inside the region.
+//
+// It mutates heights in place and returns the compressed inter-node gap. All
+// math is integer EMU / basis-point, so the result is a pure function of the
+// heights, the gap, and box.H — deterministic regardless of worker scheduling.
+// The caller invokes it only when the stack overflows (bodyH + gap*(n-1) >
+// box.H); content that already fits is never passed here, so fitting layouts
+// stay byte-identical to VAlignTop. The card-padding and display-type-scale
+// sub-steps of the R10.2 spec are layered in by separate engine units; the gap
+// and slot-height steps here satisfy the up-to-~25% overflow band on their own.
+func (r *renderer) fitCompress(heights []pptx.EMU, bodyH, gap pptx.EMU, box pptx.Box) pptx.EMU {
+	n := len(heights)
+	var gapCount pptx.EMU
+	if n > 1 {
+		gapCount = pptx.EMU(n - 1)
+	}
+
+	// Step 1 — gaps toward the pinned floor (SpaceXS, the smallest spacing token).
+	gapMin := r.theme.ResolveSpace(pptx.SpaceXS)
+	if gapMin > gap {
+		gapMin = gap // never widen the gap
+	}
+	effGap := gap
+	if gapCount > 0 {
+		// The gap that would make bodyH + g*gapCount == box.H exactly (floored,
+		// so the realized total never exceeds box.H), clamped to [gapMin, gap].
+		needed := (box.H - bodyH) / gapCount
+		switch {
+		case needed < gapMin:
+			effGap = gapMin
+		case needed < gap:
+			effGap = needed
+		}
+	}
+
+	// Step 2 — if still overflowing at the gap floor, compress slot heights
+	// proportionally toward the pinned ratio floor (sMin = 0.60).
+	if bodyH > 0 && bodyH+effGap*gapCount > box.H {
+		const (
+			full   = 10000 // basis-point unity (scale 1.0)
+			sMinBP = 6000  // 0.60 — pinned minimum scale (the ratio floor)
+		)
+		avail := box.H - effGap*gapCount
+		if avail < 0 {
+			avail = 0
+		}
+		sBP := avail * full / bodyH
+		if sBP < sMinBP {
+			sBP = sMinBP
+		}
+		if sBP < full {
+			for i := range heights {
+				heights[i] = heights[i] * sBP / full
+			}
+		}
+	}
+	return effGap
 }
 
 // nodeEffectiveHAlign returns the horizontal alignment that applies to n in
