@@ -1133,6 +1133,28 @@ badges never collide or overflow the slide safe area.
   a light color; the eyebrow drops a same-hue accent; deterministic across worker
   counts.
 
+#### Phase 51 — container slide-bounds clamp
+
+**Subsystem:** scene — Layer 2 renderer (container layout)
+**RFC sections:** §10, §10.1
+**Deps:** Phase 24 (chrome / `bodyRegion`), Phase 40 (D-071 `VAlignFit`), brief 34.
+**What lands (R11.3, CRITICAL · engine):**
+- A `clampToSafeArea(box)` guard at the entry of `renderBento` / `renderGrid` /
+  `renderCard` caps a container's box so its bottom never exceeds the per-slide safe
+  area (`= bodyRegion()`: slide minus margins minus the reserved chrome bands),
+  warning once on clamp. So an over-full body stack can no longer push the bottom
+  bento row / card grid off the slide onto the chrome footer.
+- The clamp fires only on strict overflow, so fitting layouts (and `VAlignFill`,
+  which grows to the region bottom, and a sole container filling the region) are
+  byte-identical; a pure integer cap → deterministic. Defense-in-depth
+  complementary to the opt-in `VAlignFit` (which reflows an over-full stack); this
+  caps the drawn height so the off-canvas invariant holds even for the default
+  top-anchored stack (D-083).
+**Acceptance criteria:**
+- An over-tall container is shrunk so its bottom ≤ safe-area bottom and warns; every
+  emitted cell stays inside the safe area; a fitting container is byte-identical with
+  no warning; deterministic across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog

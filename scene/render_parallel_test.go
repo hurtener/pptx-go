@@ -180,6 +180,32 @@ func TestRenderDeterministic_AutoContrast(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_BoundsClamp guards the R11.3 safe-area clamp: a deck of
+// over-tall Bentos / Grids (whose slots overflow the safe area) must render
+// byte-identically across worker counts — the clamp is a pure integer cap, so the
+// drawn geometry never depends on scheduling.
+func TestRenderDeterministic_BoundsClamp(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		var rows []scene.BentoRow
+		for j := 0; j < 8; j++ {
+			rows = append(rows, scene.BentoRow{Cells: []scene.BentoCell{
+				{Span: 1, Node: scene.Card{Header: "l", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}}}},
+				{Span: 1, Node: scene.Card{Header: "r", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}}}},
+			}})
+		}
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:    string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{scene.Bento{Columns: 2, Rows: rows}},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("bounds clamp: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_VAlignFillCapped guards the R10.6 capped fill: a deck of
 // sparse capped-fill slides must render byte-identically across worker counts (the
 // growth cap and the balanced-spacing residual are integer / basis-point math).

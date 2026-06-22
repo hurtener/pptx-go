@@ -257,6 +257,35 @@ func (r *renderer) bodyRegion() pptx.Box {
 	}
 }
 
+// safeArea is the slide's printable region — the slide box minus the content
+// margins minus the reserved chrome bands (R11.3). It is the body region: nothing
+// a container draws may extend below its bottom. A named alias of bodyRegion so the
+// clamp's intent is legible and the constant has a single source of truth.
+func (r *renderer) safeArea() pptx.Box { return r.bodyRegion() }
+
+// clampToSafeArea caps box so its bottom never exceeds the slide safe area (R11.3,
+// D-083): a container handed a box that an over-full stack pushed below the
+// printable region would otherwise divide that box and draw cells off the slide
+// bottom (overlapping the chrome footer). When box already fits (Bottom() <=
+// safeArea bottom) it is returned unchanged — byte-identical; only an overflowing
+// box is shrunk, and a single warning is logged. Pure integer clamp → deterministic
+// at any worker count. Defense-in-depth complementary to the opt-in VAlignFit
+// (which reflows an over-full stack before placement); this caps the drawn height
+// so the off-canvas invariant holds even for a default top-anchored stack.
+func (r *renderer) clampToSafeArea(box pptx.Box, slideID string) pptx.Box {
+	if sb := r.safeArea().Bottom(); box.Bottom() > sb {
+		h := sb - box.Y
+		if h < 0 {
+			h = 0
+		}
+		if h < box.H {
+			box.H = h
+			r.warn(slideID, "container overflow: content exceeds the slide safe area, clamped")
+		}
+	}
+	return box
+}
+
 // layout assigns each top-level node a slot, imposing the RFC §10.2 z-order:
 // background decorations first (behind), then section dividers and the stacked
 // body, then foreground decorations (on top). Decorations are overlays placed
