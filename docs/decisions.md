@@ -2565,4 +2565,41 @@ full punch list are preserved in the workflow transcript.
 
 ---
 
+## D-081 — R11.1 closed by D-070/D-079 (card-header content-aware height verify-and-close)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** R11.1 (`DECKARD-PRODUCT-REQUIREMENTS.md`, CRITICAL · engine) requires a
+card's header band height and body-start Y to grow with the *actual* wrapped line
+count of the eyebrow + title — at any title length, any inner width, any
+size/layout — so a long header never spills past its band onto the body. R11.1's
+spec text describes verbatim the mechanism already shipped in R10.1/D-070:
+`cardHeaderColumnWOf` (the true header column width, icon/pill aware) +
+`cardHeaderRowHeights` (`per-row-const × wrappedLines`), consumed *identically* by
+both `cardHeaderBottom` (body-region top) and `renderCardChrome` (the D-054 header
+band + emitted text frames), with single-line headers byte-identical. The estimator
+side closed in R10.10/D-079 (`cardHeaderExtraHeight` feeds `preferredHeight`). The
+open gap was test coverage: R11.1's acceptance names "a golden test … across all
+`CardSize/CardLayout` combinations", but the existing guards covered one combo.
+**Decision:** Close R11.1 as **already implemented by D-070** (mechanism) **and
+D-079** (estimator), with no renderer change. The close is the named acceptance
+golden — `TestCardBodyBelowWrappedHeader_AllCombos` — which sweeps a deliberately
+long, wrapping header across `{CardSizeMD, SM, LG} × {CardLayoutDefault,
+CardLayoutIconTop}` (6 combos) and asserts, per combo: (1) the composed body top
+**equals** `cardHeaderBottom` (so the D-054 band, drawn at height
+`cardHeaderBottom − box.Y`, meets the body exactly — the wrapped header is fully
+inside the band, no overlap and no drift); (2) the header actually wraps to ≥ 2
+lines (the test is not vacuous); (3) a single-line header yields
+`titleH == cardTitleRowH` (byte-identical to the legacy fixed advance). Per
+`CLAUDE.md §17`, proving the invariant under the full combinatorial content the
+requirement names — then recording the closure — is the correct shape for a
+verify-and-close; reimplementing already-correct geometry would be churn.
+**Consequences:** R11.1 is closed; the card-header overlap class is regression-
+guarded across the size/layout matrix, not a single combo. No public API change, no
+new token, no OOXML change. Opens Wave 11 (R11 component-rendering robustness). The
+next units add new mechanism: R11.2 (card-text auto-contrast), R11.3
+(container-slide-bounds clamp).
+
+---
+
 *Append new entries below this line.*

@@ -1082,6 +1082,36 @@ fit-to-region compression).
 
 ---
 
+### Wave 11 — Rendering robustness
+
+The R11 (`DECKARD-PRODUCT-REQUIREMENTS.md`) engine units: every component renders
+correctly under ANY content — wrapped headers grow their band, all card/container
+chrome text is variant-aware (auto-contrast), and pills / dots / watermarks /
+badges never collide or overflow the slide safe area.
+
+#### Phase 49 — card header content-aware height (verify-and-close)
+
+**Subsystem:** scene — Layer 2 renderer (card chrome / layout)
+**RFC sections:** §10.1, §12.1
+**Deps:** Phase 39 (R10.1 / D-070), Phase 48 (R10.10 / D-079), brief 32.
+**What lands (R11.1, CRITICAL · engine):**
+- A verify-and-close: the wrapped-aware card-header geometry
+  (`cardHeaderColumnWOf` / `cardHeaderRowHeights`, shared by `cardHeaderBottom` and
+  `renderCardChrome`) already shipped in R10.1/D-070 with estimator parity in
+  R10.10/D-079, so R11.1 needs only its named acceptance golden, not a
+  reimplementation (D-081).
+- A combinatorial acceptance test: a deliberately long multi-line header swept
+  across all `CardSize × CardLayout` combos asserting `body.Y >= header band
+  bottom` and band containment; single-line headers byte-identical. No renderer
+  change.
+**Acceptance criteria:**
+- For a long header in a narrow card, across `{MD, SM, LG} × {Default, IconTop}`,
+  body top ≥ `cardHeaderBottom`; the `HeaderFill` band bottom equals
+  `cardHeaderBottom`; the header wraps to ≥ 2 lines; single-line `titleH ==
+  cardTitleRowH`; deterministic.
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native

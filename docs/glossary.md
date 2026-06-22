@@ -537,8 +537,19 @@ slide into fill; the engine never decides a slide looks thin. See
 
 A `Card`'s optional colored top region (`Card.HeaderFill *ColorRole`): the
 header in an accent color with the body in `Fill` below — distinct from a full
-`Fill`. `nil` omits it. Part of the rich card visuals (D-054). See
-`RFC-001-pptx-go.md §11.2`.
+`Fill`. `nil` omits it. Part of the rich card visuals (D-054). Its height is the
+wrapped header height (`cardHeaderBottom − box.Y`), so for an eyebrow/title that
+wraps to N lines the band grows to contain every header glyph and the body still
+starts below it (R10.1/D-070; verified across all `CardSize × CardLayout` combos
+by D-081). See `RFC-001-pptx-go.md §11.2`.
+
+## Header column width
+
+The inner text column at which a card's eyebrow and title wrap
+(`cardHeaderColumnWOf`): the card inner width minus the left-icon shift (icon-left
+layouts) and the reserved header-pill width. The wrapped-line count measured at
+this width drives both the header band height and the body-region top, so the two
+never drift (R10.1/D-070).
 
 ## Header pill
 
