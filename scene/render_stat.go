@@ -12,7 +12,13 @@ func (r *renderer) renderStat(ps *pptx.Slide, box pptx.Box, v Stat) {
 
 	vp := tf.AddParagraph(pptx.ParagraphOpts{})
 	scale := r.displayRunScale(v.AutoFit, v.Value, pptx.TypeDisplay, box.W)
-	vp.AddRun(v.Value, pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true, FontScale: scale})
+	// Auto-contrast the (otherwise uncolored, near-black) value against the slide
+	// variant surface (R11.2, D-082): nil on a light slide → byte-identical; a light
+	// token on a dark-variant slide so the value is never black-on-dark. A Stat
+	// placed on a strongly-colored card resolves against the slide surface, not the
+	// card fill (leaf nodes do not receive their container surface — a documented
+	// follow-up); callers needing that drive it via the surrounding card.
+	vp.AddRun(v.Value, pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true, FontScale: scale, Color: r.onCardSurface(pptx.ColorCanvas)})
 
 	if v.Label != "" {
 		lp := tf.AddParagraph(pptx.ParagraphOpts{})

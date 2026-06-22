@@ -48,9 +48,16 @@ func (r *renderer) renderColumnJoin(ps *pptx.Slide, box, left, right pptx.Box, v
 		ps.AddShape(pptx.ShapeEllipse, bb, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))))
 		r.stats.Shapes++
 		if v.JoinLabel != "" {
+			// Auto-contrast against the badge's accent fill (R11.2, D-082): a dark
+			// accent yields the light TextInverse token (byte-identical to the prior
+			// hardcoded inverse), a light-accent theme yields a dark text token.
+			jc := r.onCardSurface(pptx.ColorAccent)
+			if jc == nil {
+				jc = pptx.TokenTextColor(pptx.TextPrimary)
+			}
 			tf := ps.AddTextFrame(bb).Anchor(pptx.AnchorMiddle)
 			p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-			p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: pptx.TokenTextColor(pptx.TextInverse)})
+			p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: jc})
 			r.stats.Shapes++
 		}
 	case JoinArrow:

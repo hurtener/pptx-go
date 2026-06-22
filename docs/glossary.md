@@ -31,6 +31,17 @@ anchors by name; the `scene` renderer translates anchor + offset into EMU
 coordinates at render time. Distinct from a `LayoutSlot`, which is the
 region a layout engine assigns to a content node.
 
+## Auto-contrast
+
+The engine mechanism (`onCardSurface`) that picks a card/container chrome run's
+text color from the [[relative luminance]] of the surface behind it: a light text
+token on a dark surface, the inherited dark default (no explicit color) on a light
+one. Pinned sRGB luminance + a black/white-crossover threshold, integer per call →
+deterministic. A *mechanism*, not a policy (`D-026`): a caller's explicit `Color`
+always wins, and a light-surface card is byte-identical to the pre-mechanism output
+(`D-082`). Reconciles the `D-058` "engine ships no contrast logic" stance — it is a
+fixed token picker, the color analog of `deltaToneColor`, not opinionated taste.
+
 ## Average char width
 
 `FontSpec.AvgCharWidth` — a role face's average glyph advance as a fraction of
@@ -75,7 +86,7 @@ when the display run's estimated `naturalWidth` exceeds its box, the engine
 downscales its font (via `FontScale`) so it fits one line, quantized to a fixed
 step and floored at a 0.60 ratio. Never upscales; the zero value (off) and
 already-fitting text are byte-identical. The engine never shrinks on its own —
-the caller opts a node in. See `Fit-to-region compression` (the vertical analogue)
+the caller opts a node in. See `Fit-to-region compression` (the vertical analog)
 and `RFC-001-pptx-go.md §10.2`.
 
 ## Bleed
@@ -805,6 +816,15 @@ referenced parts that could not be read (`WarnUnreadablePart`), de-duplicated pe
 part + element. Empty for a self-authored deck. The mechanism behind the
 [external deck](#external-deck) best-effort posture (RFC §16, D-048).
 
+## Relative luminance
+
+The WCAG sRGB perceptual brightness of a color, in `[0, 1]` (here scaled to
+`[0, 100000]`): channels are gamma-expanded then weighted `0.2126·R + 0.7152·G +
+0.0722·B`. The basis for [[auto-contrast]] — a surface below the black/white
+crossover (`≈ 0.179`) gets light text, above it the dark default. Computed via a
+256-entry integer table built once at init, so the decision is pure integer and
+worker-count independent (`D-082`).
+
 ## RepairPromptHygiene
 
 An always-on XML post-processor that strips known PowerPoint
@@ -828,7 +848,7 @@ inline style + an optional `TextColorRole` token. Same model in `pptx`
 ## Run
 
 A styled text span within a `Paragraph` (`pptx.Run`), created via
-`Paragraph.AddRun(text, RunStyle)`. The builder analogue of a scene
+`Paragraph.AddRun(text, RunStyle)`. The builder analog of a scene
 `TextRun`. (RFC §8.4/§9.)
 
 ## RunStyle

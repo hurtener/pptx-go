@@ -323,6 +323,15 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	headerLeft := innerX
 	headerW := innerW
 
+	// Auto-contrast surface for the header runs (R11.2, D-082): the eyebrow and
+	// title overlap the header band when a HeaderFill is set, otherwise the card
+	// Fill. onCardSurface returns a light token on a dark surface and nil (the
+	// pre-R11.2 default) on a light one, so a light card is byte-identical.
+	headerSurface := c.fill
+	if c.headerFill != nil {
+		headerSurface = *c.headerFill
+	}
+
 	iconSz := cardIconSz
 	hasIcon := c.icon != ""
 	if hasIcon {
@@ -361,7 +370,9 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 		r.stats.Shapes++
 		ptf := ps.AddTextFrame(pillBox).Anchor(pptx.AnchorMiddle)
 		pp := ptf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-		pp.AddRun(c.pill, pptx.RunStyle{TypeRole: pptx.TypeCaption})
+		// The pill sits on its own ColorSurfaceAlt fill — auto-contrast against it
+		// (R11.2), not the card surface.
+		pp.AddRun(c.pill, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: r.onCardSurface(pptx.ColorSurfaceAlt)})
 		r.stats.Shapes++
 		if reserve := pillW + gapSM; headerW > reserve {
 			headerW -= reserve
@@ -369,22 +380,34 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	}
 
 	// Eyebrow (kicker) above the header — sized to its wrapped line count (R10.1).
+	// The eyebrow keeps its accent tint when the accent clears a minimum contrast
+	// against the surface behind it (byte-identical on the default light card),
+	// else falls back to the auto-contrast token so it never goes invisible on a
+	// same-hue header band (R11.2, D-082).
 	if c.eyebrow != "" {
+		var ebColor pptx.Color
+		if r.accentLegible(headerSurface) {
+			ebColor = pptx.TokenTextColor(pptx.TextAccent)
+		} else {
+			ebColor = r.onCardSurface(headerSurface)
+		}
 		ebBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: eyebrowH}
 		tf := ps.AddTextFrame(ebBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
-		p.AddRun(c.eyebrow, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextAccent)})
+		p.AddRun(c.eyebrow, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: ebColor})
 		r.stats.Shapes++
 		y += eyebrowH
 	}
 
 	// Header title — sized to its wrapped line count so a long title never
-	// collides with the body (R10.1).
+	// collides with the body (R10.1). Auto-contrast against the surface (R11.2):
+	// nil (the dark default) on a light card → byte-identical; a light token on a
+	// dark card / dark variant so the title is never black-on-dark.
 	if c.header != "" {
 		hBox := pptx.Box{X: headerLeft, Y: y, W: headerW, H: titleH}
 		tf := ps.AddTextFrame(hBox)
 		p := tf.AddParagraph(pptx.ParagraphOpts{})
-		p.AddRun(c.header, pptx.RunStyle{TypeRole: pptx.TypeH3, Bold: true})
+		p.AddRun(c.header, pptx.RunStyle{TypeRole: pptx.TypeH3, Bold: true, Color: r.onCardSurface(headerSurface)})
 		r.stats.Shapes++
 		y += titleH
 	}

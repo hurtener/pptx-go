@@ -146,6 +146,40 @@ func TestRenderDeterministic_VAlignFit(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_AutoContrast guards the R11.2 auto-contrast path: a deck
+// mixing dark-variant slides, dark card fills, accent header bands, and join badges
+// (every onCardSurface / accentLegible branch) must render byte-identically across
+// worker counts — the luminance decision is pure integer math (the sRGB table is
+// built once at init), so the chosen color never depends on scheduling.
+func TestRenderDeterministic_AutoContrast(t *testing.T) {
+	accent := scene.ColorAccent
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		variant := scene.VariantLight
+		if i%2 == 0 {
+			variant = scene.VariantDark
+		}
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:      string(rune('A' + (i % 26))),
+			Variant: variant,
+			Nodes: []scene.SlideNode{
+				scene.Card{Eyebrow: "VISION", Header: "Replies. Then waits.", HeaderFill: &accent,
+					Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("body")}}}},
+				scene.Card{Header: "On dark", Fill: scene.ColorAccent, HeaderPill: "NEW",
+					Body: []scene.SlideNode{scene.Stat{Value: "$4,000", Label: "per month"}}},
+				scene.TwoColumn{Join: scene.JoinBadge, JoinLabel: "vs",
+					Left:  []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("l")}}},
+					Right: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("r")}}}},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("auto-contrast: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_VAlignFillCapped guards the R10.6 capped fill: a deck of
 // sparse capped-fill slides must render byte-identically across worker counts (the
 // growth cap and the balanced-spacing residual are integer / basis-point math).

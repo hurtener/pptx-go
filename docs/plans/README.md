@@ -1110,6 +1110,29 @@ badges never collide or overflow the slide safe area.
   `cardHeaderBottom`; the header wraps to ≥ 2 lines; single-line `titleH ==
   cardTitleRowH`; deterministic.
 
+#### Phase 50 — card-text auto-contrast
+
+**Subsystem:** scene — Layer 2 renderer (card / container chrome)
+**RFC sections:** §7.1, §7.4, §12.1
+**Deps:** Phase 25 (D-054), Phase 29 (D-058), brief 33.
+**What lands (R11.2, CRITICAL · engine):**
+- A deterministic auto-contrast mechanism `onCardSurface(bg)`: pinned sRGB relative
+  luminance (a 256-entry integer table built once at init) returns a light text
+  token on a dark surface and nil (the dark default) on a light one. Wired into the
+  card header / eyebrow / pill, the TwoColumn join-badge label, and the Stat value,
+  so chrome text is legible on any fill or slide variant — fixing black-on-dark
+  headers and same-hue eyebrows.
+- The eyebrow keeps its accent tint only when it clears 4.5:1 against its surface.
+  Light-surface cards are byte-identical (nil → the inherited default); the default
+  accent on a white card clears the check, so the common eyebrow is unchanged. A
+  mechanism the caller overrides via an explicit `Color` (D-026); reconciles the
+  D-058 no-contrast-logic tension (D-082).
+**Acceptance criteria:**
+- Chrome text clears ≥ 4.5:1 against any light/dark/brand surface; light cards are
+  byte-identical (no explicit header color); dark fills/variants flip the header to
+  a light color; the eyebrow drops a same-hue accent; deterministic across worker
+  counts.
+
 ---
 
 ## 4. Post-V1 backlog

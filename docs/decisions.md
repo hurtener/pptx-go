@@ -2602,4 +2602,55 @@ next units add new mechanism: R11.2 (card-text auto-contrast), R11.3
 
 ---
 
+## D-082 — Card-text auto-contrast (onCardSurface mechanism)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A card/container chrome run left uncolored (the card header
+`RunStyle{TypeRole: TypeH3}` with no `Color`) emits no `a:solidFill` and inherits
+the slide's near-black placeholder default, regardless of the surface behind it. On
+a dark card fill or a VariantDark slide the header is black-on-dark and barely
+legible (recreation slides 3, 7); a `TextAccent` eyebrow on a same-hue header band
+is invisible (slide 2). R11.2 (`DECKARD-PRODUCT-REQUIREMENTS.md`, CRITICAL · engine)
+requires every chrome run to derive its color from the surface it sits on. This
+tensions with **D-058**, which deliberately gave the engine *no* contrast logic
+(only resolved-color exposure via `Stats.Colors`), leaving the decision to the
+caller.
+**Decision:** Add a deterministic, pinned auto-contrast **mechanism**
+(`scene/contrast.go`) and wire it into the chrome whose surface is known at
+emission. `onCardSurface(bg ColorRole) pptx.Color` resolves `bg` against the active
+(possibly dark-variant) theme, computes WCAG sRGB **relative luminance** (a
+256-entry `srgbLinear` table built once at init via `math.Pow`, then integer
+weighted-sum per call — worker-count independent), and returns the light
+`TextInverse` token when the surface is below the black/white crossover
+`darkSurfaceLumaMax = 17912` (`L ≈ 0.179`), or **nil** otherwise. nil leaves the
+run's `Color` unset → the inherited dark default → **byte-identical** on a light
+surface. The threshold being the exact crossover guarantees both branches clear
+~4.58:1. Wired sites: the card header title and pill (`onCardSurface`), the eyebrow
+(keeps `TextAccent` when `accentLegible(surface)` clears 4.5:1 — true for the
+default accent on a white card, so the common eyebrow is byte-identical — else
+falls back to `onCardSurface`), the TwoColumn join-badge label
+(`onCardSurface(ColorAccent)`, nil → `TextPrimary`; byte-identical to the prior
+hardcoded `TextInverse` on the dark default accent), and the Stat value
+(`onCardSurface(ColorCanvas)`).
+**Reconciliation with D-058 / D-026:** the engine remains unopinionated — this is a
+*mechanism the caller drives*, not a legibility *policy*. The luminance rule is
+fixed and pinned (the color analog of `deltaToneColor`'s tone→token map); a
+caller's explicit `Color` always wins; and the light-surface default is unchanged
+byte-for-byte. That is the "mechanism, not taste" side of D-026, so D-058's
+no-contrast-logic stance is refined (the engine still encodes no *opinion*), not
+reversed.
+**Consequences:** Black-on-dark headers, invisible same-hue eyebrows, and
+black-on-dark pills/join-labels/stat-values are fixed for any fill and any variant;
+the full existing golden suite passes unchanged (light cards byte-identical); a
+parallel determinism guard asserts byte-identical output across worker counts. **A
+documented limitation / follow-up:** leaf nodes (Stat, Bento label) do not receive
+their *container* surface through `renderNode`, so a Stat inside a strongly-colored
+card contrasts against the slide surface, not the card fill; threading the
+container surface (or a `Stat.ValueColor` override) is additive future work. The
+`TextMuted` bento/stat labels are left unchanged — a deliberate mid-gray legible on
+both light and dark, not the reported bug. No public API change.
+
+---
+
 *Append new entries below this line.*
