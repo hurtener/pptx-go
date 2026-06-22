@@ -206,6 +206,31 @@ func TestRenderDeterministic_BoundsClamp(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_PillFit guards R11.5: cards with varied-length header
+// pills (some long enough to clamp and shrink via FontScale) in narrow grid cells
+// must render byte-identically across worker counts — cardPillWidthOf and fitScale
+// are pure integer math, so the pill width and font scale never depend on
+// scheduling.
+func TestRenderDeterministic_PillFit(t *testing.T) {
+	pills := []string{"NEW", "CUSTOMIZABLE", "FULLY CUSTOMIZABLE", "BETA"}
+	sc := scene.Scene{}
+	for i := 0; i < 24; i++ {
+		var cells []scene.SlideNode
+		for j := 0; j < 4; j++ {
+			cells = append(cells, scene.Card{Header: "Plan", HeaderPill: pills[(i+j)%len(pills)]})
+		}
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID:    string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{scene.Grid{Columns: 4, Cells: cells}},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("pill fit: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_VAlignFillCapped guards the R10.6 capped fill: a deck of
 // sparse capped-fill slides must render byte-identically across worker counts (the
 // growth cap and the balanced-spacing residual are integer / basis-point math).

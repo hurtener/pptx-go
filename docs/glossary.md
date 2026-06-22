@@ -566,8 +566,12 @@ never drift (R10.1/D-070).
 
 A small pill-shaped badge (rounded-rect + short label) rendered in a card's
 header row, typically right-aligned (e.g. a status tag like "NEW" or "BETA").
-A field on `Card` / `CardSection`; part of the card chrome. See
-`RFC-001-pptx-go.md §11.2`.
+A field on `Card` / `CardSection`; part of the card chrome. The pill **sizes to its
+label** on a single line (`cardPillWidthOf` = `naturalWidth(label) + padding`,
+floored at a circular minimum, clamped to the card inner width; a label too long for
+the inner width is shrunk to one line via `FontScale`), and the header text column
+reserves exactly that width — so any label renders intact instead of wrapping inside
+a fixed chip (R11.5, `D-085`). See `RFC-001-pptx-go.md §11.2`.
 
 ## Icon
 

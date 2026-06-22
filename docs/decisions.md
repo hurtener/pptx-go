@@ -2725,4 +2725,36 @@ D-053.
 
 ---
 
+## D-085 — Header-pill fit-to-label
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** A card header pill is drawn at a fixed `pillW = In(1.0)`, and
+`cardHeaderColumnWOf` reserves the same fixed width from the header text column. A
+label wider than 1.0" (e.g. "CUSTOMIZABLE") wraps to two lines inside the rounded
+chip and overflows it (recreation slide 5). R11.5
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine).
+**Decision:** Extract `cardPillWidthOf(theme, pill, innerW) =
+clamp(naturalWidth(pill @ TypeCaption) + 2·cardPillPadX, cardPillMinW, innerW)` and
+call it from **both** `cardHeaderColumnWOf` (the header-width reservation) and
+`renderCardChrome` (the drawn pill), so the reserved and drawn widths never drift.
+`cardPillPadX = In(0.10)` per side (a pinned layout metric, not a token — it absorbs
+the text frame's default inset so the measured label fits); `cardPillMinW = In(0.30)
+= cardPillH` keeps a one-character pill a proper circular chip. The pill run gets
+`FontScale = fitScale(naturalWidth, pillW − 2·cardPillPadX)` (the R10.5 primitive,
+D-074): 0 — no shrink — when the pill is not clamped, a shrink-to-one-line when a
+long label clamped the pill to `innerW`.
+**Not byte-identical, by design:** every pill resizes from the fixed `In(1.0)` to its
+fitted width (and the reserved header column shrinks with it). R11.5 explicitly does
+not require byte-identity; determinism still holds (pure integer `naturalWidth`), and
+the existing pill tests assert presence / shape counts, not the fixed width, so they
+pass unchanged.
+**Consequences:** Any caller-supplied pill label renders intact on one line inside
+its chip, for any card width; the header title/eyebrow column reserves exactly the
+fitted width so the wrapped-header geometry (R10.1) stays consistent. No public API
+change (the `Card.HeaderPill` field's behavior improves). A parallel determinism
+guard asserts byte-identical pill output across worker counts.
+
+---
+
 *Append new entries below this line.*

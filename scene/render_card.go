@@ -145,6 +145,35 @@ const (
 	cardWatermarkAlpha = 13000            // ~13% OOXML opacity; the ghosted watermark
 )
 
+// Header-pill fit-to-label geometry (R11.5, D-085). A pinned layout metric (not a
+// token): the horizontal padding each side of the pill label, sized to absorb a
+// text frame's default inset so the measured label fits on one line; and a circular
+// minimum so a one-character pill stays a proper chip.
+const (
+	cardPillPadX = pptx.EMU(91440)  // In(0.10); padding each side of the pill label
+	cardPillMinW = pptx.EMU(274320) // In(0.30); minimum pill width (== cardPillH)
+)
+
+// cardPillWidthOf returns the width a header pill needs to fit its label on a single
+// line: naturalWidth(label @ TypeCaption) + 2·cardPillPadX, floored at the circular
+// minimum and clamped to the card inner width. Shared by cardHeaderColumnWOf (the
+// header-width reservation) and renderCardChrome (the drawn pill) so the reserved
+// and drawn widths never drift. Returns 0 for an empty pill. Deterministic (pure
+// integer naturalWidth).
+func cardPillWidthOf(theme *pptx.Theme, pill string, innerW pptx.EMU) pptx.EMU {
+	if pill == "" {
+		return 0
+	}
+	w := naturalWidth(RichText{{Text: pill, Style: RunStyle{TypeRole: pptx.TypeCaption}}}, theme) + 2*cardPillPadX
+	if w < cardPillMinW {
+		w = cardPillMinW
+	}
+	if w > innerW {
+		w = innerW
+	}
+	return w
+}
+
 // cardHeaderColumnW returns the true header text column width — the inner width
 // minus the icon-left shift and the header-pill reservation — at which the
 // eyebrow and title wrap. cardHeaderRowHeights and renderCardChrome share it so
@@ -162,10 +191,7 @@ func cardHeaderColumnWOf(theme *pptx.Theme, box pptx.Box, c cardChrome) pptx.EMU
 		headerW = innerW - cardIconSz - gapSM
 	}
 	if c.pill != "" {
-		pillW := pptx.In(1.0)
-		if pillW > innerW {
-			pillW = innerW
-		}
+		pillW := cardPillWidthOf(theme, c.pill, innerW)
 		if reserve := pillW + gapSM; headerW > reserve {
 			headerW -= reserve
 		}
@@ -356,23 +382,27 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	}
 
 	// Header pill, right-aligned in the header row (drawn before the text so the
-	// header width can reserve space for it).
+	// header width can reserve space for it). The pill sizes to its label on one
+	// line (R11.5) — a fixed box wrapped a long label like "CUSTOMIZABLE" — sharing
+	// cardPillWidthOf with the header-width reservation above so they agree.
 	if c.pill != "" {
-		pillW := pptx.In(1.0)
+		pillW := cardPillWidthOf(r.theme, c.pill, innerW)
 		pillH := cardPillH
-		if pillW > innerW {
-			pillW = innerW
-		}
 		pillBox := pptx.Box{X: innerX + innerW - pillW, Y: y, W: pillW, H: pillH}
 		ps.AddShape(pptx.ShapeRoundRect, pillBox,
 			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorSurfaceAlt))),
 			pptx.WithRadius(pptx.RadiusFull))
 		r.stats.Shapes++
+		// Single-line guarantee: if the label still cannot fit the pill's inner text
+		// width (only when the pill was clamped to innerW), shrink it to one line via
+		// FontScale (reusing the R10.5 fit primitive); 0 = no scale when it fits.
+		pillNatW := naturalWidth(RichText{{Text: c.pill, Style: RunStyle{TypeRole: pptx.TypeCaption}}}, r.theme)
+		pillScale := fitScale(pillNatW, pillW-2*cardPillPadX)
 		ptf := ps.AddTextFrame(pillBox).Anchor(pptx.AnchorMiddle)
 		pp := ptf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
 		// The pill sits on its own ColorSurfaceAlt fill — auto-contrast against it
 		// (R11.2), not the card surface.
-		pp.AddRun(c.pill, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: r.onCardSurface(pptx.ColorSurfaceAlt)})
+		pp.AddRun(c.pill, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: r.onCardSurface(pptx.ColorSurfaceAlt), FontScale: pillScale})
 		r.stats.Shapes++
 		if reserve := pillW + gapSM; headerW > reserve {
 			headerW -= reserve
