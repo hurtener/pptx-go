@@ -107,6 +107,13 @@ type RunStyle struct {
 	// inherits the role's FontSpec.Case; a non-nil value (including CaseNone)
 	// wins. Emitted as a:rPr/@cap (D-062).
 	Case *TextCase
+	// FontScale optionally multiplies the resolved type-role size for this run.
+	// The zero value (and 1) leaves the role size unchanged — byte-identical; a
+	// value in (0,1) shrinks the run (the scene shrink-to-fit / AutoFit path uses
+	// it). The role's size token stays the source of truth (a theme swap re-skins
+	// the base, then this scales it), so it does not weaken P2. Emitted as the
+	// reduced a:rPr/@sz; the resulting size round-trips via Run.FontSize (D-074).
+	FontScale float64
 }
 
 // ParagraphOpts configures a paragraph at creation time.

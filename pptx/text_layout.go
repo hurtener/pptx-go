@@ -105,8 +105,12 @@ func (rs RunStyle) toProps(t *Theme) *slide.XTextProperties {
 	p := &slide.XTextProperties{}
 	set := false
 
-	if spec.Size > 0 {
-		p.FontSize = int(spec.Size * 100) // OOXML sz is in 1/100 pt
+	size := spec.Size
+	if rs.FontScale > 0 {
+		size = spec.Size * rs.FontScale // shrink-to-fit / AutoFit (D-074)
+	}
+	if size > 0 {
+		p.FontSize = int(size * 100) // OOXML sz is in 1/100 pt
 		set = true
 	}
 	// Letter-spacing (tracking): a per-run override wins over the role's value.

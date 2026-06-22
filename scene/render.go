@@ -374,13 +374,21 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 // TextRun, carrying inline style + color, at the node's base type role. A link
 // run becomes a hyperlink. Returns the number of resolver-dependent extras (0
 // for text).
-func (r *renderer) addRichText(_ *pptx.Slide, p *pptx.Paragraph, rt RichText, base pptx.TypeRole) {
+func (r *renderer) addRichText(ps *pptx.Slide, p *pptx.Paragraph, rt RichText, base pptx.TypeRole) {
+	r.addRichTextScaled(ps, p, rt, base, 0)
+}
+
+// addRichTextScaled is addRichText with a uniform per-run FontScale applied to
+// every run (the AutoFit shrink-to-fit path, R10.5). A scale of 0 leaves the
+// runs at their role size — byte-identical to addRichText.
+func (r *renderer) addRichTextScaled(_ *pptx.Slide, p *pptx.Paragraph, rt RichText, base pptx.TypeRole, scale float64) {
 	for _, run := range rt {
 		style := pptx.RunStyle{
-			TypeRole: base,
-			Bold:     run.Style.Bold,
-			Italic:   run.Style.Italic,
-			Code:     run.Style.Code,
+			TypeRole:  base,
+			Bold:      run.Style.Bold,
+			Italic:    run.Style.Italic,
+			Code:      run.Style.Code,
+			FontScale: scale,
 		}
 		if run.Style.Underline {
 			style.Underline = pptx.UnderlineSingle

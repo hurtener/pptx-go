@@ -116,6 +116,11 @@ type Hero struct {
 	Title    string
 	Subtitle string
 	Align    HAlign // per-node horizontal alignment override; 0 = inherit slide
+	// AutoFit opts the Title (the display run) into shrink-to-fit: when its
+	// estimated width exceeds the box, the engine downscales the Title font so it
+	// fits one line, within a pinned minimum ratio. Zero = off, byte-identical.
+	// (D-074.)
+	AutoFit bool
 }
 
 func (Hero) NodeKind() NodeKind { return KindHero }
@@ -139,6 +144,11 @@ type Heading struct {
 	Text  RichText
 	Level int
 	Align HAlign // per-node horizontal alignment override; 0 = inherit slide
+	// AutoFit opts the heading text into shrink-to-fit: when its estimated width
+	// exceeds the box, the engine downscales every run by one shared factor so it
+	// fits one line, within a pinned minimum ratio. Zero = off, byte-identical.
+	// (D-074.)
+	AutoFit bool
 }
 
 func (Heading) NodeKind() NodeKind { return KindHeading }
@@ -449,6 +459,11 @@ type Stat struct {
 	Label     string
 	Delta     string    // "" = no delta line
 	DeltaTone DeltaTone // color direction of Delta
+	// AutoFit opts the Value (the display run) into shrink-to-fit: when its
+	// estimated width exceeds the box, the engine downscales the Value font so a
+	// long number/price fits one line, within a pinned minimum ratio. Zero = off,
+	// byte-identical. (D-074.)
+	AutoFit bool
 }
 
 func (Stat) NodeKind() NodeKind { return KindStat }

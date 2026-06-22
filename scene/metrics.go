@@ -113,6 +113,36 @@ func nodeNaturalWidth(n SlideNode, theme *pptx.Theme) pptx.EMU {
 	return 0
 }
 
+// AutoFit (shrink-to-fit) pinned constants (R10.5, D-074). The scale is
+// quantized to a fixed step and floored at a minimum ratio so the result is
+// deterministic and never shrinks past a legible bound.
+const (
+	autofitRatioMinBP = 6000 // 0.60 — the minimum scale (pinned ratio floor)
+	autofitStepBP     = 250  // 0.025 — quantization step (keeps the float deterministic)
+)
+
+// fitScale returns the font-scale multiplier that makes a run whose estimated
+// natural width is natW fit within boxW, or 0 when it already fits (or the inputs
+// are unknown) — 0 means "no scaling", so an AutoFit-off or already-fitting run
+// is byte-identical. When natW > boxW it returns floor(boxW/natW) quantized down
+// to autofitStepBP and floored at autofitRatioMinBP, expressed as a fraction in
+// [0.60, 1). It never returns >= 1 (never upscales). Pure integer / basis-point
+// math: identical (natW, boxW) inputs always return the same scale.
+func fitScale(natW, boxW pptx.EMU) float64 {
+	if natW <= 0 || boxW <= 0 || natW <= boxW {
+		return 0
+	}
+	raw := boxW * 10000 / natW // floored basis points; < 10000 since natW > boxW
+	q := (raw / autofitStepBP) * autofitStepBP
+	if q < autofitRatioMinBP {
+		q = autofitRatioMinBP
+	}
+	if q >= 10000 {
+		return 0
+	}
+	return float64(q) / 10000
+}
+
 // wrappedLines estimates how many lines rt occupies when laid out in a column
 // of width avail, using the same pinned char-width model as naturalWidth. It is
 // the vertical complement of naturalWidth: where naturalWidth answers "how wide

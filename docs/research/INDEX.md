@@ -138,6 +138,12 @@ semantics)*
   secondary content can pin to the bottom or fill the card; zero value (Top) is
   byte-identical (the alignment engine already matches `stackIn` for the zero
   Alignment). Card only; CardSection deferred. (R10.4, HIGH.)
+- `26-display-text-shrink-to-fit.md` — opt-in `AutoFit` on the display nodes
+  (`Hero`/`Stat`/`Heading`): a pure `fitScale(natW, boxW)` quantizes `boxW/natW`
+  down to a 0.025 step, floored at a 0.60 ratio, and a new per-run
+  `RunStyle.FontScale` multiplier emits the reduced `@sz` so a too-wide title or
+  price fits one line; never upscales; default OFF byte-identical; the scale keeps
+  the role size token as source of truth (P2). (R10.5, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
