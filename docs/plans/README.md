@@ -990,6 +990,24 @@ fit-to-region compression).
   fitting text and AutoFit-off are byte-identical; a scaled run round-trips its
   size; deterministic.
 
+#### Phase 44 — fill cap (no over-grow)
+
+**Subsystem:** scene — Layer 2 renderer (body-stack fill)
+**RFC sections:** §10
+**Deps:** Phase 23 (`VAlignFill`, D-052), Phase 40 (D-071), brief 27.
+**What lands (R10.6, HIGH · engine):**
+- A new opt-in `VAlignFillCapped` body-stack mode. Like `VAlignFill` but each
+  flexible node grows by at most a pinned factor of its preferred height
+  (`fillGrowthMaxBP = 10000` → ≤ 1× added), so a sparse node can't balloon; the
+  leftover slack becomes balanced spacing (even top margin + widened inter-node
+  gaps, `residual/(n+1)`).
+- Uncapped `VAlignFill` keeps calling the unchanged `distributeFill` — byte-
+  identical.
+**Acceptance criteria:**
+- A sparse+dense capped-fill stack grows the sparse node ≤ its cap and shows the
+  residual as even spacing (not one ballooned node); uncapped fill is byte-
+  identical; deterministic and within the box.
+
 ---
 
 ## 4. Post-V1 backlog

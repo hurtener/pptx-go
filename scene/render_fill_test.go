@@ -150,6 +150,89 @@ func TestVAlignFill_OverflowStillWarns(t *testing.T) {
 	}
 }
 
+// Fill cap (Phase 44, R10.6). White-box tests for VAlignFillCapped:
+// distributeFillCapped bounds each flexible node's growth, and the alignedStackIn
+// capped branch turns the residual slack into even spacing within the box.
+
+// TestDistributeFillCapped_BoundsAndResidual: a sparse + dense flexible stack —
+// each node grows by at most fillGrowthMaxBP × its preferred height, and the
+// total growth used is less than the slack (the residual becomes spacing).
+func TestDistributeFillCapped_BoundsAndResidual(t *testing.T) {
+	// Two flexible nodes (Card): sparse 1", dense 2". Big slack so caps bind.
+	nodes := []SlideNode{Card{}, Card{}}
+	heights := []pptx.EMU{pptx.In(1), pptx.In(2)}
+	orig := append([]pptx.EMU(nil), heights...)
+	slack := pptx.In(10)
+
+	used := distributeFillCapped(nodes, heights, slack)
+
+	// Each node grew by no more than 1.0× its preferred height (capped).
+	for i := range heights {
+		grew := heights[i] - orig[i]
+		if cap := orig[i] * fillGrowthMaxBP / 10000; grew > cap {
+			t.Errorf("node %d grew %d, exceeds cap %d", i, grew, cap)
+		}
+	}
+	// used = sum of capped growth = orig[0]+orig[1] (each doubled) = In(3) < slack.
+	if used >= slack {
+		t.Errorf("used %d should be < slack %d (residual must remain for spacing)", used, slack)
+	}
+	if want := orig[0] + orig[1]; used != want {
+		t.Errorf("used = %d, want %d (each node doubled at the 1.0× cap)", used, want)
+	}
+}
+
+// TestDistributeFillCapped_NoFlexNoOp: with no flexible node nothing grows.
+func TestDistributeFillCapped_NoFlexNoOp(t *testing.T) {
+	nodes := []SlideNode{Heading{}, Prose{}}
+	heights := []pptx.EMU{pptx.In(0.6), pptx.In(0.4)}
+	if used := distributeFillCapped(nodes, heights, pptx.In(5)); used != 0 {
+		t.Errorf("no-flex distributeFillCapped used %d, want 0", used)
+	}
+	if heights[0] != pptx.In(0.6) || heights[1] != pptx.In(0.4) {
+		t.Errorf("no-flex distributeFillCapped mutated heights: %v", heights)
+	}
+}
+
+// TestFillCapped_EvenSpacingWithinBox: the alignedStackIn capped branch places a
+// sparse+dense stack within the box, with the residual slack as even spacing (a
+// non-zero top margin and widened gaps), not a single ballooned node.
+func TestFillCapped_EvenSpacingWithinBox(t *testing.T) {
+	r := newTestRenderer(t)
+	box := r.bodyRegion() // the layout uses the body region as the stack box
+	// Two flexible Grids with small preferred bodies (sparse), so the caps bind
+	// and a large residual remains.
+	nodes := []SlideNode{
+		Grid{Columns: 1, Cells: []SlideNode{Card{Header: "a"}}},
+		Grid{Columns: 1, Cells: []SlideNode{Card{Header: "b"}}},
+	}
+	pls := stackedPlacements(r.layout(nodes, "s", Alignment{Vertical: VAlignFillCapped}))
+	if len(pls) != 2 {
+		t.Fatalf("want 2 placements, got %d", len(pls))
+	}
+	// Top margin: the first node starts strictly below the box top (even spacing).
+	if pls[0].box.Y <= box.Y {
+		t.Errorf("capped fill first node Y (%d) should be below box top (%d) — top margin", pls[0].box.Y, box.Y)
+	}
+	// Last node bottom stays within the box.
+	last := pls[len(pls)-1]
+	if b := last.box.Y + last.box.H; b > box.Bottom() {
+		t.Errorf("capped fill last node bottom %d exceeds box bottom %d", b, box.Bottom())
+	}
+	// The inter-node gap is widened beyond the standard gap (residual spread).
+	gap := r.theme.ResolveSpace(pptx.SpaceMD)
+	if actualGap := pls[1].box.Y - (pls[0].box.Y + pls[0].box.H); actualGap <= gap {
+		t.Errorf("capped fill gap %d should exceed the standard gap %d (even spacing)", actualGap, gap)
+	}
+}
+
+// TestVAlignFillCapped_String guards the enum name.
+func TestVAlignFillCapped_String(t *testing.T) {
+	if got := VAlignFillCapped.String(); got != "fill-capped" {
+		t.Errorf("VAlignFillCapped.String() = %q, want %q", got, "fill-capped")
+	}
+}
+
 // stackedPlacements keeps only the body-stack placements (drops decoration and
 // section-divider full-slide overlays).
 func stackedPlacements(pls []placement) []placement {
