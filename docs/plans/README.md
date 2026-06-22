@@ -1174,6 +1174,25 @@ badges never collide or overflow the slide safe area.
   footer band top; chrome-off body region is the plain margin box; a clamped
   container stays above the footer.
 
+#### Phase 53 — header-pill fit-to-label
+
+**Subsystem:** scene — Layer 2 renderer (card chrome)
+**RFC sections:** §12.1
+**Deps:** Phase 22 (`naturalWidth`), Phase 43 (D-074 `fitScale`), brief 36.
+**What lands (R11.5, HIGH · engine):**
+- A shared `cardPillWidthOf(theme, pill, innerW)` sizes a card header pill to its
+  label (`naturalWidth(pill) + 2·padX`, floored at a circular minimum, clamped to
+  the card inner width), called from both `cardHeaderColumnWOf` (the header-width
+  reservation) and `renderCardChrome` (the drawn pill) so they agree. A label too
+  long even at full width is shrunk to one line via the R10.5 `fitScale`/`FontScale`.
+- Fixes a long pill label ("CUSTOMIZABLE") wrapping inside the fixed `In(1.0)` chip.
+  Pure integer `naturalWidth` → deterministic. Pill widths change (the fixed `In(1.0)`
+  is gone); existing pill tests assert presence/shape, not the fixed width (D-085).
+**Acceptance criteria:**
+- The pill sizes to `naturalWidth + 2·padX` (floored, clamped to inner width); the
+  header reservation equals the drawn pill width; pills render byte-identically
+  across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog

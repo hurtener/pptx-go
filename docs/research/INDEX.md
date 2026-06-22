@@ -203,6 +203,13 @@ semantics)*
   disjoint from both bands (recomputed from the chrome constants), chrome-off is the
   plain margin box (byte-identical), and a clamped container stays above the footer.
   No renderer change. (R11.4, HIGH.)
+- `36-header-pill-fit-to-label.md` — a shared `cardPillWidthOf(theme, pill, innerW)`
+  = clamp(`naturalWidth(pill@TypeCaption)` + 2·padX, min, innerW) sizes a card header
+  pill to its label, called from both `cardHeaderColumnWOf` (the reservation) and
+  `renderCardChrome` (the drawn pill) so they never drift; a clamped label is
+  shrunk to one line via the R10.5 `fitScale`/`FontScale`. Fixes a long pill
+  ("CUSTOMIZABLE") wrapping inside a fixed `In(1.0)` chip. Pure integer →
+  deterministic. (R11.5, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
