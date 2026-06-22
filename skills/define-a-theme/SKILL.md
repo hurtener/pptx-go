@@ -78,7 +78,7 @@ Colors for text runs. Construct with `pptx.TokenTextColor(role)`.
 ### Typography — `TypeRole` → `Theme.Typography[role]` (`FontSpec`)
 
 A `FontSpec` is `{Family string; Size float64; Weight int; Italic bool; Tracking
-float64; LineHeight float64; Case TextCase}`. Weight
+float64; LineHeight float64; Case TextCase; AvgCharWidth float64}`. Weight
 is 100–900 (400 = regular, 700 = bold); `FontSpec.Bold()` reports `Weight >=
 600`. `Tracking` is letter-spacing in points (signed): positive opens glyphs
 apart (wide-tracked eyebrows), negative tightens (display headlines), emitted as
@@ -90,7 +90,9 @@ emitted as `a:pPr/a:lnSpc/a:spcPct`; `0`/`100` emit nothing, and
 (`CaseNone`/`CaseUpper`/`CaseSmallCaps`) is a case transform rendered via
 `a:rPr/@cap` — the run text stays original-case while the display is cased
 (`RunStyle.Case` overrides per run); pairs with `Tracking` for tracked-caps
-eyebrows. Select a role via
+eyebrows. `AvgCharWidth` is the face's average glyph advance (fraction of size)
+for the wrap/overflow estimator only — set a measured factor for a serif/display
+face; `0` uses the `~0.5` sans fallback (it never renders). Select a role via
 `RunStyle{TypeRole: role}`. Defaults
 below use heading font `Calibri Light`, body font `Calibri`, mono font `Consolas`.
 

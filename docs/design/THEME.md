@@ -73,6 +73,13 @@ overrides per run. `CaseNone` emits nothing (byte-identical). The engine provide
 the mechanism only — making the default caption role uppercase is the soul's
 choice (D-026), not the engine default.
 
+**Average char width** (estimator metric, D-064): `FontSpec.AvgCharWidth` is the
+role face's average glyph advance as a fraction of font size, used **only by the
+deterministic wrap/overflow estimator** (it never renders). A soul sets a
+measured factor for its bundled face (serif/display faces advance differently
+from the default sans); `0` uses the built-in `~0.5` sans fallback —
+byte-identical. A layout-estimator input on the type scale, not a visual token.
+
 ### Spacing / Radius / Elevation
 
 - Spacing: `SpaceXS`, `SpaceSM`, `SpaceMD`, `SpaceLG`, `SpaceXL`, `Space2XL`.

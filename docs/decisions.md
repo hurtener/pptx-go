@@ -1891,4 +1891,35 @@ per-role `Typography[role].Family` override remains the escape hatch.
 
 ---
 
+## D-064 — Per-face width metric on FontSpec for the wrap estimator (not a global registry)
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** `scene/metrics.go` pinned a single `avgCharWidthFactor = 0.5`
+calibrated for the default sans; a serif/display face (or any non-sans) makes
+`naturalWidth`/`wrappedLines` mis-estimate advance widths, contributing to
+title/body overlaps once a soul uses a non-sans face. Wave 9 unit
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R9.5, HIGH · engine; D-059).
+**Decision:** Add `FontSpec.AvgCharWidth float64` (a role face's average glyph
+advance as a fraction of font size) and have `naturalWidth` use it when set, else
+the built-in `~0.5` sans fallback. This is consulted per run via the resolved
+`FontSpec` (the run's role's family). **Deviation from the spec's "per-family
+table keyed by font family" (§4.3):** implemented as a per-role `FontSpec` field
+the soul sets, NOT a mutable global family-keyed registry — it is deterministic
+(no shared mutable state, no concurrency hazard), theme-scoped, requires no
+invented/unmeasured factor table in the engine, and matches how the other R9
+type-detail tokens (tracking/line-height/case) live on `FontSpec`. Roles sharing
+a family each carry the factor (minor redundancy; the soul sets the type scale as
+a unit anyway). All values are soul-time constants — no runtime measurement, no
+DOM — so the estimator stays deterministic.
+**Consequences:** A soul's serif/display roles get accurate wrap/overflow
+estimates; the field never renders (it tunes the layout estimate only). Additive
+and deterministic: `AvgCharWidth == 0` uses the 0.5 fallback, so the default sans
+and every existing theme produce byte-identical estimates and output. Documented
+in `docs/design/THEME.md` as an estimator input (not a visual token). A
+package-level built-in table of well-known faces could later seed the field from
+a family name, but is not needed for the mechanism and is deferred.
+
+---
+
 *Append new entries below this line.*

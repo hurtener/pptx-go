@@ -31,6 +31,14 @@ anchors by name; the `scene` renderer translates anchor + offset into EMU
 coordinates at render time. Distinct from a `LayoutSlot`, which is the
 region a layout engine assigns to a content node.
 
+## Average char width
+
+`FontSpec.AvgCharWidth` — a role face's average glyph advance as a fraction of
+font size, used only by the deterministic wrap/overflow estimator (`naturalWidth`);
+it never renders. A soul sets a measured factor for a serif/display face; `0`
+uses the built-in `~0.5` sans fallback (byte-identical). See `docs/design/THEME.md`,
+`D-064`.
+
 ## Aspect warning
 
 The `LayoutWarning` a `chart` raises when the chart image's aspect ratio
