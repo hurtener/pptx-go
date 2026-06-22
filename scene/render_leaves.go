@@ -20,7 +20,7 @@ func (r *renderer) renderProse(ps *pptx.Slide, box pptx.Box, v Prose, hAlign HAl
 	pAlign := hAlignToParagraph(hAlign)
 	tf := ps.AddTextFrame(box)
 	for _, para := range v.Paragraphs {
-		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign})
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign, LineHeight: r.lineH(pptx.TypeBody)})
 		r.addRichText(ps, p, para, pptx.TypeBody)
 	}
 	r.stats.Shapes++
@@ -28,8 +28,9 @@ func (r *renderer) renderProse(ps *pptx.Slide, box pptx.Box, v Prose, hAlign HAl
 
 func (r *renderer) renderHeading(ps *pptx.Slide, box pptx.Box, v Heading, hAlign HAlign) {
 	tf := ps.AddTextFrame(box)
-	p := tf.AddParagraph(pptx.ParagraphOpts{Align: hAlignToParagraph(hAlign)})
-	r.addRichText(ps, p, v.Text, headingRole(v.Level))
+	role := headingRole(v.Level)
+	p := tf.AddParagraph(pptx.ParagraphOpts{Align: hAlignToParagraph(hAlign), LineHeight: r.lineH(role)})
+	r.addRichText(ps, p, v.Text, role)
 	r.stats.Shapes++
 }
 
@@ -37,7 +38,7 @@ func (r *renderer) renderList(ps *pptx.Slide, box pptx.Box, v List) {
 	tf := ps.AddTextFrame(box)
 	bullet := listBullet(v.Kind)
 	for _, item := range v.Items {
-		p := tf.AddParagraph(pptx.ParagraphOpts{Bullet: bullet, Level: item.Level})
+		p := tf.AddParagraph(pptx.ParagraphOpts{Bullet: bullet, Level: item.Level, LineHeight: r.lineH(pptx.TypeBody)})
 		r.addRichText(ps, p, item.Text, pptx.TypeBody)
 	}
 	r.stats.Shapes++
@@ -52,7 +53,7 @@ func (r *renderer) renderDivider(ps *pptx.Slide, box pptx.Box, _ Divider) {
 func (r *renderer) renderQuote(ps *pptx.Slide, box pptx.Box, v Quote, hAlign HAlign) {
 	pAlign := hAlignToParagraph(hAlign)
 	tf := ps.AddTextFrame(box)
-	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign})
+	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign, LineHeight: r.lineH(pptx.TypeH3)})
 	r.addRichText(ps, p, v.Text, pptx.TypeH3)
 	if v.Attribution != "" {
 		r.plainPara(tf, "— "+v.Attribution, pptx.TypeCaption, pptx.ParagraphOpts{Align: pAlign})
@@ -69,11 +70,11 @@ func (r *renderer) renderCallout(ps *pptx.Slide, box pptx.Box, v Callout) {
 	textBox := pptx.Box{X: box.X + pptx.In(0.2), Y: box.Y, W: box.W - pptx.In(0.2), H: box.H}
 	tf := ps.AddTextFrame(textBox)
 	if v.Title != "" {
-		p := tf.AddParagraph(pptx.ParagraphOpts{})
+		p := tf.AddParagraph(pptx.ParagraphOpts{LineHeight: r.lineH(pptx.TypeBody)})
 		p.AddRun(v.Title, pptx.RunStyle{TypeRole: pptx.TypeBody, Bold: true})
 	}
 	if len(v.Body) > 0 {
-		p := tf.AddParagraph(pptx.ParagraphOpts{})
+		p := tf.AddParagraph(pptx.ParagraphOpts{LineHeight: r.lineH(pptx.TypeBody)})
 		r.addRichText(ps, p, v.Body, pptx.TypeBody)
 	}
 	r.stats.Shapes++
@@ -131,9 +132,18 @@ func (r *renderer) renderSectionDivider(ps *pptx.Slide, box pptx.Box, v SectionD
 
 // ---- helpers --------------------------------------------------------------
 
+// lineH returns the role's resolved line-height (percent of single) from the
+// active theme; 0 when the role declares none (byte-identical, D-061).
+func (r *renderer) lineH(role pptx.TypeRole) float64 {
+	return r.theme.ResolveType(role).LineHeight
+}
+
 func (r *renderer) plainPara(tf *pptx.TextFrame, text string, role pptx.TypeRole, opts pptx.ParagraphOpts) {
 	if text == "" {
 		return
+	}
+	if opts.LineHeight == 0 {
+		opts.LineHeight = r.lineH(role) // a node's role drives its leading (D-061)
 	}
 	tf.AddParagraph(opts).AddRun(text, pptx.RunStyle{TypeRole: role})
 }

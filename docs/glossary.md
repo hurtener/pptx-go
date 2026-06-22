@@ -507,6 +507,15 @@ A scene IR node that doesn't contain children. Listed in
 A shape's outline (builder): width (EMU), `Color`, and optional preset dash.
 Like `Fill`, its color resolves against the active `Theme`.
 
+## Line height
+
+Paragraph leading on a `FontSpec` (`FontSpec.LineHeight`, percent of single;
+100 = single) — part of the resolved type scale. The scene renderer applies a
+node's role line-height to its paragraphs, emitted as OOXML
+`a:pPr/a:lnSpc/a:spcPct` (1/1000 percent); `ParagraphOpts.LineHeight` is the
+builder-level override. 0/100 = none (byte-identical). See `Tracking`,
+`docs/design/THEME.md`, and `D-061`.
+
 ## Master
 
 `pptx.Master` — a read-only view of one slide master and the `Layout`s it

@@ -1802,4 +1802,33 @@ drives).
 
 ---
 
+## D-061 — Line-height (leading) token: FontSpec.LineHeight → a:pPr/a:lnSpc/a:spcPct
+
+**Date:** 2026-06-21
+**Status:** Settled
+**Context:** Pro decks set multi-line display headlines tight (~100–105%) and body
+readable (~120–135%); the engine had no leading control (`FontSpec` lacked it,
+`XParaProps` carried no line spacing, no `a:lnSpc` was ever emitted). Wave 9 unit
+(`DECKARD-PRODUCT-REQUIREMENTS.md` R9.4, HIGH · engine; D-059).
+**Decision:** Add `FontSpec.LineHeight float64` (line spacing as a percent of
+single; the per-role token a soul sets) and `pptx.ParagraphOpts.LineHeight`
+(builder-level per-paragraph value); `AddParagraph` emits `a:pPr/a:lnSpc/a:spcPct`
+= `round(pct × 1000)` (OOXML 1/1000 percent) when the value is non-zero and not
+100. The scene leaf renderers apply a node's base-role `FontSpec.LineHeight` to
+its paragraphs (a `lineH(role)` helper + `plainPara` routing). A
+`Paragraph.LineHeight()` read accessor returns the value (G6). New OOXML structs
+`XLnSpc`/`XSpcPct` are placed as `pPr`'s first child (schema order), and
+`lnSpc`/`spcPct` are registered in `RestoreNamespaces` so they emit with the `a:`
+prefix (a write-path correctness fix — bare `<lnSpc>` is invalid OOXML).
+**Consequences:** A soul can set per-role leading and the scene tightens/loosens
+paragraphs accordingly; additive and deterministic (0/100 emit nothing →
+byte-identical; the default theme sets no line-height). Round-trips losslessly.
+**Deferred:** feeding leading into the `preferredHeight`/`wrappedLines` estimator
+(R9.4's "smaller preferredHeight" acceptance) — the per-line height model is a
+fixed constant, not leading-derived, so making it leading-aware is a model rework
+folded with R9.5 (per-face metrics) / R10.10 (estimate-actual parity). This phase
+delivers the visual leading; the estimator-accuracy refinement follows.
+
+---
+
 *Append new entries below this line.*

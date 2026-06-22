@@ -416,9 +416,21 @@ type XParaProps struct {
 	Indent    int         `xml:"indent,attr,omitempty"`
 	Level     int         `xml:"lvl,attr,omitempty"`
 	Alignment string      `xml:"algn,attr,omitempty"`
+	LnSpc     *XLnSpc     `xml:"lnSpc,omitempty"` // line spacing; schema-first child (D-061)
 	BuNone    *XEmptyElem `xml:"buNone,omitempty"`
 	BuChar    *XBuChar    `xml:"buChar,omitempty"`
 	BuAutoNum *XBuAutoNum `xml:"buAutoNum,omitempty"`
+}
+
+// XLnSpc is <a:lnSpc>: paragraph line spacing. V1 emits the percentage form
+// (<a:spcPct val="…"/>, 1/1000 percent — 100000 = single).
+type XLnSpc struct {
+	SpcPct *XSpcPct `xml:"spcPct,omitempty"`
+}
+
+// XSpcPct is <a:spcPct val="…"/> — a spacing percentage in 1/1000 percent.
+type XSpcPct struct {
+	Val int `xml:"val,attr"`
 }
 
 // XBuChar is a character bullet (<a:buChar char="•"/>).
