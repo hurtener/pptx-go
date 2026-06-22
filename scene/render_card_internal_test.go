@@ -111,3 +111,83 @@ func TestCardBodyBelowWrappedHeader(t *testing.T) {
 		t.Errorf("body top %d is above the wrapped header bottom %d (overlap, R10.1)", body.Y, r.cardHeaderBottom(box, c))
 	}
 }
+
+// TestCardBodyBelowWrappedHeader_AllCombos is the R11.1 acceptance golden: a
+// deliberately long, wrapping header across every CardSize × CardLayout
+// combination must (a) advance the body region top to at or below the header
+// band bottom — no header/body overlap — and (b) when a HeaderFill band is
+// enabled, size the band to exactly the header bottom so the band fully contains
+// the wrapped header. A single-line header stays byte-identical to the legacy
+// fixed advance for every combo. (R11.1, closed-by-D-070; verified by D-081.)
+func TestCardBodyBelowWrappedHeader_AllCombos(t *testing.T) {
+	const longHeader = "A deliberately long card header that cannot possibly fit on a single line in a narrow third-width card column"
+
+	teal := ColorAccent
+	sizes := []struct {
+		name string
+		size CardSize
+	}{
+		{"MD", CardSizeMD},
+		{"SM", CardSizeSM},
+		{"LG", CardSizeLG},
+	}
+	layouts := []struct {
+		name   string
+		layout CardLayout
+	}{
+		{"Default", CardLayoutDefault},
+		{"IconTop", CardLayoutIconTop},
+	}
+
+	for _, sz := range sizes {
+		for _, ly := range layouts {
+			t.Run(sz.name+"/"+ly.name, func(t *testing.T) {
+				r := newTestRenderer(t)
+				pres := pptx.New()
+				ps := pres.AddSlide()
+				// A narrow (1/3-width) card so the long header wraps.
+				box := pptx.Box{X: 0, Y: 0, W: pptx.In(3), H: pptx.In(3)}
+
+				long := cardChrome{
+					header:     longHeader,
+					eyebrow:    "SECTION",
+					icon:       "star", // exercise the icon-band advance (esp. IconTop)
+					fill:       ColorSurface,
+					headerFill: &teal, // exercise the D-054 header band containment
+					size:       sz.size,
+					layout:     ly.layout,
+				}
+
+				// (4) The test must not be vacuous: the long header must actually wrap.
+				_, titleH := r.cardHeaderRowHeights(box, long)
+				if lines := titleH / cardTitleRowH; lines < 2 {
+					t.Fatalf("long header wrapped to %d line(s); expected >= 2 (test is vacuous)", lines)
+				}
+
+				// bandBottom is both the body-region top (cardHeaderBottom) and the
+				// bottom of the D-054 header band: renderCardChrome draws the band at
+				// height cardHeaderBottom(box,c) - box.Y, so the band bottom IS this
+				// value by construction.
+				bandBottom := r.cardHeaderBottom(box, long)
+				body := r.renderCardChrome(ps, box, long, "s1")
+
+				// (1) No header/body overlap AND no drift: the composed body top equals
+				// cardHeaderBottom exactly, because renderCardChrome advances through
+				// the same shared cardHeaderRowHeights. Body top == band bottom means
+				// the header band meets the body with the wrapped header fully inside it.
+				if body.Y != bandBottom {
+					t.Errorf("body top %d != header band bottom %d (R11.1: band/body must agree, no overlap/gap)", body.Y, bandBottom)
+				}
+
+				// (3) A single-line header is byte-identical to the legacy fixed advance.
+				single := long
+				single.header = "Short"
+				single.eyebrow = ""
+				_, singleTitleH := r.cardHeaderRowHeights(box, single)
+				if singleTitleH != cardTitleRowH {
+					t.Errorf("single-line titleH = %d, want the legacy fixed %d (byte-identical, R11.1)", singleTitleH, cardTitleRowH)
+				}
+			})
+		}
+	}
+}

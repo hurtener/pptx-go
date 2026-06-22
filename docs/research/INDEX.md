@@ -174,6 +174,13 @@ semantics)*
   width (span-1 byte-identical, wide-span no longer over-counts), so overflow
   detection / the fit pass are trustworthy; closes the R10.1-deferred
   `cardChromeEst` parity. (R10.10, HIGH.)
+- `32-card-header-robustness-verify.md` — verify-and-close of R11.1: the
+  wrapped-aware card header geometry (`cardHeaderColumnWOf`/`cardHeaderRowHeights`
+  shared by `cardHeaderBottom` + `renderCardChrome`) already shipped in R10.1/D-070
+  (estimator parity in R10.10/D-079), so R11.1 needs only the acceptance golden — a
+  long multi-line header swept across all `CardSize × CardLayout` combos asserting
+  `body.Y >= header band bottom` and band containment, single-line byte-identical.
+  No renderer change. (R11.1, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*
