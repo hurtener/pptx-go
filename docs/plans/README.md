@@ -914,6 +914,27 @@ fit-to-region compression).
   bottom (no overlap) and sizes the header band to the wrapped height; a
   single-line header is byte-identical; deterministic.
 
+#### Phase 40 — fit-to-region compression
+
+**Subsystem:** scene — Layer 2 renderer (body-stack layout)
+**RFC sections:** §10, §10.2
+**Deps:** Phase 13 (`alignedStackIn`), Phase 23 (`VAlignFill`, D-052), Phase 39
+(D-070), brief 23.
+**What lands (R10.2, CRITICAL · engine):**
+- A new opt-in `VAlignFit` body-stack mode (set via `SceneSlide.Content.Vertical`).
+  When the stack overflows its region, a deterministic `fitCompress` pass floors
+  the inter-node gap toward `SpaceXS` then proportionally scales slot heights
+  toward a pinned `sMin=0.60` ratio, so the last node lands inside the frame
+  instead of clipping off-slide.
+- Byte-identical when off or when content already fits; the card-padding /
+  type-scale sub-steps are deferred to R10.7 / R10.5, container-internal fit to
+  R10.3 / R10.4.
+**Acceptance criteria:**
+- For a stack overflowing by up to ~25%, `VAlignFit` keeps the last node bottom
+  ≤ region bottom using only the pinned steps; fitting content is byte-identical
+  to `VAlignTop`; deterministic at any worker count; the overflow warning fires
+  iff content still overflows after compression.
+
 ---
 
 ## 4. Post-V1 backlog

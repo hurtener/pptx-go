@@ -253,13 +253,22 @@ narrow card pushes the body down below the wrapped header instead of colliding
 with it (single-line headers are unchanged).
 
 `SceneSlide.Content.Vertical` aligns the body stack: `VAlignTop` (default),
-`VAlignCenter`, `VAlignBottom`, `VAlignJustify`, and `VAlignFill`. `VAlignFill`
-pins fixed leaves at the top and **grows the flexible nodes** — the containers
-(`Grid`, `TwoColumn`, `Card`, `CardSection`, `Bento`, `Table`) plus `Image`/`Chart`
-— to consume the remaining height, so a sparse slide fills its frame. The leftover
-height is shared proportionally and deterministically; text leaves keep their
-size, and a slide with no flexible node just top-aligns. It is opt-in — the
-engine never decides on its own that a slide looks thin.
+`VAlignCenter`, `VAlignBottom`, `VAlignJustify`, `VAlignFill`, and `VAlignFit`.
+`VAlignFill` pins fixed leaves at the top and **grows the flexible nodes** — the
+containers (`Grid`, `TwoColumn`, `Card`, `CardSection`, `Bento`, `Table`) plus
+`Image`/`Chart` — to consume the remaining height, so a sparse slide fills its
+frame. The leftover height is shared proportionally and deterministically; text
+leaves keep their size, and a slide with no flexible node just top-aligns.
+
+`VAlignFit` is the compression inverse, for the **over-full** slide: when the
+body stack is taller than its region, it shrinks the stack to fit instead of
+letting content spill off-slide. The engine first tightens inter-node gaps toward
+a pinned floor, then — only if still overflowing — scales every node's slot
+height toward a pinned ratio floor (60% of preferred), so the last node lands
+inside the frame. A stack that already fits is byte-identical to `VAlignTop`; an
+overflow too large for the pinned floors still raises the `content overflows its
+region` warning. Both modes are opt-in and deterministic — the engine never
+decides on its own that a slide is too thin or too full.
 
 Set `Scene.Chrome` (`Enabled`, `Brand`/`BrandAsset`, `Total`) for opt-in
 per-slide **chrome** drawn outside the body region (the body shrinks to fit): a
