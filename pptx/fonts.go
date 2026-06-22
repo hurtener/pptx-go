@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"github.com/hurtener/pptx-go/internal/ooxml/embeddings"
 	"github.com/hurtener/pptx-go/internal/ooxml/slide"
 	"github.com/hurtener/pptx-go/internal/opc"
 )
 
-// Font embedding (RFC §7.6, D-019). pptx-go provides the *mechanism* to embed
-// fonts; whether to embed (and which) is the caller's distribution decision.
-// There is no auto-embedding: the caller registers a FontSource and calls
-// EmbedFont for each face it wants shipped.
+// Font embedding (RFC §7.6, D-019, D-065). pptx-go provides the *mechanism* to
+// embed fonts; whether to embed (and which) is the caller's distribution
+// decision. A caller embeds one face at a time with EmbedFont, or opts into the
+// automatic save-time pass (WithFontEmbedding → autoEmbedFonts, D-065), which
+// embeds every face a deck actually uses via the registered FontSource. With no
+// FontSource registered nothing is embedded.
 
 // ErrNoFontSource is returned by EmbedFont when no FontSource is registered.
 var ErrNoFontSource = errors.New("pptx: no font source registered (use SetFontSource)")
@@ -23,7 +26,14 @@ var ErrNoFontSource = errors.New("pptx: no font source registered (use SetFontSo
 var ErrFontNotFound = errors.New("pptx: font not found")
 
 // FontSource resolves a font name + style + weight to its raw bytes. A missing
-// font returns (nil, ErrFontNotFound). Callers inject one via SetFontSource.
+// font returns (nil, ErrFontNotFound). Callers inject one via SetFontSource or
+// pptx.WithFontSource.
+//
+// The returned bytes are embedded **verbatim** — pptx-go applies no size cap and
+// no signature/format validation (the caller's responsibility, parallel to image
+// and SVG bytes under CLAUDE.md §7). A FontSource may be invoked from the save
+// path (the automatic embedding/fallback passes) and, when shared across several
+// presentations saved concurrently, must be safe for concurrent use.
 type FontSource interface {
 	Resolve(name, style string, weight int) ([]byte, error)
 }
@@ -65,8 +75,10 @@ func (p *Presentation) embedFontLocked(name, style string, weight int) error {
 		return fmt.Errorf("font %q: %w", name, ErrFontNotFound)
 	}
 
-	p.fontCounter++
-	n := int(p.fontCounter)
+	// Atomic, matching slideCounter/relCounter/chartCounter — embedFontLocked is
+	// reached both from EmbedFont (under p.mu.Lock) and from autoEmbedFonts in the
+	// save path, so the increment must not be a bare read-modify-write.
+	n := int(atomic.AddInt32(&p.fontCounter, 1))
 	uri := opc.NewPackURI(embeddings.FontPartURI(n))
 	if _, err := p.pkg.CreatePart(uri, embeddings.ContentTypeFontData, data); err != nil {
 		return fmt.Errorf("create font part: %w", err)
@@ -235,7 +247,13 @@ type fallbackKey struct {
 // byte-identical) when no FontSource is registered or no role declares a
 // Fallback. It runs before syncSlides so the serialized runs carry the resolved
 // face, and before autoEmbedFonts so the embedded bytes match. The caller holds
-// p.mu.
+// p.mu (the save path holds p.mu.Lock, so the run rewrite is exclusive).
+//
+// The substitution mutates the in-memory runs in place: after a save that
+// substitutes a face, Run.Font reports the resolved (fallback) family, not the
+// original. This is intentional — the run carries its realized face — and keeps
+// the pass idempotent (a second save finds the fallback family, not a primary
+// key, and rewrites nothing).
 func (p *Presentation) resolveFontFallbacks() {
 	if p.fontSource == nil {
 		return

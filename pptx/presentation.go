@@ -717,9 +717,16 @@ func (p *Presentation) Slides() []*Slide {
 // ============================================================================
 
 // Save serializes the presentation and writes it to a file.
+//
+// The save path holds the presentation's write lock: prepareForWrite mutates
+// shared builder state (it materializes parts, allocates the embedded-font
+// counter, and rewrites runs for font fallback), so concurrent saves of the
+// *same* *Presentation serialize. Saves of distinct presentations are
+// independent. To serve one deck to many concurrent writers, call WriteToBytes
+// once and share the bytes, or Clone per writer.
 func (p *Presentation) Save(path string) error {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if err := p.prepareForWrite(); err != nil {
 		return err
@@ -727,11 +734,13 @@ func (p *Presentation) Save(path string) error {
 	return p.pkg.SaveFile(path)
 }
 
-// Write serializes the presentation and writes it to an io.Writer.
-// This is suitable for high-concurrency streaming output such as HTTP responses.
+// Write serializes the presentation and writes it to an io.Writer (e.g. an HTTP
+// response). Like Save, it holds the write lock for the duration, so concurrent
+// writes of the same *Presentation serialize; for high-concurrency fan-out of a
+// single deck, WriteToBytes once and share the bytes.
 func (p *Presentation) Write(w io.Writer) error {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if err := p.prepareForWrite(); err != nil {
 		return err
@@ -740,9 +749,11 @@ func (p *Presentation) Write(w io.Writer) error {
 }
 
 // WriteToBytes serializes the presentation and returns it as a byte slice.
+// It holds the write lock (prepareForWrite mutates shared state); concurrent
+// calls on the same *Presentation serialize.
 func (p *Presentation) WriteToBytes() ([]byte, error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if err := p.prepareForWrite(); err != nil {
 		return nil, err

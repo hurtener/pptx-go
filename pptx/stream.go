@@ -49,8 +49,10 @@ func OpenStream(path string, opts ...Option) (*Presentation, error) {
 // writer. It applies the same syncing and repair-prompt hygiene (D-020) as
 // Save. (RFC §9, §17.2.)
 func (p *Presentation) SaveStream(path string) error {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	// Exclusive: prepareForWrite mutates shared builder state (see Save), so
+	// concurrent saves of the same *Presentation serialize.
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if err := p.prepareForWrite(); err != nil {
 		return err

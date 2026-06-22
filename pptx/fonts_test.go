@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/hurtener/pptx-go/internal/opc"
@@ -388,6 +389,134 @@ func TestFontFallbackDeterministicIdempotent(t *testing.T) {
 }
 
 // ----------------------------------------------------------------------------
+// Wave 9 checkpoint — concurrency guard (M1) + cross-phase coverage
+// ----------------------------------------------------------------------------
+
+// TestConcurrentSaveWithFontEmbeddingAndFallback drives the font save path
+// (autoEmbedFonts + resolveFontFallbacks, both mutating shared state) from many
+// goroutines on one *Presentation under -race, asserting all saves return the
+// same non-empty bytes. Guards the M1 fix (atomic fontCounter + exclusive save
+// lock).
+func TestConcurrentSaveWithFontEmbeddingAndFallback(t *testing.T) {
+	src := mapFontSource{"Georgia": []byte("GEORGIA"), "Inter": []byte("INTER")}
+	// Primary "Playfair Display" unavailable → fallback to Georgia; body Inter.
+	theme := fallbackTheme("Playfair Display", "Inter", "Georgia")
+	pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src), pptx.WithFontEmbedding())
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p.AddRun("Title", pptx.RunStyle{TypeRole: pptx.TypeH1})
+	p.AddRun("body", pptx.RunStyle{TypeRole: pptx.TypeBody})
+
+	const n = 8
+	var wg sync.WaitGroup
+	results := make([][]byte, n)
+	errs := make([]error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			results[i], errs[i] = pres.WriteToBytes()
+		}(i)
+	}
+	wg.Wait()
+
+	for i := 0; i < n; i++ {
+		if errs[i] != nil {
+			t.Fatalf("goroutine %d: %v", i, errs[i])
+		}
+		if len(results[i]) == 0 {
+			t.Fatalf("goroutine %d: empty output", i)
+		}
+		if !bytes.Equal(results[i], results[0]) {
+			t.Errorf("goroutine %d output differs from goroutine 0 (%d vs %d bytes)", i, len(results[i]), len(results[0]))
+		}
+	}
+}
+
+// TestAutoEmbedFourBucketsDeterministic exercises the embed-order comparator's
+// bold/italic branches: one family used at all four cuts (regular/bold/italic/
+// boldItalic), built independently twice in different run orders, must produce
+// byte-identical output (canonical font1..font4 ordering).
+func TestAutoEmbedFourBucketsDeterministic(t *testing.T) {
+	build := func(reverse bool) []byte {
+		src := mapFontSource{"Mix": []byte("MIX")}
+		theme := pptx.NewTheme(pptx.WithFonts("Mix", "Mix"))
+		pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src), pptx.WithFontEmbedding())
+		s := pres.AddSlide()
+		tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+		p := tf.AddParagraph(pptx.ParagraphOpts{})
+		styles := []pptx.RunStyle{
+			{TypeRole: pptx.TypeBody},
+			{TypeRole: pptx.TypeBody, Bold: true},
+			{TypeRole: pptx.TypeBody, Italic: true},
+			{TypeRole: pptx.TypeBody, Bold: true, Italic: true},
+		}
+		if reverse {
+			for i, j := 0, len(styles)-1; i < j; i, j = i+1, j-1 {
+				styles[i], styles[j] = styles[j], styles[i]
+			}
+		}
+		for _, rs := range styles {
+			p.AddRun("x", rs)
+		}
+		data, err := pres.WriteToBytes()
+		if err != nil {
+			t.Fatalf("WriteToBytes: %v", err)
+		}
+		return data
+	}
+	// Run order is slide content, so whole-deck bytes differ; but the embedded
+	// font list (sorted by family/bold/italic) must be canonical regardless of the
+	// order faces are first encountered.
+	embeddedList := func(deck []byte) string {
+		pkg, err := opc.Open(bytes.NewReader(deck), int64(len(deck)))
+		if err != nil {
+			t.Fatalf("reopen: %v", err)
+		}
+		defer func() { _ = pkg.Close() }()
+		xml := string(pkg.GetPartByStr("/ppt/presentation.xml").Blob())
+		i := strings.Index(xml, "<p:embeddedFontLst")
+		j := strings.Index(xml, "</p:embeddedFontLst>")
+		if i < 0 || j < 0 {
+			t.Fatalf("no embeddedFontLst in:\n%s", xml)
+		}
+		return xml[i:j]
+	}
+	if a, b := embeddedList(build(false)), embeddedList(build(true)); a != b {
+		t.Errorf("embeddedFontLst not order-independent:\n%s\n---\n%s", a, b)
+	}
+	// All four cuts embedded.
+	src := mapFontSource{"Mix": []byte("MIX")}
+	theme := pptx.NewTheme(pptx.WithFonts("Mix", "Mix"))
+	pres := pptx.New(pptx.WithTheme(theme), pptx.WithFontSource(src), pptx.WithFontEmbedding())
+	s := pres.AddSlide()
+	tf := s.AddTextFrame(pptx.Box{X: 0, Y: 0, W: pptx.Slide16x9Width, H: pptx.Slide16x9Height})
+	p := tf.AddParagraph(pptx.ParagraphOpts{})
+	p.AddRun("a", pptx.RunStyle{TypeRole: pptx.TypeBody})
+	p.AddRun("b", pptx.RunStyle{TypeRole: pptx.TypeBody, Bold: true})
+	p.AddRun("c", pptx.RunStyle{TypeRole: pptx.TypeBody, Italic: true})
+	p.AddRun("d", pptx.RunStyle{TypeRole: pptx.TypeBody, Bold: true, Italic: true})
+	if got := countFontParts(t, pres); got != 4 {
+		t.Errorf("four-cut family embedded %d files, want 4", got)
+	}
+}
+
+func TestFontFallbackExhaustedChainKeepsPrimary(t *testing.T) {
+	// Source resolves nothing in [Family]+Fallback → no substitution, primary kept.
+	src := mapFontSource{"SomethingElse": []byte("X")}
+	pres := fallbackDeck(t, fallbackTheme("Playfair Display", "Inter", "Georgia", "Cardo"),
+		pptx.WithFontSource(src))
+	xml := slideXML(t, pres)
+	if !strings.Contains(xml, `typeface="Playfair Display"`) {
+		t.Errorf("primary not kept when the whole chain is unresolvable:\n%s", xml)
+	}
+	if strings.Contains(xml, `typeface="Georgia"`) || strings.Contains(xml, `typeface="Cardo"`) {
+		t.Errorf("substituted to an unresolvable fallback:\n%s", xml)
+	}
+}
+
+// ----------------------------------------------------------------------------
 // Phase 38 — weight-aware font embedding (R9.8, D-068)
 // ----------------------------------------------------------------------------
 
@@ -539,10 +668,13 @@ func TestEmphasisDisplayItalicEmbedded(t *testing.T) {
 	if !strings.Contains(xml, `typeface="Cardo"`) {
 		t.Errorf("display face not embedded:\n%s", xml)
 	}
-	// The display role is bold by default, so an italic display run embeds the
-	// boldItalic bucket — either way an italic cut is present.
-	if !strings.Contains(strings.ToLower(xml), "italic") {
-		t.Errorf("italic cut not present in embeddedFontLst:\n%s", xml)
+	// The display role is bold by default, so a weight-700 italic display run must
+	// land specifically in the boldItalic slot — not the plain italic slot.
+	if !strings.Contains(xml, "<p:boldItalic ") {
+		t.Errorf("display italic cut not embedded in the boldItalic slot:\n%s", xml)
+	}
+	if strings.Contains(xml, "<p:italic ") {
+		t.Errorf("a weight-700 italic display run wrongly used the plain italic slot:\n%s", xml)
 	}
 }
 

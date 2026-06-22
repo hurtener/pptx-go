@@ -4,7 +4,7 @@
 **RFC sections:** §7 (theme tokens), §9 (rich text / paragraphs)
 **Deps:** Phase 02 (theme/FontSpec), Phase 04 (rich text), Phase 30 (the
 type-detail-token pattern). External: none.
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -148,11 +148,11 @@ No new node, no new token *family* beyond the typography taxonomy entry (P2).
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for `pptx` + `scene`.
-- [ ] `scripts/smoke/phase-31.sh` reports `OK ≥ 4` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] `make lint` clean.
-- [ ] Glossary + `docs/design/THEME.md` updated.
-- [ ] Decision entry D-061 added.
-- [ ] Docs site + `define-a-theme` skill updated (§19).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for `pptx` + `scene`.
+- [x] `scripts/smoke/phase-31.sh` reports `OK ≥ 4` and `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] `make lint` clean.
+- [x] Glossary + `docs/design/THEME.md` updated.
+- [x] Decision entry D-061 added.
+- [x] Docs site + `define-a-theme` skill updated (§19).

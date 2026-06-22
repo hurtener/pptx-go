@@ -3,7 +3,7 @@
 **Subsystem:** pptx (theme) + scene (estimator) — `RFC §3.3`, §7, §10.2
 **RFC sections:** §7 (theme/FontSpec), §10.2 (content-bbox-driven layout)
 **Deps:** Phase 02 (FontSpec), Phase 22 (wrap estimator). External: none.
-**Status:** In progress
+**Status:** Done
 
 ---
 
@@ -114,11 +114,11 @@ fallback.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean.
-- [ ] `scripts/smoke/phase-34.sh` reports `OK ≥ 1` and `FAIL = 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] `make lint` clean.
-- [ ] Glossary + `docs/design/THEME.md` updated.
-- [ ] Decision entry D-064 added.
-- [ ] `define-a-theme` skill updated (§19).
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean.
+- [x] `scripts/smoke/phase-34.sh` reports `OK ≥ 1` and `FAIL = 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] `make lint` clean.
+- [x] Glossary + `docs/design/THEME.md` updated.
+- [x] Decision entry D-064 added.
+- [x] `define-a-theme` skill updated (§19).
