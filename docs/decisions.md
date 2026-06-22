@@ -2511,4 +2511,58 @@ inset parity is a future refinement. Closes the `cardChromeEst` parity deferred 
 
 ---
 
+## D-080 — Wave 10 checkpoint: doc/accessor hygiene + three documented intentional behaviors
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The §17 adversarial checkpoint of Wave 10 (Phases 39–48, the
+content-fit & density layout cluster, D-070..D-079) ran 40 agents over 8
+dimensions with 2 skeptics per finding. It found **no broken runtime invariant** —
+the additive byte-identity, integer-EMU/basis-point determinism, division/negative
+guards, and the no-new-OOXML-element constraint all held against the source. The 13
+confirmed findings were documentation drift and white-box test-coverage gaps.
+**Decision:** Land the punch list as one `chore(checkpoint)` PR. (1) **Doc
+hygiene:** the `docs/site/reference/pptx.md` struct snapshots are refreshed to
+include the Wave-9/10 additions (`RunStyle.Tracking`/`Case`/`FontScale`,
+`ParagraphOpts.LineHeight`/`BulletIndent`) and the new read accessors; the
+`Card.BodyVAlign` enumeration is completed to all 8 `VAlign` modes (it fed
+`alignedStackIn` directly, so `VAlignFillCapped`/`VAlignBalanced` were always
+reachable) in the glossary, the catalog, and the skill; the Phase-48 plan file
+listing and a card-body call-site comment are corrected. (2) **Accessor:**
+`Paragraph.BulletIndent()` is added to restore the read-inverse pattern every
+sibling field has (`Run.FontSize`, `Paragraph.LineHeight`, `Run.Tracking/Case`);
+the round-trip test now asserts the Go-model accessor, not only raw XML. (3)
+**Test hardening** in the same PR: the wrapped-header-card overflow warning
+(Phase-48 criterion 4), `fitCompress` n==1 / ~25%-band / extreme-overflow-still-
+warns, `distributeFillCapped` zero-preferred-flex, `VAlignBalanced` single-node,
+`cardHeaderExtraHeight` eyebrow wrapping, `FontScale`+bold and a dirty-quantum
+(0.65) round-trip, parallel-determinism guards for the float `AutoFit` path and
+the weighted bento, three cross-feature interaction tests, and a card-body
+per-node-`Align` guard.
+
+**Three intentional behaviors documented (not defects):**
+- **Bento `WeightedRows` slot estimate stays a uniform over-estimate.** The bento
+  `preferredHeight` (`render.go`) uses `nRows × global-max-cell` and does not
+  branch on `WeightedRows`, while the composer sizes rows per-row. The estimate is
+  always ≥ the composed height (over-estimate → taller slot → no clip), so it is
+  safe; reconciling it exactly would couple the estimator to the weighted-row pass
+  for no overflow-safety gain. Deferred.
+- **Bento clamps silently (no overflow warning).** `bentoWeightedRowHeights` /
+  `bentoGeometry` floor their scale and never call `r.warn` (unlike
+  `alignedStackIn`); the `content overflows its region` warning is a slide-stack
+  signal. Pre-existing for equal rows; the R10.3 clamp inherits it intentionally.
+- **`FontScale` emits a truncated `@sz`.** `toProps` computes `int(size ×
+  FontScale × 100)` (truncate), matching the pre-existing unscaled `int(spec.Size
+  × 100)` sz emission — consistent within the size attribute (the `math.Round`
+  used for `@spc`/tracking is a different attribute). Deterministic; documented via
+  a dirty-quantum (0.65) round-trip test.
+**Consequences:** Wave 10 is closed as healthy — the density/fit cluster's
+additivity, determinism, and bounds hold, and the reference docs, the
+`BulletIndent` read inverse, and the new-branch test coverage are restored. No
+public API change beyond the additive `Paragraph.BulletIndent()` accessor. The
+three documented behaviors are settled as intentional. Audit dimensions and the
+full punch list are preserved in the workflow transcript.
+
+---
+
 *Append new entries below this line.*

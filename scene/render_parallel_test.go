@@ -195,6 +195,49 @@ func TestRenderDeterministic_VAlignBalanced(t *testing.T) {
 	}
 }
 
+// TestRenderDeterministic_AutoFit (checkpoint NH8) guards the only float64 path in
+// Wave 10: an AutoFit deck (FontScale → @sz) must render byte-identically across
+// worker counts.
+func TestRenderDeterministic_AutoFit(t *testing.T) {
+	long := strings.Repeat("8", 60)
+	sc := scene.Scene{}
+	for i := 0; i < 16; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{
+				scene.Hero{Title: long, AutoFit: true},
+				scene.Stat{Value: long, AutoFit: true},
+				scene.Heading{Text: rt(long), Level: 1, AutoFit: true},
+			},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("AutoFit: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
+// TestRenderDeterministic_WeightedBento (checkpoint NH8): a content-weighted bento
+// deck renders byte-identically across worker counts.
+func TestRenderDeterministic_WeightedBento(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 16; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + (i % 26))),
+			Nodes: []scene.SlideNode{scene.Bento{Columns: 3, WeightedRows: true, Rows: []scene.BentoRow{
+				{Label: "R1", Cells: []scene.BentoCell{{Span: 2, Node: scene.Prose{Paragraphs: []scene.RichText{rt("x")}}}, {Span: 1, Node: scene.Card{Header: "c"}}}},
+				{Label: "R2", Cells: []scene.BentoCell{{Span: 1, Node: scene.List{Items: []scene.ListItem{{Text: rt("a")}, {Text: rt("b")}, {Text: rt("c")}, {Text: rt("d")}}}}}},
+			}}},
+		})
+	}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatalf("WeightedBento: parallel render (%d bytes) differs from sequential (%d bytes)", len(par), len(seq))
+	}
+}
+
 // TestRenderDeterministic_WithAssets guards determinism when a media-bearing
 // node (code_block) is mixed into a multi-slide deck: those slides render
 // sequentially, so distinct image parts are numbered in scene order every run.

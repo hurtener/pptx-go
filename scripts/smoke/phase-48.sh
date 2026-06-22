@@ -22,6 +22,7 @@ run_check "wrapped-header card estimate grows"              ./scene/ 'TestPrefer
 run_check "single-line card estimate byte-identical"       ./scene/ 'TestPreferredHeight_SingleLineCardUnchanged'
 run_check "wide-span bento estimate uses span width"       ./scene/ 'TestPreferredHeight_BentoSpanWidth'
 run_check "span-1 bento estimate byte-identical"           ./scene/ 'TestPreferredHeight_BentoSpanOneByteIdentical'
+run_check "wrapped-header card overflow warning fires"     ./scene/ 'TestOverflow_WrappedHeaderCardFires'
 echo
 echo "phase-48 smoke: ${OK} OK, ${FAIL} FAIL, ${SKIP} SKIP"
 [ "$FAIL" -eq 0 ]

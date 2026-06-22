@@ -76,7 +76,7 @@ preferredHeight Bento:
 ```text
 scene/render_card.go                 # CHANGED — cardPadding*/cardHeaderColumnW free funcs + method wrappers
 scene/render.go                      # CHANGED — Card/CardSection chrome increment; Bento span-width estimate
-scene/render_height_test.go          # CHANGED — wrapped-header card est grows; span-width bento est; single-line/span-1 byte-identical
+scene/render_parity_test.go          # NEW — wrapped-header card est grows; span-width bento est; single-line/span-1 byte-identical; wrapped-header overflow warns
 scripts/smoke/phase-48.sh            # NEW — phase smoke
 docs/research/31-estimate-actual-parity.md # NEW — brief 31
 docs/research/INDEX.md               # CHANGED — register brief 31

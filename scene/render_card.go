@@ -461,7 +461,9 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 	// Vertical body: route through the body-stack alignment engine so a card can
 	// distribute its body (center / bottom / justify / fill / fit) within the
 	// card body box instead of always top-anchoring (R10.4). BodyVAlign's zero
-	// value (VAlignTop) reproduces the top-anchored stackIn layout byte-for-byte.
+	// value (VAlignTop) reproduces the top-anchored stackIn layout byte-for-byte
+	// when no body node carries a per-node Align override (alignedStackIn honors
+	// those where the old stackIn ignored them — a deliberate improvement, D-073).
 	for _, pl := range r.alignedStackIn(body, v.Body, slideID, Alignment{Vertical: v.BodyVAlign}) {
 		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
