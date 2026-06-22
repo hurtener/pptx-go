@@ -508,9 +508,14 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		}
 		return pptx.EMU(rows)*maxCell + estGap*pptx.EMU(rows-1)
 	case Card:
-		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
+		// Wrapped-header-aware chrome estimate (R10.10): the fixed cardChromeEst
+		// baseline plus the extra eyebrow/title lines a multi-line header wraps to,
+		// so the slot accounts for a wrapped header. Single-line → +0 (byte-identical).
+		c := cardChrome{header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill, size: v.Size, layout: v.Layout, paddingScale: v.PaddingScale}
+		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case CardSection:
-		return cardChromeEst + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
+		c := cardChrome{header: v.Header}
+		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case Bento:
 		cols := v.Columns
 		if cols < 1 {
@@ -532,11 +537,19 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 				break
 			}
 		}
-		cellW := (contentW - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
+		unitW := (contentW - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU
 		for _, row := range v.Rows {
 			for _, cell := range row.Cells {
-				if h := preferredHeight(cell.Node, cellW, theme); h > maxCell {
+				// Measure each cell at its ACTUAL span width (R10.10): a span-S cell
+				// renders S units wide and wraps less, so the unit-width estimate
+				// over-counts its lines. A span-1 cell yields unitW (byte-identical).
+				span := cell.Span
+				if span < 1 {
+					span = 1
+				}
+				spanW := pptx.EMU(span)*unitW + estGap*pptx.EMU(span-1)
+				if h := preferredHeight(cell.Node, spanW, theme); h > maxCell {
 					maxCell = h
 				}
 			}

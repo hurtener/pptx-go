@@ -248,7 +248,11 @@ A text-bearing node's slot height derived from how many lines its text wraps to
 (line count × the node's line height), rather than a fixed per-node constant.
 The scene renderer computes it deterministically via the `Wrapped-line estimate`
 so stacked nodes don't overlap and overflow is reported truthfully; single-line
-content keeps its prior fixed height (byte-identical). See
+content keeps its prior fixed height (byte-identical). The Card/CardSection slot
+estimate is wrapped-header-aware (the `cardChromeEst` baseline plus the extra
+eyebrow/title lines) and the Bento estimate measures each cell at its actual span
+width, so the estimators match the composed geometry — overflow detection and the
+`Fit-to-region compression` pass are trustworthy (D-079). See
 `RFC-001-pptx-go.md §10.2`.
 
 ## CGo

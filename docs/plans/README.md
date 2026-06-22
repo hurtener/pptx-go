@@ -1060,6 +1060,26 @@ fit-to-region compression).
 - A tight list shows a smaller, consistent marker-to-text offset; the default is
   byte-identical; the emitted indent round-trips; deterministic.
 
+#### Phase 48 — estimate/actual parity
+
+**Subsystem:** scene — Layer 2 renderer (slot estimators)
+**RFC sections:** §10.2
+**Deps:** Phase 22 (`preferredHeight`), Phase 39 (D-070), Phase 41 (D-072), brief 31.
+**What lands (R10.10, HIGH · engine):**
+- The Card/CardSection `preferredHeight` becomes wrapped-header-aware
+  (`cardChromeEst` + the extra eyebrow/title lines at the header column width), and
+  the Bento estimate measures each cell at its actual span width instead of the
+  unit width — so the overflow warning and the fit pass operate on accurate
+  numbers. Closes the `cardChromeEst` parity deferred by R10.1.
+- Single-line headers (increment 0) and span-1 bento cells (span width = unit
+  width) are byte-identical; the card-header helpers are refactored to theme-taking
+  free functions with method wrappers. Card body inset parity deferred.
+**Acceptance criteria:**
+- A multi-line-header card's estimate grows by the wrapped increment; a wide-span
+  bento cell's estimate ≤ the unit-width one; single-line/span-1 byte-identical;
+  the overflow warning fires iff the composed content exceeds the region;
+  deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -91,35 +91,41 @@ type cardChrome struct {
 	paddingScale int        // basis-point multiplier on the size padding; 0/10000 = unchanged (D-076)
 }
 
-// cardPadding returns the size-resolved interior inset for a card size (the base,
-// before any PaddingScale). Token-bound (P2).
-func (r *renderer) cardPadding(size CardSize) pptx.EMU {
+// cardPaddingBase returns the size-resolved interior inset for a card size (the
+// base, before any PaddingScale). Token-bound (P2). Free function so the slot
+// estimators (preferredHeight) share it with the composer (R10.10).
+func cardPaddingBase(theme *pptx.Theme, size CardSize) pptx.EMU {
 	switch size {
 	case CardSizeSM:
-		return r.theme.ResolveSpace(pptx.SpaceSM)
+		return theme.ResolveSpace(pptx.SpaceSM)
 	case CardSizeLG:
-		return r.theme.ResolveSpace(pptx.SpaceXL)
+		return theme.ResolveSpace(pptx.SpaceXL)
 	default:
-		return r.theme.ResolveSpace(pptx.SpaceMD)
+		return theme.ResolveSpace(pptx.SpaceMD)
 	}
 }
 
-// cardPaddingFor returns a card's interior inset: the size-resolved base padding
-// (cardPadding) scaled by c.paddingScale (basis points; 0 or 10000 = unchanged),
-// floored at a pinned minimum (SpaceXS) so a tightened card never collapses its
-// inset. Deterministic integer math; the base and the floor both resolve through
-// theme spacing tokens — no literals (P2, D-076).
-func (r *renderer) cardPaddingFor(c cardChrome) pptx.EMU {
-	base := r.cardPadding(c.size)
+// cardPaddingScaled returns a card's interior inset: the size-resolved base
+// padding scaled by c.paddingScale (basis points; 0 or 10000 = unchanged), floored
+// at a pinned minimum (SpaceXS) so a tightened card never collapses its inset.
+// Deterministic integer math; base and floor both resolve through theme spacing
+// tokens — no literals (P2, D-076).
+func cardPaddingScaled(theme *pptx.Theme, c cardChrome) pptx.EMU {
+	base := cardPaddingBase(theme, c.size)
 	if c.paddingScale <= 0 || c.paddingScale == 10000 {
 		return base
 	}
 	pad := base * pptx.EMU(c.paddingScale) / 10000
-	if min := r.theme.ResolveSpace(pptx.SpaceXS); pad < min {
+	if min := theme.ResolveSpace(pptx.SpaceXS); pad < min {
 		pad = min
 	}
 	return pad
 }
+
+// cardPadding / cardPaddingFor are the renderer-method wrappers used by the
+// composer and the internal tests (so those call sites stay unchanged).
+func (r *renderer) cardPadding(size CardSize) pptx.EMU   { return cardPaddingBase(r.theme, size) }
+func (r *renderer) cardPaddingFor(c cardChrome) pptx.EMU { return cardPaddingScaled(r.theme, c) }
 
 const cardStripeW = pptx.EMU(45720) // 4pt accent stripe
 
@@ -144,9 +150,9 @@ const (
 // eyebrow and title wrap. cardHeaderRowHeights and renderCardChrome share it so
 // the wrapped-line counts (and thus the body Y, the header band, and the emitted
 // text frames) never drift.
-func (r *renderer) cardHeaderColumnW(box pptx.Box, c cardChrome) pptx.EMU {
-	pad := r.cardPaddingFor(c)
-	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
+func cardHeaderColumnWOf(theme *pptx.Theme, box pptx.Box, c cardChrome) pptx.EMU {
+	pad := cardPaddingScaled(theme, c)
+	gapSM := theme.ResolveSpace(pptx.SpaceSM)
 	innerW := box.W - cardStripeW - 2*pad
 	if innerW < 0 {
 		innerW = 0
@@ -168,6 +174,28 @@ func (r *renderer) cardHeaderColumnW(box pptx.Box, c cardChrome) pptx.EMU {
 		headerW = 0
 	}
 	return headerW
+}
+
+func (r *renderer) cardHeaderColumnW(box pptx.Box, c cardChrome) pptx.EMU {
+	return cardHeaderColumnWOf(r.theme, box, c)
+}
+
+// cardHeaderExtraHeight returns the slot height a card's header needs *beyond* the
+// single-line baseline: the eyebrow/title lines past the first, each at its
+// per-row constant, measured at the card's true header column width for a card of
+// total width avail. It is 0 for a single-line (or empty) header, so the
+// preferredHeight slot estimate stays byte-identical for single-line cards while a
+// wrapped multi-line header grows the slot (R10.10, closing the R10.1 deferral).
+func cardHeaderExtraHeight(theme *pptx.Theme, avail pptx.EMU, c cardChrome) pptx.EMU {
+	headerW := cardHeaderColumnWOf(theme, pptx.Box{W: avail}, c)
+	var extra pptx.EMU
+	if c.eyebrow != "" {
+		extra += cardEyebrowRowH * pptx.EMU(wrappedLines(RichText{{Text: c.eyebrow}}, pptx.TypeCaption, headerW, theme)-1)
+	}
+	if c.header != "" {
+		extra += cardTitleRowH * pptx.EMU(wrappedLines(RichText{{Text: c.header}}, pptx.TypeH3, headerW, theme)-1)
+	}
+	return extra
 }
 
 // cardHeaderRowHeights returns the wrapped heights of the eyebrow and title rows
