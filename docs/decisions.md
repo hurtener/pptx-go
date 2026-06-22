@@ -2013,4 +2013,51 @@ theme-scheme (major/minor) fallback for runs that inherit the theme font.
 
 ---
 
+## D-067 — Italic-aware font fallback + embedded <p:font> prefix fix
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** R9.7 (`emphasis-as-italic-display`, MED · both) wants an italic
+emphasis run inside a display/heading role to render in that face's **italic cut**
+(a serif italic), not a faux-italic sans. Most of the engine half is already
+satisfied: D-063 routes the display family onto the run's `a:latin`, and D-065's
+embedding pass already collects `(family, bold, italic)` from each run's `rPr` and
+embeds the italic bucket. The gap is the fallback path (D-066): it probed and
+substituted at the regular-cut/family level only, so an italic run of a family
+that ships *regular but not italic* was left on the primary (the regular cut
+resolves → "primary wins"), and the consumer faux-italicized the upright. While
+testing this, a latent bug surfaced: the `<p:embeddedFontLst>`'s `<p:font
+typeface=…>` child was emitted **bare** (`<font…>`) because `font` was missing
+from the `RestoreNamespaces` element-prefix map — invalid OOXML PowerPoint cannot
+bind, silently breaking *all* embedding since D-019.
+**Decision:** (1) Make the fallback pass **italic-aware**: resolve per
+`(family, italic)` rather than per family. For each role with a `Fallback`, probe
+the italic cut (`Resolve(family, "italic", 400)`) for the italic key and the
+regular cut for the upright key, and substitute each independently — so an italic
+run whose family's italic cut is unavailable falls back to the first chain family
+whose italic cut resolves, while the upright runs keep the primary. The codec
+rewrite generalizes from `RewriteFontFaces(map[string]string)` to a resolver
+callback `RewriteFontFaces(func(typeface string, bold, italic bool) string)`
+(shaped to also carry weight for R9.8). (2) Add `"font": "p"` to the
+`RestoreNamespaces` element map so `<p:font>` is correctly prefixed; `font` only
+occurs in presentation's `embeddedFontLst` (the theme's `<a:font>` collection is a
+literal string, not processed by this pass; slides emit `a:latin`, never `font`),
+so the global mapping is unambiguous.
+**Consequences:** An italic emphasis run renders in (and embeds) a real italic cut
+— the role's own when present, else a controlled fallback — never a faux-italic
+sans. The display-italic guarantee itself (R9.7 accept #1) was already delivered
+by D-063+D-065 and is now covered by a verification test. Additive and
+deterministic: both cuts of the primary resolving → no substitution (identical to
+D-066); no `Fallback`/no `FontSource` → byte-identical to the true baseline; the
+only new behavior is the "regular present, italic absent" case (R9.7's target).
+The `<p:font>` fix makes embedded fonts actually bind in PowerPoint — verified at
+the byte level (the reader matches by local name and hid the bare-element bug);
+single-version codec, goldens unaffected (no prior golden emitted an
+`embeddedFontLst`). The emphasis-*treatment* choice (italic vs bold vs
+accent-color) stays in the soul (D-026, D-059). **Deferred:** bold-cut–specific
+fallback (a bold run uses the regular-cut resolution); the resolver callback can
+extend to it and to numeric weight (R9.8).
+
+---
+
 *Append new entries below this line.*

@@ -847,6 +847,29 @@ mechanism (D-019).
   byte-identical; with embedding on, the resolved fallback face is what is
   embedded.
 
+#### Phase 37 — italic-aware font fallback (emphasis-as-italic-display)
+
+**Subsystem:** pptx — Layer 1 builder (theme/typography + font embedding)
+**RFC sections:** §7.6
+**Deps:** Phase 33 (display family, D-063), Phase 35 (embedding, D-065),
+Phase 36 (fallback, D-066).
+**What lands (R9.7, engine half — D-059):**
+- Italic-aware fallback: `resolveFontFallbacks` resolves per `(family, italic)`,
+  probing the italic cut for italic runs and the regular cut for upright ones, so
+  an italic emphasis run whose family lacks an italic cut falls back to an
+  italic-capable face (not a faux-italic) while its upright runs keep the primary.
+- `internal/ooxml/slide.SlidePart.RewriteFontFaces` generalized to a resolver
+  callback `func(typeface string, bold, italic bool) string`.
+- Fix: `<p:font>` in `embeddedFontLst` was emitted bare (`<font>`) — invalid
+  OOXML PowerPoint cannot bind; `font` added to the `RestoreNamespaces` prefix
+  map. The display-italic guarantee itself was already delivered by D-063+D-065
+  (now covered by a verification test).
+**Acceptance criteria:**
+- An italic run of a regular-only family falls back to an italic-capable face;
+  upright runs keep the primary; an italic display run embeds the display italic
+  cut; the embedded `<p:font>` carries the `p:` prefix; byte-identical when
+  unused; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

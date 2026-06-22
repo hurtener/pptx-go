@@ -35,6 +35,25 @@ func TestRestorePrefixesElements(t *testing.T) {
 	}
 }
 
+// TestRestoreEmbeddedFontList proves the <p:embeddedFontLst> face elements —
+// including the <p:font> typeface child — are all p:-prefixed (a bare <font> is
+// invalid OOXML and PowerPoint cannot bind the embedded face). R9.1/R9.7 fix.
+func TestRestoreEmbeddedFontList(t *testing.T) {
+	bare := `<embeddedFontLst><embeddedFont><font typeface="Cardo"/><regular rid="rId6"/><boldItalic rid="rId7"/></embeddedFont></embeddedFontLst>`
+	got := restore(t, bare)
+	for _, want := range []string{
+		`<p:embeddedFontLst `, `<p:embeddedFont>`, `<p:font typeface="Cardo"/>`,
+		`<p:regular r:id="rId6"/>`, `<p:boldItalic r:id="rId7"/>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `<font `) {
+		t.Errorf("bare <font> survived (must be p:font):\n%s", got)
+	}
+}
+
 func TestRestoreRelationshipAttr(t *testing.T) {
 	bare := `<presentation><sldIdLst><sldId id="256" rid="rId1"></sldId></sldIdLst></presentation>`
 	got := restore(t, bare)

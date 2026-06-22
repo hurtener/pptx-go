@@ -105,7 +105,13 @@ func TestRewriteFontFaces(t *testing.T) {
 		Table: &XTable{Rows: []XTableRow{{Cells: []XTableCell{cell}}}},
 	}}})
 
-	n := s.RewriteFontFaces(map[string]string{"Playfair Display": "Georgia"})
+	playfairToGeorgia := func(typeface string, _, _ bool) string {
+		if typeface == "Playfair Display" {
+			return "Georgia"
+		}
+		return ""
+	}
+	n := s.RewriteFontFaces(playfairToGeorgia)
 	if n != 3 {
 		t.Errorf("rewrote %d runs, want 3", n)
 	}
@@ -119,17 +125,43 @@ func TestRewriteFontFaces(t *testing.T) {
 		t.Errorf("after rewrite UsedFontFaces = %#v, want %#v", got, want)
 	}
 
-	// Idempotent: a second pass with the same mapping rewrites nothing.
-	if n2 := s.RewriteFontFaces(map[string]string{"Playfair Display": "Georgia"}); n2 != 0 {
+	// Idempotent: a second pass with the same resolver rewrites nothing.
+	if n2 := s.RewriteFontFaces(playfairToGeorgia); n2 != 0 {
 		t.Errorf("second rewrite changed %d runs, want 0", n2)
 	}
-	// Nil/empty mapping and nil part are no-ops.
+	// Nil resolver and nil part are no-ops.
 	if n3 := s.RewriteFontFaces(nil); n3 != 0 {
-		t.Errorf("nil mapping rewrote %d runs, want 0", n3)
+		t.Errorf("nil resolver rewrote %d runs, want 0", n3)
 	}
 	var nilPart *SlidePart
-	if n4 := nilPart.RewriteFontFaces(map[string]string{"x": "y"}); n4 != 0 {
+	if n4 := nilPart.RewriteFontFaces(playfairToGeorgia); n4 != 0 {
 		t.Errorf("nil part rewrote %d runs, want 0", n4)
+	}
+}
+
+func TestRewriteFontFacesItalicAware(t *testing.T) {
+	s := NewSlidePart(1)
+	s.AppendShapeChild(textBoxWithRuns(2,
+		faceRun("upright", "Display", false, false),
+		faceRun("emph", "Display", false, true),
+	))
+	// Only the italic run of "Display" is rewritten.
+	resolve := func(typeface string, _, italic bool) string {
+		if typeface == "Display" && italic {
+			return "Georgia"
+		}
+		return ""
+	}
+	if n := s.RewriteFontFaces(resolve); n != 1 {
+		t.Fatalf("rewrote %d runs, want 1 (italic only)", n)
+	}
+	got := s.UsedFontFaces()
+	want := []FontFace{
+		{Typeface: "Display", Italic: false},
+		{Typeface: "Georgia", Italic: true},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("after italic-aware rewrite = %#v, want %#v", got, want)
 	}
 }
 

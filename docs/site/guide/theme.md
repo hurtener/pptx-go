@@ -76,7 +76,9 @@ chain (`FontSpec.Fallback []string`): when a `FontSource` is registered and it
 cannot resolve the role's primary family, the run's typeface is rewritten at save
 to the first family in `[Family] + Fallback` the source resolves — a controlled
 near-match rather than an arbitrary host default; empty (or no `FontSource`) is
-byte-identical.
+byte-identical. Resolution is italic-aware: an italic emphasis run whose family
+lacks an italic cut falls back to an italic-capable face instead of a faux-italic,
+while upright runs keep the primary.
 
 | Role | Family | Size | Weight |
 | --- | --- | --- | --- |

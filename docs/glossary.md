@@ -360,10 +360,15 @@ type role. When a `FontSource` is registered and it cannot resolve the
 role's primary `Family`, the write-time fallback pass rewrites the run's
 single-valued `a:latin` typeface to the first family in `[Family]` +
 `Fallback` the source can resolve, so output degrades to a controlled
-near-match instead of an arbitrary host default. Empty (the zero value) and
-"no `FontSource`" are byte-identical; resolution is deterministic and
+near-match instead of an arbitrary host default. Resolution is
+**italic-aware** (D-067): it is keyed per `(family, italic)` — the italic cut
+is probed for italic runs, the regular cut for upright ones — so an italic
+emphasis run whose family lacks an italic cut falls back to an italic-capable
+face (not a faux-italic), while upright runs keep the primary. Empty (the zero
+value) and "no `FontSource`" are byte-identical; resolution is deterministic and
 idempotent across saves. The chain *contents* are the soul's choice; the
-engine provides the carry-and-resolve mechanism (D-066, R9.6, `RFC §7.6`).
+engine provides the carry-and-resolve mechanism (D-066, D-067, R9.6/R9.7,
+`RFC §7.6`).
 
 ## FontSource
 

@@ -70,14 +70,16 @@ func (s *SlidePart) UsedFontFaces() []FontFace {
 	return out
 }
 
-// RewriteFontFaces rewrites every run's Latin typeface that matches a key in
-// mapping to the mapped face, in place, over the same text bodies UsedFontFaces
-// walks (shape + table cells). It realizes the declared font fallback chain
-// (R9.6, D-066): the chosen face is recorded as the run's single-valued a:latin
-// typeface. A nil/empty mapping is a no-op. It reports the number of runs
-// rewritten.
-func (s *SlidePart) RewriteFontFaces(mapping map[string]string) int {
-	if s == nil || len(mapping) == 0 {
+// RewriteFontFaces rewrites each run's Latin typeface in place over the same
+// text bodies UsedFontFaces walks (shape + table cells). For every run carrying
+// an explicit Latin face it calls resolve(typeface, bold, italic); a non-empty
+// result different from the current typeface replaces it. It realizes the
+// declared font fallback chain (R9.6, D-066) and its italic-aware extension
+// (R9.7, D-067): the resolver keys on the run's bold/italic flags so an italic
+// run can fall back independently of an upright one. A nil resolver is a no-op.
+// It reports the number of runs rewritten.
+func (s *SlidePart) RewriteFontFaces(resolve func(typeface string, bold, italic bool) string) int {
+	if s == nil || resolve == nil {
 		return 0
 	}
 	n := 0
@@ -91,7 +93,8 @@ func (s *SlidePart) RewriteFontFaces(mapping map[string]string) int {
 				if pr == nil || pr.Latin == nil {
 					continue
 				}
-				if to, ok := mapping[pr.Latin.Typeface]; ok && to != pr.Latin.Typeface {
+				to := resolve(pr.Latin.Typeface, pr.Bold == "1", pr.Italic == "1")
+				if to != "" && to != pr.Latin.Typeface {
 					pr.Latin.Typeface = to
 					n++
 				}

@@ -155,15 +155,27 @@ var fallbackRoles = []TypeRole{
 	TypeBody, TypeBodySmall, TypeCaption, TypeMono, TypeCode,
 }
 
+// fallbackKey identifies a resolved face by its declared family and whether the
+// run is italic. Fallback is realized per (family, italic) so an italic run can
+// degrade to a different fallback than an upright one when only the italic cut is
+// missing (R9.7).
+type fallbackKey struct {
+	family string
+	italic bool
+}
+
 // resolveFontFallbacks realizes the declared per-role fallback chains (R9.6,
-// D-066). When a FontSource is registered and a role's primary family cannot be
-// resolved by it, the run's single-valued a:latin typeface is rewritten to the
-// first family in [Family] + Fallback the source can resolve — so output
-// degrades to a controlled near-match instead of an arbitrary host default. It
-// is a no-op (and zero FontSource calls, byte-identical) when no FontSource is
-// registered or no role declares a Fallback. It runs before syncSlides so the
-// serialized runs carry the resolved face, and before autoEmbedFonts so the
-// embedded bytes match. The caller holds p.mu.
+// D-066) with italic-cut awareness (R9.7, D-067). When a FontSource is
+// registered and a role's primary cut cannot be resolved by it, the run's
+// single-valued a:latin typeface is rewritten to the first family in [Family] +
+// Fallback whose matching cut (italic for an italic run, regular otherwise) the
+// source can resolve — so output degrades to a controlled near-match (and an
+// italic emphasis run keeps a real italic cut) instead of an arbitrary host
+// default or a faux-italic. It is a no-op (and zero FontSource calls,
+// byte-identical) when no FontSource is registered or no role declares a
+// Fallback. It runs before syncSlides so the serialized runs carry the resolved
+// face, and before autoEmbedFonts so the embedded bytes match. The caller holds
+// p.mu.
 func (p *Presentation) resolveFontFallbacks() {
 	if p.fontSource == nil {
 		return
@@ -185,39 +197,48 @@ func (p *Presentation) resolveFontFallbacks() {
 		return
 	}
 
-	// Probe the source for family availability, memoized (a family is "available"
-	// when its regular cut resolves).
-	avail := map[string]bool{}
-	resolvable := func(family string) bool {
+	// Probe the source for cut availability, memoized. A family is "available"
+	// for a cut when that cut resolves: the italic cut for an italic run, the
+	// regular cut otherwise.
+	avail := map[fallbackKey]bool{}
+	resolvable := func(family string, italic bool) bool {
 		if family == "" {
 			return false
 		}
-		if v, ok := avail[family]; ok {
+		k := fallbackKey{family, italic}
+		if v, ok := avail[k]; ok {
 			return v
 		}
-		data, err := p.fontSource.Resolve(family, "", 400)
+		style := ""
+		if italic {
+			style = "italic"
+		}
+		data, err := p.fontSource.Resolve(family, style, 400)
 		ok := err == nil && len(data) > 0
-		avail[family] = ok
+		avail[k] = ok
 		return ok
 	}
 
-	// Build primary -> resolved face, first-seen (lowest role) wins.
-	mapping := map[string]string{}
+	// Build (family, italic) -> resolved face, first-seen (lowest role) wins.
+	mapping := map[fallbackKey]string{}
 	for _, role := range fallbackRoles {
 		spec := theme.ResolveType(role)
 		if len(spec.Fallback) == 0 || spec.Family == "" {
 			continue
 		}
-		if _, done := mapping[spec.Family]; done {
-			continue
-		}
-		if resolvable(spec.Family) {
-			continue // primary available — it wins, no substitution
-		}
-		for _, fb := range spec.Fallback {
-			if fb != spec.Family && resolvable(fb) {
-				mapping[spec.Family] = fb
-				break
+		for _, italic := range []bool{false, true} {
+			key := fallbackKey{spec.Family, italic}
+			if _, done := mapping[key]; done {
+				continue
+			}
+			if resolvable(spec.Family, italic) {
+				continue // primary cut available — it wins, no substitution
+			}
+			for _, fb := range spec.Fallback {
+				if fb != spec.Family && resolvable(fb, italic) {
+					mapping[key] = fb
+					break
+				}
 			}
 		}
 	}
@@ -225,12 +246,15 @@ func (p *Presentation) resolveFontFallbacks() {
 		return
 	}
 
+	resolve := func(typeface string, _ /*bold*/, italic bool) string {
+		return mapping[fallbackKey{typeface, italic}]
+	}
 	rewritten := 0
 	for _, s := range p.slides {
 		if s == nil || s.part == nil {
 			continue
 		}
-		rewritten += s.part.RewriteFontFaces(mapping)
+		rewritten += s.part.RewriteFontFaces(resolve)
 	}
 	if p.logger != nil && rewritten > 0 {
 		p.logger.Debug("pptx: font fallback substituted faces",
