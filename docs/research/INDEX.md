@@ -125,6 +125,13 @@ semantics)*
   `sMin=0.60` ratio, so the last node lands inside the frame instead of clipping
   off-slide; byte-identical when off or when content fits; the card-padding /
   type-scale sub-steps are deferred to R10.7 / R10.5. (R10.2, CRITICAL.)
+- `24-content-weighted-bento-rows.md` — opt-in `Bento.WeightedRows`: size each
+  bento row to its content's preferred height (per-row max cell height at span
+  widths), clamped by a single basis-point scale so `Σ rows + gaps ≤ box.H`, so a
+  dense row no longer shares equal height with a sparse one; default equal rows
+  byte-identical; the `bentoGeometry` refactor factors out `bentoColumns`/
+  `cellWidth` and returns per-row Y/H. Grid analog + estimator parity deferred.
+  (R10.3, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

@@ -100,7 +100,19 @@ label (`BentoRow.Label`) and a left-to-right sequence of cells of variable
 `Column span` (`BentoCell.Span`) measured against `Bento.Columns` shared column
 units, so columns align across rows. Distinct from `Grid` (uniform columns, one
 child per cell). A native container — cells render per their own policy (D-056).
-See `RFC-001-pptx-go.md §11.2`.
+Rows are equal-height by default; the opt-in `Bento weighted rows` mode sizes
+them to content. See `RFC-001-pptx-go.md §11.2`.
+
+## Bento weighted rows
+
+The opt-in `Bento.WeightedRows` mode (D-072): instead of equal-height rows
+(`(box.H − gaps)/nRows`), each bento row sizes to its content's preferred height —
+the tallest cell's `preferredHeight` at that cell's span width — so a dense row
+no longer shares an equal band with a sparse one. When the preferred rows would
+overflow, a single deterministic basis-point scale clamps them so `Σ rows + gaps
+≤ box.H` (no off-slide row); when they fit, rows keep their preferred height
+(top-aligned, slack as bottom whitespace). The zero value (`false`) is
+byte-identical to the equal-row layout. See `RFC-001-pptx-go.md §11.2`.
 
 ## Box
 

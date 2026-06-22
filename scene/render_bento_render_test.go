@@ -81,3 +81,31 @@ func TestBento_Deterministic(t *testing.T) {
 		t.Errorf("bento deck: parallel render differs from sequential (%d vs %d bytes)", len(par), len(seq))
 	}
 }
+
+// TestBentoWeighted_Deterministic (R10.3): a content-weighted bento deck renders
+// byte-identically across worker counts (the row-height pass is integer / basis-
+// point math).
+func TestBentoWeighted_Deterministic(t *testing.T) {
+	sc := scene.Scene{}
+	for i := 0; i < 12; i++ {
+		sc.Slides = append(sc.Slides, scene.SceneSlide{
+			ID: string(rune('A' + i)),
+			Nodes: []scene.SlideNode{scene.Bento{Columns: 3, WeightedRows: true, Rows: []scene.BentoRow{
+				{Label: "R1", Cells: []scene.BentoCell{
+					{Span: 2, Node: scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+					{Span: 1, Node: scene.Card{Header: "c"}},
+				}},
+				{Label: "R2", Cells: []scene.BentoCell{
+					{Span: 1, Node: scene.List{Items: []scene.ListItem{
+						{Text: rt("a")}, {Text: rt("b")}, {Text: rt("c")}, {Text: rt("d")},
+					}}},
+				}},
+			}}},
+		})
+	}
+	seq, _ := render(t, sc, scene.WithWorkers(1))
+	par, _ := render(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Errorf("weighted bento deck: parallel render differs from sequential (%d vs %d bytes)", len(par), len(seq))
+	}
+}

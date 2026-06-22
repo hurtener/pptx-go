@@ -2226,4 +2226,46 @@ Extends `D-052` (`VAlignFill`); builds on `D-070` (content-aware card header).
 
 ---
 
+## D-072 — Content-weighted bento rows (Bento.WeightedRows)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `bentoGeometry` forced every bento row to the same height
+`(box.H − gaps)/nRows` regardless of content. A sparse one-line row and a dense
+four-line row got identical bands, so the sparse row wasted a huge area while the
+dense row starved and overflowed off-slide (the recreation's slide-6 "Canvas"
+bento). R10.3 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine), the Wave-10 unit
+after the two CRITICALs.
+**Decision:** Add an additive `Bento.WeightedRows bool`. When set, each row's
+height is the preferred height of its tallest cell at that cell's span width
+(`r.bentoWeightedRowHeights`); if the rows plus gaps would overflow the region, a
+single basis-point scale `sBP = avail·10000/Σpref` (flooring, so `Σ ≤ avail`)
+clamps every row so all rows fit inside the frame — unlike the R10.2 `fitCompress`
+ratio floor, the bento clamp has no floor because the rows must always fit. When
+they fit, rows keep their preferred height (top-aligned; leftover slack is bottom
+whitespace). `bentoGeometry` is refactored: the shared horizontal math moves to
+`bentoColumns` (gutter, content X, unit width) and `cellWidth(span)`, and it now
+returns per-row `rowYs`/`rowHs` slices plus the cell boxes and accepts an optional
+`rowHs []EMU` (nil ⇒ equal mode). `renderBento` threads the weighted heights in
+when `WeightedRows` and uses the per-row Y/H for both gutter labels and cells, so
+labels anchor-middle within their actual row height. All math is integer / basis
+point — deterministic regardless of worker count.
+**Consequences:** A weighted bento gives a dense row more height than a sparse one
+and never overflows the region. The zero value (`WeightedRows=false`) reproduces
+the equal-row layout byte-for-byte (the per-row-array refactor fills every row
+with the same `rowH` and accumulates `rowY` identically). An additive bool field —
+`Bento` stays comparable; no round-trip codec (scene IR is rendered, not
+serialized). **Deviation (§4.3) from R10.3's literal spec:** (1) the **Grid analog**
+is deferred — the acceptance is bento-specific, `Grid` cells are single children
+laid out by the pure theme-free `layout.Grid`, and content-weighting Grid is a
+separable change (folds into R10.10 / a follow-up); (2) the leftover-slack
+distribution defaults to **top-align** rather than proportional fill (the spec
+lists top-align as an option, and it already prevents a sparse row stealing space
+from a dense one). The **slot estimate** (`preferredHeight` for the bento) is left
+unchanged this phase; estimator/actual parity (wide-span cells, weighted rows) is
+R10.10's explicit job. Extends `D-056` (Bento); mirrors `D-071`'s scale-to-fit
+shape.
+
+---
+
 *Append new entries below this line.*

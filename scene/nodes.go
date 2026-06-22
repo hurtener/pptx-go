@@ -524,6 +524,12 @@ type Bento struct {
 	node
 	Columns int // shared column-unit count a row's spans are measured against (>= 1)
 	Rows    []BentoRow
+	// WeightedRows opts a bento into content-proportional row heights: each row
+	// sizes to the preferred height of its tallest cell (at that cell's span
+	// width), clamped by a single deterministic scale so the rows always fit the
+	// region. The zero value (false) keeps equal-height rows — byte-identical to
+	// the pre-R10.3 layout. (D-072.)
+	WeightedRows bool
 }
 
 func (Bento) NodeKind() NodeKind { return KindBento }

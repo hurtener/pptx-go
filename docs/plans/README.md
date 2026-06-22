@@ -935,6 +935,25 @@ fit-to-region compression).
   to `VAlignTop`; deterministic at any worker count; the overflow warning fires
   iff content still overflows after compression.
 
+#### Phase 41 — content-weighted bento rows
+
+**Subsystem:** scene — Layer 2 renderer (Bento container)
+**RFC sections:** §11.2, §10
+**Deps:** Phase 27 (Bento, D-056), Phase 40 (D-071), brief 24.
+**What lands (R10.3, HIGH · engine):**
+- A new opt-in `Bento.WeightedRows` flag. When set, each bento row sizes to its
+  content's preferred height (the per-row max cell height at span widths) instead
+  of an equal `(box.H − gaps)/nRows` band, clamped by a single basis-point scale
+  so `Σ rows + gaps ≤ box.H` — a dense row no longer shares equal height with a
+  sparse one.
+- `bentoGeometry` refactored to factor out `bentoColumns`/`cellWidth` and return
+  per-row Y/H; the equal-row default is byte-identical. Gutter labels anchor-
+  middle within their actual row height. Grid analog + estimator parity deferred.
+**Acceptance criteria:**
+- A bento with a 1-line row and a 4-line row in weighted mode renders the dense
+  row taller and fits the region; equal-mode and single-density bentos are
+  byte-identical; deterministic at any worker count.
+
 ---
 
 ## 4. Post-V1 backlog
