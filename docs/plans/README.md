@@ -1008,6 +1008,23 @@ fit-to-region compression).
   residual as even spacing (not one ballooned node); uncapped fill is byte-
   identical; deterministic and within the box.
 
+#### Phase 45 — density-aware card padding
+
+**Subsystem:** scene — Layer 2 renderer (Card)
+**RFC sections:** §11.2, §7
+**Deps:** Phase 14 (Card), Phase 39 (D-070), brief 28.
+**What lands (R10.7, MED · engine):**
+- An additive `Card.PaddingScale int` — a basis-point multiplier on the
+  size-resolved interior padding (0/10000 = unchanged), floored at a pinned
+  `SpaceXS` `padMin`. A tighter scale shrinks the inset and grows the card body so
+  a dense card reclaims interior space; resolves through theme spacing tokens (no
+  literals). The three padding sites route through a new `cardPaddingFor`.
+- Zero/default reproduces the SM/MD/LG output byte-for-byte; auto-tighten-in-fit
+  is deferred.
+**Acceptance criteria:**
+- A tighter scale measurably reduces the inset and grows the body (≥ padMin); an
+  extreme scale floors at padMin; default is byte-identical; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

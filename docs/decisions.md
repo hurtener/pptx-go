@@ -2370,4 +2370,37 @@ shape.
 
 ---
 
+## D-076 — Density-aware card padding (Card.PaddingScale)
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** `cardPadding` mapped the 3-value `CardSize` enum to fixed
+`SpaceSM/MD/XL`, so a dense card carried the same generous interior inset as a
+sparse one, wasting interior space (the recreation's dense cards use generous
+fixed padding where the reference packs tighter). R10.7
+(`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine).
+**Decision:** Add an additive `Card.PaddingScale int` — a basis-point multiplier
+on the size-resolved padding. A new `paddingScale` field on the internal
+`cardChrome` carries it, and a new `cardPaddingFor(c)` method returns
+`cardPadding(c.size)` scaled by `paddingScale` (when > 0 and ≠ 10000), floored at a
+pinned `padMin = ResolveSpace(SpaceXS)` so a tightened card never collapses its
+inset. The three padding sites (`cardHeaderColumnW`, `cardHeaderBottom`,
+`renderCardChrome`) route through `cardPaddingFor`; `cardPadding(size)` stays the
+base resolver. Both the base and the floor resolve through theme spacing tokens —
+no literals (P2). Deterministic integer math.
+**Consequences:** A tighter `PaddingScale` (e.g. 5000) shrinks the inset on all
+sides and grows the card body (the body box is computed below the header inside
+the padding), letting a dense card reclaim interior space; an extreme scale floors
+at `SpaceXS`. The zero value (and 10000) returns the base unchanged — byte-
+identical to the prior SM/MD/LG output; the existing card golden/determinism tests
+pass through `cardPaddingFor`. `CardSection` builds a bare `cardChrome`
+(`paddingScale` 0), so it is unaffected. **Deviation (§4.3):** ships
+`Card.PaddingScale` only, not the spec's auto-tighten-inside-the-fit-pass
+alternative — the fit pass (D-071) is stack-level and does not reach inside a card
+body; an auto-tighten hook can later reuse the `cardPaddingFor` seam. Extends
+`D-043` (Card additive fields); mirrors `D-074`'s basis-point-multiplier +
+pinned-floor pattern.
+
+---
+
 *Append new entries below this line.*

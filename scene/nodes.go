@@ -634,6 +634,12 @@ type Card struct {
 	// top-anchored — byte-identical to the pre-R10.4 render. Applies to the
 	// vertical body layout only (BodyLayout != BodyHorizontal). (D-073.)
 	BodyVAlign VAlign
+	// PaddingScale is a basis-point multiplier on the card's size-resolved
+	// interior padding (Size → SpaceSM/MD/XL): 0 and 10000 leave it unchanged
+	// (byte-identical), a value below 10000 tightens a dense card (floored at a
+	// pinned minimum so the inset never collapses), above 10000 loosens it. It
+	// resolves through theme spacing tokens — no literals (P2). (D-076.)
+	PaddingScale int
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }

@@ -163,6 +163,16 @@ the inter-item gaps), `VAlignFill` (grow flexible body nodes), or `VAlignFit`
 top-anchored layout byte-for-byte. Applies to the vertical body only
 (`BodyLayout != BodyHorizontal`). See `RFC-001-pptx-go.md §11.2`.
 
+## Card PaddingScale
+
+The additive `Card.PaddingScale int` (D-076): a basis-point multiplier on the
+card's size-resolved interior padding (`CardSize` → `SpaceSM/MD/XL`). The zero
+value and 10000 leave it unchanged (byte-identical); below 10000 tightens a dense
+card (floored at a pinned `SpaceXS` minimum so the inset never collapses), above
+10000 loosens it. The base and the floor both resolve through theme spacing tokens
+— no literals (P2). A tighter scale shrinks the inset and grows the card body. See
+`RFC-001-pptx-go.md §11.2`.
+
 ## Card chrome
 
 A card's non-content shapes: the background rounded-rect (with `fill`,
