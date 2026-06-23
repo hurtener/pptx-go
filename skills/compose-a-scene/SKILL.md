@@ -77,6 +77,7 @@ renders as native PPTX shapes**.
 | `Chip` | `Label string; Tone ChipTone; Color ColorRole` | native |
 | `Arrow` | `Direction ArrowDirection; Label string` | native |
 | `Stat` | `Value, Label, Delta string; DeltaTone; AutoFit bool` | native; hero big-number (value at display scale + label + optional delta). `DeltaTone` = `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted). A `Grid` of `Stat`s is a metric strip. `AutoFit` (opt-in) shrinks a long value/price to fit its column on one line, down to 60% of the display size; off / fitting values are byte-identical |
+| `Button` | `Label string; Tone ButtonTone; Size ButtonSize; LeadingIcon, TrailingIcon string; Align HAlign` | native; a CTA / action pill (a closing slide, a pricing-card footer). `Tone` = `ButtonPrimary` (accent solid) / `ButtonAccentAlt` / `ButtonGhost` (outline) / `ButtonNeutral` (surface). `Size` = `ButtonMD` (default) / `ButtonSM` / `ButtonLG`. Width is content-fit to the label + icons, clamped to its box; `Align` centers/right-aligns it. `LeadingIcon`/`TrailingIcon` are closed-name registry icons (e.g. `arrow-right`); `""` = none. Presentational only — no hyperlink (the deck is static) |
 | `SectionDivider` | `Eyebrow, Label string` | native (full-bleed) |
 | `Table` | `Headers []RichText; Rows [][]RichText; Caption string` | native |
 | `Flow` | `Orientation FlowOrientation; Steps []FlowStep; Connector ConnectorKind` | native |
@@ -202,6 +203,8 @@ returns a joined error so you see every problem at once. Per-node rules:
   `Opacity` in `[0,1]`.
 - `Flow`: at least one step.
 - `Stat`: non-empty `Value` (label and delta are optional).
+- `Button`: non-empty `Label`; any `LeadingIcon`/`TrailingIcon` must resolve in
+  the icon registry (curated ∪ extensions).
 - `Table`: at least one header column; every row width equals the header width.
 - `TwoColumn`: non-empty `Left` and `Right` (children validated recursively).
 - `Grid`: `Columns` in `2..4`; `Ratio` empty or length == `Columns`; non-empty

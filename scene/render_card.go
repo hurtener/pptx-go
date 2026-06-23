@@ -43,6 +43,9 @@ func validateIconRefs(s Scene, reg *icons.Registry) error {
 func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 	for _, n := range nodes {
 		switch v := n.(type) {
+		case Button:
+			fn(v.LeadingIcon, "button leading")
+			fn(v.TrailingIcon, "button trailing")
 		case Card:
 			fn(v.Icon, "card")
 			walkIconRefs(v.Body, fn)

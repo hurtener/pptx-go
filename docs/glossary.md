@@ -159,6 +159,16 @@ token-typed, OOXML-free. Composes `internal/opc` and `internal/ooxml`. The
 single substrate for all higher-level content authoring. See
 `RFC-001-pptx-go.md §8`.
 
+## Button (node)
+
+A scene IR leaf node: a presentational CTA / action affordance — a content-fit
+`RadiusFull` pill with a bold label and optional leading/trailing icons, droppable
+standalone (a closing slide), inside a card body (a pricing card), or inside a banner.
+Its `ButtonTone` selects a token fill (Primary/AccentAlt solid, Neutral surface, Ghost
+= an accent outline); its `ButtonSize` (MD/SM/LG) scales the pinned height/padding/icon
+geometry. It is a shape only — no hyperlink/action wiring (the deck is static). Renders
+as native shapes + custGeom icons (no media). Absent ⇒ byte-identical. See `D-094`.
+
 ## Card
 
 A scene IR container node — accent strip + optional icon / eyebrow /

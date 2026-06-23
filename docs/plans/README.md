@@ -1319,6 +1319,38 @@ badges never collide or overflow the slide safe area.
 
 ---
 
+### Wave 12 — Component primitives
+
+The R12 (`DECKARD-PRODUCT-REQUIREMENTS.md`) engine units: the node/composition
+primitives a pro slide needs that the recreation could not express — CTA buttons,
+in-card feature checklists, ribbons, inter-column connectors, chip rows, callout
+banners, and the composites that pull them together. Most are new scene IR leaf
+nodes; they follow the new-node wiring checklist (NodeKind + policy + validate +
+render dispatch + walk recursions + catalog count + integration kind-range loop).
+
+#### Phase 61 — prim cta button
+
+**Subsystem:** scene — Layer 2 renderer (new IR leaf node)
+**RFC sections:** §11.1, §12
+**Deps:** Phase 28 (Stat leaf wiring), Phase 53 (header-pill fit), Phase 50
+(auto-contrast); brief 44.
+**What lands (R12.1, CRITICAL · both — engine side):**
+- A `Button` leaf node `{Label, Tone, Size, LeadingIcon, TrailingIcon, Align}`: a
+  content-fit `RadiusFull` pill, `ButtonTone` → `ColorRole` fill (ghost = `NoFill` +
+  accent hairline), pinned `ButtonSize` height/padding/icon scale, a middle-anchored
+  bold `TypeBody` label flanked by native custGeom icons, a `fitScale` tail when the
+  label is clamped, and `Align`-offset placement within its box. Presentational only
+  — no hyperlink/action wiring (static deck) (D-094).
+- Full new-node wiring: catalog count 22 → 23; the integration kind-range loop covers
+  `KindButton`; `walkIconRefs` validates both icon fields.
+**Acceptance criteria:**
+- Standalone button = a single label-sized pill (no wrap/clip) with its glyph in row;
+  a button last in a card body sits inside the card padding; tone resolves to a token
+  fill (ghost = outline); an unknown icon fails validation; a button-free deck is
+  byte-identical; the catalog is 23 and the kind loop covers `KindButton`.
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native

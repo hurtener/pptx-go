@@ -3023,4 +3023,45 @@ change, no new token.
 
 ---
 
+## D-094 — prim-cta-button: a Button leaf node (R12.1)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A professional sales/investor deck ends on a button (a "Talk to the team
+→" closing CTA) and prices against one (a "Start free" at the foot of every pricing
+card). The scene IR had no button primitive at all — a closing slide stopped at bare
+prose, a pricing card at the price. R12.1 (CRITICAL · both; D-059 engine side) is the
+first Wave-12 component primitive.
+**Decision:** Add `KindButton` + a `Button` leaf node `{Label string; Tone ButtonTone
+(ButtonPrimary/ButtonAccentAlt/ButtonGhost/ButtonNeutral); Size ButtonSize
+(ButtonMD/SM/LG); LeadingIcon, TrailingIcon string; Align HAlign}`. It renders native
+chrome (`scene/render_button.go`):
+- A `RadiusFull` `ShapeRoundRect` pill, **content-fit** width
+  `naturalWidth(label@TypeBody) + each icon(iconSz+gap) + 2·padX`, floored at the pill
+  height (a circular minimum) and clamped to its box, with a `fitScale` tail so a label
+  clamped to the box stays one line.
+- A **tone→token** fill (P2): Primary = `ColorAccent` solid / `TextInverse` label;
+  AccentAlt = `ColorAccentAlt` / `TextInverse`; Neutral = `ColorSurfaceAlt` /
+  `TextPrimary`; Ghost = `NoFill` + an accent hairline (`WithLine`) / `TextAccent`.
+- A middle-anchored centered bold `TypeBody` label flanked by optional native custGeom
+  icons (the closed-name registry via `ps.AddIcon`, filled with the label color).
+- `Align` offsets the pill within its box (the same center/right offset path the body
+  stack already uses); inside a container cell it inherits `HAlignLeft`.
+
+The `ButtonSize` SM/MD/LG height/padding/icon scale is a **pinned layout metric**
+(`buttonMetrics`), not a theme token — it sizes geometry, not a visual property; the
+*tone colors* are tokens (THEME.md). It is **presentational only**: no hyperlink/action
+wiring (the deck is static), so it adds no builder capability (P1) and registers no
+media (`nodeUsesAssets` false → parallel-safe). Full new-node wiring: policy (native),
+validate (non-empty label), `renderNode` dispatch + `preferredHeight` (size height) +
+`isFlexible` false, `walkIconRefs` `case Button` (both icon fields Stage-1 validated),
+catalog count 22 → 23, integration kind-range loop → `KindButton`.
+**Consequences:** A deck that uses no `Button` is byte-identical (the node is purely
+additive). A rendered button is **not** byte-identical to any prior output — there was
+none; the byte-identity obligation is only the unused/default path (consistent with the
+fit-to-label note in D-089/D-093). No `Disposition`/mode toggle, no default-tone opinion
+(the soul-tokened default tone is Deckard's product side, D-026). Brief 44.
+
+---
+
 *Append new entries below this line.*

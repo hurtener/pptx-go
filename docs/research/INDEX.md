@@ -249,6 +249,14 @@ semantics)*
   fit/contrast helpers. The suite surfaced an off-canvas card-body-leaf overflow,
   fixed by generalizing the R11.3 safe-area clamp to `renderNode` (exempting
   full-slide overlays; subsumes the three container clamps). (R11.12, HIGH.)
+- `44-prim-cta-button.md` — a new `Button` leaf IR node (the first R12 primitive):
+  content-fit `RadiusFull` pill, `ButtonTone` → `ColorRole` fill (ghost = `NoFill` +
+  accent hairline), pinned `ButtonSize` height/padding scale, middle-anchored bold
+  `TypeBody` label flanked by native custGeom leading/trailing icons, `fitScale`
+  tail, `Align` offset within the box. Presentational only (no hyperlink — static
+  deck). Reuses the header-pill geometry, the icon registry + `walkIconRefs`
+  validation, and `onCardSurface` auto-contrast. Additive ⇒ byte-identical when
+  unused. (R12.1, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

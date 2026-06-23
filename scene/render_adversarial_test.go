@@ -72,6 +72,19 @@ func adversarialScene() scene.Scene {
 					scene.Stat{Value: "1,234,567", Label: "c", AutoFit: true}, scene.Stat{Value: "$12.5M", Label: "d", AutoFit: true},
 				}},
 			}},
+			// Buttons (R12.1): a long-label primary (forces width clamp + label fitScale),
+			// a ghost outline + leading icon, and a button last in a card body (must stay
+			// inside the card padding). Centered so the offset path is exercised too.
+			scene.SceneSlide{ID: fmt.Sprintf("buttons-%v", variant), Variant: variant,
+				Content: scene.Alignment{Horizontal: scene.HAlignCenter},
+				Nodes: []scene.SlideNode{
+					scene.Button{Label: longText, Tone: scene.ButtonPrimary, Size: scene.ButtonLG, TrailingIcon: "arrow-right"},
+					scene.Button{Label: "Talk to the team", Tone: scene.ButtonGhost, LeadingIcon: "star"},
+					scene.Card{Header: "Scale", Body: []scene.SlideNode{
+						scene.Stat{Value: "$399", Label: "per month"},
+						scene.Button{Label: "Start free", Tone: scene.ButtonAccentAlt, TrailingIcon: "arrow-right"},
+					}},
+				}},
 		)
 	}
 	return scene.Scene{Slides: slides}
