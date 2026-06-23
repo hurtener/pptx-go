@@ -247,3 +247,34 @@ cta := scene.Button{
 	Align:        scene.HAlignCenter,
 }
 ```
+
+## Checklist
+
+A dense feature / "what you get" list: rows of a filled status glyph before rich text,
+reflowed into 1–3 columns. The glyph is a real filled mark (a check, cross, or dot) —
+never the empty square a font checkbox draws — and the text hangs indented past it.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Items` | `[]ChecklistItem` | The rows (each `{Text RichText; State CheckState; Icon string}`) |
+| `Columns` | `int` | 1–3 columns; items reflow row-major (`0` = 1 column) |
+| `GlyphTone` | `*ColorRole` | Override the glyph color for all rows; `nil` = per-state default |
+| `Fill` | `bool` | Distribute rows to fill the box height (a short list spans the card) |
+
+`CheckState` selects the glyph: `CheckDone` (a check, accent-tinted), `CheckNo` (a
+cross, muted), `CheckNeutral` (a dot, muted). A per-item `Icon` (a closed-name registry
+icon) overrides the state glyph. Place a `Checklist` with `Fill: true` in a card whose
+body uses `VAlignFill` and the list spreads evenly to the card bottom. A deck that uses
+no `Checklist` is unchanged.
+
+```go
+list := scene.Checklist{
+	Columns: 2,
+	Fill:    true,
+	Items: []scene.ChecklistItem{
+		{Text: scene.RichText{{Text: "Understands your data"}}, State: scene.CheckDone},
+		{Text: scene.RichText{{Text: "Follows your rules"}}, State: scene.CheckDone},
+		{Text: scene.RichText{{Text: "No training on prompts"}}, State: scene.CheckNo},
+	},
+}
+```

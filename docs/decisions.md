@@ -3064,4 +3064,49 @@ fit-to-label note in D-089/D-093). No `Disposition`/mode toggle, no default-tone
 
 ---
 
+## D-095 — prim-in-card-checklist-fill: a Checklist leaf node (R12.2)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** The "what you get" feature list is the heart of every offer/pricing card.
+The recreation rendered `List{Kind: ListChecklist}` via `pptx.BulletCheckbox` — an
+**empty white square** (the `ListItem.Checked` bool is never read), a broken bullet
+indent, native body size, no column reflow, and no fill-to-card. R12.2 (CRITICAL ·
+engine) adds a dedicated `Checklist` node rather than mutating `List`, so the existing
+list path stays byte-identical.
+**Decision:** Add `KindChecklist` + a `Checklist` leaf node `{Items []ChecklistItem{Text
+RichText; State CheckState (CheckDone/CheckNo/CheckNeutral); Icon string}; Columns int;
+GlyphTone *ColorRole; Fill bool}`, rendered in `scene/render_checklist.go`:
+- **A true filled glyph, not a font checkbox.** `CheckDone` → the curated `check` SVG,
+  `CheckNo` → `x`, `CheckNeutral` → `dot`, each via `ps.AddIcon` as a native custGeom
+  shape with a token fill (a per-item `Icon` overrides the name). Fixes the empty-square
+  bug by construction; reuses the Phase-61 icon-glyph mechanism.
+- **Glyph color: per-state default + `*ColorRole` override.** `CheckDone` defaults to
+  `ColorAccent`, the rest to `TextMuted`; `GlyphTone` (non-nil) overrides all. It is a
+  `*ColorRole` because `ColorRole`'s zero value is a real color (`ColorCanvas`) — the
+  D-054 pattern, a §4.3 deviation from the spec's value `ColorRole`.
+- **Hanging indent = glyph width + gap.** Each row is `[glyph | text]`; the text frame
+  is offset by `glyphSz + glyphGap`, so wrapped lines align under the text (no PPTX
+  auto-bullet).
+- **Row-major column reflow.** `cols = clamp(Columns,1,3)`; item `i` → `(row=i/cols,
+  col=i%cols)`; columns share `box.W` with a pinned gap. Per-row heights are
+  content-aware (`wrappedLines` × per-line height).
+- **Fill distributes inter-row slack** across the `rows−1` gaps so the last row meets
+  the box bottom (the VAlignJustify primitive, per-row); off (default) top-aligns at a
+  pinned gap. `Checklist` is added to `isFlexible` so a `VAlignFill`/`BodyVAlign` parent
+  can grow it to fill a card.
+
+Layout metrics (glyph size/gap, column gap, row gap, line height) are pinned EMU (not
+tokens); the glyph colors are tokens (THEME.md). Full new-node wiring: policy (native),
+validate (items + columns 0..3 + state range), `renderNode` dispatch +
+`preferredHeight` (content-aware) + `isFlexible` true + `nodeUsesAssets` false,
+`walkIconRefs case Checklist` (per-item icon overrides Stage-1 validated), catalog 23 →
+24, integration kind-range loop → `KindChecklist`.
+**Consequences:** A deck with no `Checklist` is byte-identical (additive; the
+`List`/`BulletCheckbox` path is untouched). A rendered checklist is not byte-identical
+to anything — there was no equivalent. No mode toggle; the engine renders `Text`
+verbatim and picks no content (D-026). Brief 45.
+
+---
+
 *Append new entries below this line.*

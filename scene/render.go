@@ -230,8 +230,8 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, SectionDivider, Table:
-		// Button is native (a pill + custGeom icons) — no media.
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, SectionDivider, Table:
+		// Button and Checklist are native (pill / glyphs + custGeom icons) — no media.
 		return false
 	default:
 		return true
@@ -409,6 +409,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderStat(ps, box, v)
 	case Button:
 		r.renderButton(ps, box, v, hAlign)
+	case Checklist:
+		r.renderChecklist(ps, box, v)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -521,6 +523,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 			h += pptx.In(0.3)
 		}
 		return h
+	case Checklist:
+		return checklistPreferredHeight(v, avail, theme)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:
@@ -868,6 +872,11 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 func isFlexible(n SlideNode) bool {
 	switch n.(type) {
 	case Grid, TwoColumn, Card, CardSection, Bento, Table, Chart, Image:
+		return true
+	case Checklist:
+		// A checklist subdivides a taller box into evenly spread rows when Fill is set
+		// (R12.2); flexible so a VAlignFill/BodyVAlign parent can grow it. A non-Fill
+		// checklist in a grown box top-aligns its rows (harmless).
 		return true
 	default:
 		return false
