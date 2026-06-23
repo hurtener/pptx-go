@@ -247,3 +247,11 @@ The `Card.Ribbon` badge's colors map onto existing tokens: `Color` is a `*ColorR
 auto-contrasts against the fill by default via `onCardSurface`, with explicit values
 honored. A theme swap re-skins the ribbon. The top-bar band height, corner-tab height,
 star size, and label padding are pinned layout metrics, not tokens. No new token role.
+
+## IconRows glyph / pill (mechanism, no new token — D-100)
+
+The scene `IconRows` node's colors map onto existing tokens: `GlyphColor` is any
+`ColorRole` (its zero value `ColorCanvas` defaults to `ColorAccent` — a canvas glyph would
+be invisible), and the `RowPill` frame uses `ColorSurfaceAlt`. A theme swap re-skins both.
+The icon size, gaps, row gap, line height, and pill pad are pinned layout metrics, not
+tokens. No new token role is introduced.

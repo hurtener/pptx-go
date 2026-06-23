@@ -121,6 +121,17 @@ func adversarialScene() scene.Scene {
 				scene.Banner{Lead: rt(longText), Body: rt(longText), Icon: "star", Fill: scene.ColorAccent,
 					Trailing: []scene.SlideNode{scene.Button{Label: "Talk to the team", Tone: scene.ButtonNeutral, TrailingIcon: "arrow-right"}}},
 			}},
+			// A filled icon-rows list with long labels + right-aligned meta in a Fill card
+			// (R12.7): icons, labels, and meta must stay on-canvas without colliding.
+			scene.SceneSlide{ID: fmt.Sprintf("iconrows-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Card{Header: "Integrations", Fill: scene.ColorSurface, BodyVAlign: scene.VAlignFill, Body: []scene.SlideNode{
+					scene.IconRows{Fill: true, Rows: []scene.IconRow{
+						{Icon: "star", Label: rt(longText), Meta: rt("Microsoft 365 · Workspace"), Tone: scene.RowPill},
+						{Icon: "check", Label: rt(longText), Meta: rt("CRM")},
+						{Icon: "dot", Label: rt(longText), Tone: scene.RowPill},
+					}},
+				}},
+			}},
 		)
 	}
 	return scene.Scene{Slides: slides}

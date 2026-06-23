@@ -122,3 +122,22 @@ func TestRestoreUnknownElementStaysBare(t *testing.T) {
 		t.Errorf("unknown element should stay bare:\n%s", got)
 	}
 }
+
+// TestStripNamespacePrefixes_EscapesEntities guards the read-side bug where decoded
+// CharData and attribute values were re-emitted raw, re-introducing a bare & / < / "
+// that the subsequent xml.Unmarshal rejected (a run like "A & B", a URL a=1&b=2). The
+// stripped output must stay well-formed XML — the entities are preserved.
+func TestStripNamespacePrefixes_EscapesEntities(t *testing.T) {
+	in := `<p:t xmlns:p="urn:x" attr="a=1&amp;b=2">A &amp; B &lt; C</p:t>`
+	out, err := StripNamespacePrefixes([]byte(in))
+	if err != nil {
+		t.Fatalf("StripNamespacePrefixes: %v", err)
+	}
+	got := string(out)
+	if !strings.Contains(got, "A &amp; B &lt; C") {
+		t.Errorf("char data lost escaping: %q", got)
+	}
+	if !strings.Contains(got, `attr="a=1&amp;b=2"`) {
+		t.Errorf("attribute value lost escaping: %q", got)
+	}
+}

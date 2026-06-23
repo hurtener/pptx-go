@@ -201,6 +201,16 @@ Renders native (filled rect + text + custGeom icon; children per their own polic
 node with children — recurses like a container in every walk. Absent ⇒ byte-identical.
 See `D-097`.
 
+## IconRows (node)
+
+A scene IR leaf node: a vertical stack of `[icon | label | optional right-aligned meta]`
+rows — the "integrations / capabilities / sources" list that reads as designed rows rather
+than bullets. Each `IconRow` pairs a leading icon with a rich label and an optional meta;
+`RowPill` frames a row in a `SurfaceAlt` rounded-rect. `Fill` distributes inter-row spacing
+so the rows span the box (a `VAlignFill` card grows it); `GlyphColor` tints the icons (its
+zero value defaults to accent). Renders native (icon custGeom + text + optional pill).
+Absent ⇒ byte-identical. See `D-100`.
+
 ## Grid connector
 
 An inter-column connector glyph drawn in the gutter between two adjacent columns of a

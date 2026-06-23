@@ -65,7 +65,11 @@ func StripNamespacePrefixes(data []byte) ([]byte, error) {
 				}
 				buf.WriteString(attr.Name.Local)
 				buf.WriteString("=\"")
-				buf.WriteString(attr.Value)
+				// Re-escape the decoded attribute value: the tokenizer hands us the
+				// decoded text (& not &amp;), so writing it raw would re-introduce a
+				// bare & / < / " and make the rebuilt XML invalid (e.g. a URL query
+				// a=1&b=2). xml.EscapeText restores the entities.
+				_ = xml.EscapeText(&buf, []byte(attr.Value))
 				buf.WriteString("\"")
 			}
 			buf.WriteString(">")
@@ -74,7 +78,10 @@ func StripNamespacePrefixes(data []byte) ([]byte, error) {
 			buf.WriteString(v.Name.Local)
 			buf.WriteString(">")
 		case xml.CharData:
-			buf.Write(v)
+			// Re-escape decoded text content: writing the tokenizer's decoded bytes
+			// raw would turn a run like "A & B" into invalid XML (a bare &), which the
+			// subsequent xml.Unmarshal rejects. xml.EscapeText restores &amp; / &lt; …
+			_ = xml.EscapeText(&buf, v)
 		case xml.Comment:
 			buf.WriteString("<!--")
 			buf.Write(v)
