@@ -239,3 +239,11 @@ strip); the lead/body `TextColor` is any `TextColorRole`, and its zero value
 chrome uses (`onCardSurface`). A theme swap re-skins the strip and keeps the text
 legible. The padding, icon size, gaps, and trailing-region width are pinned layout
 metrics, not tokens. No new token role is introduced.
+
+## Ribbon color (mechanism, no new token — D-098)
+
+The `Card.Ribbon` badge's colors map onto existing tokens: `Color` is a `*ColorRole`
+(nil = `ColorAccent`, the D-054 pointer pattern), and `TextColor` (a `TextColorRole`)
+auto-contrasts against the fill by default via `onCardSurface`, with explicit values
+honored. A theme swap re-skins the ribbon. The top-bar band height, corner-tab height,
+star size, and label padding are pinned layout metrics, not tokens. No new token role.

@@ -278,6 +278,13 @@ semantics)*
   stacking the trailing `Stat`/`Button`. Recurses like a container in every walk
   (validate / walkIconRefs / walkImages / nodeUsesAssets / collectKinds). Distinct
   from the side-bar `Callout`. Additive ⇒ byte-identical when unused. (R12.6, HIGH.)
+- `48-prim-ribbon-corner-badge.md` — a `Card.Ribbon *Ribbon` field extension (not a new
+  node): a pinned emphasis badge outside the header text flow. `RibbonTopBar` reserves
+  a band (`ribbonReserveOf` threaded through `cardHeaderBottom` / `renderCardChrome` /
+  `cardHeaderExtraHeight` so the body shifts down); `RibbonCornerStar` is the curated
+  star glyph; `RibbonCornerTL/TR` are content-fit corner text tabs (the diagonal
+  rotated-band variant deferred — no builder text rotation). nil ⇒ byte-identical.
+  (R12.3, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

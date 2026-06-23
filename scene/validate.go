@@ -147,6 +147,9 @@ func validateNode(n SlideNode) error {
 		}
 		return validateChildren(v.Cells)
 	case Card:
+		if v.Ribbon != nil && (v.Ribbon.Position < RibbonTopBar || v.Ribbon.Position > RibbonCornerStar) {
+			return fmt.Errorf("card ribbon position %d out of range", v.Ribbon.Position)
+		}
 		return validateChildren(v.Body)
 	case CardSection:
 		if len(v.Body) == 0 {

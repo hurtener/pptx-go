@@ -147,6 +147,7 @@ stack), `CardLayoutIconTop` (icon above it).
 | `Watermark` | `string` | Large, low-opacity label behind the body; `""` = none |
 | `BodyVAlign` | `VAlign` | Vertical distribution of the body within the card (`Top`/`Center`/`Bottom`/`Justify`/`Fill`/`FillCapped`/`Balanced`/`Fit`); zero `Top` = top-anchored |
 | `PaddingScale` | `int` | Basis-point multiplier on the size-resolved interior padding (0/10000 = unchanged; tighten a dense card, floored at a minimum) |
+| `Ribbon` | `*Ribbon` | Pinned emphasis badge (`{Text; Position; Color *ColorRole; TextColor}`); `nil` = none |
 
 By default a card body is top-anchored, so a short body floats in the upper card
 with empty space below. Set `BodyVAlign` to distribute it: `VAlignBottom` pins
@@ -161,6 +162,14 @@ to the vertical body only (not `BodyHorizontal`).
 zero value means "omit" — a plain `ColorRole` zero is a real color (`canvas`).
 Take the address of a role to set them: `hf := scene.ColorAccent; card.HeaderFill
 = &hf`. All three reuse theme tokens, so a theme swap re-skins them.
+
+`Ribbon` pins an emphasis badge outside the header text flow — distinct from the
+in-row `HeaderPill` — to single one card out of a row. `RibbonTopBar` is a
+full-width tab across the top that reserves a band (the body shifts down below it);
+`RibbonCornerStar` is a star glyph in the top-right corner; `RibbonCornerTL`/
+`RibbonCornerTR` are content-fit corner text tabs. Its `Color` (`*ColorRole`, nil =
+accent) and `TextColor` (auto-contrast by default) are theme tokens. `nil` = no
+ribbon.
 
 ```go
 card := scene.Card{
