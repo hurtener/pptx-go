@@ -80,6 +80,8 @@ func validateNode(n SlideNode) error {
 				return fmt.Errorf("chip_row chip %d has invalid tone %d", i, c.Tone)
 			}
 		}
+	case Banner:
+		return validateChildren(v.Trailing)
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

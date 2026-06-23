@@ -272,6 +272,12 @@ semantics)*
   renderer and `preferredHeight`. `Wrap` is the engine mechanism (zero = one line;
   the product sets it true). Pinned metrics, `ChipTone` token colors. Additive ⇒
   byte-identical when unused. (R12.5, HIGH.)
+- `47-prim-callout-banner.md` — a new `Banner` IR node (with `Trailing []SlideNode`
+  children): a full-width `RadiusLG` filled strip (fill defaults to accent), a leading
+  icon + bold lead + body with auto-contrast text, and an optional right region
+  stacking the trailing `Stat`/`Button`. Recurses like a container in every walk
+  (validate / walkIconRefs / walkImages / nodeUsesAssets / collectKinds). Distinct
+  from the side-bar `Callout`. Additive ⇒ byte-identical when unused. (R12.6, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

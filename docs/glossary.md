@@ -190,6 +190,17 @@ mechanism (zero = single line; the product sets it true). `Align` offsets each l
 Renders as native rounded-rect pills + text + optional custGeom icons (no media). Absent
 ⇒ byte-identical. See `D-096`.
 
+## Banner (node)
+
+A scene IR node: a full-width filled "big takeaway / promo / CTA" strip — a leading icon
++ a bold lead phrase + a supporting body on the left, with optional right-aligned
+`Trailing` children (a `Stat` and/or `Button`). Distinct from the side-bar `Callout` (the
+banner is a wide, full-fill `RadiusLG` band). `Fill` defaults to accent (its zero value);
+the lead/body auto-contrast against the fill unless an explicit `TextColor` is set.
+Renders native (filled rect + text + custGeom icon; children per their own policy). A
+node with children — recurses like a container in every walk. Absent ⇒ byte-identical.
+See `D-097`.
+
 ## Card
 
 A scene IR container node — accent strip + optional icon / eyebrow /
