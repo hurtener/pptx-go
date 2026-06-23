@@ -3217,4 +3217,30 @@ soul decides when to flag a card (D-026). Brief 48.
 
 ---
 
+## D-099 — prim-inter-column-connectors: Grid.Connectors (R12.4)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A 3-column architecture grid reads as data flow only when connector arrows
+join the columns in the gutters. The recreation's plain `Grid` left the cards floating
+disconnected; `TwoColumn.Join` (D-055) only places a single centered seam element. R12.4
+(HIGH · engine) adds an N-column gutter connector layer.
+**Decision:** Add `Grid.Connectors []GridConnector{Between [2]int; Kind ConnectorKind;
+Label string}` — a **field extension, not a new node** (no catalog/kind change) — and a
+new `ConnectorBiArrow` glyph. `renderGrid` calls `renderGridConnectors`, which for each
+connector `{c, c+1}` derives the gutter box from the deterministic `layout.Grid` cell
+boxes (`{X: cells[c].Right(), W: cells[c+1].X − cells[c].Right(), Y: box.Y, H: box.H}`)
+and calls the existing `render_flow` `renderConnector` (reuse, D-044). `ConnectorBiArrow`
+emits `leftRightArrow` (horizontal) / `upDownArrow` (vertical) preset geometry — a `prst`
+attribute on the already-registered `prstGeom` element, so no `restorenamespaces` change.
+An optional `Label` sits in the lower third of the gutter (a muted `TypeCaption`).
+Stage-1 validates adjacency (`Between[1] == Between[0]+1`), range (`0..Columns−1`), and
+kind.
+**Consequences:** An empty `Connectors` slice is byte-identical (the helper returns
+immediately; the existing grid tests pass unchanged). Gutters are narrow, so connector
+labels are best kept short. The complementary single-seam case stays `TwoColumn.Join`
+(R12.8 extends that for a spanning bridge). Brief 49.
+
+---
+
 *Append new entries below this line.*

@@ -145,6 +145,15 @@ func validateNode(n SlideNode) error {
 		if len(v.Cells)%v.Columns != 0 {
 			return fmt.Errorf("grid cell count %d is not a multiple of columns %d (a partial last row)", len(v.Cells), v.Columns)
 		}
+		for i, gc := range v.Connectors {
+			c0, c1 := gc.Between[0], gc.Between[1]
+			if c1 != c0+1 || c0 < 0 || c1 > v.Columns-1 {
+				return fmt.Errorf("grid connector %d between %v must be adjacent columns within 0..%d", i, gc.Between, v.Columns-1)
+			}
+			if gc.Kind < ConnectorArrow || gc.Kind > ConnectorBiArrow {
+				return fmt.Errorf("grid connector %d has invalid kind %d", i, gc.Kind)
+			}
+		}
 		return validateChildren(v.Cells)
 	case Card:
 		if v.Ribbon != nil && (v.Ribbon.Position < RibbonTopBar || v.Ribbon.Position > RibbonCornerStar) {

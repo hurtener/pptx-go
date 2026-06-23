@@ -383,6 +383,7 @@ const (
 	ConnectorArrowDashed                      // dashed line + chevron head
 	ConnectorCycle                            // arrows + a trailing return arrow
 	ConnectorPlus                             // a mathPlus glyph between steps
+	ConnectorBiArrow                          // a bidirectional left-right / up-down arrow (R12.4)
 )
 
 // FlowStep is one step in a Flow: a label, optional detail line, and optional
@@ -670,13 +671,26 @@ type TwoColumn struct {
 
 func (TwoColumn) NodeKind() NodeKind { return KindTwoColumn }
 
+// GridConnector draws a connector glyph in the gutter between two adjacent columns of
+// a Grid (R12.4, D-099), so an architecture / pipeline grid reads as data flow, not
+// just adjacency. Between holds the two adjacent column indices ({c, c+1}); Kind reuses
+// the Flow connector set (plus ConnectorBiArrow); Label is an optional caption.
+type GridConnector struct {
+	Between [2]int        // adjacent column indices, e.g. {0, 1}
+	Kind    ConnectorKind // glyph; ConnectorBiArrow = a bidirectional arrow
+	Label   string        // optional caption in the gutter; "" = none
+}
+
 // Grid is a 2/3/4-column layout with weighted ratios and one child per cell.
+// Connectors (additive, R12.4) draw glyphs in the gutters between adjacent columns;
+// an empty Connectors slice renders byte-identically.
 type Grid struct {
 	node
-	Columns int
-	Ratio   []int // per-column weights; empty = equal
-	Gap     SpaceRole
-	Cells   []SlideNode
+	Columns    int
+	Ratio      []int // per-column weights; empty = equal
+	Gap        SpaceRole
+	Cells      []SlideNode
+	Connectors []GridConnector // inter-column gutter glyphs; empty = none
 }
 
 func (Grid) NodeKind() NodeKind { return KindGrid }

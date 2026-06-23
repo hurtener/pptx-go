@@ -103,6 +103,44 @@ func (r *renderer) renderGrid(ps *pptx.Slide, box pptx.Box, v Grid, slideID stri
 		}
 		r.renderNode(ps, cells[i], n, slideID, HAlignLeft)
 	}
+	// Inter-column connectors (R12.4, D-099): a glyph centered in the gutter between
+	// two adjacent columns' first-row cells, spanning the grid height. Empty = no draw
+	// (byte-identical). The gutter is derived from the cell boxes, so it scales with
+	// the column layout deterministically.
+	r.renderGridConnectors(ps, box, v, cells)
+}
+
+// renderGridConnectors draws each GridConnector in the gutter between the named adjacent
+// columns. The gutter box is bounded by the right edge of the left column's first-row
+// cell and the left edge of the right column's, spanning the full grid height. A Label
+// (when set) sits below the glyph in the gutter. Validated adjacent/in-range at Stage-1.
+func (r *renderer) renderGridConnectors(ps *pptx.Slide, box pptx.Box, v Grid, cells []pptx.Box) {
+	if len(v.Connectors) == 0 || len(cells) < v.Columns {
+		return
+	}
+	for _, gc := range v.Connectors {
+		c0, c1 := gc.Between[0], gc.Between[1]
+		if c1 != c0+1 || c0 < 0 || c1 >= v.Columns || c1 >= len(cells) {
+			continue // defensive; Stage-1 already rejected bad indices
+		}
+		left, right := cells[c0], cells[c1]
+		gutter := pptx.Box{X: left.Right(), Y: box.Y, W: right.X - left.Right(), H: box.H}
+		if gutter.W <= 0 {
+			continue
+		}
+		glyphGutter := gutter
+		if gc.Label != "" {
+			// Reserve the lower third of the gutter for the caption; the glyph centers
+			// in the upper part.
+			glyphGutter.H = gutter.H * 2 / 3
+			labelBox := pptx.Box{X: gutter.X, Y: gutter.Y + glyphGutter.H, W: gutter.W, H: gutter.H - glyphGutter.H}
+			tf := ps.AddTextFrame(labelBox).Anchor(pptx.AnchorTop)
+			p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+			p.AddRun(gc.Label, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextMuted)})
+			r.stats.Shapes++
+		}
+		r.renderConnector(ps, glyphGutter, gc.Kind, false)
+	}
 }
 
 // ratioWeights maps a two_column ratio to per-column weights.

@@ -1431,6 +1431,22 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   the corner; the card is visually distinct; a ribbon-free card is byte-identical; an
   out-of-range position fails validation.
 
+#### Phase 66 — prim inter column connectors
+
+**Subsystem:** scene — Layer 2 renderer (Grid field extension)
+**RFC sections:** §11.2, §12
+**Deps:** Phase 06 (Flow `renderConnector`), `layout.Grid`; brief 49.
+**What lands (R12.4, HIGH · engine):**
+- A `Grid.Connectors []GridConnector{Between [2]int; Kind ConnectorKind; Label string}`
+  field extension + a new `ConnectorBiArrow` (`leftRightArrow`/`upDownArrow`): a connector
+  glyph drawn in the gutter between two adjacent columns (derived from the cell boxes),
+  reusing `render_flow`'s `renderConnector`. An optional label sits below the glyph.
+  Adjacency/range/kind validated at Stage-1; empty ⇒ byte-identical (D-099).
+**Acceptance criteria:**
+- A connector renders centered in the correct gutter and scales with it; a bi-arrow is
+  bidirectional; a connector-free grid is byte-identical; a non-adjacent/out-of-range
+  connector fails validation; byte-identical across workers.
+
 ---
 
 ## 4. Post-V1 backlog
