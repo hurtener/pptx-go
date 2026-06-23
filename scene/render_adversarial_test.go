@@ -98,6 +98,15 @@ func adversarialScene() scene.Scene {
 					}},
 				}},
 			}},
+			// A labeled wrapping chip row with many long chips (R12.5): every pill must
+			// wrap within the width and stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("chips-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.ChipRow{Label: "COMMON BUILDS — every department", Wrap: true, Chips: []scene.ChipSpec{
+					{Label: "Finance & accounting"}, {Label: "Human resources"}, {Label: "Sales operations"},
+					{Label: "Legal & compliance"}, {Label: "Operations"}, {Label: "Reporting & analytics"},
+					{Label: "Custom integrations", Tone: scene.ChipSolid, Color: scene.ColorAccent},
+				}},
+			}},
 		)
 	}
 	return scene.Scene{Slides: slides}
