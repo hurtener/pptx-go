@@ -265,6 +265,13 @@ semantics)*
   distributes inter-row slack so a short list spans the card (added to `isFlexible`).
   Reuses the icon registry + `walkIconRefs`, `wrappedLines`, and the VAlignJustify
   slack math. Additive ⇒ byte-identical when unused. (R12.2, CRITICAL.)
+- `46-prim-chip-row-group.md` — a new `ChipRow` leaf IR node: a greedy left-to-right
+  wrap of content-fit chip pills (reusing the single-`Chip` pill + the button
+  content-fit width), an optional leading `TypeCaption` label on line 0, per-line
+  `HAlign` offset, and a shared two-pass packer (`chipRowLines`) feeding both the
+  renderer and `preferredHeight`. `Wrap` is the engine mechanism (zero = one line;
+  the product sets it true). Pinned metrics, `ChipTone` token colors. Additive ⇒
+  byte-identical when unused. (R12.5, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

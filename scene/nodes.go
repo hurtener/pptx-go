@@ -39,6 +39,7 @@ const (
 	KindStat
 	KindButton
 	KindChecklist
+	KindChipRow
 )
 
 // String returns the node kind's IR name.
@@ -92,6 +93,8 @@ func (k NodeKind) String() string {
 		return "button"
 	case KindChecklist:
 		return "checklist"
+	case KindChipRow:
+		return "chip_row"
 	default:
 		return "unknown"
 	}
@@ -572,6 +575,37 @@ type Checklist struct {
 }
 
 func (Checklist) NodeKind() NodeKind { return KindChecklist }
+
+// ChipSpec is one chip in a ChipRow: a label, a tone, the tone's color role, and an
+// optional leading icon (a closed-name curated/extension icon, Stage-1 validated). It
+// mirrors the single Chip node's vocabulary (ChipTone / ColorRole). For ChipTint the
+// Color is ignored (the chip uses ColorSurfaceAlt); ChipSolid/ChipOutline use Color.
+type ChipSpec struct {
+	Label string
+	Tone  ChipTone
+	Color ColorRole
+	Icon  string // optional leading glyph; "" = none
+}
+
+// ChipRow is a horizontal, wrap-to-next-line row of content-fit chip pills with an
+// optional leading label (R12.5, D-096): a tag / category / capability strip. Each
+// chip sizes to its label (plus an optional leading icon); chips lay left-to-right and,
+// when Wrap is set, reflow onto new lines when the row width is exceeded.
+//
+// Wrap is the engine mechanism: the zero value lays all chips on a single line (the
+// minimal behavior); a product that wants a reflowing strip sets Wrap true (D-026). A
+// non-empty Label renders as a leading TypeCaption label before the first chip. Align
+// offsets each line's chips (zero = inherit the slide's Content.Horizontal). Additive:
+// a deck with no ChipRow is byte-identical.
+type ChipRow struct {
+	node
+	Label string
+	Chips []ChipSpec
+	Wrap  bool   // wrap chips onto new lines (zero = single line)
+	Align HAlign // per-node horizontal alignment override; 0 = inherit slide
+}
+
+func (ChipRow) NodeKind() NodeKind { return KindChipRow }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

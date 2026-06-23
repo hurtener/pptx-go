@@ -180,6 +180,16 @@ inter-row spacing so a short list spans its box (and lets a `VAlignFill` card gr
 Renders as native shapes + custGeom glyphs (no media). Absent ⇒ byte-identical. See
 `D-095`.
 
+## ChipRow (node)
+
+A scene IR leaf node: a horizontal, wrap-to-next-line row of content-fit chip pills with
+an optional leading `TypeCaption` label — a tag / category / capability strip. Each chip
+sizes to its label (plus an optional leading icon); chips lay left-to-right and, when
+`Wrap` is set, reflow onto new lines within the box width. `Wrap` is the engine
+mechanism (zero = single line; the product sets it true). `Align` offsets each line.
+Renders as native rounded-rect pills + text + optional custGeom icons (no media). Absent
+⇒ byte-identical. See `D-096`.
+
 ## Card
 
 A scene IR container node — accent strip + optional icon / eyebrow /

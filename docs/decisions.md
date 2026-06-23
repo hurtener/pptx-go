@@ -3109,4 +3109,43 @@ verbatim and picks no content (D-026). Brief 45.
 
 ---
 
+## D-096 — prim-chip-row-group: a ChipRow leaf node (R12.5)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A horizontal row of tag/category chips (a labeled "COMMON BUILDS · Finance ·
+HR · …" strip, a card-footer capability row) is a universal slide element. The IR had
+only a single inline `Chip`; the recreation rendered chip rows as broken bullet lists or
+dropped them. R12.5 (HIGH · both, engine side per D-059) adds the row primitive.
+**Decision:** Add `KindChipRow` + a `ChipRow` leaf node `{Label string; Chips
+[]ChipSpec{Label string; Tone ChipTone; Color ColorRole; Icon string}; Wrap bool; Align
+HAlign}`, rendered in `scene/render_chiprow.go`:
+- **Greedy left-to-right wrap.** Each chip is content-fit (`chipWidthOf =
+  naturalWidth(label@TypeBodySmall) + 2·pad`, + a leading icon). A shared two-pass packer
+  (`chipRowLines`) feeds both the renderer and `preferredHeight`; chips pack onto a line
+  until the next exceeds `box.W`, then break — pure integer arithmetic, deterministic.
+- **The leading label rides line 0** as a `TypeCaption` run, consuming its width before
+  the first chip and participating in line 0's `HAlign` offset.
+- **`Wrap` is the engine mechanism (zero = single line).** A plain Go bool can't encode
+  "default true"; the engine zero is the minimal behavior, the product sets `Wrap: true`
+  for a reflowing strip (D-026). A `Wrap: false` row that overflows is the caller's
+  explicit choice (the `Decoration.Bleed` posture).
+- **Per-line `HAlign` offset** (left / center / right within `box.W`); each chip is a
+  `RadiusFull` rounded-rect with the `ChipTone` fill (reusing the single-`Chip`
+  treatment), an optional leading custGeom icon, and a centered `TypeBodySmall` label
+  auto-contrasted on a solid fill (`onCardSurface`).
+
+Layout metrics (chip height, padding, icon size, gaps) are pinned EMU; the tone colors
+reuse the existing `ChipTone` → token mapping (no new token). Full new-node wiring:
+policy (native), validate (non-empty chips + tone range), `renderNode` dispatch +
+`preferredHeight` (line count × chip height) + `isFlexible` false + `nodeUsesAssets`
+false + `nodeEffectiveHAlign`, `walkIconRefs case ChipRow` (per-chip icons Stage-1
+validated), catalog 24 → 25, integration kind-range loop → `KindChipRow`.
+**Consequences:** A deck with no `ChipRow` is byte-identical (additive). The chip pill
+uses `RadiusFull` (a fuller capsule than the single `Chip`'s default-radius rounded
+rect) — a deliberate, isolated visual for the new node. No mode toggle; the engine picks
+no content (D-026). Brief 46.
+
+---
+
 *Append new entries below this line.*

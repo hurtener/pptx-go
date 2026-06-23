@@ -278,3 +278,32 @@ list := scene.Checklist{
 	},
 }
 ```
+
+## ChipRow
+
+A horizontal row of tag / category chips — a labeled capability strip ("COMMON BUILDS ·
+Finance · HR · …") or a card-footer tag row. Each chip is a real pill sized to its
+label; chips lay left-to-right and reflow onto new lines when `Wrap` is set.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Label` | `string` | Optional leading caption before the first chip; `""` = none |
+| `Chips` | `[]ChipSpec` | The chips (each `{Label string; Tone ChipTone; Color ColorRole; Icon string}`) |
+| `Wrap` | `bool` | Reflow chips onto new lines within the width (zero = single line) |
+| `Align` | `HAlign` | Align each line's chips left / center / right within the box |
+
+Each `ChipSpec` mirrors the single `Chip`: `Tone` is `ChipTint` (default surface),
+`ChipSolid` (the `Color` role), or `ChipOutline` (a `Color` hairline); a leading `Icon`
+(a closed-name registry icon) is optional. Set `Wrap: true` for a long strip so it
+reflows instead of overflowing.
+
+```go
+strip := scene.ChipRow{
+	Label: "COMMON BUILDS",
+	Wrap:  true,
+	Chips: []scene.ChipSpec{
+		{Label: "Finance"}, {Label: "HR"}, {Label: "Sales"},
+		{Label: "Legal & Compliance"}, {Label: "Operations"},
+	},
+}
+```

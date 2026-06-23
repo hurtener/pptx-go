@@ -41,6 +41,7 @@ var policyTable = map[NodeKind]Policy{
 	KindStat:           {},
 	KindButton:         {}, // native pill + custGeom icons (no asset)
 	KindChecklist:      {}, // native text + custGeom glyphs (no asset)
+	KindChipRow:        {}, // native pills + text + optional custGeom icons (no asset)
 }
 
 // PolicyFor returns the rendering policy for a node kind.

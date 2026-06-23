@@ -79,6 +79,7 @@ renders as native PPTX shapes**.
 | `Stat` | `Value, Label, Delta string; DeltaTone; AutoFit bool` | native; hero big-number (value at display scale + label + optional delta). `DeltaTone` = `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted). A `Grid` of `Stat`s is a metric strip. `AutoFit` (opt-in) shrinks a long value/price to fit its column on one line, down to 60% of the display size; off / fitting values are byte-identical |
 | `Button` | `Label string; Tone ButtonTone; Size ButtonSize; LeadingIcon, TrailingIcon string; Align HAlign` | native; a CTA / action pill (a closing slide, a pricing-card footer). `Tone` = `ButtonPrimary` (accent solid) / `ButtonAccentAlt` / `ButtonGhost` (outline) / `ButtonNeutral` (surface). `Size` = `ButtonMD` (default) / `ButtonSM` / `ButtonLG`. Width is content-fit to the label + icons, clamped to its box; `Align` centers/right-aligns it. `LeadingIcon`/`TrailingIcon` are closed-name registry icons (e.g. `arrow-right`); `""` = none. Presentational only — no hyperlink (the deck is static) |
 | `Checklist` | `Items []ChecklistItem` (`{Text RichText; State CheckState; Icon string}`); `Columns int (1..3)`; `GlyphTone *ColorRole`; `Fill bool` | native; a dense feature / "what you get" list with **true filled** glyphs (a real check/cross/dot custGeom, never an empty font checkbox). `State` = `CheckDone` (check, accent) / `CheckNo` (cross, muted) / `CheckNeutral` (dot, muted); a per-item `Icon` overrides the glyph. `Columns` reflows items row-major into balanced columns; text hangs indented from the glyph width. `GlyphTone` (a `*ColorRole`, `nil` = per-state default) re-skins all glyphs. `Fill` distributes rows to span the box height — place it in a `VAlignFill` card body to fill the card. Use this, not `List{Kind: ListChecklist}`, for feature/offer lists |
+| `ChipRow` | `Label string; Chips []ChipSpec` (`{Label string; Tone ChipTone; Color ColorRole; Icon string}`); `Wrap bool`; `Align HAlign` | native; a horizontal row of content-fit chip pills (a tag / category / capability strip) with an optional leading `Label`. Each `ChipSpec` mirrors `Chip` (`ChipTint`/`ChipSolid`/`ChipOutline` + an optional leading `Icon`). `Wrap` reflows chips onto new lines within the width (zero = one line; set it true for a long strip); `Align` offsets each line. Use this, not a bullet `List`, for a tag/category row |
 | `SectionDivider` | `Eyebrow, Label string` | native (full-bleed) |
 | `Table` | `Headers []RichText; Rows [][]RichText; Caption string` | native |
 | `Flow` | `Orientation FlowOrientation; Steps []FlowStep; Connector ConnectorKind` | native |
@@ -208,6 +209,8 @@ returns a joined error so you see every problem at once. Per-node rules:
   the icon registry (curated ∪ extensions).
 - `Checklist`: non-empty `Items`; `Columns` in `0..3` (0 = 1); each item's
   `State` valid; any per-item `Icon` must resolve in the icon registry.
+- `ChipRow`: non-empty `Chips`; each chip's `Tone` valid; any chip `Icon` must
+  resolve in the icon registry.
 - `Table`: at least one header column; every row width equals the header width.
 - `TwoColumn`: non-empty `Left` and `Right` (children validated recursively).
 - `Grid`: `Columns` in `2..4`; `Ratio` empty or length == `Columns`; non-empty

@@ -1371,6 +1371,25 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   width; `Fill` spans the box height; an unknown item icon fails validation; identical
   input is byte-identical; the catalog is 24 and the kind loop covers `KindChecklist`.
 
+#### Phase 63 — prim chip row group
+
+**Subsystem:** scene — Layer 2 renderer (new IR leaf node)
+**RFC sections:** §11.1, §12
+**Deps:** Phase 62 (row-packing), Phase 61 (content-fit pill), the `Chip` pill; brief 46.
+**What lands (R12.5, HIGH · both):**
+- A `ChipRow` leaf node `{Label string; Chips []ChipSpec{Label string; Tone ChipTone;
+  Color ColorRole; Icon string}; Wrap bool; Align HAlign}`: a greedy left-to-right wrap
+  of content-fit chip pills (reusing the single-`Chip` pill + the button content-fit
+  width), an optional leading `TypeCaption` label on the first line, and per-line
+  `HAlign` offset. `Wrap` is the engine mechanism (zero = one line; the product sets it
+  true); a shared two-pass packer feeds both the renderer and `preferredHeight` (D-096).
+- Full new-node wiring: catalog 24 → 25; integration kind-range loop → `KindChipRow`;
+  `walkIconRefs` validates per-chip icons.
+**Acceptance criteria:**
+- Chips render as real pills (never bullets); `Wrap` reflows without clipping within the
+  width; `Align` offsets each line; an unknown chip icon fails validation; identical
+  input is byte-identical; the catalog is 25 and the kind loop covers `KindChipRow`.
+
 ---
 
 ## 4. Post-V1 backlog

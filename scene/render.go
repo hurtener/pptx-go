@@ -230,8 +230,8 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, SectionDivider, Table:
-		// Button and Checklist are native (pill / glyphs + custGeom icons) — no media.
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, SectionDivider, Table:
+		// Button / Checklist / ChipRow are native (pills / glyphs + custGeom icons) — no media.
 		return false
 	default:
 		return true
@@ -411,6 +411,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderButton(ps, box, v, hAlign)
 	case Checklist:
 		r.renderChecklist(ps, box, v)
+	case ChipRow:
+		r.renderChipRow(ps, box, v, hAlign)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -525,6 +527,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return h
 	case Checklist:
 		return checklistPreferredHeight(v, avail, theme)
+	case ChipRow:
+		return chipRowPreferredHeight(v, avail, theme)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:
@@ -1047,6 +1051,8 @@ func nodeEffectiveHAlign(n SlideNode, slideHAlign HAlign) HAlign {
 	case Chip:
 		nodeAlign = v.Align
 	case Button:
+		nodeAlign = v.Align
+	case ChipRow:
 		nodeAlign = v.Align
 	case SectionDivider:
 		nodeAlign = v.Align

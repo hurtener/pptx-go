@@ -71,6 +71,15 @@ func validateNode(n SlideNode) error {
 				return fmt.Errorf("checklist item %d has invalid state %d", i, it.State)
 			}
 		}
+	case ChipRow:
+		if len(v.Chips) == 0 {
+			return errors.New("chip_row has no chips")
+		}
+		for i, c := range v.Chips {
+			if c.Tone < ChipTint || c.Tone > ChipOutline {
+				return fmt.Errorf("chip_row chip %d has invalid tone %d", i, c.Tone)
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")
