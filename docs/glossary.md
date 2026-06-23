@@ -310,8 +310,11 @@ The optional element a `TwoColumn` draws centered on its seam
 reusing accent/inverse tokens (D-055). The `JoinBadge` **sizes to its label** —
 the diameter grows to contain the `JoinLabel` (up to a cap, then the label is shrunk
 to one line) so a multi-word label renders intact instead of breaking mid-word; a
-short label like "vs" keeps the base diameter (byte-identical) (R11.7, `D-087`). See
-`RFC-001-pptx-go.md §11.2`.
+short label like "vs" keeps the base diameter (byte-identical) (R11.7, `D-087`). The
+`TwoColumn.JoinPosition` selects where it sits: `JoinSeam` (centered, the default) or
+`JoinTopBridge`/`JoinBottomBridge` — a horizontal accent bracket (a spanning line + two end
+stubs + a content-fit centered label pill, no mid-word wrap) across the top/bottom of both
+columns, the "one X, two ways" header (`D-101`). See `RFC-001-pptx-go.md §11.2`.
 
 ## Column span
 

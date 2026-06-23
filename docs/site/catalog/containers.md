@@ -20,11 +20,17 @@ their own policy).
 | `Left` | `[]SlideNode` | Children in the left region |
 | `Right` | `[]SlideNode` | Children in the right region |
 | `Join` | `ColumnJoin` | Centered seam element: `JoinNone` (default), `JoinBadge`, `JoinArrow` |
-| `JoinLabel` | `string` | Badge text when `Join == JoinBadge` (e.g. `"VS"`) |
+| `JoinLabel` | `string` | Badge / bridge text when `Join != JoinNone` (e.g. `"VS"`, `"One agent"`) |
+| `JoinPosition` | `JoinPosition` | Where the join sits: `JoinSeam` (centered, default), `JoinTopBridge`, `JoinBottomBridge` |
 
 `Join` draws an optional element straddling the seam between the columns: a
 circular "VS"-style badge (`JoinBadge` + `JoinLabel`) for comparing two cards, or
 a right-arrow connector (`JoinArrow`). `JoinNone` (the zero value) draws nothing.
+`JoinPosition` selects where it sits: `JoinSeam` (centered, the default) or
+`JoinTopBridge`/`JoinBottomBridge` — a horizontal accent bracket (a spanning line +
+two end stubs + a content-fit label pill, no mid-word wrap) across the top/bottom of
+both columns, the "one X, two ways" header. A bridge reserves a band so it spans
+above/below the column content; `JoinSeam` is byte-identical to the centered element.
 
 ```go
 two := scene.TwoColumn{

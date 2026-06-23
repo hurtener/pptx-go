@@ -295,6 +295,11 @@ semantics)*
   `SurfaceAlt` frame and a `Fill` mode (added to `isFlexible`). Mirrors the Checklist
   row engine (content-aware heights, slack distribution, `walkIconRefs` per-row icon);
   `GlyphColor` defaults to accent. Additive ⇒ byte-identical. (R12.7, MED.)
+- `51-prim-spanning-column-bridge.md` — a `TwoColumn.JoinPosition` field extension
+  (`JoinSeam`/`JoinTopBridge`/`JoinBottomBridge`): a horizontal accent bracket (spanning
+  line + two end stubs + a content-fit centered label pill, no mid-word wrap) across the
+  top/bottom of both columns, reserving a band (ribbon-style) so it spans above/below the
+  content. `JoinSeam` (zero) is byte-identical to the D-055 seam element. (R12.8, MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

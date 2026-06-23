@@ -556,7 +556,12 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return tableHeight(v, avail, theme)
 	case TwoColumn:
 		colW := (avail - estGap) / 2
-		return maxEMU(nodesHeight(v.Left, colW, theme), nodesHeight(v.Right, colW, theme))
+		h := maxEMU(nodesHeight(v.Left, colW, theme), nodesHeight(v.Right, colW, theme))
+		// A top/bottom bridge reserves a band beyond the columns (R12.8); JoinSeam adds 0.
+		if v.Join != JoinNone && v.JoinPosition != JoinSeam {
+			h += bridgeBandH
+		}
+		return h
 	case Grid:
 		cols := v.Columns
 		if cols < 1 {
