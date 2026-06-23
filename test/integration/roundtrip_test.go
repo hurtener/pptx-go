@@ -355,7 +355,12 @@ func everyNodeScene() scene.Scene {
 					scene.Banner{
 						Lead: rt("Run it internally, sell it externally"), Body: rt("the power of an agentic platform"),
 						Icon: "star", Fill: scene.ColorAccent,
-						Trailing: []scene.SlideNode{scene.Button{Label: "Start free", TrailingIcon: "arrow-right"}},
+						Trailing: []scene.SlideNode{
+							scene.Button{Label: "Start free", TrailingIcon: "arrow-right"},
+							// A Lockup inside Banner.Trailing (Wave-12 checkpoint composite):
+							// exercises walkIconRefs recursion through Banner.Trailing into a leaf.
+							scene.Lockup{Caption: "by ACME", Icon: "star"},
+						},
 					},
 					scene.IconRows{Rows: []scene.IconRow{
 						{Icon: "star", Label: rt("Chat & Q&A"), Meta: rt("core"), Tone: scene.RowPill},

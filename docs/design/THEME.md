@@ -263,3 +263,27 @@ fills with the accent token (the `AddIcon` default). A theme swap re-skins both.
 caption-to-logo gap, the default logo height, and the slot padding are pinned layout
 metrics, not tokens; the logo box is square (no pixel-aspect parsing — §7). No new token
 role is introduced.
+
+## ChipRow chip tone (mechanism, no new token — D-096)
+
+The scene `ChipRow` node's chips reuse the single `Chip`'s tone mapping: `ChipSolid` /
+`ChipOutline` resolve the chip's `Color` role via `TokenColor`, `ChipTint` uses
+`ColorSurfaceAlt`, and the label auto-contrasts against a solid fill (`onCardSurface`,
+falling back to the default text token). The optional leading label uses `TextMuted`. A
+theme swap re-skins every chip. The chip height, padding, icon size, and inter-chip / inter-
+line gaps are pinned layout metrics, not tokens. No new token role is introduced.
+
+## Grid connector color (mechanism, no new token — D-099)
+
+The scene `Grid.Connectors` glyphs reuse the flow connector colors: the arrow / bi-arrow /
+plus glyph fills with `ColorAccent`, and an optional gutter label uses `TextMuted`. A theme
+swap re-skins the connectors. The gutter geometry is derived from the deterministic column
+layout; no new token role is introduced.
+
+## Column-bridge color (mechanism, no new token — D-101)
+
+The scene `TwoColumn.JoinPosition` bridge (`JoinTopBridge` / `JoinBottomBridge`) reuses the
+accent token: the spanning line, the end stubs, and the label pill fill with `ColorAccent`,
+and the pill label auto-contrasts against that fill (`onCardSurface`). A theme swap re-skins
+the bridge. The reserved band height, stub length, stroke, and pill padding are pinned
+layout metrics, not tokens. No new token role is introduced.
