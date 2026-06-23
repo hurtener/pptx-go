@@ -1447,6 +1447,23 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   bidirectional; a connector-free grid is byte-identical; a non-adjacent/out-of-range
   connector fails validation; byte-identical across workers.
 
+#### Phase 67 — prim icon label rows
+
+**Subsystem:** scene — Layer 2 renderer (new IR leaf node)
+**RFC sections:** §11.1, §12
+**Deps:** Phase 62 (Checklist row engine), the icon registry; brief 50.
+**What lands (R12.7, MED · engine):**
+- An `IconRows` leaf node `{Rows []IconRow{Icon string; Label RichText; Meta RichText;
+  Tone RowTone}; Fill bool; GlyphColor ColorRole}`: a vertical stack of `[icon | label |
+  optional right-aligned meta]` rows with an optional `RowPill` `SurfaceAlt` frame and a
+  `Fill` mode (added to `isFlexible`). Mirrors the Phase-62 checklist row engine; per-row
+  icon validated via `walkIconRefs`; `GlyphColor` defaults to accent (D-100).
+- Full new-node wiring: catalog 26 → 27; integration kind-range loop → `KindIconRows`.
+**Acceptance criteria:**
+- Each row's icon aligns to its label without overlapping the title; `Meta` right-aligns;
+  `Fill` spreads rows to the bottom; `RowPill` frames each row; an unknown row icon fails
+  validation; byte-identical across workers; catalog 27 and the kind loop covers it.
+
 ---
 
 ## 4. Post-V1 backlog

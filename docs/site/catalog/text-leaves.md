@@ -339,3 +339,30 @@ banner := scene.Banner{
 	},
 }
 ```
+
+## IconRows
+
+A vertical stack of icon-label rows — the "integrations / capabilities / sources" list
+that reads as designed rows rather than bullets. Each row pairs a leading icon with a label
+and an optional right-aligned meta; rows can be framed as pills and distributed to fill a
+card.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Rows` | `[]IconRow` | The rows (each `{Icon string; Label RichText; Meta RichText; Tone RowTone}`) |
+| `Fill` | `bool` | Distribute rows to fill the box height (a `VAlignFill` card grows the list) |
+| `GlyphColor` | `ColorRole` | Icon tint; the zero value defaults to the accent role |
+
+`RowTone` is `RowPlain` (no frame) or `RowPill` (a `SurfaceAlt` rounded-rect frame around
+the row). A row's `Icon` is a closed-name registry icon (`""` omits the glyph); `Meta`
+right-aligns. A deck that uses no `IconRows` is unchanged.
+
+```go
+rows := scene.IconRows{
+	Fill: true,
+	Rows: []scene.IconRow{
+		{Icon: "star", Label: scene.RichText{{Text: "Chat & Q&A"}}, Meta: scene.RichText{{Text: "core"}}, Tone: scene.RowPill},
+		{Icon: "check", Label: scene.RichText{{Text: "Specialized agents"}}},
+	},
+}
+```

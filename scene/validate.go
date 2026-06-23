@@ -82,6 +82,15 @@ func validateNode(n SlideNode) error {
 		}
 	case Banner:
 		return validateChildren(v.Trailing)
+	case IconRows:
+		if len(v.Rows) == 0 {
+			return errors.New("icon_rows has no rows")
+		}
+		for i, row := range v.Rows {
+			if row.Tone < RowPlain || row.Tone > RowPill {
+				return fmt.Errorf("icon_rows row %d has invalid tone %d", i, row.Tone)
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

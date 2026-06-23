@@ -41,6 +41,7 @@ const (
 	KindChecklist
 	KindChipRow
 	KindBanner
+	KindIconRows
 )
 
 // String returns the node kind's IR name.
@@ -98,6 +99,8 @@ func (k NodeKind) String() string {
 		return "chip_row"
 	case KindBanner:
 		return "banner"
+	case KindIconRows:
+		return "icon_rows"
 	default:
 		return "unknown"
 	}
@@ -633,6 +636,40 @@ type Banner struct {
 }
 
 func (Banner) NodeKind() NodeKind { return KindBanner }
+
+// RowTone selects an IconRow's framing (R12.7, D-100). The zero value RowPlain draws no
+// frame; RowPill wraps the row in a SurfaceAlt rounded-rect.
+type RowTone int
+
+const (
+	RowPlain RowTone = iota // no frame (zero value)
+	RowPill                 // a SurfaceAlt rounded-rect frame around the row
+)
+
+// IconRow is one row of an IconRows: a leading icon, a rich label, and an optional
+// right-aligned meta. Icon is a closed-name curated/extension icon (Stage-1 validated);
+// "" renders no glyph (the label starts at the left).
+type IconRow struct {
+	Icon  string
+	Label RichText
+	Meta  RichText // optional, right-aligned; nil = none
+	Tone  RowTone
+}
+
+// IconRows is a vertical stack of [icon | label | optional meta] rows (R12.7, D-100): the
+// "integrations / capabilities / sources" list that reads as designed rows rather than
+// bullets. Fill distributes inter-row spacing so the rows span the box height (like
+// VAlignFill); GlyphColor tints every row's icon (its zero value, ColorCanvas, defaults to
+// ColorAccent — a canvas-colored glyph would be invisible). Additive: a deck with no
+// IconRows is byte-identical.
+type IconRows struct {
+	node
+	Rows       []IconRow
+	Fill       bool      // distribute rows to fill the box height
+	GlyphColor ColorRole // icon tint; zero (ColorCanvas) = ColorAccent
+}
+
+func (IconRows) NodeKind() NodeKind { return KindIconRows }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

@@ -290,6 +290,11 @@ semantics)*
   two adjacent columns (derived from the cell boxes), reusing `render_flow`'s
   `renderConnector` + a new `ConnectorBiArrow` (`leftRightArrow`/`upDownArrow`).
   Adjacency validated at Stage-1; empty ⇒ byte-identical. (R12.4, HIGH.)
+- `50-prim-icon-label-rows.md` — a new `IconRows` leaf IR node: a vertical stack of
+  `[icon | label | optional right-aligned meta]` rows with an optional `RowPill`
+  `SurfaceAlt` frame and a `Fill` mode (added to `isFlexible`). Mirrors the Checklist
+  row engine (content-aware heights, slack distribution, `walkIconRefs` per-row icon);
+  `GlyphColor` defaults to accent. Additive ⇒ byte-identical. (R12.7, MED.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

@@ -3243,4 +3243,38 @@ labels are best kept short. The complementary single-seam case stays `TwoColumn.
 
 ---
 
+## D-100 — prim-icon-label-rows + read-side entity-escaping fix (R12.7)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A card that is a vertical stack of `[icon | label | optional meta]` rows
+(integrations, capabilities) reads as designed rows, not bullets. The recreation rendered
+these as bullet lists with the title overlapping. R12.7 (MED · engine) adds the row
+primitive. Implementing its integration round-trip fixture (a label with `&`) **surfaced a
+pre-existing codec bug** fixed here per `CLAUDE.md §17`.
+**Decision (the node):** Add `KindIconRows` + an `IconRows` leaf node `{Rows []IconRow{Icon
+string; Label RichText; Meta RichText; Tone RowTone}; Fill bool; GlyphColor ColorRole}`,
+rendered in `scene/render_iconrows.go` mirroring the Phase-62 checklist row engine:
+content-aware per-row heights, a `[icon | label | right-aligned meta]` layout, an optional
+`RowPill` `RadiusMD` `SurfaceAlt` frame, and a `Fill` mode distributing inter-row slack
+(added to `isFlexible` so a `VAlignFill` card grows it). `GlyphColor`'s zero value
+(`ColorCanvas`) maps to `ColorAccent` (a canvas-colored glyph is invisible). Pinned layout
+metrics; glyph color + pill surface are tokens. Per-row icon validated via `walkIconRefs`.
+Catalog 26 → 27. Additive ⇒ byte-identical when unused.
+**Decision (the codec fix):** `internal/ooxml.StripNamespacePrefixes` (the read-side
+prefix-stripper that rebuilds slide XML token-by-token before `xml.Unmarshal`) re-emitted
+decoded `CharData` and attribute values **raw** (`buf.Write(v)` / `buf.WriteString(attr.
+Value)`), so any run text or attribute containing `&` / `<` / `>` (a label "A & B", a URL
+`a=1&b=2`) became a bare entity and the reopen failed with "invalid character entity & (no
+semicolon)" — silently dropping that slide on read (a G6 round-trip defect, latent because
+no prior fixture used those characters in slide-body text). Fixed by re-escaping both with
+`xml.EscapeText`. Hyperlink URLs were unaffected (they live in the part rels, not the slide
+XML). Guarded by `TestStripNamespacePrefixes_EscapesEntities` and the everyNodeScene
+round-trip (which now carries an `&` label).
+**Consequences:** Any self-authored deck with `&`/`<`/`>` in run text now round-trips
+losslessly (previously such a slide was dropped on reopen). The write path was already
+correct (`xml.Marshal` escaped); only the read-side rebuild was wrong. Brief 50.
+
+---
+
 *Append new entries below this line.*
