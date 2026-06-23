@@ -11,7 +11,23 @@ import (
 
 func (r *renderer) renderTwoColumn(ps *pptx.Slide, box pptx.Box, v TwoColumn, slideID string) {
 	gap := r.theme.ResolveSpace(pptx.SpaceMD)
-	cols := layout.Columns(box, ratioWeights(v.Ratio), gap)
+
+	// A top/bottom bridge (R12.8) reserves a band at that edge so the bracket spans above
+	// (or below) the columns without overlapping their content; the columns lay out in the
+	// remaining region. JoinSeam (default) reserves nothing — byte-identical (D-101).
+	colBox := box
+	bridging := v.Join != JoinNone && v.JoinPosition != JoinSeam
+	if bridging {
+		switch v.JoinPosition {
+		case JoinTopBridge:
+			colBox.Y += bridgeBandH
+			colBox.H -= bridgeBandH
+		case JoinBottomBridge:
+			colBox.H -= bridgeBandH
+		}
+	}
+
+	cols := layout.Columns(colBox, ratioWeights(v.Ratio), gap)
 	if len(cols) != 2 {
 		return
 	}
@@ -21,10 +37,82 @@ func (r *renderer) renderTwoColumn(ps *pptx.Slide, box pptx.Box, v TwoColumn, sl
 	for _, pl := range r.stackIn(cols[1], v.Right, slideID) {
 		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
 	}
-	// Inter-column element (D-055), drawn after the column content so it sits on
-	// top of both columns, centered on the seam. Inert when Join == JoinNone.
+	// Inter-column element (D-055 / D-101), drawn after the column content so it sits on
+	// top of both columns. Inert when Join == JoinNone.
 	if v.Join != JoinNone {
-		r.renderColumnJoin(ps, box, cols[0], cols[1], v)
+		if bridging {
+			r.renderColumnBridge(ps, box, cols[0], cols[1], v)
+		} else {
+			r.renderColumnJoin(ps, box, cols[0], cols[1], v)
+		}
+	}
+}
+
+// Column-bridge geometry (R12.8, D-101). Pinned layout metrics — the reserved band, the
+// stub length, the bracket stroke, and the label-pill padding.
+const (
+	bridgeBandH    = pptx.EMU(457200) // In(0.50); the reserved top/bottom band
+	bridgeStubLen  = pptx.EMU(146304) // In(0.16); the down/up stubs at each end
+	bridgeStroke   = pptx.EMU(19050)  // Pt(1.5); the bracket line thickness
+	bridgePillPadX = pptx.EMU(91440)  // In(0.10); the label-pill horizontal padding
+	bridgePillH    = pptx.EMU(274320) // In(0.30); the label-pill height
+)
+
+// renderColumnBridge draws a horizontal accent bracket (two end stubs + a spanning line)
+// across the top or bottom edge of both columns, with the JoinLabel as a content-fit
+// centered pill on the line — the "one X, two ways" header (R12.8, D-101). The label
+// never wraps mid-word (the pill grows to the text, shrinking via FontScale only if it
+// would exceed the span). Deterministic integer-EMU; accent-token colors.
+func (r *renderer) renderColumnBridge(ps *pptx.Slide, box, left, right pptx.Box, v TwoColumn) {
+	accent := pptx.SolidFill(pptx.TokenColor(pptx.ColorAccent))
+	bracketLeft := left.X
+	bracketRight := right.X + right.W
+	span := bracketRight - bracketLeft
+	if span <= 0 {
+		return
+	}
+
+	// The bracket line sits in the reserved band; the stubs reach toward the columns.
+	var lineY, stubY pptx.EMU
+	if v.JoinPosition == JoinBottomBridge {
+		lineY = box.Y + box.H - bridgeBandH/2
+		stubY = lineY // stubs go down toward... actually up to the columns above
+	} else {
+		lineY = box.Y + bridgeBandH/2
+		stubY = lineY
+	}
+
+	// Horizontal spanning line.
+	ps.AddShape(pptx.ShapeRect, pptx.Box{X: bracketLeft, Y: lineY - bridgeStroke/2, W: span, H: bridgeStroke}, pptx.WithFill(accent))
+	r.stats.Shapes++
+	// End stubs: from the line toward the columns (down for a top bridge, up for a bottom).
+	stubTopY := stubY
+	if v.JoinPosition == JoinBottomBridge {
+		stubTopY = stubY - bridgeStubLen
+	}
+	for _, sx := range []pptx.EMU{bracketLeft, bracketRight - bridgeStroke} {
+		ps.AddShape(pptx.ShapeRect, pptx.Box{X: sx, Y: stubTopY, W: bridgeStroke, H: bridgeStubLen}, pptx.WithFill(accent))
+		r.stats.Shapes++
+	}
+
+	// Content-fit label pill centered on the line.
+	if v.JoinLabel != "" {
+		natW := naturalWidth(RichText{{Text: v.JoinLabel, Style: RunStyle{TypeRole: pptx.TypeBodySmall}}}, r.theme)
+		pillW := natW + 2*bridgePillPadX
+		if pillW > span {
+			pillW = span
+		}
+		pillBox := pptx.Box{X: bracketLeft + (span-pillW)/2, Y: lineY - bridgePillH/2, W: pillW, H: bridgePillH}
+		ps.AddShape(pptx.ShapeRoundRect, pillBox, pptx.WithFill(accent), pptx.WithRadius(pptx.RadiusFull))
+		r.stats.Shapes++
+		jc := r.onCardSurface(pptx.ColorAccent)
+		if jc == nil {
+			jc = pptx.TokenTextColor(pptx.TextPrimary)
+		}
+		tf := ps.AddTextFrame(pillBox).Anchor(pptx.AnchorMiddle)
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+		p.AddRun(v.JoinLabel, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: jc, FontScale: fitScale(natW, pillW-2*bridgePillPadX)})
+		r.stats.Shapes++
 	}
 }
 

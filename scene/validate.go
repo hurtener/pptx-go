@@ -140,6 +140,9 @@ func validateNode(n SlideNode) error {
 		if len(v.Left) == 0 || len(v.Right) == 0 {
 			return errors.New("two_column requires non-empty left and right")
 		}
+		if v.JoinPosition < JoinSeam || v.JoinPosition > JoinBottomBridge {
+			return fmt.Errorf("two_column join position %d out of range", v.JoinPosition)
+		}
 		return validateChildren(append(append([]SlideNode{}, v.Left...), v.Right...))
 	case Grid:
 		if v.Columns < 2 || v.Columns > 4 {

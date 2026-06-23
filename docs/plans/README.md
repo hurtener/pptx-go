@@ -1464,6 +1464,22 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   `Fill` spreads rows to the bottom; `RowPill` frames each row; an unknown row icon fails
   validation; byte-identical across workers; catalog 27 and the kind loop covers it.
 
+#### Phase 68 — prim spanning column bridge
+
+**Subsystem:** scene — Layer 2 renderer (TwoColumn field extension)
+**RFC sections:** §11.2, §12
+**Deps:** Phase 26 (column join), Phase 65 (ribbon band-reserve); brief 51.
+**What lands (R12.8, MED · engine):**
+- A `TwoColumn.JoinPosition` field (`JoinSeam`/`JoinTopBridge`/`JoinBottomBridge`): the
+  join can be a horizontal accent bracket (a spanning line + two end stubs + a content-fit
+  centered label pill, no mid-word wrap) across the top/bottom of both columns, reserving a
+  band (ribbon-style) so it spans above/below the content. `JoinSeam` (zero) is
+  byte-identical to the D-055 centered seam element (D-101).
+**Acceptance criteria:**
+- A top bridge spans both columns with a single-line label pill (never mid-word wrap); a
+  `JoinSeam` render is byte-identical to before; an out-of-range position fails validation;
+  repeated renders are byte-identical.
+
 ---
 
 ## 4. Post-V1 backlog

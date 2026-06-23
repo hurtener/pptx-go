@@ -695,15 +695,30 @@ const (
 	JoinArrow                   // a right-arrow connector between the columns
 )
 
+// JoinPosition selects where a TwoColumn's Join element sits (R12.8, D-101). The zero
+// value JoinSeam centers it on the vertical seam between the columns (the D-055 default);
+// JoinTopBridge / JoinBottomBridge draw a horizontal accent bracket spanning both columns'
+// combined width at the top / bottom edge, with the JoinLabel as a centered pill on it —
+// the "one X, two ways" header used on option/path slides.
+type JoinPosition int
+
+const (
+	JoinSeam         JoinPosition = iota // centered on the seam (zero value, D-055)
+	JoinTopBridge                        // a bracket spanning both column tops
+	JoinBottomBridge                     // a bracket spanning both column bottoms
+)
+
 // TwoColumn splits the body into left/right regions with leaf children. Join /
-// JoinLabel are additive (D-055): their zero values draw no inter-column element.
+// JoinLabel / JoinPosition are additive (D-055, D-101): their zero values draw no
+// inter-column element (or, for a non-None Join, the centered-seam element).
 type TwoColumn struct {
 	node
-	Ratio     ColumnRatio
-	Left      []SlideNode
-	Right     []SlideNode
-	Join      ColumnJoin // optional element centered on the column seam; JoinNone = none
-	JoinLabel string     // badge text when Join == JoinBadge (e.g. "VS")
+	Ratio        ColumnRatio
+	Left         []SlideNode
+	Right        []SlideNode
+	Join         ColumnJoin   // optional element centered on the column seam; JoinNone = none
+	JoinLabel    string       // badge / bridge text when Join != JoinNone (e.g. "VS", "One agent")
+	JoinPosition JoinPosition // JoinSeam (default) / JoinTopBridge / JoinBottomBridge (R12.8)
 }
 
 func (TwoColumn) NodeKind() NodeKind { return KindTwoColumn }

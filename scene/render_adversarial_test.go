@@ -72,6 +72,13 @@ func adversarialScene() scene.Scene {
 					Left:  []scene.SlideNode{scene.Heading{Text: rt(longText), Level: 1, AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}},
 					Right: []scene.SlideNode{scene.Stat{Value: "$4,000+", Label: "up to 100 agents", AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}}},
 			}},
+			// TwoColumn with a top-bridge join (R12.8): the bracket + label pill must span
+			// both columns and stay on-canvas, never wrapping the label mid-word.
+			scene.SceneSlide{ID: fmt.Sprintf("bridge-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.TwoColumn{Join: scene.JoinBadge, JoinLabel: "One agent, purpose-built — two ways to get it", JoinPosition: scene.JoinTopBridge,
+					Left:  []scene.SlideNode{scene.Heading{Text: rt(longText), Level: 2, AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}},
+					Right: []scene.SlideNode{scene.Heading{Text: rt(longText), Level: 2, AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}}},
+			}},
 			// A tall stat strip + hero that would overflow without the guards.
 			scene.SceneSlide{ID: fmt.Sprintf("strip-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
 				scene.Hero{Title: longText, AutoFit: true},

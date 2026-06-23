@@ -3277,4 +3277,29 @@ correct (`xml.Marshal` escaped); only the read-side rebuild was wrong. Brief 50.
 
 ---
 
+## D-101 — prim-spanning-column-bridge: TwoColumn.JoinPosition (R12.8)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** An option / path slide ("One agent, purpose-built — two ways to get it") wants
+a labeled connector spanning the *tops* of two columns. `TwoColumn.Join` (D-055) only
+places an element on the vertical seam; the recreation collapsed the bridge into a tiny
+seam circle with "One age nt" wrapped mid-word. R12.8 (MED · engine) adds a spanning bridge.
+**Decision:** Add `TwoColumn.JoinPosition JoinPosition` (`JoinSeam`/`JoinTopBridge`/
+`JoinBottomBridge`) — a **field extension, not a new node**. `JoinSeam` (zero) keeps the
+D-055 centered-seam element (byte-identical). A bridge reserves a `bridgeBandH` band at the
+top (or bottom) edge — the ribbon band-reserve pattern (D-098) — so the columns lay out in
+the inset region and the bracket spans above (below) them; `preferredHeight` adds the band.
+`renderColumnBridge` draws an accent spanning line from the left column's left edge to the
+right column's right edge, two short end stubs reaching toward the columns, and the
+`JoinLabel` as a content-fit `RadiusFull` accent pill centered on the line — sized to the
+label so it never wraps mid-word (a `fitScale` tail shrinks it only if it would exceed the
+span). Accent colors are tokens; the band height, stub length, stroke, and pill pad are
+pinned EMU. Stage-1 validates the position range.
+**Consequences:** A `JoinSeam` (default) `TwoColumn` is byte-identical (the existing
+column-join tests pass unchanged). The N-column gutter-connector case stays `Grid.Connectors`
+(D-099); this is the 2-column spanning-bridge case. Brief 51.
+
+---
+
 *Append new entries below this line.*
