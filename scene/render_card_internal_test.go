@@ -112,6 +112,35 @@ func TestCardBodyBelowWrappedHeader(t *testing.T) {
 	}
 }
 
+// TestCardHeaderColumn_PillReservation guards the Wave-11 checkpoint H1 fix (D-093):
+// the header column reserves the pill width unconditionally. A normal pill is
+// byte-identical (headerW == innerW − (pillW + gapSM)); a pill clamped to the whole
+// inner width collapses the header column to 0 instead of leaving it at full width
+// (which let the title overlap the pill).
+func TestCardHeaderColumn_PillReservation(t *testing.T) {
+	r := newTestRenderer(t)
+	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
+
+	// Normal pill in a roomy card: byte-identical reservation.
+	box := pptx.Box{X: 0, Y: 0, W: pptx.In(4), H: pptx.In(3)}
+	c := cardChrome{header: "Title", pill: "NEW", size: CardSizeMD}
+	pad := cardPaddingScaled(r.theme, c)
+	innerW := box.W - cardStripeW - 2*pad
+	pillW := cardPillWidthOf(r.theme, c.pill, innerW)
+	if got, want := r.cardHeaderColumnW(box, c), innerW-(pillW+gapSM); got != want {
+		t.Errorf("normal-pill header column = %d, want innerW − (pillW+gap) = %d", got, want)
+	}
+
+	// A pill label far wider than the whole card → pillW clamps to innerW → the
+	// header column collapses to 0 (no overlap), where the old conditional left it
+	// at innerW.
+	wide := cardChrome{header: "Title", pill: "AN ABSURDLY LONG PILL LABEL THAT EXCEEDS THE ENTIRE CARD WIDTH MANY TIMES OVER", size: CardSizeMD}
+	narrow := pptx.Box{X: 0, Y: 0, W: pptx.In(1.2), H: pptx.In(3)}
+	if got := r.cardHeaderColumnW(narrow, wide); got != 0 {
+		t.Errorf("full-width-pill header column = %d, want 0 (collapsed, no overlap)", got)
+	}
+}
+
 // TestCardBodyBelowWrappedHeader_AllCombos is the R11.1 acceptance golden: a
 // deliberately long, wrapping header across every CardSize × CardLayout
 // combination must (a) advance the body region top to at or below the header

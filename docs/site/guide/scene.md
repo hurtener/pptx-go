@@ -224,13 +224,15 @@ the signal to inspect when you want to flag a slide as too full. Short,
 single-line content is allotted the same compact height as before and never
 falsely warns.
 
-A container (`Bento`, `Grid`, `Card`) is additionally clamped to the slide
-**safe area** — the body region minus any reserved chrome bands — so it can never
-draw cells below the slide onto the footer, even when an over-full stack pushes it
-down. When that clamp fires it records a `container overflow … clamped`
-`LayoutWarning`; a container that already fits is byte-identical (no clamp, no
-warning). To make over-full content fit *legibly* rather than just capping it, opt
-the slide into `VAlignFit` (below).
+Every content node is additionally clamped to the slide **safe area** — the body
+region minus any reserved chrome bands — so it can never draw below the slide onto
+the footer, even when an over-full stack (or a card body) pushes it down. This
+applies to every container *and* every leaf; only the full-slide overlays
+(decorations, which may bleed off-canvas by design, and section dividers) are
+exempt. When the clamp fires it records a `container overflow … clamped`
+`LayoutWarning`; content that already fits is byte-identical (no clamp, no warning).
+To make over-full content fit *legibly* rather than just capping it, opt the slide
+(or a card) into `VAlignFit` (below).
 
 ### Vertical alignment and fill
 
