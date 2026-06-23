@@ -257,6 +257,14 @@ semantics)*
   deck). Reuses the header-pill geometry, the icon registry + `walkIconRefs`
   validation, and `onCardSurface` auto-contrast. Additive ⇒ byte-identical when
   unused. (R12.1, CRITICAL.)
+- `45-prim-in-card-checklist-fill.md` — a new `Checklist` leaf IR node: true filled
+  status glyphs (`check`/`x`/`dot` curated custGeom via `AddIcon`, not a font
+  checkbox — fixing the empty-square bug), a hanging indent from the glyph width,
+  row-major reflow into 1–3 columns, per-state glyph color with an optional
+  `*ColorRole` `GlyphTone` override (D-054 pattern), and a `Fill` mode that
+  distributes inter-row slack so a short list spans the card (added to `isFlexible`).
+  Reuses the icon registry + `walkIconRefs`, `wrappedLines`, and the VAlignJustify
+  slack math. Additive ⇒ byte-identical when unused. (R12.2, CRITICAL.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

@@ -25,6 +25,7 @@ func allNodes() []scene.SlideNode {
 		scene.Bento{Columns: 2, Rows: []scene.BentoRow{{Label: "L", Cells: []scene.BentoCell{{Span: 1, Node: scene.Prose{}}}}}},
 		scene.Stat{Value: "42"},
 		scene.Button{Label: "Go"},
+		scene.Checklist{Items: []scene.ChecklistItem{{Text: scene.RichText{{Text: "done"}}}}},
 	}
 }
 
@@ -42,8 +43,8 @@ func TestCatalog_KindsDistinct(t *testing.T) {
 			t.Errorf("node %T has no String()", n)
 		}
 	}
-	if len(seen) != 23 {
-		t.Errorf("catalog has %d distinct kinds, want 23", len(seen))
+	if len(seen) != 24 {
+		t.Errorf("catalog has %d distinct kinds, want 24", len(seen))
 	}
 }
 

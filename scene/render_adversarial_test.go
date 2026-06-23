@@ -85,6 +85,19 @@ func adversarialScene() scene.Scene {
 						scene.Button{Label: "Start free", Tone: scene.ButtonAccentAlt, TrailingIcon: "arrow-right"},
 					}},
 				}},
+			// A filled 2-column checklist with long items inside a Fill card (R12.2):
+			// glyphs stay on-canvas and the text never collides with the glyph or wraps off.
+			scene.SceneSlide{ID: fmt.Sprintf("checklist-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Card{Header: "What you get", Fill: scene.ColorSurface, BodyVAlign: scene.VAlignFill, Body: []scene.SlideNode{
+					scene.Checklist{Columns: 2, Fill: true, Items: []scene.ChecklistItem{
+						{Text: rt(longText), State: scene.CheckDone},
+						{Text: rt(longText), State: scene.CheckDone},
+						{Text: rt(longText), State: scene.CheckNo},
+						{Text: rt(longText), State: scene.CheckNeutral},
+						{Text: rt(longText), State: scene.CheckDone},
+					}},
+				}},
+			}},
 		)
 	}
 	return scene.Scene{Slides: slides}

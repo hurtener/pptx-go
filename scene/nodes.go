@@ -38,6 +38,7 @@ const (
 	KindBento
 	KindStat
 	KindButton
+	KindChecklist
 )
 
 // String returns the node kind's IR name.
@@ -89,6 +90,8 @@ func (k NodeKind) String() string {
 		return "stat"
 	case KindButton:
 		return "button"
+	case KindChecklist:
+		return "checklist"
 	default:
 		return "unknown"
 	}
@@ -529,6 +532,46 @@ type Button struct {
 }
 
 func (Button) NodeKind() NodeKind { return KindButton }
+
+// CheckState selects a checklist item's status glyph (R12.2, D-095). The zero value
+// CheckDone is a filled affirmative check (the common "you get this" row).
+type CheckState int
+
+const (
+	CheckDone    CheckState = iota // a filled check glyph (default), accent-tinted
+	CheckNo                        // a filled cross glyph, muted
+	CheckNeutral                   // a filled dot glyph, muted
+)
+
+// ChecklistItem is one row of a Checklist: rich text, a status, and an optional icon
+// name that overrides the state's default glyph (a closed-name curated/extension icon,
+// Stage-1 validated). The zero value renders a filled check glyph before the text.
+type ChecklistItem struct {
+	Text  RichText
+	State CheckState
+	Icon  string // optional glyph override; "" = the state's default glyph
+}
+
+// Checklist is a dense feature/"what you get" list (R12.2, D-095): rows of a filled
+// status glyph (check / cross / dot) before rich text, reflowed row-major into 1–3
+// balanced columns, with the text hanging-indented from the glyph width. The glyph is a
+// true filled custGeom (the curated check/x/dot icon), never an empty font checkbox.
+//
+// GlyphTone overrides the per-state glyph color for every item; it is a *ColorRole so
+// nil selects the per-state default (CheckDone → accent, others → muted) — ColorRole's
+// zero value is a real color (ColorCanvas) and cannot signal "unset" (D-054 pattern).
+// Fill distributes inter-row slack so a short list spans the box height (the last row
+// meets the bottom); the zero value top-aligns the rows. Additive: a deck with no
+// Checklist is byte-identical (the List/BulletCheckbox path is untouched).
+type Checklist struct {
+	node
+	Items     []ChecklistItem
+	Columns   int        // 1..3 column reflow (row-major); 0 = 1 column
+	GlyphTone *ColorRole // glyph color override; nil = per-state default
+	Fill      bool       // distribute rows to fill the box height (like VAlignFill)
+}
+
+func (Checklist) NodeKind() NodeKind { return KindChecklist }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

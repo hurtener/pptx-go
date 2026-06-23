@@ -59,6 +59,18 @@ func validateNode(n SlideNode) error {
 		if v.Label == "" {
 			return errors.New("button requires a label")
 		}
+	case Checklist:
+		if len(v.Items) == 0 {
+			return errors.New("checklist has no items")
+		}
+		if v.Columns < 0 || v.Columns > 3 {
+			return fmt.Errorf("checklist columns %d out of range 0..3", v.Columns)
+		}
+		for i, it := range v.Items {
+			if it.State < CheckDone || it.State > CheckNeutral {
+				return fmt.Errorf("checklist item %d has invalid state %d", i, it.State)
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

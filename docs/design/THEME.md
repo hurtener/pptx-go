@@ -219,3 +219,13 @@ not a new token role: `ButtonPrimary` → `ColorAccent` fill / `TextInverse` lab
 `ButtonSize` (MD/SM/LG) height/padding/icon scale is a **pinned layout metric**
 (`buttonMetrics`), not a token — it sizes geometry, not a visual property. No new token
 role is introduced; the token taxonomy above is unchanged.
+
+## Checklist glyph tone (mechanism, no new token — D-095)
+
+The scene `Checklist` node's glyph colors are a **mapping onto existing color tokens**:
+per state, `CheckDone` → `ColorAccent`, `CheckNo`/`CheckNeutral` → the muted text token;
+an optional `GlyphTone *ColorRole` overrides all glyphs (nil = the per-state default —
+`ColorRole`'s zero is a real color, so the override is a pointer, the D-054 pattern). A
+theme swap re-skins every glyph through these roles (P2). The glyph size/gap, column
+gap, row gap, and per-line height are **pinned layout metrics**, not tokens — they size
+geometry, not a visual property. No new token role is introduced.

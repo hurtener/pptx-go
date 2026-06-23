@@ -169,6 +169,17 @@ Its `ButtonTone` selects a token fill (Primary/AccentAlt solid, Neutral surface,
 geometry. It is a shape only — no hyperlink/action wiring (the deck is static). Renders
 as native shapes + custGeom icons (no media). Absent ⇒ byte-identical. See `D-094`.
 
+## Checklist (node)
+
+A scene IR leaf node: a dense feature / "what you get" list — rows of a **true filled**
+status glyph (a curated `check` / `x` / `dot` custGeom, selected by `CheckState`, never
+an empty font checkbox) before rich text, with the text hanging-indented from the glyph
+width. `Columns` (1–3) reflows items row-major into balanced columns; `GlyphTone`
+(`*ColorRole`, nil = per-state default) re-skins the glyphs; `Fill` distributes
+inter-row spacing so a short list spans its box (and lets a `VAlignFill` card grow it).
+Renders as native shapes + custGeom glyphs (no media). Absent ⇒ byte-identical. See
+`D-095`.
+
 ## Card
 
 A scene IR container node — accent strip + optional icon / eyebrow /

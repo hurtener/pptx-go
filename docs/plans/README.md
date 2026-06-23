@@ -1349,6 +1349,28 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   fill (ghost = outline); an unknown icon fails validation; a button-free deck is
   byte-identical; the catalog is 23 and the kind loop covers `KindButton`.
 
+#### Phase 62 — prim in card checklist fill
+
+**Subsystem:** scene — Layer 2 renderer (new IR leaf node)
+**RFC sections:** §11.1, §12
+**Deps:** Phase 61 (icon-glyph + new-node pattern), Phase 47 (list indent), Phase 23
+(VAlignFill slack); brief 45.
+**What lands (R12.2, CRITICAL · engine):**
+- A `Checklist` leaf node `{Items []ChecklistItem{Text RichText; State CheckState;
+  Icon string}; Columns int; GlyphTone *ColorRole; Fill bool}`: **true filled** status
+  glyphs (`CheckDone` → `check`, `CheckNo` → `x`, `CheckNeutral` → `dot`, the curated
+  single-path custGeom via `AddIcon`, not the empty-square font checkbox), a hanging
+  indent computed from the glyph width, row-major reflow into 1–3 balanced columns, a
+  per-state glyph color with an optional `*ColorRole` `GlyphTone` override, and a `Fill`
+  mode that distributes inter-row slack so a short list spans the box (D-095).
+- Full new-node wiring: catalog 23 → 24; integration kind-range loop → `KindChecklist`;
+  `walkIconRefs` validates per-item icon overrides; `isFlexible` so a fill-mode parent
+  can grow it.
+**Acceptance criteria:**
+- Every row shows a solid glyph (never an empty box); 2-column reflow stays within the
+  width; `Fill` spans the box height; an unknown item icon fails validation; identical
+  input is byte-identical; the catalog is 24 and the kind loop covers `KindChecklist`.
+
 ---
 
 ## 4. Post-V1 backlog
