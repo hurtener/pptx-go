@@ -201,6 +201,16 @@ Renders native (filled rect + text + custGeom icon; children per their own polic
 node with children — recurses like a container in every walk. Absent ⇒ byte-identical.
 See `D-097`.
 
+## Ribbon (Card field)
+
+A pinned emphasis badge on a `Card` (`Card.Ribbon`) — a "MOST POPULAR" / "RECOMMENDED" /
+"NEW" marker that singles one card out of a row, sitting OUTSIDE the header text flow
+(distinct from `HeaderPill`, an in-row pill). `RibbonTopBar` is a full-width tab that
+reserves a band so the card body shifts down below it; `RibbonCornerStar` is a star glyph;
+`RibbonCornerTL`/`RibbonCornerTR` are content-fit corner text tabs. `Color` (a
+`*ColorRole`, nil = accent) and `TextColor` (auto-contrast by default) are tokens. `nil`
+⇒ no ribbon, byte-identical. See `D-098`.
+
 ## Card
 
 A scene IR container node — accent strip + optional icon / eyebrow /

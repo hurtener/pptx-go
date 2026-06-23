@@ -3184,4 +3184,37 @@ the engine picks no content (D-026). Brief 47.
 
 ---
 
+## D-098 — prim-ribbon-corner-badge: a Card.Ribbon field (R12.3)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** To single one card out of a row ("MOST POPULAR" across a tier's top, a star
+on a highlighted feature), a deck needs a pinned badge OUTSIDE the header text flow. The
+only tool was `Card.HeaderPill`, an in-row pill that jammed into the title row in the
+recreation. R12.3 (HIGH · engine) adds a ribbon distinct from the pill.
+**Decision:** Add `Card.Ribbon *Ribbon{Text string; Position RibbonPos
+(RibbonTopBar/RibbonCornerTL/RibbonCornerTR/RibbonCornerStar); Color *ColorRole; TextColor
+TextColorRole}` — a **field extension, not a new node** (no catalog/kind change). Drawn
+last in `renderCardChrome` (on top):
+- **RibbonTopBar reserves a band; the body shifts down.** `ribbonReserveOf(c)` returns the
+  band height for a top bar (0 for corner positions), threaded through `cardHeaderBottom`,
+  `renderCardChrome` (the header `top := box.Y + ribbonReserveOf(c)`), and
+  `cardHeaderExtraHeight` (the slot estimate) — so the reserved band, the header text, the
+  D-054 band, the body Y, and `preferredHeight` all agree. A top bar therefore never
+  overlaps the eyebrow/title.
+- **RibbonCornerStar** renders the curated `star` custGeom in the top-right corner.
+- **Color** is `Color *ColorRole` (nil = `ColorAccent`, the D-054 pointer pattern);
+  `TextColor` auto-contrasts against the fill by default (`onCardSurface`), explicit
+  values honored. Band/tab/star metrics are pinned EMU.
+**Deviation (§4.3):** the spec's *diagonal rotated-rect corner ribbon with a label* is
+not expressible in V1 — the builder has no rotated-text primitive. `RibbonCornerTL/TR`
+render a **horizontal content-fit corner text tab** instead (the label is the point); the
+rotated-diagonal-band visual waits on a builder text-rotation enhancement. All positions
+pass the acceptance (distinct, in-corner / top, no header overlap).
+**Consequences:** A card with no `Ribbon` is byte-identical (nil → `ribbonReserveOf` 0 →
+the pre-feature geometry; the existing card goldens pass unchanged). No mode toggle; the
+soul decides when to flag a card (D-026). Brief 48.
+
+---
+
 *Append new entries below this line.*

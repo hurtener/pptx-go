@@ -103,6 +103,48 @@ type cardChrome struct {
 	statusDot    *ColorRole // top-right status dot; nil = no dot
 	watermark    string     // faint label behind the body; "" = none
 	paddingScale int        // basis-point multiplier on the size padding; 0/10000 = unchanged (D-076)
+	ribbon       *Ribbon    // pinned emphasis badge; nil = none (R12.3, D-098)
+}
+
+// Ribbon geometry (R12.3, D-098). Pinned layout metrics — a top-bar band height, a
+// corner-tab height, and the corner star size. Not theme tokens (geometry).
+const (
+	ribbonTopBarH = pptx.EMU(311112) // In(0.34); the reserved RibbonTopBar band
+	ribbonTabH    = pptx.EMU(274320) // In(0.30); a corner text tab
+	ribbonStarSz  = pptx.EMU(365760) // In(0.40); the corner star glyph
+	ribbonTabPadX = pptx.EMU(91440)  // In(0.10); corner-tab / top-bar label padding
+	ribbonTabMinW = pptx.EMU(274320) // In(0.30); a corner tab's minimum width
+)
+
+// ribbonReserveOf returns the vertical band a RibbonTopBar reserves at the card top so
+// the header (and body) shift down below it; 0 for the corner positions (overlays) and
+// when there is no ribbon. Shared by cardHeaderBottom, renderCardChrome, and the slot
+// estimate so the reserved band, the header text, and the body Y all agree.
+func ribbonReserveOf(c cardChrome) pptx.EMU {
+	if c.ribbon != nil && c.ribbon.Position == RibbonTopBar {
+		return ribbonTopBarH
+	}
+	return 0
+}
+
+// ribbonColor / ribbonTextColor resolve a ribbon's fill and label colors: the fill is
+// the caller's Color or ColorAccent (nil); the label is an explicit non-default TextColor
+// or auto-contrast against the fill (the banner/card pattern). Token-bound (P2).
+func ribbonColorRole(rb *Ribbon) pptx.ColorRole {
+	if rb.Color != nil {
+		return *rb.Color
+	}
+	return pptx.ColorAccent
+}
+
+func (r *renderer) ribbonTextColor(rb *Ribbon, fillRole pptx.ColorRole) pptx.Color {
+	if rb.TextColor != TextPrimary {
+		return pptx.TokenTextColor(rb.TextColor)
+	}
+	if c := r.onCardSurface(fillRole); c != nil {
+		return c
+	}
+	return pptx.TokenTextColor(pptx.TextPrimary)
 }
 
 // cardPaddingBase returns the size-resolved interior inset for a card size (the
@@ -238,6 +280,9 @@ func cardHeaderExtraHeight(theme *pptx.Theme, avail pptx.EMU, c cardChrome) pptx
 	if c.header != "" {
 		extra += cardTitleRowH * pptx.EMU(wrappedLines(RichText{{Text: c.header}}, pptx.TypeH3, headerW, theme)-1)
 	}
+	// A RibbonTopBar reserves a band beyond the fixed chrome baseline (R12.3), so the
+	// slot grows to keep the body below it; corner ribbons reserve nothing.
+	extra += ribbonReserveOf(c)
 	return extra
 }
 
@@ -267,7 +312,10 @@ func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 	pad := r.cardPaddingFor(c)
 	gapSM := r.theme.ResolveSpace(pptx.SpaceSM)
 	eyebrowH, titleH := r.cardHeaderRowHeights(box, c)
-	y := box.Y + pad
+	// A RibbonTopBar reserves a band at the top, so the header (and body) start below
+	// it (R12.3); corner ribbons reserve nothing.
+	top := box.Y + ribbonReserveOf(c)
+	y := top + pad
 	hasIcon := c.icon != ""
 	if hasIcon && c.layout == CardLayoutIconTop {
 		y += cardIconSz + gapSM
@@ -279,7 +327,7 @@ func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 		y += titleH
 	}
 	if hasIcon && c.layout != CardLayoutIconTop {
-		if iconBottom := box.Y + pad + cardIconSz; y < iconBottom {
+		if iconBottom := top + pad + cardIconSz; y < iconBottom {
 			y = iconBottom
 		}
 	}
@@ -287,7 +335,7 @@ func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 	// too, so a pill-only (or pill-without-title) card does not stack its body
 	// over the pill (and the D-054 header band is sized to include the pill).
 	if c.pill != "" {
-		if pillBottom := box.Y + pad + cardPillH; y < pillBottom {
+		if pillBottom := top + pad + cardPillH; y < pillBottom {
 			y = pillBottom
 		}
 	}
@@ -362,7 +410,9 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	// Wrapped header row heights (R10.1) — shared with cardHeaderBottom so the
 	// emitted text frames, the header band, and the body Y agree.
 	eyebrowH, titleH := r.cardHeaderRowHeights(box, c)
-	y := box.Y + pad
+	// A RibbonTopBar reserves a band at the top (R12.3); the header starts below it.
+	top := box.Y + ribbonReserveOf(c)
+	y := top + pad
 	headerLeft := innerX
 	headerW := innerW
 
@@ -465,7 +515,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 
 	// For icon-left, make sure the body starts below the icon too.
 	if hasIcon && c.layout != CardLayoutIconTop {
-		if iconBottom := box.Y + pad + iconSz; y < iconBottom {
+		if iconBottom := top + pad + iconSz; y < iconBottom {
 			y = iconBottom
 		}
 	}
@@ -473,7 +523,7 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	// (mirrors cardHeaderBottom) so a pill-only / pill-without-title card does not
 	// overlap its body onto the pill.
 	if c.pill != "" {
-		if pillBottom := box.Y + pad + cardPillH; y < pillBottom {
+		if pillBottom := top + pad + cardPillH; y < pillBottom {
 			y = pillBottom
 		}
 	}
@@ -518,7 +568,64 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 		r.stats.Shapes++
 	}
 
+	// 7. Ribbon (R12.3, D-098): a pinned emphasis badge drawn last (on top). A
+	// RibbonTopBar's band was already reserved (the header shifted down); the corner
+	// positions are overlays. Inert when unset.
+	if c.ribbon != nil {
+		r.renderCardRibbon(ps, box, c.ribbon, pad)
+	}
+
 	return bodyBox
+}
+
+// renderCardRibbon draws a Card.Ribbon (R12.3, D-098). RibbonTopBar is a full-width tab
+// across the top with centered text; RibbonCornerTL/TR are content-fit text tabs pinned
+// in the top corner; RibbonCornerStar is a star glyph. The diagonal rotated-band variant
+// is deferred (the builder has no rotated-text primitive) — a horizontal corner tab
+// carries the label instead. Deterministic integer-EMU; token-bound colors.
+func (r *renderer) renderCardRibbon(ps *pptx.Slide, box pptx.Box, rb *Ribbon, pad pptx.EMU) {
+	fillRole := ribbonColorRole(rb)
+	textColor := r.ribbonTextColor(rb, fillRole)
+
+	drawTab := func(tab pptx.Box) {
+		ps.AddShape(pptx.ShapeRoundRect, tab,
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(fillRole))),
+			pptx.WithRadius(pptx.RadiusSM))
+		r.stats.Shapes++
+		tf := ps.AddTextFrame(tab).Anchor(pptx.AnchorMiddle)
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+		p.AddRun(rb.Text, pptx.RunStyle{TypeRole: pptx.TypeCaption, Bold: true, Color: textColor})
+		r.stats.Shapes++
+	}
+
+	// tabWidth is the content-fit width of a corner tab's label, clamped to the card.
+	tabWidth := func() pptx.EMU {
+		w := naturalWidth(RichText{{Text: rb.Text, Style: RunStyle{TypeRole: pptx.TypeCaption}}}, r.theme) + 2*ribbonTabPadX
+		if w < ribbonTabMinW {
+			w = ribbonTabMinW
+		}
+		if w > box.W {
+			w = box.W
+		}
+		return w
+	}
+
+	switch rb.Position {
+	case RibbonCornerStar:
+		starBox := pptx.Box{X: box.X + box.W - pad - ribbonStarSz, Y: box.Y + pad, W: ribbonStarSz, H: ribbonStarSz}
+		if svg, ok := r.cfg.icons.Lookup("star"); ok {
+			if _, err := ps.AddIcon(svg, starBox, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(fillRole)))); err == nil {
+				r.stats.Shapes++
+			}
+		}
+	case RibbonCornerTL:
+		drawTab(pptx.Box{X: box.X, Y: box.Y, W: tabWidth(), H: ribbonTabH})
+	case RibbonCornerTR:
+		w := tabWidth()
+		drawTab(pptx.Box{X: box.X + box.W - w, Y: box.Y, W: w, H: ribbonTabH})
+	default: // RibbonTopBar — full-width tab across the reserved band
+		drawTab(pptx.Box{X: box.X, Y: box.Y, W: box.W, H: ribbonTopBarH})
+	}
 }
 
 func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID string) {
@@ -529,7 +636,7 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 		fill: v.Fill, outline: v.Outline, border: v.BorderStyle, size: v.Size,
 		layout: v.Layout, elevation: v.Elevation,
 		headerFill: v.HeaderFill, statusDot: v.StatusDot, watermark: v.Watermark,
-		paddingScale: v.PaddingScale,
+		paddingScale: v.PaddingScale, ribbon: v.Ribbon,
 	}, slideID)
 
 	if v.BodyLayout == BodyHorizontal && len(v.Body) > 0 {

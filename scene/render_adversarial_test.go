@@ -38,7 +38,10 @@ func adversarialScene() scene.Scene {
 		return scene.Card{
 			Eyebrow: "VISION", Header: longText, HeaderPill: "FULLY CUSTOMIZABLE",
 			HeaderFill: &accent, StatusDot: &dotColor, Watermark: "01", Fill: fill,
-			Body: body(),
+			// A top-bar ribbon (R12.3) reserves a band so the long wrapped header below
+			// it must still stay on-canvas and clear the body.
+			Ribbon: &scene.Ribbon{Text: "MOST POPULAR · THE MOAT", Position: scene.RibbonTopBar},
+			Body:   body(),
 		}
 	}
 

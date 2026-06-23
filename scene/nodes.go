@@ -805,9 +805,43 @@ type Card struct {
 	// pinned minimum so the inset never collapses), above 10000 loosens it. It
 	// resolves through theme spacing tokens — no literals (P2). (D-076.)
 	PaddingScale int
+	// Ribbon is an optional pinned emphasis badge (R12.3, D-098) — a "MOST POPULAR"
+	// top bar or a corner badge that singles this card out of a row. It sits outside
+	// the header text flow (distinct from HeaderPill); a RibbonTopBar shifts the body
+	// down. nil = no ribbon, byte-identical.
+	Ribbon *Ribbon
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }
+
+// RibbonPos selects where a Card.Ribbon is pinned (R12.3, D-098). The zero value
+// RibbonTopBar is a full-width tab across the card's top edge that reserves its own band
+// (the card body shifts down below it); the corner positions are overlays that do not
+// shift the body.
+type RibbonPos int
+
+const (
+	RibbonTopBar     RibbonPos = iota // full-width tab across the top (reserves a band)
+	RibbonCornerTL                    // a text tab pinned in the top-left corner
+	RibbonCornerTR                    // a text tab pinned in the top-right corner
+	RibbonCornerStar                  // a star glyph in the top-right corner (Text ignored)
+)
+
+// Ribbon is a pinned emphasis badge on a Card (R12.3, D-098): a "MOST POPULAR" /
+// "RECOMMENDED" / "NEW" marker that singles one card out of a row. It sits OUTSIDE the
+// header text flow — distinct from Card.HeaderPill (an in-row pill). A RibbonTopBar
+// reserves a band so the card body shifts down (cardHeaderBottom accounts for it); the
+// corner positions are overlays.
+//
+// Color is the badge fill; nil selects ColorAccent (ColorRole's zero value is the real
+// color ColorCanvas, so the override is a pointer — the D-054 pattern). TextColor colors
+// the label; its zero value (TextPrimary) auto-contrasts against Color.
+type Ribbon struct {
+	Text      string
+	Position  RibbonPos
+	Color     *ColorRole    // nil = ColorAccent
+	TextColor TextColorRole // zero (TextPrimary) = auto-contrast on Color
+}
 
 // CardSection is a top-level card that accepts grid / two_column / nested cards.
 type CardSection struct {

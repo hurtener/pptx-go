@@ -574,7 +574,7 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		// Wrapped-header-aware chrome estimate (R10.10): the fixed cardChromeEst
 		// baseline plus the extra eyebrow/title lines a multi-line header wraps to,
 		// so the slot accounts for a wrapped header. Single-line → +0 (byte-identical).
-		c := cardChrome{header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill, size: v.Size, layout: v.Layout, paddingScale: v.PaddingScale}
+		c := cardChrome{header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill, size: v.Size, layout: v.Layout, paddingScale: v.PaddingScale, ribbon: v.Ribbon}
 		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
 	case CardSection:
 		c := cardChrome{header: v.Header}

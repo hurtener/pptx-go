@@ -1411,6 +1411,26 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   strip (not invisible); an unknown icon fails validation; byte-identical across workers;
   catalog 26 and the kind loop covers `KindBanner`.
 
+#### Phase 65 — prim ribbon corner badge
+
+**Subsystem:** scene — Layer 2 renderer (Card field extension)
+**RFC sections:** §11.2, §12
+**Deps:** Phase 39/48 (card header geometry), Phase 64 (auto-contrast), Phase 25
+(`*ColorRole`); brief 48.
+**What lands (R12.3, HIGH · engine):**
+- A `Card.Ribbon *Ribbon{Text string; Position RibbonPos; Color *ColorRole; TextColor
+  TextColorRole}` field extension (not a new node): a pinned emphasis badge outside the
+  header text flow. `RibbonTopBar` reserves a band (`ribbonReserveOf` threaded through
+  `cardHeaderBottom` / `renderCardChrome` / `cardHeaderExtraHeight` so the body shifts
+  down); `RibbonCornerStar` is the curated star glyph; `RibbonCornerTL/TR` are content-fit
+  corner text tabs. Drawn last (on top). nil ⇒ byte-identical (D-098).
+- Deviation: the diagonal rotated-band-with-text variant is deferred (the builder has no
+  rotated-text primitive) — corner ribbons render as horizontal tabs.
+**Acceptance criteria:**
+- A top bar pushes the body down and never overlaps the title; a corner ribbon stays in
+  the corner; the card is visually distinct; a ribbon-free card is byte-identical; an
+  out-of-range position fails validation.
+
 ---
 
 ## 4. Post-V1 backlog
