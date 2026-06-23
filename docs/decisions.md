@@ -3333,4 +3333,47 @@ engine node. Brief 52.
 
 ---
 
+## D-103 — Wave 12 §17 checkpoint: THEME.md backfill + documented-intentional codec/IR rationales
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** The Wave 12 §17 adversarial checkpoint (a 22-agent workflow: 8 dimension finders
+→ 2 skeptics/finding → completeness critic → synthesis over the R12 component-primitive
+cluster, Phases 61–69 / D-094..D-102) returned a **clean bill of health** on the binding
+invariants — every new node is wired through the full checklist, output is token-driven and
+deterministic, byte-identity holds at the unused/zero-value path, and the Phase-67 codec fix
+is correct and minimal. It surfaced **one genuine §19 documentation-sync defect** plus two
+refuted findings to record as by-design.
+**Decision (fixes landed in this `chore(checkpoint)` PR):**
+- **§19 / P2 — three Wave-12 token-resolving nodes lacked a `docs/design/THEME.md` mechanism
+  section.** `THEME.md` documented Button (D-094), Checklist (D-095), Banner (D-097), Ribbon
+  (D-098), IconRows (D-100), and Lockup (D-102), but **ChipRow (D-096)**, **Grid.Connectors
+  (D-099)**, and **TwoColumn.JoinPosition / column-bridge (D-101)** — all of which resolve
+  colors through tokens — had no section, despite §19/§20 requiring a taxonomy entry in the
+  same PR as a visual property. (The finders flagged two; verification surfaced the third,
+  ChipRow.) Added three "(mechanism, no new token — D-0NN)" sections naming the exact token
+  roles (`ChipTone`→`TokenColor`/`ColorSurfaceAlt`/`TextMuted`; connectors→`ColorAccent`/
+  `TextMuted`; bridge→`ColorAccent` + `onCardSurface`). No code change.
+- **Banner docstring** reworded from "(Stat/Button)" to "(e.g. Stat/Button/Lockup)" to remove
+  the implied type constraint (see below).
+- **Composite round-trip coverage:** added a `Lockup` inside `Banner.Trailing` to the
+  `everyNodeScene` integration fixture, exercising the `walkIconRefs` recursion through
+  `Banner.Trailing` into a leaf.
+**Documented as intentional (no code change):**
+- **Comments are written raw, correctly.** A finding claimed the `xml.Comment` cases in
+  `StripNamespacePrefixes` / `RestoreNamespaces` should mirror the Phase-67 `xml.EscapeText`
+  calls. **They must not:** Go's `xml.Decoder` entity-decodes `CharData` and attribute values
+  but hands back comment bytes **verbatim**, so escaping them would double-escape
+  (`a&amp;b` → `a&amp;amp;b`) and corrupt round-trip fidelity. The Phase-67 scope (CharData +
+  attributes only) is complete and correct; this asymmetry is intentional.
+- **`Banner.Trailing` accepts any `SlideNode` by design** (validated via the generic
+  `validateChildren`). Restricting trailing node types would encode a layout opinion (D-026);
+  the docstring's "Stat/Button" is illustrative, not normative.
+**Consequences:** Wave 12 is closed as **healthy**. One §19 doc defect fixed; two rationales
+recorded so a future reviewer does not "fix" the correct comment-raw-write or add a spurious
+`Banner.Trailing` type restriction. No production code change was required for correctness.
+The R12 component primitives (28-kind catalog) are complete.
+
+---
+
 *Append new entries below this line.*

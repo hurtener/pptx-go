@@ -635,7 +635,7 @@ type Banner struct {
 	Icon      string        // leading curated/extension icon; "" = none
 	Fill      ColorRole     // strip fill; zero (ColorCanvas) = ColorAccent
 	TextColor TextColorRole // lead/body color; zero (TextPrimary) = auto-contrast on Fill
-	Trailing  []SlideNode   // right-aligned children (Stat/Button); nil = none
+	Trailing  []SlideNode   // right-aligned children (e.g. Stat/Button/Lockup); nil = none
 }
 
 func (Banner) NodeKind() NodeKind { return KindBanner }
