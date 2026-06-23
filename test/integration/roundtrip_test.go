@@ -241,8 +241,8 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 	}
 }
 
-// everyNodeScene is a scene exercising all 22 shipped scene IR node kinds (the
-// scene/policy.go policyTable set): the 17 leaf kinds and the 5 container kinds.
+// everyNodeScene is a scene exercising all 23 shipped scene IR node kinds (the
+// scene/policy.go policyTable set): the 18 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
 func everyNodeScene() scene.Scene {
@@ -338,6 +338,12 @@ func everyNodeScene() scene.Scene {
 					}},
 				},
 			},
+			{
+				ID: "button",
+				Nodes: []scene.SlideNode{
+					scene.Button{Label: "Talk to the team", Tone: scene.ButtonPrimary, Size: scene.ButtonLG, TrailingIcon: "arrow-right"},
+				},
+			},
 		},
 	}
 }
@@ -352,12 +358,12 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 
 	// Mechanically assert the fixture covers every shipped node kind, so adding a
 	// node without extending this walk fails loudly (the kinds are contiguous,
-	// KindHero..KindStat).
+	// KindHero..KindButton).
 	kinds := map[scene.NodeKind]bool{}
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindStat; k++ {
+	for k := scene.KindHero; k <= scene.KindButton; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}
@@ -372,8 +378,8 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	if stats.Slides != 7 {
-		t.Fatalf("stats.Slides = %d, want 7", stats.Slides)
+	if stats.Slides != 8 {
+		t.Fatalf("stats.Slides = %d, want 8", stats.Slides)
 	}
 
 	data1, err := pres.WriteToBytes()
@@ -386,8 +392,8 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 		t.Fatalf("NewFromBytes on scene deck: %v", err)
 	}
 	slides := re.Slides()
-	if len(slides) != 7 {
-		t.Fatalf("reopened slides = %d, want 7", len(slides))
+	if len(slides) != 8 {
+		t.Fatalf("reopened slides = %d, want 8", len(slides))
 	}
 	for i, s := range slides {
 		if len(s.Shapes()) == 0 {

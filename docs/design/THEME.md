@@ -208,3 +208,14 @@ the role against the active theme at `AddShape` time and emits
 the brand's elevation. `WithShadow(e)` is the literal escape hatch (P2 — the
 documented path is `WithElevation`). A flat elevation
 (`Elevation.IsFlat()`) emits no effect. No new token role is introduced.
+
+## Button tone (mechanism, no new token — D-094)
+
+The scene `Button` node's `ButtonTone` is a **mapping onto existing color tokens**,
+not a new token role: `ButtonPrimary` → `ColorAccent` fill / `TextInverse` label,
+`ButtonAccentAlt` → `ColorAccentAlt` / `TextInverse`, `ButtonNeutral` →
+`ColorSurfaceAlt` / `TextPrimary`, `ButtonGhost` → no fill + a `ColorAccent` hairline /
+`TextAccent` label. A theme swap re-skins every button through these roles (P2). The
+`ButtonSize` (MD/SM/LG) height/padding/icon scale is a **pinned layout metric**
+(`buttonMetrics`), not a token — it sizes geometry, not a visual property. No new token
+role is introduced; the token taxonomy above is unchanged.

@@ -55,6 +55,10 @@ func validateNode(n SlideNode) error {
 		if v.Value == "" {
 			return errors.New("stat requires a value")
 		}
+	case Button:
+		if v.Label == "" {
+			return errors.New("button requires a label")
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

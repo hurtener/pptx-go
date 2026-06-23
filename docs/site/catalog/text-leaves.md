@@ -216,3 +216,34 @@ strip := scene.Grid{
 	},
 }
 ```
+
+## Button
+
+A presentational CTA / action affordance: a content-fit pill with a bold label and
+optional leading/trailing icons. Drop it standalone on a closing slide, at the foot of
+a pricing card, or inside a banner. It is a shape only — there is no hyperlink or action
+wiring (a `.pptx` deck is static).
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Label` | `string` | The button text (required) |
+| `Tone` | `ButtonTone` | Fill treatment: `ButtonPrimary` (accent solid, default), `ButtonAccentAlt`, `ButtonGhost` (outline), `ButtonNeutral` (surface) |
+| `Size` | `ButtonSize` | `ButtonMD` (default), `ButtonSM`, `ButtonLG` — scales height, padding, and icon size |
+| `LeadingIcon` | `string` | Closed-name registry icon before the label (e.g. `"star"`); `""` = none |
+| `TrailingIcon` | `string` | Closed-name registry icon after the label (e.g. `"arrow-right"`); `""` = none |
+| `Align` | `HAlign` | Center/right-align the pill within its box; `0` inherits the slide's content alignment |
+
+The width is fit to the label plus any icons and clamped to the available box; a label
+too wide for the box is shrunk to one line. Tone colors resolve through the theme, so a
+theme swap re-skins every button (`ButtonPrimary` uses the accent token; `ButtonGhost`
+is a no-fill pill with an accent hairline). A deck that uses no `Button` is unchanged.
+
+```go
+cta := scene.Button{
+	Label:        "Talk to the team",
+	Tone:         scene.ButtonPrimary,
+	Size:         scene.ButtonLG,
+	TrailingIcon: "arrow-right",
+	Align:        scene.HAlignCenter,
+}
+```

@@ -230,7 +230,8 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, SectionDivider, Table:
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, SectionDivider, Table:
+		// Button is native (a pill + custGeom icons) — no media.
 		return false
 	default:
 		return true
@@ -406,6 +407,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderChart(ps, box, v, slideID)
 	case Stat:
 		r.renderStat(ps, box, v)
+	case Button:
+		r.renderButton(ps, box, v, hAlign)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -520,6 +523,10 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return h
 	case Arrow:
 		return pptx.In(0.6)
+	case Button:
+		// A fixed pill: its slot is the size-driven button height (the pill itself
+		// is content-fit horizontally; the slot height does not vary with the label).
+		return buttonMetrics(v.Size).height
 	case CodeBlock:
 		return pptx.In(2.6)
 	case Image:
@@ -1029,6 +1036,8 @@ func nodeEffectiveHAlign(n SlideNode, slideHAlign HAlign) HAlign {
 	case Quote:
 		nodeAlign = v.Align
 	case Chip:
+		nodeAlign = v.Align
+	case Button:
 		nodeAlign = v.Align
 	case SectionDivider:
 		nodeAlign = v.Align
