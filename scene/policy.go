@@ -39,11 +39,12 @@ var policyTable = map[NodeKind]Policy{
 	KindCardSection:    {},
 	KindBento:          {},
 	KindStat:           {},
-	KindButton:         {}, // native pill + custGeom icons (no asset)
-	KindChecklist:      {}, // native text + custGeom glyphs (no asset)
-	KindChipRow:        {}, // native pills + text + optional custGeom icons (no asset)
-	KindBanner:         {}, // native filled strip + text + icon; children per their own policy
-	KindIconRows:       {}, // native icon + text rows + optional pill frame (no asset)
+	KindButton:         {},               // native pill + custGeom icons (no asset)
+	KindChecklist:      {},               // native text + custGeom glyphs (no asset)
+	KindChipRow:        {},               // native pills + text + optional custGeom icons (no asset)
+	KindBanner:         {},               // native filled strip + text + icon; children per their own policy
+	KindIconRows:       {},               // native icon + text rows + optional pill frame (no asset)
+	KindLockup:         {HasAsset: true}, // asset logo → pic; icon variant is native (cf. Decoration)
 }
 
 // PolicyFor returns the rendering policy for a node kind.

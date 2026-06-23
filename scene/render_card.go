@@ -61,6 +61,8 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 			for _, row := range v.Rows {
 				fn(row.Icon, "icon row")
 			}
+		case Lockup:
+			fn(v.Icon, "lockup")
 		case Card:
 			fn(v.Icon, "card")
 			walkIconRefs(v.Body, fn)

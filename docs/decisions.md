@@ -3302,4 +3302,35 @@ column-join tests pass unchanged). The N-column gutter-connector case stays `Gri
 
 ---
 
+## D-102 — prim-attribution-lockup: a Lockup node (R12.9)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A branded deck places a "POWERED BY [logo] CLEAR TECH" / "in partnership with"
+lockup — a caption paired with a small partner logo as one inline, centerable unit — on its
+cover and closing. The recreation dropped the logo and rendered the caption as plain text.
+`Image` and `Chip` exist separately but nothing composes a small logo with a caption.
+**Decision:** Add `KindLockup` + a `Lockup` leaf node `{Caption string; AssetID AssetID;
+Icon string; AssetSide AssetSide; MaxHeight pptx.EMU; Align HAlign}`, rendered in
+`scene/render_lockup.go` as a centered inline group: `[caption | gap | logo]` (`LeadCaption`,
+default) or `[logo | gap | caption]` (`TrailCaption`), the whole group aligned within the box
+and vertically centered. The mark is **exactly one** of `AssetID` (a partner logo resolved
+via the AssetResolver → a pic, warn-don't-fail) or `Icon` (a curated glyph, media-free);
+validation rejects neither/both. The logo box is height-bounded by `MaxHeight` (a pinned
+default when 0) and **square** — without pixel dimensions the engine cannot know the aspect
+(§7), so a square box is the honest default (the caller's logo bytes drive the display
+aspect). `nodeUsesAssets` is `AssetID != ""` so an asset lockup composes serially
+(deterministic media part numbering, RFC §10.1) and an icon lockup stays parallel-safe.
+`policy = {HasAsset: true}` (it carries an `AssetID` field — the policy_test invariant) with
+`Image:false`, the conditional-asset shape of `Decoration`. The caption is `TypeCaption`
+muted; the gap/default-height/pad are pinned EMU; the icon flows through `walkIconRefs`.
+Catalog 27 → 28.
+**Consequences:** A deck with no `Lockup` is byte-identical (additive). This is the last
+Wave-12 component primitive; with the atoms (Button, Checklist, ChipRow, Banner, Ribbon,
+Grid connectors, IconRows, column bridge, Lockup) in place, **R12.10** (the pricing-offer
+card recipe) is a product-layer composition on Deckard's contract/skill (D-059) — no further
+engine node. Brief 52.
+
+---
+
 *Append new entries below this line.*

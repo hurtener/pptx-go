@@ -42,6 +42,7 @@ const (
 	KindChipRow
 	KindBanner
 	KindIconRows
+	KindLockup
 )
 
 // String returns the node kind's IR name.
@@ -101,6 +102,8 @@ func (k NodeKind) String() string {
 		return "banner"
 	case KindIconRows:
 		return "icon_rows"
+	case KindLockup:
+		return "lockup"
 	default:
 		return "unknown"
 	}
@@ -670,6 +673,35 @@ type IconRows struct {
 }
 
 func (IconRows) NodeKind() NodeKind { return KindIconRows }
+
+// AssetSide selects where a Lockup's logo sits relative to its caption (R12.9, D-102).
+// The zero value LeadCaption places the caption first (caption leads, logo trails);
+// TrailCaption places the logo first.
+type AssetSide int
+
+const (
+	LeadCaption  AssetSide = iota // caption then logo (zero value)
+	TrailCaption                  // logo then caption
+)
+
+// Lockup is a compact "powered by / in partnership with" attribution mark (R12.9, D-102):
+// a caption paired with a small partner logo composed as one inline, centerable unit. The
+// mark is either an AssetID (a partner logo, resolved via the AssetResolver — renders as a
+// pic) or an Icon (a curated/extension glyph — media-free); exactly one is set. AssetSide
+// places the logo before or after the caption; MaxHeight height-bounds the logo (a pinned
+// default when 0); Align positions the whole group (zero = inherit the slide). Additive: a
+// deck with no Lockup is byte-identical.
+type Lockup struct {
+	node
+	Caption   string
+	AssetID   AssetID   // the partner logo (resolved via AssetResolver); "" = use Icon
+	Icon      string    // a curated/extension glyph instead of an asset; "" = use AssetID
+	AssetSide AssetSide // logo before (TrailCaption) or after (LeadCaption) the caption
+	MaxHeight pptx.EMU  // logo height bound; 0 = a pinned default
+	Align     HAlign    // per-node horizontal alignment override; 0 = inherit slide
+}
+
+func (Lockup) NodeKind() NodeKind { return KindLockup }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

@@ -366,3 +366,30 @@ rows := scene.IconRows{
 	},
 }
 ```
+
+## Lockup
+
+A compact "powered by / in partnership with" attribution mark — a caption paired with a
+small partner logo composed as one centered inline unit, for a cover or closing slide.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Caption` | `string` | The attribution caption (muted) |
+| `AssetID` | `AssetID` | The partner logo, resolved via the `AssetResolver` (renders as a pic); `""` = use `Icon` |
+| `Icon` | `string` | A curated/extension glyph instead of an asset (media-free); `""` = use `AssetID` |
+| `AssetSide` | `AssetSide` | `LeadCaption` (caption then logo) / `TrailCaption` (logo then caption) |
+| `MaxHeight` | `EMU` | Logo height bound; `0` = a default |
+| `Align` | `HAlign` | Position the whole group within its box |
+
+Set **exactly one** of `AssetID` or `Icon`. The logo box is square (the engine does not
+parse pixel dimensions — §7; your logo bytes drive the display aspect). An asset lockup
+resolves through your `AssetResolver` (see register-an-asset); an icon lockup is media-free.
+
+```go
+mark := scene.Lockup{
+	Caption:   "POWERED BY CLEAR TECH",
+	Icon:      "star",
+	AssetSide: scene.TrailCaption,
+	Align:     scene.HAlignCenter,
+}
+```
