@@ -191,10 +191,13 @@ func cardHeaderColumnWOf(theme *pptx.Theme, box pptx.Box, c cardChrome) pptx.EMU
 		headerW = innerW - cardIconSz - gapSM
 	}
 	if c.pill != "" {
-		pillW := cardPillWidthOf(theme, c.pill, innerW)
-		if reserve := pillW + gapSM; headerW > reserve {
-			headerW -= reserve
-		}
+		// Reserve the pill width unconditionally (Wave-11 checkpoint H1, D-093): a
+		// conditional `if headerW > reserve` left headerW at full width when a pill
+		// label clamped to the whole inner width (pillW == innerW), so the title
+		// overlapped the pill. Subtracting always collapses the header column to 0 in
+		// that degenerate case instead of overlapping. Byte-identical on every normal
+		// deck (headerW > pillW+gapSM there); floored at 0 below.
+		headerW -= cardPillWidthOf(theme, c.pill, innerW) + gapSM
 	}
 	if headerW < 0 {
 		headerW = 0
@@ -404,8 +407,12 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 		// (R11.2), not the card surface.
 		pp.AddRun(c.pill, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: r.onCardSurface(pptx.ColorSurfaceAlt), FontScale: pillScale})
 		r.stats.Shapes++
-		if reserve := pillW + gapSM; headerW > reserve {
-			headerW -= reserve
+		// Reserve the pill width unconditionally (checkpoint H1, D-093) — mirrors
+		// cardHeaderColumnWOf, so the reserved and drawn header columns agree even for
+		// a full-inner-width pill (the header collapses rather than overlapping it).
+		headerW -= pillW + gapSM
+		if headerW < 0 {
+			headerW = 0
 		}
 	}
 

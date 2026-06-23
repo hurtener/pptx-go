@@ -121,13 +121,16 @@ const (
 	autofitStepBP     = 250  // 0.025 — quantization step (keeps the float deterministic)
 )
 
-// fitScale returns the font-scale multiplier that makes a run whose estimated
-// natural width is natW fit within boxW, or 0 when it already fits (or the inputs
-// are unknown) — 0 means "no scaling", so an AutoFit-off or already-fitting run
-// is byte-identical. When natW > boxW it returns floor(boxW/natW) quantized down
-// to autofitStepBP and floored at autofitRatioMinBP, expressed as a fraction in
-// [0.60, 1). It never returns >= 1 (never upscales). Pure integer / basis-point
-// math: identical (natW, boxW) inputs always return the same scale.
+// fitScale returns the font-scale multiplier that shrinks a run whose estimated
+// natural width is natW toward boxW, or 0 when it already fits (or the inputs are
+// unknown) — 0 means "no scaling", so an AutoFit-off or already-fitting run is
+// byte-identical. When natW > boxW it returns floor(boxW/natW) quantized down to
+// autofitStepBP and floored at autofitRatioMinBP, expressed as a fraction in
+// [0.60, 1). It never returns >= 1 (never upscales). The 0.60 floor is a legibility
+// bound, so it does NOT guarantee the run fits: text much wider than its box
+// (natW >> boxW, e.g. a value in a sub-~0.85" cell) can still overflow at the floor
+// — that residual overflow is accepted (see D-088). Pure integer / basis-point math:
+// identical (natW, boxW) inputs always return the same scale.
 func fitScale(natW, boxW pptx.EMU) float64 {
 	if natW <= 0 || boxW <= 0 || natW <= boxW {
 		return 0

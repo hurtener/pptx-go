@@ -2970,4 +2970,57 @@ No public API change, no new token.
 
 ---
 
+## D-093 — Wave 11 §17 checkpoint: header/pill reservation fix + doc/test backfill
+
+**Date:** 2026-06-22
+**Status:** Settled
+**Context:** The Wave 11 §17 adversarial checkpoint (a 38-agent workflow: 8 dimension
+finders → 2 skeptics/finding → completeness critic → synthesis over the R11
+component-robustness cluster, Phases 49–60 / D-081..D-092) returned a **clean bill of
+health** on the binding invariants — pure-integer determinism (the `srgbLinear` table
+is built once at init, every per-call use is an integer lookup), byte-identity on the
+default-theme path (every auto-contrast / fit-to-label helper is a no-op there), and
+the D-092 bounds clamp generalized correctly with the right overlay exemptions. It
+surfaced **one real correctness defect** plus doc/test-hygiene gaps.
+**Decision (fixes landed in this `chore(checkpoint)` PR):**
+- **H1 — header/pill reservation (real defect, fixed).** `cardHeaderColumnWOf` and
+  `renderCardChrome` reserved the pill width *conditionally*
+  (`if headerW > pillW+gapSM`), so when a pill label clamped to the whole inner width
+  (`pillW == innerW`) the header column stayed at full width and the title overlapped
+  the pill. Made the reservation **unconditional** (`headerW -= pillW + gapSM`, floored
+  at 0) in both — byte-identical on every non-degenerate deck (where
+  `headerW > pillW+gapSM`), collapsing the header column to 0 only in the pathological
+  full-width-pill case. Guarded by `TestCardHeaderColumn_PillReservation`.
+- **M2 — stale safe-area docs (§19).** `docs/glossary.md` and `docs/site/guide/scene.md`
+  said only "a container (Bento/Grid/Card)" is clamped; updated to "every content
+  node … (full-slide overlays exempt)" per D-092.
+- **M3 — `fitScale` docstring** amended to state the 0.60 floor is a legibility bound
+  that does not guarantee fit (extreme over-wide text may still overflow; see D-088).
+- **M4 / L1 / L2 / L3 — test backfill** of shipped behavior the per-phase tests missed:
+  pill and join-badge auto-contrast colours, the narrow-card status-dot clamp, a
+  nested-container overflow warn + on-canvas check, and CardSection header
+  auto-contrast.
+- Removed an untracked `test_check.go` debris file (a stray `package scene_test` file at
+  the repo root that broke root package detection).
+**Documented as intentional (no code change):**
+- **H2** (status dot shares the pill's left edge) shares H1's root — a single pill
+  label wider than the whole card — a pathological input; the degenerate boundary is
+  noted, not contorted around.
+- **H3** (the "Bento `preferredHeight` uses `estGap` → D-089 violation") is a **false
+  positive**: D-089's parity is about the *row-label gutter*, which `preferredHeight`
+  already threads through `bentoGutterWidthOf`; the flagged `estGap` is the
+  *inter-column* gap, a conservative estimator constant (shared by the Grid/TwoColumn/
+  Card cases) that only ever over-estimates height (safe).
+- **M1** (a light `ColorAccent` join-badge label on a dark-variant theme can be
+  low-contrast) is the **documented asymmetry** of the contrast *mechanism*
+  (D-058/D-026: `onCardSurface` flips dark→light only, assuming the theme default text
+  is dark): pre-existing (the prior hardcoded `TextInverse` was equally affected), and
+  a caller-`Color`-override case. The default theme (dark accent) is byte-identical and
+  correct.
+**Consequences:** Wave 11 is closed as healthy. One geometry defect fixed
+byte-identically; docs and tests reconciled with the shipped behavior. No public API
+change, no new token.
+
+---
+
 *Append new entries below this line.*

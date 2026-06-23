@@ -889,11 +889,13 @@ contract. See `RFC-001-pptx-go.md §16`.
 
 The slide's printable region: the slide box minus the content margins minus the
 reserved chrome bands (the section eyebrow at top, the footer/page-number at
-bottom). Equal to the body region (`bodyRegion`). No container may draw below its
-bottom — `renderBento`/`renderGrid`/`renderCard` clamp their box to it so an
-over-full stack can never push cells off the slide onto the footer (R11.3, `D-083`).
-Complementary to the opt-in `Fit-to-region compression` (`VAlignFit`), which
-reflows; the clamp caps.
+bottom). Equal to the body region (`bodyRegion`). **Every content node** — every
+container *and* every leaf — is clamped to it so an over-full stack or card body can
+never push content off the slide onto the footer (R11.3, generalized in R11.12 from
+containers to all nodes, `D-083`/`D-092`). The full-slide overlays (`Decoration`,
+which may bleed off-canvas by design, and `SectionDivider`) are exempt. Complementary
+to the opt-in `Fit-to-region compression` (`VAlignFit`), which reflows; the clamp
+caps.
 
 ## Scene
 
