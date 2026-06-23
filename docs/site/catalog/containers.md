@@ -53,15 +53,26 @@ must be 2, 3, or 4. `Ratio` holds per-column weights (empty = equal columns).
 | `Ratio` | `[]int` | Per-column weights; empty = equal |
 | `Gap` | `SpaceRole` | Spacing between cells |
 | `Cells` | `[]SlideNode` | One child per cell |
+| `Connectors` | `[]GridConnector` | Inter-column gutter glyphs (`{Between [2]int; Kind ConnectorKind; Label string}`); empty = none |
+
+`Connectors` draw a glyph in the gutter between two adjacent columns, so an
+architecture / pipeline grid reads as flow. `Between` is the two adjacent column
+indices (e.g. `{0, 1}`); `Kind` reuses the flow connectors (`ConnectorArrow`,
+`ConnectorBiArrow`, …); an optional `Label` sits below the glyph. An empty slice is
+byte-identical.
 
 ```go
 grid := scene.Grid{
 	Columns: 3,
 	Gap:     scene.SpaceMD,
 	Cells: []scene.SlideNode{
-		scene.Card{Header: "Fast"},
-		scene.Card{Header: "Safe"},
-		scene.Card{Header: "Simple"},
+		scene.Card{Header: "People"},
+		scene.Card{Header: "Operating layer"},
+		scene.Card{Header: "Knowledge"},
+	},
+	Connectors: []scene.GridConnector{
+		{Between: [2]int{0, 1}, Kind: scene.ConnectorArrow},
+		{Between: [2]int{1, 2}, Kind: scene.ConnectorBiArrow, Label: "feeds"},
 	},
 }
 ```

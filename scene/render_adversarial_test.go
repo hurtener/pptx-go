@@ -51,7 +51,12 @@ func adversarialScene() scene.Scene {
 		slides = append(slides,
 			// Cards (every size × layout) under a long wrapping header.
 			scene.SceneSlide{ID: fmt.Sprintf("cards-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
-				scene.Grid{Columns: 3, Cells: []scene.SlideNode{card(dark), card(dark), card(dark)}},
+				scene.Grid{Columns: 3, Cells: []scene.SlideNode{card(dark), card(dark), card(dark)},
+					// Inter-column connectors (R12.4) in the gutters must stay on-canvas.
+					Connectors: []scene.GridConnector{
+						{Between: [2]int{0, 1}, Kind: scene.ConnectorArrow, Label: "feeds"},
+						{Between: [2]int{1, 2}, Kind: scene.ConnectorBiArrow},
+					}},
 			}},
 			// A dense bento with long row labels + an over-wide stat.
 			scene.SceneSlide{ID: fmt.Sprintf("bento-%v", variant), Variant: variant, Nodes: []scene.SlideNode{

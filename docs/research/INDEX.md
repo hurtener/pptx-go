@@ -285,6 +285,11 @@ semantics)*
   star glyph; `RibbonCornerTL/TR` are content-fit corner text tabs (the diagonal
   rotated-band variant deferred — no builder text rotation). nil ⇒ byte-identical.
   (R12.3, HIGH.)
+- `49-prim-inter-column-connectors.md` — a `Grid.Connectors []GridConnector{Between
+  [2]int; Kind; Label}` field extension: a connector glyph drawn in the gutter between
+  two adjacent columns (derived from the cell boxes), reusing `render_flow`'s
+  `renderConnector` + a new `ConnectorBiArrow` (`leftRightArrow`/`upDownArrow`).
+  Adjacency validated at Stage-1; empty ⇒ byte-identical. (R12.4, HIGH.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

@@ -201,6 +201,15 @@ Renders native (filled rect + text + custGeom icon; children per their own polic
 node with children — recurses like a container in every walk. Absent ⇒ byte-identical.
 See `D-097`.
 
+## Grid connector
+
+An inter-column connector glyph drawn in the gutter between two adjacent columns of a
+`Grid` (`Grid.Connectors []GridConnector{Between [2]int; Kind ConnectorKind; Label}`), so
+an architecture / pipeline grid reads as data flow rather than mere adjacency. The gutter
+box is derived from the cell layout; the glyph reuses the Flow connector set plus
+`ConnectorBiArrow` (a bidirectional arrow). An empty `Connectors` slice ⇒ byte-identical.
+See `D-099`.
+
 ## Ribbon (Card field)
 
 A pinned emphasis badge on a `Card` (`Card.Ribbon`) — a "MOST POPULAR" / "RECOMMENDED" /

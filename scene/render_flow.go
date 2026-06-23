@@ -196,6 +196,13 @@ func (r *renderer) renderConnector(ps *pptx.Slide, gap pptx.Box, kind ConnectorK
 		r.stats.Shapes++
 	case ConnectorArrowDashed:
 		r.renderDashedArrow(ps, gap, vertical)
+	case ConnectorBiArrow:
+		if vertical {
+			ps.AddShape(pptx.ShapeGeometry("upDownArrow"), centerIn(gap, pptx.In(0.3), gap.H*7/10), pptx.WithFill(accent))
+		} else {
+			ps.AddShape(pptx.ShapeGeometry("leftRightArrow"), centerIn(gap, gap.W*7/10, pptx.In(0.3)), pptx.WithFill(accent))
+		}
+		r.stats.Shapes++
 	default: // ConnectorArrow and ConnectorCycle inter-pair glyph
 		if vertical {
 			ps.AddShape(pptx.ShapeGeometry("downArrow"), centerIn(gap, pptx.In(0.3), gap.H*7/10), pptx.WithFill(accent))
