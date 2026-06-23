@@ -128,6 +128,12 @@ func adversarialScene() scene.Scene {
 				scene.Banner{Lead: rt(longText), Body: rt(longText), Icon: "star", Fill: scene.ColorAccent,
 					Trailing: []scene.SlideNode{scene.Button{Label: "Talk to the team", Tone: scene.ButtonNeutral, TrailingIcon: "arrow-right"}}},
 			}},
+			// A centered attribution lockup (R12.9): caption + icon mark stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("lockup-%v", variant), Variant: variant,
+				Content: scene.Alignment{Horizontal: scene.HAlignCenter},
+				Nodes: []scene.SlideNode{
+					scene.Lockup{Caption: "POWERED BY A VERY LONG PARTNER NAME CLEAR TECHNOLOGIES", Icon: "star", AssetSide: scene.TrailCaption},
+				}},
 			// A filled icon-rows list with long labels + right-aligned meta in a Fill card
 			// (R12.7): icons, labels, and meta must stay on-canvas without colliding.
 			scene.SceneSlide{ID: fmt.Sprintf("iconrows-%v", variant), Variant: variant, Nodes: []scene.SlideNode{

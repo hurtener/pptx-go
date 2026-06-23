@@ -300,6 +300,12 @@ semantics)*
   line + two end stubs + a content-fit centered label pill, no mid-word wrap) across the
   top/bottom of both columns, reserving a band (ribbon-style) so it spans above/below the
   content. `JoinSeam` (zero) is byte-identical to the D-055 seam element. (R12.8, MED.)
+- `52-prim-attribution-lockup.md` — a new `Lockup` leaf IR node (asset-bearing): a
+  caption + a small partner logo composed as one centered inline group. The mark is an
+  `AssetID` (resolved via the AssetResolver → a pic, `nodeUsesAssets` true → serial part
+  numbering) OR an `Icon` (media-free); exactly one is set. `AssetSide` orders the pair;
+  `MaxHeight` bounds the (square — §7) logo. `policy {HasAsset:true}` like Decoration.
+  Additive ⇒ byte-identical. (R12.9, LOW.)
 
 *(candidates: layout-engine survey (CSS grid analogues expressible in EMU),
 scene IR JSON wire form compatibility with pengui-slides v4)*

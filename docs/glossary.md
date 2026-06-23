@@ -201,6 +201,16 @@ Renders native (filled rect + text + custGeom icon; children per their own polic
 node with children — recurses like a container in every walk. Absent ⇒ byte-identical.
 See `D-097`.
 
+## Lockup (node)
+
+A scene IR leaf node: a compact "powered by / in partnership with" attribution mark — a
+caption paired with a small partner logo composed as one centered inline unit. The mark is
+either an `AssetID` (a logo resolved via the `AssetResolver`, rendered as a pic) or an
+`Icon` (a curated glyph, media-free); exactly one is set. `AssetSide` orders the
+caption/logo pair; `MaxHeight` bounds the (square — no pixel aspect, §7) logo; `Align`
+positions the whole group. An asset lockup composes serially for deterministic media part
+numbering. Absent ⇒ byte-identical. See `D-102`.
+
 ## IconRows (node)
 
 A scene IR leaf node: a vertical stack of `[icon | label | optional right-aligned meta]`

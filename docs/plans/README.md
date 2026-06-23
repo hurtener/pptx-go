@@ -1480,6 +1480,29 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   `JoinSeam` render is byte-identical to before; an out-of-range position fails validation;
   repeated renders are byte-identical.
 
+#### Phase 69 — prim attribution lockup
+
+**Subsystem:** scene — Layer 2 renderer (new IR leaf node, asset-bearing)
+**RFC sections:** §11.1, §12, §14.3
+**Deps:** Phase 10 (Image asset path), Phase 61 (icon glyph); brief 52.
+**What lands (R12.9, LOW · engine):**
+- A `Lockup` leaf node `{Caption string; AssetID AssetID; Icon string; AssetSide
+  AssetSide; MaxHeight pptx.EMU; Align HAlign}`: a caption + a small partner logo composed
+  as one centered inline group (a "powered by / in partnership with" mark). The mark is an
+  `AssetID` (resolved via the AssetResolver → a pic, `nodeUsesAssets` true → serial part
+  numbering) OR an `Icon` (media-free); exactly one is set. `AssetSide` orders the pair;
+  `MaxHeight` bounds the square logo (D-102).
+- Full new-node wiring: policy `{HasAsset:true}`; catalog 27 → 28; integration kind-range
+  loop → `KindLockup`; `walkIconRefs` validates the icon.
+**Acceptance criteria:**
+- Caption + logo render as one centered unit; an icon lockup is media-free and
+  byte-identical; an asset lockup registers one asset; neither/both/unknown-icon fail
+  validation; catalog is 28 and the kind loop covers it.
+
+**Wave 12 (R12) complete after Phase 69** — R12.10 (pricing-offer-card recipe) is the
+product-layer composition of the atoms above (D-059), implemented on Deckard's contract /
+skill, not in this engine.
+
 ---
 
 ## 4. Post-V1 backlog

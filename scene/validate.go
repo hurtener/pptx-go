@@ -91,6 +91,19 @@ func validateNode(n SlideNode) error {
 				return fmt.Errorf("icon_rows row %d has invalid tone %d", i, row.Tone)
 			}
 		}
+	case Lockup:
+		if v.AssetID == "" && v.Icon == "" {
+			return errors.New("lockup requires an asset id or an icon")
+		}
+		if v.AssetID != "" && v.Icon != "" {
+			return errors.New("lockup has both an asset id and an icon (set exactly one)")
+		}
+		if v.AssetSide < LeadCaption || v.AssetSide > TrailCaption {
+			return fmt.Errorf("lockup asset side %d out of range", v.AssetSide)
+		}
+		if v.MaxHeight < 0 {
+			return fmt.Errorf("lockup max height %d must be >= 0", v.MaxHeight)
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

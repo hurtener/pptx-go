@@ -230,6 +230,9 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Banner:
 		// The strip + icon register no media; only an asset-bearing Trailing child does.
 		return nodesUseAssets(v.Trailing)
+	case Lockup:
+		// The asset variant registers a pic; the icon variant is media-free (R12.9).
+		return v.AssetID != ""
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
@@ -420,6 +423,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderBanner(ps, box, v, slideID)
 	case IconRows:
 		r.renderIconRows(ps, box, v)
+	case Lockup:
+		r.renderLockup(ps, box, v, slideID, hAlign)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -540,6 +545,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return bannerPreferredHeight(v, avail, theme)
 	case IconRows:
 		return iconRowsPreferredHeight(v, avail, theme)
+	case Lockup:
+		return lockupPreferredHeight(v)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:
@@ -1072,6 +1079,8 @@ func nodeEffectiveHAlign(n SlideNode, slideHAlign HAlign) HAlign {
 	case Button:
 		nodeAlign = v.Align
 	case ChipRow:
+		nodeAlign = v.Align
+	case Lockup:
 		nodeAlign = v.Align
 	case SectionDivider:
 		nodeAlign = v.Align

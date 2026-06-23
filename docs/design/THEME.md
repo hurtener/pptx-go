@@ -255,3 +255,11 @@ The scene `IconRows` node's colors map onto existing tokens: `GlyphColor` is any
 be invisible), and the `RowPill` frame uses `ColorSurfaceAlt`. A theme swap re-skins both.
 The icon size, gaps, row gap, line height, and pill pad are pinned layout metrics, not
 tokens. No new token role is introduced.
+
+## Lockup caption (mechanism, no new token — D-102)
+
+The scene `Lockup` node's caption uses the existing `TextMuted` text token; an icon mark
+fills with the accent token (the `AddIcon` default). A theme swap re-skins both. The
+caption-to-logo gap, the default logo height, and the slot padding are pinned layout
+metrics, not tokens; the logo box is square (no pixel-aspect parsing — §7). No new token
+role is introduced.

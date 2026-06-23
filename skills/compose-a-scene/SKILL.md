@@ -82,6 +82,7 @@ renders as native PPTX shapes**.
 | `ChipRow` | `Label string; Chips []ChipSpec` (`{Label string; Tone ChipTone; Color ColorRole; Icon string}`); `Wrap bool`; `Align HAlign` | native; a horizontal row of content-fit chip pills (a tag / category / capability strip) with an optional leading `Label`. Each `ChipSpec` mirrors `Chip` (`ChipTint`/`ChipSolid`/`ChipOutline` + an optional leading `Icon`). `Wrap` reflows chips onto new lines within the width (zero = one line; set it true for a long strip); `Align` offsets each line. Use this, not a bullet `List`, for a tag/category row |
 | `Banner` | `Lead RichText; Body RichText; Icon string; Fill ColorRole; TextColor TextColorRole; Trailing []SlideNode` | native; a full-width filled "big takeaway / promo / CTA" strip with a leading icon + bold `Lead` + `Body` on the left and optional right-aligned `Trailing` children (a `Stat`/`Button`). `Fill` defaults to accent (its zero value); the text auto-contrasts against the fill unless `TextColor` is set. Distinct from the small side-bar `Callout` — use `Banner` for a wide promo/closing band. Embed a `Button` in `Trailing` for the action |
 | `IconRows` | `Rows []IconRow` (`{Icon string; Label RichText; Meta RichText; Tone RowTone}`); `Fill bool`; `GlyphColor ColorRole` | native; a vertical stack of `[icon | label | optional right-aligned meta]` rows — the "integrations / capabilities / sources" list. `RowTone` = `RowPlain` / `RowPill` (a `SurfaceAlt` frame). `Fill` distributes rows to span the box (place it in a `VAlignFill` card); `GlyphColor` tints the icons (zero = accent). Use this, not a bullet `List`, for an icon-label row list |
+| `Lockup` | `Caption string; AssetID AssetID; Icon string; AssetSide AssetSide; MaxHeight pptx.EMU; Align HAlign` | a "powered by / in partnership with" mark — a caption + a small partner logo as one centered inline unit. Set **exactly one** of `AssetID` (a logo resolved via the AssetResolver → a pic) or `Icon` (a curated glyph, media-free). `AssetSide` = `LeadCaption` (caption then logo) / `TrailCaption` (logo then caption). `MaxHeight` bounds the square logo (0 = default; the engine does not parse pixel aspect — your bytes drive it). Use on a cover/closing slide |
 | `SectionDivider` | `Eyebrow, Label string` | native (full-bleed) |
 | `Table` | `Headers []RichText; Rows [][]RichText; Caption string` | native |
 | `Flow` | `Orientation FlowOrientation; Steps []FlowStep; Connector ConnectorKind` | native |
@@ -217,6 +218,8 @@ returns a joined error so you see every problem at once. Per-node rules:
   `Trailing` child icon must resolve in the icon registry.
 - `IconRows`: non-empty `Rows`; each row's `Tone` valid; any row `Icon` must
   resolve in the icon registry.
+- `Lockup`: exactly one of `AssetID` / `Icon` set; `AssetSide` valid;
+  `MaxHeight >= 0`; an `Icon` must resolve in the icon registry.
 - `Table`: at least one header column; every row width equals the header width.
 - `TwoColumn`: non-empty `Left` and `Right` (children validated recursively).
 - `Grid`: `Columns` in `2..4`; `Ratio` empty or length == `Columns`; non-empty
