@@ -3148,4 +3148,40 @@ no content (D-026). Brief 46.
 
 ---
 
+## D-097 — prim-callout-banner: a Banner node (R12.6)
+
+**Date:** 2026-06-23
+**Status:** Settled
+**Context:** A full-width filled "big takeaway / promo / CTA" strip (a lime closing
+banner, a dark "$0 · Start free →" promo) is a staple slide element. The IR's `Callout`
+is only a small left-bar note; the recreation rendered the banner as plain overlapping
+text with no fill. R12.6 (HIGH · engine) adds the wide banner primitive.
+**Decision:** Add `KindBanner` + a `Banner` node `{Lead RichText; Body RichText; Icon
+string; Fill ColorRole; TextColor TextColorRole; Trailing []SlideNode}`, rendered in
+`scene/render_banner.go`: a full-width `RadiusLG` filled strip, a left region with the
+leading custGeom icon + bold lead + body, and an optional right region stacking the
+`Trailing` children (the card-body `stackIn` + `renderNode` mechanism).
+- **Fill defaults to accent.** `Fill`'s zero value (`ColorCanvas`) is treated as
+  `ColorAccent` — a banner is always a filled strip; a canvas one would be invisible (a
+  §4.3 deviation from the spec's value field, documented).
+- **Text auto-contrasts by default.** When `TextColor` is the zero value (`TextPrimary`)
+  the lead/body resolve via `onCardSurface(fill)` (inverse on a dark fill, the default on
+  light); an explicit non-default `TextColor` is honored verbatim. The banner runs force
+  this color (and bold on the lead) so the strip is legible out of the box.
+- **A node with children.** `Trailing` makes `Banner` recurse like a container in
+  `validateChildren` / `walkIconRefs` / `walkImages` / `nodeUsesAssets` and the
+  integration `collectKinds`; it carries no `AssetID` itself (`nodeUsesAssets` defers to
+  `Trailing`, so a typical Stat/Button banner stays parallel-safe).
+
+Layout metrics (padding, icon size, gaps, the trailing-region width band) are pinned EMU;
+the fill and text colors are tokens (THEME.md). Full new-node wiring: policy (native),
+validate (recurse `Trailing`), `renderNode` dispatch + `preferredHeight` (max of text and
+trailing stacks + padding, floored) + `isFlexible` false + `nodeUsesAssets`(Trailing),
+catalog 25 → 26, integration kind-range loop → `KindBanner`. Distinct from the side-bar
+`Callout`.
+**Consequences:** A deck with no `Banner` is byte-identical (additive). No mode toggle;
+the engine picks no content (D-026). Brief 47.
+
+---
+
 *Append new entries below this line.*

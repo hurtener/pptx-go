@@ -107,6 +107,12 @@ func adversarialScene() scene.Scene {
 					{Label: "Custom integrations", Tone: scene.ChipSolid, Color: scene.ColorAccent},
 				}},
 			}},
+			// A full-width banner with a long lead/body + an embedded trailing button
+			// (R12.6): the strip, text, and button must stay on-canvas and legible.
+			scene.SceneSlide{ID: fmt.Sprintf("banner-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Banner{Lead: rt(longText), Body: rt(longText), Icon: "star", Fill: scene.ColorAccent,
+					Trailing: []scene.SlideNode{scene.Button{Label: "Talk to the team", Tone: scene.ButtonNeutral, TrailingIcon: "arrow-right"}}},
+			}},
 		)
 	}
 	return scene.Scene{Slides: slides}

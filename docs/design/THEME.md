@@ -229,3 +229,13 @@ an optional `GlyphTone *ColorRole` overrides all glyphs (nil = the per-state def
 theme swap re-skins every glyph through these roles (P2). The glyph size/gap, column
 gap, row gap, and per-line height are **pinned layout metrics**, not tokens — they size
 geometry, not a visual property. No new token role is introduced.
+
+## Banner fill / text (mechanism, no new token — D-097)
+
+The scene `Banner` node's colors map onto existing tokens: `Fill` is any `ColorRole`
+(its zero value `ColorCanvas` is treated as `ColorAccent` — a banner is always a filled
+strip); the lead/body `TextColor` is any `TextColorRole`, and its zero value
+(`TextPrimary`) auto-contrasts against the fill via the same luminance check the card
+chrome uses (`onCardSurface`). A theme swap re-skins the strip and keeps the text
+legible. The padding, icon size, gaps, and trailing-region width are pinned layout
+metrics, not tokens. No new token role is introduced.

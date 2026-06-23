@@ -227,6 +227,9 @@ func nodeUsesAssets(n SlideNode) bool {
 		return nodesUseAssets(v.Body)
 	case Bento:
 		return nodesUseAssets(v.cellNodes())
+	case Banner:
+		// The strip + icon register no media; only an asset-bearing Trailing child does.
+		return nodesUseAssets(v.Trailing)
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
@@ -413,6 +416,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderChecklist(ps, box, v)
 	case ChipRow:
 		r.renderChipRow(ps, box, v, hAlign)
+	case Banner:
+		r.renderBanner(ps, box, v, slideID)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -529,6 +534,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return checklistPreferredHeight(v, avail, theme)
 	case ChipRow:
 		return chipRowPreferredHeight(v, avail, theme)
+	case Banner:
+		return bannerPreferredHeight(v, avail, theme)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:

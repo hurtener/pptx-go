@@ -125,6 +125,8 @@ func walkImages(nodes []SlideNode, fn func(Image)) {
 			walkImages(v.Body, fn)
 		case Bento:
 			walkImages(v.cellNodes(), fn)
+		case Banner:
+			walkImages(v.Trailing, fn)
 		}
 	}
 }

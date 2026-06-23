@@ -40,6 +40,7 @@ const (
 	KindButton
 	KindChecklist
 	KindChipRow
+	KindBanner
 )
 
 // String returns the node kind's IR name.
@@ -95,6 +96,8 @@ func (k NodeKind) String() string {
 		return "checklist"
 	case KindChipRow:
 		return "chip_row"
+	case KindBanner:
+		return "banner"
 	default:
 		return "unknown"
 	}
@@ -606,6 +609,29 @@ type ChipRow struct {
 }
 
 func (ChipRow) NodeKind() NodeKind { return KindChipRow }
+
+// Banner is a full-width filled "big takeaway / promo / CTA" strip (R12.6, D-097): a
+// leading icon + a bold lead phrase + a supporting body on the left, with optional
+// right-aligned Trailing children (a Stat and/or a Button). Distinct from the side-bar
+// Callout — the banner is a wide, full-fill band.
+//
+// Fill is the strip color; its zero value (ColorCanvas) is treated as ColorAccent (a
+// banner is always a filled strip — a canvas-colored one would be invisible). TextColor
+// colors the lead/body; its zero value (TextPrimary) auto-contrasts against Fill (light
+// on a dark fill), and any explicit non-default value is honored. Trailing children
+// render in a right region per their own policy. Additive: a deck with no Banner is
+// byte-identical.
+type Banner struct {
+	node
+	Lead      RichText
+	Body      RichText
+	Icon      string        // leading curated/extension icon; "" = none
+	Fill      ColorRole     // strip fill; zero (ColorCanvas) = ColorAccent
+	TextColor TextColorRole // lead/body color; zero (TextPrimary) = auto-contrast on Fill
+	Trailing  []SlideNode   // right-aligned children (Stat/Button); nil = none
+}
+
+func (Banner) NodeKind() NodeKind { return KindBanner }
 
 // ============================================================================
 // Container nodes (RFC §11.2)

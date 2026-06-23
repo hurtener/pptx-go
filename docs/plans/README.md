@@ -1390,6 +1390,27 @@ render dispatch + walk recursions + catalog count + integration kind-range loop)
   width; `Align` offsets each line; an unknown chip icon fails validation; identical
   input is byte-identical; the catalog is 25 and the kind loop covers `KindChipRow`.
 
+#### Phase 64 — prim callout banner
+
+**Subsystem:** scene — Layer 2 renderer (new IR node with trailing children)
+**RFC sections:** §11.1, §12
+**Deps:** Phase 61 (Button — a Trailing child), Phase 50 (auto-contrast), the card-body
+`stackIn` pattern; brief 47.
+**What lands (R12.6, HIGH · engine):**
+- A `Banner` node `{Lead RichText; Body RichText; Icon string; Fill ColorRole; TextColor
+  TextColorRole; Trailing []SlideNode}`: a full-width `RadiusLG` filled strip (`Fill`
+  defaults to accent), a leading icon + bold lead + body with auto-contrast text, and an
+  optional right region stacking the trailing `Stat`/`Button` children. Distinct from
+  the side-bar `Callout` (D-097).
+- A node with children: recurses like a container in `validateChildren` /
+  `walkIconRefs` / `walkImages` / `nodeUsesAssets` / integration `collectKinds`. Catalog
+  25 → 26; kind-range loop → `KindBanner`.
+**Acceptance criteria:**
+- One colored rect spans the band; the lead is legible against the fill; an embedded
+  `Button`/`Stat` sits in the right region without overlap; a `Banner{}` is an accent
+  strip (not invisible); an unknown icon fails validation; byte-identical across workers;
+  catalog 26 and the kind loop covers `KindBanner`.
+
 ---
 
 ## 4. Post-V1 backlog

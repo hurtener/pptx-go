@@ -307,3 +307,35 @@ strip := scene.ChipRow{
 	},
 }
 ```
+
+## Banner
+
+A full-width filled "big takeaway / promo / call-to-action" strip — a leading icon, a
+bold lead phrase + supporting body, and an optional right-aligned embedded action. Use
+it across the top or bottom of a slide; it is distinct from the small side-bar `Callout`.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Lead` | `RichText` | The bold lead phrase |
+| `Body` | `RichText` | The supporting body line |
+| `Icon` | `string` | Optional leading registry icon; `""` = none |
+| `Fill` | `ColorRole` | Strip fill; the zero value defaults to the accent role |
+| `TextColor` | `TextColorRole` | Lead/body color; the zero value auto-contrasts against the fill |
+| `Trailing` | `[]SlideNode` | Optional right-aligned children — a `Stat` and/or `Button` |
+
+The strip is a single colored `RadiusLG` rounded rect; the lead/body sit on the left and
+are kept legible against the fill automatically (or set `TextColor` explicitly). Embed a
+`Button` in `Trailing` for a promo banner's action. A deck that uses no `Banner` is
+unchanged.
+
+```go
+banner := scene.Banner{
+	Lead: scene.RichText{{Text: "Run it internally, sell it externally"}},
+	Body: scene.RichText{{Text: "the power of an agentic platform, without building one"}},
+	Icon: "star",
+	Fill: scene.ColorAccent,
+	Trailing: []scene.SlideNode{
+		scene.Button{Label: "Talk to the team", TrailingIcon: "arrow-right"},
+	},
+}
+```

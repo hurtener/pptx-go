@@ -237,12 +237,14 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 					collectKinds([]scene.SlideNode{cell.Node}, set)
 				}
 			}
+		case scene.Banner:
+			collectKinds(c.Trailing, set)
 		}
 	}
 }
 
-// everyNodeScene is a scene exercising all 25 shipped scene IR node kinds (the
-// scene/policy.go policyTable set): the 20 leaf kinds and the 5 container kinds.
+// everyNodeScene is a scene exercising all 26 shipped scene IR node kinds (the
+// scene/policy.go policyTable set): the 21 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
 func everyNodeScene() scene.Scene {
@@ -350,6 +352,11 @@ func everyNodeScene() scene.Scene {
 					scene.ChipRow{Label: "COMMON BUILDS", Wrap: true, Chips: []scene.ChipSpec{
 						{Label: "Finance"}, {Label: "HR"}, {Label: "Sales", Tone: scene.ChipSolid, Color: scene.ColorAccent},
 					}},
+					scene.Banner{
+						Lead: rt("Run it internally, sell it externally"), Body: rt("the power of an agentic platform"),
+						Icon: "star", Fill: scene.ColorAccent,
+						Trailing: []scene.SlideNode{scene.Button{Label: "Start free", TrailingIcon: "arrow-right"}},
+					},
 				},
 			},
 		},
@@ -366,12 +373,12 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 
 	// Mechanically assert the fixture covers every shipped node kind, so adding a
 	// node without extending this walk fails loudly (the kinds are contiguous,
-	// KindHero..KindChipRow).
+	// KindHero..KindBanner).
 	kinds := map[scene.NodeKind]bool{}
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindChipRow; k++ {
+	for k := scene.KindHero; k <= scene.KindBanner; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}
