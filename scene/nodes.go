@@ -296,6 +296,13 @@ type Image struct {
 	FrameName string
 	Crop      Crop
 	Fit       Fit
+	// CornerRadius rounds the picture's corners from a theme radius token (D-114).
+	// RadiusNone (the zero value) leaves the picture rectangular — byte-identical.
+	CornerRadius RadiusRole
+	// Elevation casts a soft drop shadow on the picture from a theme elevation
+	// token (D-114). ElevationFlat (the zero value) emits no shadow —
+	// byte-identical. Matches the card/surface finish.
+	Elevation ElevationRole
 }
 
 func (Image) NodeKind() NodeKind { return KindImage }

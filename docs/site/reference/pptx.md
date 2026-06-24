@@ -467,6 +467,8 @@ func (im *Image) SetRotation(deg float64) *Image
 func (im *Image) Rotation() float64
 func (im *Image) SetOpacity(alpha int) *Image
 func (im *Image) Opacity() int
+func (im *Image) SetCornerRadius(role RadiusRole) *Image  // roundRect-clip the picture (D-114)
+func (im *Image) SetElevation(role ElevationRole) *Image  // soft drop shadow on the picture (D-114)
 func (im *Image) Bytes() ([]byte, error)
 ```
 Typed mutators and read accessors over an inserted image (P3).

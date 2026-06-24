@@ -1691,6 +1691,30 @@ defaults) is Deckard's product half.
   fill (behind it in z-order), bleeding beyond the box; a nil-backdrop card is
   byte-identical; deterministic.
 
+#### Phase 80 — rounded + shadow image framing (R13.11, MED · engine)
+
+**Subsystem:** pptx (builder Image) + scene (Image node)
+**RFC sections:** §7.1, §11.1, §10.1
+**Deps:** none; brief 63.
+**What lands (R13.11):**
+- `(*pptx.Image).SetCornerRadius(RadiusRole)` / `SetElevation(ElevationRole)`
+  builder methods (thin wrappers over the existing `applyCornerRadius`/
+  `applyShadow` on the pic spPr) + scene `Image.CornerRadius` / `Elevation`.
+  `renderImage` applies them; zero tokens self-gate (RadiusNone → rectangular,
+  ElevationFlat → no shadow) → byte-identical. Image finish now matches the
+  card/surface radius + elevation finish. (`DecorationAsset` framing deferred.)
+**Acceptance criteria:**
+- A framed image emits `prst="roundRect"` + `<a:outerShdw>` and survives a write →
+  reopen → re-write (G6); a scene `Image` with the tokens emits both; a zero-token
+  image is byte-identical.
+
+**Wave 13 (R13) engine reqs complete after Phase 80** — R13.5/.8/.9/.6/.7/.4/.10/.11
+plus the foundations R13.1/.3/.2. R13.12 (soul archetype background+decoration
+policy) and R13.13 (subtle-by-default alphas) are the **product** half (D-059):
+the engine supplies the mechanisms (paper token, backgrounds, decoration color +
+pitch, glows, watermarks, the `opacityAlpha` knob); the soul that *applies* them
+by archetype and keeps them subtle lives in Deckard, not this engine.
+
 ---
 
 ## 4. Post-V1 backlog

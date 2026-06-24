@@ -246,6 +246,15 @@ spacing (0 = a legacy fixed count, byte-identical) so a full-bleed texture keeps
 consistent visual density. It is a mechanism over the existing color tokens, not a new token; the
 `ornaments.Recipe` signature carries the role as its last parameter.
 
+**Image framing** (D-114): the scene `Image.CornerRadius` (a `RadiusRole`) and
+`Image.Elevation` (an `ElevationRole`) clip the picture to a rounded rectangle and
+cast a soft drop shadow from the existing radius/elevation tokens (P2), so image
+finish matches the card/surface finish — a theme swap re-skins both. The builder
+methods `(*Image).SetCornerRadius`/`SetElevation` wrap the same
+`applyCornerRadius`/`applyShadow` the shapes use. `RadiusNone`/`ElevationFlat` (the
+zero values) leave the picture rectangular and shadowless (byte-identical). A
+mechanism over the existing tokens, not a new token.
+
 **Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
 decoration (typically a role-colored `radial_glow`) behind the card's computed
 box, before its fill — a focal halo. It composes the decoration node + the glow

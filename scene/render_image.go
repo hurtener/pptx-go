@@ -49,6 +49,11 @@ func (r *renderer) renderImage(ps *pptx.Slide, box pptx.Box, v Image, slideID st
 		img.SetCrop(v.Crop)
 	}
 	img.SetFit(v.Fit)
+	// Rounded-corner clip + drop shadow from theme tokens (D-114). Both self-gate:
+	// RadiusNone leaves the picture rectangular and ElevationFlat emits no shadow,
+	// so a Phase-10 image (zero tokens) is byte-identical.
+	img.SetCornerRadius(v.CornerRadius)
+	img.SetElevation(v.Elevation)
 	r.stats.Shapes++
 	r.stats.Assets++
 }

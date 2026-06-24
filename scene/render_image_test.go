@@ -308,3 +308,54 @@ func TestRenderImage_UnknownFrameNested(t *testing.T) {
 		t.Fatalf("nested unknown frame not rejected; err = %v", err)
 	}
 }
+
+// TestRenderImage_Framing is R13.11 acceptance 2: a scene Image with CornerRadius
+// + Elevation set emits a roundRect-clipped pic with a drop shadow, and survives
+// a round-trip (D-114).
+func TestRenderImage_Framing(t *testing.T) {
+	resolver, _ := pngResolver()
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "f",
+		Nodes: []scene.SlideNode{scene.Image{
+			AssetID: "asset://x", CornerRadius: scene.RadiusMD, Elevation: scene.ElevationRaised,
+		}},
+	}}}
+	data, _ := render(t, sc, scene.WithAssetResolver(resolver))
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, `prst="roundRect"`) {
+		t.Errorf("framed image missing roundRect geometry:\n%s", slide)
+	}
+	if !strings.Contains(slide, "<a:outerShdw") {
+		t.Errorf("framed image missing drop shadow:\n%s", slide)
+	}
+	// Round-trip: the framing survives reopen + re-write (G6).
+	pres, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	out, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	rt := zipPart(t, out, "ppt/slides/slide1.xml")
+	if !strings.Contains(rt, `prst="roundRect"`) || !strings.Contains(rt, "<a:outerShdw") {
+		t.Errorf("image framing did not survive round-trip")
+	}
+}
+
+// TestRenderImage_FramingZeroByteIdentical is R13.11 acceptance 3: a scene Image
+// with zero CornerRadius/Elevation is byte-identical to a plain image (D-114).
+func TestRenderImage_FramingZeroByteIdentical(t *testing.T) {
+	resolver, _ := pngResolver()
+	mk := func(n scene.Image) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{ID: "z", Nodes: []scene.SlideNode{n}}}}
+	}
+	withZero, _ := render(t, mk(scene.Image{AssetID: "asset://x", CornerRadius: scene.RadiusNone, Elevation: scene.ElevationFlat}), scene.WithAssetResolver(resolver))
+	plain, _ := render(t, mk(scene.Image{AssetID: "asset://x"}), scene.WithAssetResolver(resolver))
+	if !bytes.Equal(withZero, plain) {
+		t.Errorf("zero-token framed image not byte-identical to plain (%d vs %d bytes)", len(withZero), len(plain))
+	}
+	if strings.Contains(zipPart(t, withZero, "ppt/slides/slide1.xml"), `prst="roundRect"`) {
+		t.Errorf("zero-radius image unexpectedly emitted roundRect")
+	}
+}

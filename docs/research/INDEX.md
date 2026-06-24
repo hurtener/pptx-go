@@ -381,6 +381,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   card's computed box (before its fill) via the existing `renderDecoration` with
   the card box as the region — a focal halo that tracks the card across any
   layout. nil = byte-identical. (R13.10, engine.)
+- `63-image-framing.md` — `(*Image).SetCornerRadius(RadiusRole)` /
+  `SetElevation(ElevationRole)` builder methods (thin wrappers over the existing
+  `applyCornerRadius`/`applyShadow` on the pic spPr) + scene `Image.CornerRadius`
+  / `Elevation`; zero tokens self-gate (byte-identical), structural G6 round-trip.
+  (R13.11, engine; `DecorationAsset` framing deferred.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
