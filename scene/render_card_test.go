@@ -315,3 +315,64 @@ func TestCardPaddingScale_Wiring(t *testing.T) {
 		t.Error("PaddingScale=0 is not byte-identical to leaving the field unset")
 	}
 }
+
+// TestCardFillGradient is R13.8 acceptance 1: a card with FillGradient set
+// renders a gradient surface (<a:gradFill>) carrying the From/To role colors,
+// while a solid-fill card does not (D-108).
+func TestCardFillGradient(t *testing.T) {
+	grad := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "g",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Way", Fill: pptx.ColorSurface,
+			FillGradient: &scene.GradientFill{From: pptx.ColorAccent, To: pptx.ColorAccentAlt, Angle: 90},
+			Body:         []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+		}},
+	}}}
+	data, _ := render(t, grad)
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, "<a:gradFill") {
+		t.Errorf("gradient card missing <a:gradFill>:\n%s", slide)
+	}
+	if !strings.Contains(slide, "2563EB") || !strings.Contains(slide, "7C3AED") {
+		t.Errorf("gradient card missing From/To role colors (2563EB / 7C3AED)")
+	}
+}
+
+// TestCardFillGradient_NilByteIdentical is R13.8 acceptance 2 + 3: a nil
+// FillGradient card is byte-identical across renders (and uses a solid fill, no
+// gradFill on the surface) (D-108).
+func TestCardFillGradient_NilByteIdentical(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "s",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Way", Fill: pptx.ColorSurface,
+			Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+		}},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("solid-fill card not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+	if strings.Contains(zipPart(t, a, "ppt/slides/slide1.xml"), "<a:gradFill") {
+		t.Errorf("solid-fill card unexpectedly emitted a gradient surface")
+	}
+}
+
+// TestCardFillGradient_Deterministic is R13.8 acceptance 3: a gradient card
+// re-renders byte-identically (D-108).
+func TestCardFillGradient_Deterministic(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "gd",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Way", Fill: pptx.ColorSurface,
+			FillGradient: &scene.GradientFill{From: pptx.ColorSurface, To: pptx.ColorSurfaceAlt, Angle: 90},
+			Body:         []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+		}},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("gradient card not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}

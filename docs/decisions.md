@@ -3532,4 +3532,42 @@ byte-identical per curated preset; the role threads through all six recipes
 
 ---
 
+## D-108 — Surface fill gradient (`Card.FillGradient`) (Wave 13 / Phase 74, R13.8)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.8 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) — reference
+cards use gradient fills for depth (a vertical fade from a saturated top to a
+lighter base); Deckard's flat single-color cards read as solid swatches. The
+card surface fill needs an optional gradient.
+
+**Decision:** Add a scene `GradientFill{From, To pptx.ColorRole; Angle int}` type
+and `Card.FillGradient *GradientFill`. `renderCardChrome` picks the surface fill:
+when `FillGradient` is non-nil, `pptx.LinearGradient(Angle, {0,From},{1,To})`;
+else the unchanged `pptx.SolidFill(TokenColor(c.fill))`. nil = solid →
+**byte-identical**. A pointer makes "unset" unambiguous (`ColorRole`'s zero is a
+real color); `Card` is already non-comparable (`Body []SlideNode`), so the
+pointer field adds no constraint. A distinct 2-role `{From,To,Angle}` type (vs the
+N-stop `Background.Stops`) is the natural surface-depth API.
+
+**No engine auto-tint.** R13.8 mentions a convenience where `To` defaults to a
+slightly-darker role if only `From` is given. Which direction and how much is a
+*taste* decision → the soul's (D-026), not the engine's. Both stops are explicit;
+the auto-tint is documented as the caller's job.
+
+**Scope: Card only.** `cardChrome` is shared with CardSection, but only `Card`
+gets the field this phase; Bento-cell and Container fills are separate paths.
+Card is the dominant case and satisfies the acceptance criterion; the
+`GradientFill` type is reusable when CardSection/Bento/Container follow (§4.3
+deviation).
+
+**Consequences:** No new theme token (mechanism over surface roles, P2), no OOXML
+/ `restorenamespaces` change (`<a:gradFill>`/`<a:gs>` already emit via the
+background gradient path), deterministic. The header band / ribbon / status dot
+draw over the gradient surface exactly as over a solid fill. Tested: a gradient
+card emits `<a:gradFill>` with the `From`/`To` role colors; a solid card is
+byte-identical and emits no surface gradient; both deterministic.
+
+---
+
 *Append new entries below this line.*

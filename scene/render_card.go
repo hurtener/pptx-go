@@ -100,6 +100,7 @@ type cardChrome struct {
 	icon         string
 	pill         string
 	fill         ColorRole
+	fillGradient *GradientFill // 2-stop surface gradient; nil = solid fill (D-108)
 	outline      bool
 	border       BorderStyle
 	size         CardSize
@@ -352,10 +353,19 @@ func (r *renderer) cardHeaderBottom(box pptx.Box, c cardChrome) pptx.EMU {
 // returns the body region (inset by padding, below the header). It is
 // deterministic: integer-EMU geometry, no map iteration (D-035).
 func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, slideID string) pptx.Box {
-	// 1. Background rounded-rect: fill + border + elevation shadow.
+	// 1. Background rounded-rect: fill + border + elevation shadow. A non-nil
+	// fillGradient replaces the solid fill with a 2-stop linear surface gradient
+	// (D-108); nil keeps the solid fill (byte-identical).
+	surfaceFill := pptx.SolidFill(pptx.TokenColor(c.fill))
+	if c.fillGradient != nil {
+		surfaceFill = pptx.LinearGradient(float64(c.fillGradient.Angle),
+			pptx.GradientStop{Pos: 0, Color: pptx.TokenColor(c.fillGradient.From)},
+			pptx.GradientStop{Pos: 1, Color: pptx.TokenColor(c.fillGradient.To)},
+		)
+	}
 	opts := []pptx.ShapeOption{
 		pptx.WithRadius(pptx.RadiusLG),
-		pptx.WithFill(pptx.SolidFill(pptx.TokenColor(c.fill))),
+		pptx.WithFill(surfaceFill),
 	}
 	switch c.border {
 	case BorderNone:
@@ -639,7 +649,7 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 	// card never draws past the safe area.
 	body := r.renderCardChrome(ps, box, cardChrome{
 		header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill,
-		fill: v.Fill, outline: v.Outline, border: v.BorderStyle, size: v.Size,
+		fill: v.Fill, fillGradient: v.FillGradient, outline: v.Outline, border: v.BorderStyle, size: v.Size,
 		layout: v.Layout, elevation: v.Elevation,
 		headerFill: v.HeaderFill, statusDot: v.StatusDot, watermark: v.Watermark,
 		paddingScale: v.PaddingScale, ribbon: v.Ribbon,
