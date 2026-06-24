@@ -53,13 +53,16 @@ z-layer). A zero `Background` (`BackgroundNone`) draws nothing. The kinds:
 
 ```go
 type Background struct {
-    Kind     BackgroundKind    // BackgroundNone | BackgroundColor | BackgroundGradient | BackgroundAsset | BackgroundRadial
-    Color    pptx.ColorRole    // BackgroundColor — solid fill (e.g. pptx.ColorPaper for a tinted paper canvas)
+    Kind     BackgroundKind    // BackgroundNone | BackgroundColor | BackgroundGradient | BackgroundAsset | BackgroundRadial | BackgroundMesh
+    Color    pptx.ColorRole    // BackgroundColor — solid fill (e.g. pptx.ColorPaper for a tinted paper canvas); BackgroundMesh — the base canvas under the glows
     Gradient [2]pptx.ColorRole // BackgroundGradient — legacy 2-role linear gradient (used when Stops is empty)
     Stops    []scene.GradientStop // BackgroundGradient — multi-stop wash: 2..8 ascending stops in [0,1]
     Angle    int               // linear gradient angle (degrees clockwise from +x; 0 = left→right, 90 = top→bottom)
     AssetID  scene.AssetID     // BackgroundAsset — full-bleed picture (needs an AssetResolver)
+    Mesh     []scene.MeshGlow  // BackgroundMesh — N pooled radial glows over the base canvas
 }
+
+type MeshGlow struct { Anchor Anchor; Color pptx.ColorRole; Radius pptx.EMU; Alpha int } // a soft pooled glow
 
 type GradientStop struct { Pos float64; Color pptx.ColorRole } // Pos in [0,1]
 ```
@@ -93,6 +96,22 @@ Background: scene.Background{
     Stops: []scene.GradientStop{
         {Pos: 0, Color: pptx.ColorSurface}, // brighter center
         {Pos: 1, Color: pptx.ColorCanvas},  // darker edges
+    },
+},
+```
+
+For a soft cover "mesh" wash — diffuse colored light pooling at one or two
+corners over the paper — use `BackgroundMesh`: a base canvas (`Color`) plus N
+low-alpha radial glows pooled at caller anchors. Keep each `Alpha` low so the
+pools whisper:
+
+```go
+Background: scene.Background{
+    Kind:  scene.BackgroundMesh,
+    Color: pptx.ColorPaper, // the base canvas under the glows
+    Mesh: []scene.MeshGlow{
+        {Anchor: scene.AnchorTopLeft, Color: pptx.ColorAccent, Radius: pptx.In(4), Alpha: 12000},
+        {Anchor: scene.AnchorBottomRight, Color: pptx.ColorAccentAlt, Radius: pptx.In(5), Alpha: 10000},
     },
 },
 ```

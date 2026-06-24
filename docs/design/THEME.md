@@ -225,6 +225,14 @@ spotlight/vignette), consuming the same token-role `Stops` (or the legacy 2-role
 new token; a theme swap re-paints it. The focal point is centered (the
 focal-offset knob is deferred — D-106).
 
+**Mesh background** (D-112): `BackgroundMesh` draws a base canvas fill plus the N
+low-alpha radial glows in `Background.Mesh` (`MeshGlow{Anchor; Color
+pptx.ColorRole; Radius; Alpha}`), pooled at caller anchors over the canvas — the
+diffuse cover "mesh" wash. Each glow's color is a surface role and its `Alpha` is
+the OOXML opacity (kept subtle by the soul, R13.13), so a theme swap re-paints
+the mesh. A mechanism over the existing color tokens, not a new token; an empty
+`Mesh` draws nothing.
+
 **Decoration color role** (D-107): the scene `Decoration.Color *pptx.ColorRole`
 overrides the ornament's color role (nil = `ColorAccent`, the D-054 pointer
 pattern → byte-identical). The curated ornament recipes (`grid_dots`,

@@ -33,7 +33,28 @@ const (
 	// (a 50%-inset circle); a focal offset is not yet exposed (D-106). Appended
 	// last so existing BackgroundKind values are unchanged (byte-identical).
 	BackgroundRadial
+
+	// BackgroundMesh draws a soft "mesh" wash: a base canvas fill plus the N
+	// low-alpha radial glows in Background.Mesh, pooled at caller-chosen anchors
+	// over the canvas (the cover/section mesh look — D-112). An empty Mesh draws
+	// nothing (absent config). Appended last so existing values are unchanged.
+	BackgroundMesh
 )
+
+// MeshGlow is one pooled radial glow in a BackgroundMesh (D-112): a soft circle
+// of light at Anchor, of the surface role Color, radius Radius (EMU), fading from
+// the center alpha Alpha (OOXML 0..100000) to transparent at the edge.
+type MeshGlow struct {
+	// Anchor is where the glow pools on the slide (its center).
+	Anchor Anchor
+	// Color is the glow's surface color role (resolved against the active theme).
+	Color pptx.ColorRole
+	// Radius is the glow circle's radius in EMU; a non-positive radius is skipped.
+	Radius pptx.EMU
+	// Alpha is the glow center's OOXML opacity (0..100000); keep it low for a
+	// subtle pool. The edge fades to fully transparent.
+	Alpha int
+}
 
 // GradientStop is one color stop in a multi-stop background gradient (D-105).
 // Pos is the stop position in [0,1] (0 = start, 1 = end); Color is a surface
@@ -56,6 +77,8 @@ func (k BackgroundKind) String() string {
 		return "asset"
 	case BackgroundRadial:
 		return "radial"
+	case BackgroundMesh:
+		return "mesh"
 	default:
 		return "none"
 	}
@@ -114,6 +137,11 @@ type Background struct {
 	// AssetID is the asset reference for a full-bleed picture background
 	// (Kind == BackgroundAsset). Resolved via the render's AssetResolver.
 	AssetID AssetID
+
+	// Mesh holds the pooled radial glows for a BackgroundMesh (D-112), drawn over
+	// the base canvas fill in slice order. Empty draws nothing (absent config).
+	// Adds no comparability constraint beyond the Stops slice above.
+	Mesh []MeshGlow
 }
 
 // ─── VariantDark pinned palette ──────────────────────────────────────────────

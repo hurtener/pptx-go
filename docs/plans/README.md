@@ -1661,6 +1661,21 @@ defaults) is Deckard's product half.
   proportionally fewer; a legacy (`Pitch == 0`) pattern is byte-identical; a tiny
   pitch warns + caps; deterministic.
 
+#### Phase 78 — gradient-mesh background (R13.4, HIGH · engine)
+
+**Subsystem:** scene — Layer 2 renderer (Background)
+**RFC sections:** §10.1, §7.1
+**Deps:** Phase 72 (radial fill), Phase 73 (role glows); brief 61.
+**What lands (R13.4):**
+- A `BackgroundMesh` kind (appended last) + `MeshGlow{Anchor; Color
+  pptx.ColorRole; Radius pptx.EMU; Alpha int}` + `Background.Mesh []MeshGlow`: a
+  base canvas fill + N low-alpha caller-anchored radial glows pooled over it (the
+  cover mesh wash), reusing `pptx.RadialGradient`. An empty `Mesh` emits no shapes
+  (absent-config); a new kind = byte-identical when unused.
+**Acceptance criteria:**
+- A ≥2-glow mesh emits a base rect + one radial ellipse per glow at the specified
+  anchors; an empty mesh emits nothing; re-render deterministic.
+
 ---
 
 ## 4. Post-V1 backlog
