@@ -1537,6 +1537,26 @@ defaults) is Deckard's product half.
   background's rect fill survives `pptx.Open`; the default-theme case is
   byte-identical to `ColorCanvas`.
 
+#### Phase 71 — multi-stop background gradient (R13.3, MED · engine)
+
+**Subsystem:** scene — Layer 2 renderer (Background)
+**RFC sections:** §10.1, §10.2
+**Deps:** none; brief 54.
+**What lands (R13.3):**
+- A scene `GradientStop{Pos float64; Color pptx.ColorRole}` + a
+  `Background.Stops []GradientStop` field (2..8 ascending stops in [0,1]) that
+  supersedes the legacy `Gradient [2]ColorRole` pair when non-empty, so a hero
+  wash with 3–4 hues is expressible. `pptx.LinearGradient` is already variadic.
+- `renderBackground` validates the stops (`backgroundGradientStops`); invalid
+  (`<2`, `>8`, out of [0,1], not ascending) → one `LayoutWarning` + skip
+  (D-026). Empty `Stops` → the legacy 2-role path (byte-identical). The slice
+  makes `Background` non-comparable.
+**Acceptance criteria:**
+- A 3-stop gradient emits 3 `<a:gs>` stops and round-trips; invalid stops warn
+  and emit no gradient shape; a legacy 2-role background is byte-identical;
+  re-render is deterministic. Foundation for R13.2 radial (Phase 72): the same
+  `Stops` + a `BackgroundRadial` kind feeding `pptx.RadialGradient`.
+
 ---
 
 ## 4. Post-V1 backlog

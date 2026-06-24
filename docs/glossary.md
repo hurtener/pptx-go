@@ -636,6 +636,16 @@ ornaments (`radial_glow`, `glow_ring`) as true gradients rather than banded
 solids. Public API: `pptx.LinearGradient` / `pptx.RadialGradient` with
 `GradientStop`s. Joins `SolidFill` / `NoFill` as a `Fill`.
 
+## Gradient stops (background)
+
+The scene `Background.Stops []GradientStop` field (D-105): a 2–8-stop,
+ascending-in-`[0,1]` multi-hue background wash, each stop a `{Pos float64;
+Color pptx.ColorRole}`. When non-empty it supersedes the legacy two-role
+`Background.Gradient` pair (which stays byte-identical when `Stops` is empty).
+Invalid stops (`<2`, `>8`, out of `[0,1]`, or not strictly ascending) record a
+`LayoutWarning` and skip the fill (D-026 — no panic). The slice makes
+`Background` non-comparable. See `DECKARD-PRODUCT-REQUIREMENTS.md` R13.3.
+
 ## Grow-to-fit
 
 The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their

@@ -28,6 +28,16 @@ const (
 	BackgroundAsset
 )
 
+// GradientStop is one color stop in a multi-stop background gradient (D-105).
+// Pos is the stop position in [0,1] (0 = start, 1 = end); Color is a surface
+// role resolved against the active theme so a theme swap re-paints the stop (P2).
+type GradientStop struct {
+	// Pos is the stop position along the gradient axis, in [0,1].
+	Pos float64
+	// Color is the surface color role at this stop.
+	Color pptx.ColorRole
+}
+
 // String returns the background kind's name.
 func (k BackgroundKind) String() string {
 	switch k {
@@ -60,6 +70,10 @@ func (k BackgroundKind) String() string {
 // Kind == BackgroundAsset. A missing resolver or an unresolvable ID records a
 // LayoutWarning and skips the fill; the slide renders without a background
 // rather than failing (RFC §10.2 — no panics, degrade to warning).
+//
+// Stops is an optional multi-stop gradient (D-105). When non-empty it
+// supersedes Gradient for a BackgroundGradient; when empty the two-role
+// Gradient + Angle path runs unchanged (byte-identical to pre-D-105 output).
 type Background struct {
 	// Kind selects the fill type; zero (BackgroundNone) draws nothing.
 	Kind BackgroundKind
@@ -69,9 +83,19 @@ type Background struct {
 	Color pptx.ColorRole
 
 	// Gradient holds the two surface color roles for a linear gradient
-	// (Kind == BackgroundGradient). Index 0 is the start stop (Pos 0.0),
-	// index 1 is the end stop (Pos 1.0). Both resolve against the active theme.
+	// (Kind == BackgroundGradient) when Stops is empty. Index 0 is the start
+	// stop (Pos 0.0), index 1 is the end stop (Pos 1.0). Both resolve against
+	// the active theme.
 	Gradient [2]pptx.ColorRole
+
+	// Stops is an optional multi-stop gradient (2..8 ascending stops in [0,1])
+	// for Kind == BackgroundGradient. When non-empty it supersedes Gradient (the
+	// legacy two-role pair); when empty, Gradient + Angle drive a two-stop linear
+	// gradient (byte-identical to pre-D-105 output). Invalid stops (<2, >8, out
+	// of [0,1], or not strictly ascending) record a LayoutWarning and skip the
+	// fill (RFC §10.2 — degrade to a warning, no panic). The slice makes
+	// Background non-comparable; compare with reflect.DeepEqual.
+	Stops []GradientStop
 
 	// Angle is the linear gradient angle in degrees clockwise from the positive
 	// x-axis (used when Kind == BackgroundGradient). 0° = left-to-right,

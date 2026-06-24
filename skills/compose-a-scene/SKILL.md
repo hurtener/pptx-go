@@ -29,11 +29,12 @@ type Scene struct {
 }
 
 type SceneSlide struct {
-    ID      string        // your label; used in warnings/timings
-    Layout  LayoutKind    // structural intent → a master layout
-    Nodes   []SlideNode   // top-level node list
-    Notes   RichText      // speaker notes (optional)
-    Variant Variant       // theme variant (see below)
+    ID         string       // your label; used in warnings/timings
+    Layout     LayoutKind   // structural intent → a master layout
+    Nodes      []SlideNode  // top-level node list
+    Notes      RichText     // speaker notes (optional)
+    Variant    Variant      // theme variant (see below)
+    Background  Background   // full-bleed slide background (optional; zero = none)
 }
 
 type Metadata struct {
@@ -44,6 +45,43 @@ type Metadata struct {
 ```
 
 `Metadata` (when non-empty) is written to `docProps/core.xml`.
+
+### Slide background
+
+`SceneSlide.Background` paints a full-bleed fill behind all content (the lowest
+z-layer). A zero `Background` (`BackgroundNone`) draws nothing. The kinds:
+
+```go
+type Background struct {
+    Kind     BackgroundKind    // BackgroundNone | BackgroundColor | BackgroundGradient | BackgroundAsset
+    Color    pptx.ColorRole    // BackgroundColor — solid fill (e.g. pptx.ColorPaper for a tinted paper canvas)
+    Gradient [2]pptx.ColorRole // BackgroundGradient — legacy 2-role linear gradient (used when Stops is empty)
+    Stops    []scene.GradientStop // BackgroundGradient — multi-stop wash: 2..8 ascending stops in [0,1]
+    Angle    int               // linear gradient angle (degrees clockwise from +x; 0 = left→right, 90 = top→bottom)
+    AssetID  scene.AssetID     // BackgroundAsset — full-bleed picture (needs an AssetResolver)
+}
+
+type GradientStop struct { Pos float64; Color pptx.ColorRole } // Pos in [0,1]
+```
+
+For a multi-hue hero wash, set `Stops` (it supersedes `Gradient`):
+
+```go
+Background: scene.Background{
+    Kind: scene.BackgroundGradient,
+    Stops: []scene.GradientStop{
+        {Pos: 0, Color: pptx.ColorAccent},
+        {Pos: 0.5, Color: pptx.ColorAccentAlt},
+        {Pos: 1, Color: pptx.ColorCanvas},
+    },
+    Angle: 45,
+},
+```
+
+`Stops` must be 2–8 stops, each `Pos` in `[0,1]`, strictly ascending — otherwise
+the renderer records one warning and skips the fill (it never panics). An empty
+`Stops` falls back to the two-role `Gradient` pair (byte-identical to the
+2-stop form).
 
 **`LayoutKind`** — `LayoutCover`, `LayoutTitleContent`, `LayoutTwoColumn`,
 `LayoutCardGrid`, `LayoutFullBleed`, `LayoutBlank`. A structural intent; it maps

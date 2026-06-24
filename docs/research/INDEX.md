@@ -337,6 +337,12 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   tinted off-white "paper" canvas; a role *without* a theme1.xml slot (keeps
   its default on read-back, like `TextMuted`), but its resolved background RGB
   round-trips. (R13.1, engine half.)
+- `54-multistop-background-gradient.md` — extend the scene `Background` from a
+  fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
+  `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side
+  field extension. Empty `Stops` → legacy 2-role path (byte-identical); invalid
+  stops → `LayoutWarning` + skip (D-026); the slice makes `Background`
+  non-comparable. (R13.3, engine; foundation for R13.2 radial.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

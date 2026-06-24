@@ -155,6 +155,119 @@ func TestBackground_GradientSlide(t *testing.T) {
 	}
 }
 
+// TestBackground_MultiStopGradient verifies that a Stops-driven gradient renders
+// exactly N stops and round-trips through pptx.Open (D-105, R13.3 acceptance 1).
+func TestBackground_MultiStopGradient(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "bg-multistop",
+		Background: scene.Background{
+			Kind: scene.BackgroundGradient,
+			Stops: []scene.GradientStop{
+				{Pos: 0, Color: pptx.ColorAccent},
+				{Pos: 0.5, Color: pptx.ColorAccentAlt},
+				{Pos: 1, Color: pptx.ColorCanvas},
+			},
+			Angle: 45,
+		},
+	}}}
+	data, stats := render(t, sc)
+	if len(stats.Warnings) != 0 {
+		t.Errorf("multi-stop gradient: unexpected warnings: %+v", stats.Warnings)
+	}
+	// The emitted XML must carry three gradient stops.
+	if n := strings.Count(zipPart(t, data, "ppt/slides/slide1.xml"), "<a:gs "); n != 3 {
+		t.Errorf("multi-stop gradient: <a:gs> count = %d, want 3", n)
+	}
+
+	pres, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	fill := pres.Slides()[0].Shapes()[0].Fill()
+	if fill == nil || fill.Kind() != pptx.FillGradient {
+		t.Fatalf("multi-stop gradient: fill kind = %v, want FillGradient", fill)
+	}
+	grad, ok := fill.Gradient()
+	if !ok || len(grad.Stops) != 3 {
+		t.Errorf("multi-stop gradient: round-trip stops = %d, want 3", len(grad.Stops))
+	}
+}
+
+// TestBackground_InvalidStopsWarn verifies that invalid Stops record exactly one
+// warning and emit no gradient shape, without panicking (D-105, R13.3
+// acceptance 2; RFC §10.2 warn-don't-fail).
+func TestBackground_InvalidStopsWarn(t *testing.T) {
+	cases := map[string][]scene.GradientStop{
+		"too few":       {{Pos: 0, Color: pptx.ColorAccent}},
+		"out of range":  {{Pos: 0, Color: pptx.ColorAccent}, {Pos: 1.5, Color: pptx.ColorCanvas}},
+		"not ascending": {{Pos: 0.8, Color: pptx.ColorAccent}, {Pos: 0.2, Color: pptx.ColorCanvas}},
+		"negative":      {{Pos: -0.1, Color: pptx.ColorAccent}, {Pos: 1, Color: pptx.ColorCanvas}},
+	}
+	for name, stops := range cases {
+		t.Run(name, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{
+				ID:         "bad",
+				Background: scene.Background{Kind: scene.BackgroundGradient, Stops: stops},
+			}}}
+			data, stats := render(t, sc)
+			if len(stats.Warnings) != 1 {
+				t.Errorf("invalid stops %q: warnings = %d, want 1 (%+v)", name, len(stats.Warnings), stats.Warnings)
+			}
+			pres, err := pptx.NewFromBytes(data)
+			if err != nil {
+				t.Fatalf("NewFromBytes: %v", err)
+			}
+			for _, sh := range pres.Slides()[0].Shapes() {
+				if f := sh.Fill(); f != nil && f.Kind() == pptx.FillGradient {
+					t.Errorf("invalid stops %q: a gradient shape was emitted", name)
+				}
+			}
+		})
+	}
+}
+
+// TestBackground_LegacyGradientByteIdentical verifies that an empty-Stops
+// (legacy two-role) gradient is byte-identical across a re-render and unaffected
+// by the multi-stop path (D-105, R13.3 acceptance 3 + 4 determinism).
+func TestBackground_LegacyGradientByteIdentical(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "legacy",
+		Background: scene.Background{
+			Kind:     scene.BackgroundGradient,
+			Gradient: [2]pptx.ColorRole{pptx.ColorAccent, pptx.ColorCanvas},
+			Angle:    90,
+		},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("legacy two-role gradient not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}
+
+// TestBackground_MultiStopDeterministic verifies a multi-stop gradient re-renders
+// byte-identically (D-105, R13.3 acceptance 4).
+func TestBackground_MultiStopDeterministic(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "det",
+		Background: scene.Background{
+			Kind: scene.BackgroundGradient,
+			Stops: []scene.GradientStop{
+				{Pos: 0, Color: pptx.ColorAccent},
+				{Pos: 0.33, Color: pptx.ColorAccentAlt},
+				{Pos: 0.66, Color: pptx.ColorAccentWarm},
+				{Pos: 1, Color: pptx.ColorCanvas},
+			},
+			Angle: 30,
+		},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("multi-stop gradient not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}
+
 // TestBackground_NoneDrawsNothing verifies that BackgroundNone (the zero value)
 // is byte-identical to a slide with no Background field set at all — both light
 // variant (RFC §10.1 backward-compat guarantee).
