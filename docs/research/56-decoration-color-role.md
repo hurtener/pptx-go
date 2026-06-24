@@ -60,8 +60,9 @@ Phase 73 lets the caller pick the decoration color, defaulting to accent
 - Add `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`); resolve it in
   `render_decoration` and pass to the recipe.
 - Update the recipe unit tests (assets/ornaments) and the registry test to the
-  new signature; add a scene black-box test: a `Color=ColorTextInverse` (white)
-  decoration emits a different `srgbClr` than the accent default, and an unset
+  new signature; add a scene black-box test: a `Color`-set decoration (the shipped
+  test uses `ColorError` = `DC2626`, a surface role distinct from the accent
+  `2563EB`) emits a different `srgbClr` than the accent default, and an unset
   `Color` is byte-identical to the pre-change build.
 - THEME.md mechanism note, glossary, compose-a-scene skill, docs/site catalog.
   D-107. CHANGELOG note for the `OrnamentRecipe` signature break.

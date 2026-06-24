@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	assetornaments "github.com/hurtener/pptx-go/assets/ornaments"
 	"github.com/hurtener/pptx-go/pptx"
 	"github.com/hurtener/pptx-go/scene"
 	"github.com/hurtener/pptx-go/scene/ornaments"
@@ -300,6 +301,29 @@ func TestDecoration_TextWatermarkDeterministic(t *testing.T) {
 	}
 }
 
+// TestDecoration_TextWatermarkFontSizeDeterministic covers the explicit-FontSize
+// float-scale path (FontScale = targetPt/displaySize): it must serialize
+// byte-identically across renders (D-109, D-115 M2).
+func TestDecoration_TextWatermarkFontSizeDeterministic(t *testing.T) {
+	grey := pptx.ColorSurfaceAlt
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "wf",
+		Nodes: []scene.SlideNode{scene.Decoration{
+			Kind: scene.DecorationText, Text: "02", Color: &grey, Opacity: 0.1,
+			FontSize: 132, Anchor: scene.AnchorTopRight,
+		}},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("FontSize text watermark not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+	// The explicit point size must reach the run (FontScale path emits a reduced/scaled @sz).
+	if !strings.Contains(zipPart(t, a, "ppt/slides/slide1.xml"), ">02<") {
+		t.Errorf("FontSize watermark missing the text run")
+	}
+}
+
 // TestDecoration_Starfield is R13.6 acceptance 1-3: a starfield over a full-bleed
 // box emits dots of >=2 distinct sizes and >=2 distinct alphas, a bigger box
 // yields more dots, the role colors them, and two renders are byte-identical
@@ -434,7 +458,16 @@ func TestDecoration_PatternPitchCapWarns(t *testing.T) {
 	if caps != 1 {
 		t.Errorf("tiny-pitch grid: %d cap warnings, want 1 (%+v)", caps, stats.Warnings)
 	}
-	if stats.Shapes > 2000 {
-		t.Errorf("tiny-pitch grid emitted %d dots, want <= 2000 cap", stats.Shapes)
+	if stats.Shapes > ornaments.PatternMaxDots {
+		t.Errorf("tiny-pitch grid emitted %d dots, want <= %d cap", stats.Shapes, ornaments.PatternMaxDots)
+	}
+}
+
+// TestOrnamentPatternCap_MirrorsRecipeCap pins the warn-threshold to the recipe
+// cap so they can never drift (D-115, H1).
+func TestOrnamentPatternCap_MirrorsRecipeCap(t *testing.T) {
+	if ornaments.PatternMaxDots != assetornaments.PatternMaxDots {
+		t.Errorf("scene/ornaments.PatternMaxDots (%d) != assets/ornaments.PatternMaxDots (%d)",
+			ornaments.PatternMaxDots, assetornaments.PatternMaxDots)
 	}
 }

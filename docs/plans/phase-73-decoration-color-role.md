@@ -118,7 +118,7 @@ extensions must add the `role` arg (they may ignore it). v0.x; CHANGELOG noted.
 
 ## 11. Acceptance criteria
 
-1. A decoration with `Color = &ColorTextInverse` (white) emits a different `srgbClr` than the accent default for the same preset.
+1. A decoration with `Color = &ColorError` (a role distinct from accent — the shipped test uses `ColorError` / `DC2626` vs the accent `2563EB`) emits a different `srgbClr` than the accent default for the same preset.
 2. A decoration with `Color == nil` is byte-identical to the pre-Phase-73 build, for every curated preset.
 3. The `role` threads through all 6 curated recipes (solid + glow).
 4. `make lint`/`coverage`/`preflight`/`check-mirror` clean; `-race` clean.

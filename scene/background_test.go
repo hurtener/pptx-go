@@ -245,6 +245,32 @@ func TestBackground_LegacyGradientByteIdentical(t *testing.T) {
 	}
 }
 
+// TestBackground_LegacyGradientStructure pins the exact emitted gradient structure
+// of the legacy two-role path so the D-106 shared-resolver refactor cannot
+// silently shift bytes (the riskiest Wave-13 byte-identity claim — D-115). The
+// legacy [2]ColorRole maps to exactly two stops at pos 0 and 100000 with the role
+// colors and the angle in 1/60000°.
+func TestBackground_LegacyGradientStructure(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "legacy-struct",
+		Background: scene.Background{
+			Kind:     scene.BackgroundGradient,
+			Gradient: [2]pptx.ColorRole{pptx.ColorAccent, pptx.ColorCanvas},
+			Angle:    90,
+		},
+	}}}
+	data, _ := render(t, sc)
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if n := strings.Count(slide, "<a:gs "); n != 2 {
+		t.Errorf("legacy gradient: %d <a:gs> stops, want exactly 2", n)
+	}
+	for _, want := range []string{`<a:gs pos="0">`, `<a:gs pos="100000">`, "2563EB", "FFFFFF", `ang="5400000"`} {
+		if !strings.Contains(slide, want) {
+			t.Errorf("legacy gradient missing %q:\n%s", want, slide)
+		}
+	}
+}
+
 // TestBackground_MultiStopDeterministic verifies a multi-stop gradient re-renders
 // byte-identically (D-105, R13.3 acceptance 4).
 func TestBackground_MultiStopDeterministic(t *testing.T) {
