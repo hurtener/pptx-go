@@ -37,13 +37,18 @@ const (
 	NameStarfield     = "starfield" // organic scatter of size/alpha-varied dots (R13.6, D-110)
 )
 
+// PatternMaxDots re-exports the pattern-recipe dot cap (R13.7, D-111) so scene
+// code (render_decoration's pitch-projection warning) shares the single source of
+// truth with the recipes and the two can never drift (D-115).
+const PatternMaxDots = assetornaments.PatternMaxDots
+
 // Registry is an immutable, name-keyed set of ornament recipes. Lookup and Names
 // are safe on a nil *Registry (treated as empty).
 type Registry struct {
 	m map[string]Recipe
 }
 
-// Curated returns a registry seeded with the six curated ornaments.
+// Curated returns a registry seeded with the seven curated ornaments.
 func Curated() *Registry {
 	return &Registry{m: map[string]Recipe{
 		NameGlowRing:      assetornaments.GlowRing,

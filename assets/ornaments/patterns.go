@@ -2,10 +2,14 @@ package ornaments
 
 import "github.com/hurtener/pptx-go/pptx"
 
-// patternMaxDots caps the dots a pattern recipe emits, so a fine pitch over a
-// full-bleed box cannot explode the part size (R13.7, D-111). render_decoration
-// emits a LayoutWarning when a caller pitch projects past this cap.
-const patternMaxDots = 2000
+// PatternMaxDots caps the dots a pattern recipe emits, so a fine pitch over a
+// full-bleed box cannot explode the part size (R13.7, D-111). It is the single
+// source of truth for the cap: scene/render_decoration.go's ornamentPatternCap
+// references it so the warn-threshold can never drift from the recipe cap (D-115).
+const PatternMaxDots = 2000
+
+// patternMaxDots is the internal alias used by the recipes below.
+const patternMaxDots = PatternMaxDots
 
 // patternDims returns the column and row counts for a pattern lattice: a
 // box-derived count (cols = box.W/pitch) when pitch > 0, else the legacy fixed

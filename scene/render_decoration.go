@@ -94,10 +94,11 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 	}
 }
 
-// ornamentPatternCap mirrors assets/ornaments.patternMaxDots — the dot cap a
-// pattern recipe enforces. render_decoration warns when a caller pitch projects
-// past it (the recipe then caps silently). Kept in sync by the pitch-cap test.
-const ornamentPatternCap = 2000
+// ornamentPatternCap is the dot cap a pattern recipe enforces — the threshold at
+// which render_decoration warns that a caller pitch projects past it (the recipe
+// then caps silently). It references the recipe's own constant so the two can
+// never drift (D-115).
+const ornamentPatternCap = ornaments.PatternMaxDots
 
 // isPatternPreset reports whether name is a lattice pattern ornament whose dot
 // count derives from Decoration.Pitch (so a cap projection warning applies).

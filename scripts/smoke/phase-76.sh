@@ -30,7 +30,7 @@ if CGO_ENABLED=0 go build ./... >/dev/null 2>&1; then ok "library builds CGo-fre
 grep_check "Starfield recipe"           assets/ornaments/patterns.go 'func Starfield'
 grep_check "NameStarfield registry name" scene/ornaments/registry.go  'NameStarfield'
 grep_check "starfield in Curated()"      scene/ornaments/registry.go  'assetornaments.Starfield'
-run_check  "curated set is seven (incl starfield)" ./scene/ornaments/ 'TestCurated_HasSixOrnaments'
+run_check  "curated set is seven (incl starfield)" ./scene/ornaments/ 'TestCurated_HasSevenOrnaments'
 run_check  "ornament recipes emit shapes (incl starfield)" ./assets/ornaments/ 'TestOrnamentRecipes_EmitShapes'
 run_check  "starfield size+alpha variance + density + determinism" ./scene/ 'TestDecoration_Starfield'
 run_check  "curated decorations byte-identical"            ./scene/ 'TestDecoration_ColorNilByteIdentical'

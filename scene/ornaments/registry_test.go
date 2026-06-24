@@ -12,9 +12,9 @@ func noopRecipe(_ *pptx.Slide, _ pptx.Box, _ int, _ float64, _ pptx.ColorRole, _
 	return 0
 }
 
-// TestCurated_HasSixOrnaments checks the curated factory exposes the six
+// TestCurated_HasSevenOrnaments checks the curated factory exposes the seven
 // reserved names and resolves each.
-func TestCurated_HasSixOrnaments(t *testing.T) {
+func TestCurated_HasSevenOrnaments(t *testing.T) {
 	reg := ornaments.Curated()
 	want := []string{"chevron_arrow", "corner_bracket", "glow_ring", "grid_dots", "noise_overlay", "radial_glow", "starfield"} // sorted
 	if got := reg.Names(); !reflect.DeepEqual(got, want) {

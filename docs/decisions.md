@@ -3808,4 +3808,66 @@ mechanisms, the soul applies them.
 
 ---
 
+## D-115 — Wave 13 §17 checkpoint: pattern-cap single-source-of-truth + test/doc backfill
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+The Wave 13 §17 adversarial checkpoint (R13 backgrounds & finish, Phases 70–80 /
+D-104..D-114) ran a 52-agent workflow (8 dimension finders → 2 skeptics/finding →
+completeness critic → synthesis): **9 confirmed findings, 12 refuted, 7 gaps**.
+Verdict: **healthy** — the IR catalog stayed at 28 kinds, the gradient/radial/mesh
+paths are deterministic and gated, both `OrnamentRecipe` signature breaks landed
+with CHANGELOG notes, and the unused-field-zero-reproduces-prior-output invariant
+holds in every traced path. No P1–P4 / D-026 / D-035 / G6 violation. Defects were
+confined to one latent drift risk, two test-depth gaps, and stale labels.
+
+**Fixed in this PR:**
+- **H1 — pattern-cap constant triplicated.** `patternMaxDots` (recipe),
+  `ornamentPatternCap` (warn threshold), and a hardcoded `2000` in the test each
+  claimed to mirror the others by comment only. Exported
+  `assets/ornaments.PatternMaxDots` as the single source of truth, re-exported it
+  as `scene/ornaments.PatternMaxDots`, pointed `ornamentPatternCap` and the test
+  at it, and added `TestOrnamentPatternCap_MirrorsRecipeCap`. They can no longer
+  drift.
+- **M2 — `DecorationText` explicit-`FontSize` float-scale path had no determinism
+  guard.** The existing watermark determinism test never set `FontSize`, so the
+  `FontScale = targetPt/displaySize` branch was unasserted; added
+  `TestDecoration_TextWatermarkFontSizeDeterministic`.
+- **M1 — phantom `ColorTextInverse`.** The Phase-73 plan + brief cited
+  `Color = &ColorTextInverse` (white) for acceptance — but `ColorTextInverse` is
+  not a `ColorRole` (`TextInverse` is a `TextColorRole`). The shipped test
+  correctly used `ColorError` (`DC2626` vs the accent `2563EB`); corrected the
+  plan + brief to match. Doc-only.
+- **I1 — stale "six" ornament count.** After the starfield (D-110) the curated set
+  is seven; renamed `TestCurated_HasSixOrnaments` → `...HasSevenOrnaments`, fixed
+  the `Curated()` + registry-test docstrings ("six" → "seven"), and updated the
+  phase-76 smoke invocation.
+- **Riskiest-claim hardening** — the D-106 shared-resolver refactor routes the
+  legacy two-role `BackgroundGradient` through `backgroundGradientStopsFor`. The
+  existing tests proved render-twice self-determinism but not the exact emitted
+  structure (no pre-refactor golden exists — D-105 superseded the legacy field the
+  same wave). Added `TestBackground_LegacyGradientStructure` pinning the exact
+  output (two `<a:gs>` at pos 0/100000, the role colors, `ang="5400000"`) so a
+  future resolver edit cannot silently shift the legacy path's bytes.
+
+**Documented as intentional (no change):**
+- The Phase-74 card-gradient test asserts the From/To color pair, not a computed
+  WCAG luminance delta — the delta is a property of the distinct theme tokens, not
+  the gradient mechanism; verifying it would test the palette, not the engine.
+- §19 doc sync is **satisfied** (the completeness critic's "skills not updated"
+  gap is refuted): `compose-a-scene`/`define-a-theme` skills, glossary, docs/site,
+  and THEME.md all carry the Wave-13 surface.
+- External XSD/LibreOffice conformance is a pre-existing decided posture
+  (structural-only in-suite, external validators delegated) — not a Wave-13
+  regression; no new gate added.
+- The empty-`Mesh` light-slide "draw nothing" path is already covered by
+  `TestBackground_MeshEmpty`.
+
+**Consequences:** Wave 13 closes as **healthy**. One drift risk eliminated (the
+cap is now a single exported constant), two test gaps closed, the riskiest
+byte-identity claim pinned by a structural golden, and the doc-drift swept. No
+production behavior changed.
+
+---
+
 *Append new entries below this line.*
