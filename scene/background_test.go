@@ -565,3 +565,83 @@ func TestVariantDark_NoWarning(t *testing.T) {
 		}
 	}
 }
+
+// TestBackground_Mesh is R13.4 acceptance 1: a BackgroundMesh emits a base canvas
+// rect plus one radial-gradient ellipse per glow at distinct anchors (D-112).
+func TestBackground_Mesh(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "mesh",
+		Background: scene.Background{
+			Kind:  scene.BackgroundMesh,
+			Color: pptx.ColorPaper,
+			Mesh: []scene.MeshGlow{
+				{Anchor: scene.AnchorTopLeft, Color: pptx.ColorAccent, Radius: pptx.In(4), Alpha: 12000},
+				{Anchor: scene.AnchorBottomRight, Color: pptx.ColorAccentAlt, Radius: pptx.In(5), Alpha: 10000},
+			},
+		},
+	}}}
+	data, stats := render(t, sc)
+	if len(stats.Warnings) != 0 {
+		t.Errorf("mesh: unexpected warnings: %+v", stats.Warnings)
+	}
+	// base rect + 2 glow ellipses = 3 shapes.
+	if stats.Shapes != 3 {
+		t.Errorf("mesh: %d shapes, want 3 (base + 2 glows)", stats.Shapes)
+	}
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if n := strings.Count(slide, `path="circle"`); n != 2 {
+		t.Errorf("mesh: %d radial glow ellipses, want 2", n)
+	}
+	// Distinct anchors → the two glows have distinct x offsets.
+	offs := regexpAll(`<a:off x="(-?\d+)"`, slide)
+	if len(offs) < 2 || (offs[len(offs)-1] == offs[len(offs)-2]) {
+		t.Errorf("mesh glows not at distinct positions: %v", offs)
+	}
+}
+
+// TestBackground_MeshEmpty is R13.4 acceptance 2: an empty Mesh on a light slide
+// emits no shapes (absent config) and is byte-identical to no background (D-112).
+func TestBackground_MeshEmpty(t *testing.T) {
+	mesh := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:         "empty",
+		Background: scene.Background{Kind: scene.BackgroundMesh},
+		Nodes:      []scene.SlideNode{scene.Heading{Text: rt("Title"), Level: 1}},
+	}}}
+	none := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "empty",
+		Nodes: []scene.SlideNode{scene.Heading{Text: rt("Title"), Level: 1}},
+	}}}
+	m, _ := render(t, mesh)
+	n, _ := render(t, none)
+	if !bytes.Equal(m, n) {
+		t.Errorf("empty mesh not byte-identical to no background (%d vs %d bytes)", len(m), len(n))
+	}
+}
+
+// TestBackground_MeshDeterministic is R13.4 acceptance 3: a mesh re-renders
+// byte-identically (D-112).
+func TestBackground_MeshDeterministic(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "md",
+		Background: scene.Background{
+			Kind:  scene.BackgroundMesh,
+			Color: pptx.ColorPaper,
+			Mesh: []scene.MeshGlow{
+				{Anchor: scene.AnchorTopRight, Color: pptx.ColorAccent, Radius: pptx.In(3), Alpha: 11000},
+				{Anchor: scene.AnchorBottomLeft, Color: pptx.ColorInfo, Radius: pptx.In(4), Alpha: 9000},
+			},
+		},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("mesh not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}
+
+// TestBackgroundKind_MeshString verifies the kind's name (D-112).
+func TestBackgroundKind_MeshString(t *testing.T) {
+	if got := scene.BackgroundMesh.String(); got != "mesh" {
+		t.Errorf("BackgroundMesh.String() = %q, want mesh", got)
+	}
+}

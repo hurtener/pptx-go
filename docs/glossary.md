@@ -662,6 +662,15 @@ same `Background.Stops` (or the legacy 2-role `Background.Gradient`) as the
 linear `BackgroundGradient`. The focal point is centered; a focal-offset knob is
 deferred (center-only in V1). See `DECKARD-PRODUCT-REQUIREMENTS.md` R13.2.
 
+## Mesh background
+
+The scene `BackgroundMesh` kind (D-112): a soft cover "mesh" wash — a base canvas
+fill plus the N low-alpha radial glows in `Background.Mesh` (each a `MeshGlow` =
+`{Anchor; Color pptx.ColorRole; Radius EMU; Alpha int}`), pooled at caller
+anchors over the canvas, drawn via `pptx.RadialGradient` in slice order
+(deterministic). An empty `Mesh` draws nothing. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R13.4.
+
 ## Grow-to-fit
 
 The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their

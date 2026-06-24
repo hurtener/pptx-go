@@ -372,6 +372,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `noise_overlay` / `starfield` derive their count from the box at a caller pitch
   (consistent visual density at any box size). `pitch == 0` = the legacy fixed
   count (byte-identical); capped with a past-cap `LayoutWarning`. (R13.7, engine.)
+- `61-gradient-mesh-background.md` — a `BackgroundMesh` kind + `Background.Mesh
+  []MeshGlow` (`{Anchor; Color ColorRole; Radius EMU; Alpha int}`): a base canvas
+  fill + N low-alpha caller-anchored radial glows pooled over it (the cover mesh
+  look), reusing `pptx.RadialGradient`. Empty mesh → no shapes; byte-identical
+  when unused. (R13.4, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -29,17 +29,25 @@ type SceneSlide struct {
 }
 
 type Background struct {
-	Kind     BackgroundKind   // None | Color | Gradient | Asset | Radial
+	Kind     BackgroundKind   // None | Color | Gradient | Asset | Radial | Mesh
 	Color    pptx.ColorRole   // solid fill (Kind == BackgroundColor)
 	Gradient [2]pptx.ColorRole // legacy 2-role linear gradient (used when Stops empty)
 	Stops    []GradientStop   // multi-stop gradient: 2..8 ascending stops in [0,1]; supersedes Gradient
 	Angle    int              // linear gradient angle, degrees clockwise from +x
 	AssetID  AssetID          // full-bleed picture (Kind == BackgroundAsset)
+	Mesh     []MeshGlow       // base canvas + pooled radial glows (Kind == BackgroundMesh)
 }
 
 type GradientStop struct {
 	Pos   float64        // [0,1]
 	Color pptx.ColorRole
+}
+
+type MeshGlow struct {
+	Anchor Anchor         // where the glow pools (its center)
+	Color  pptx.ColorRole // glow color role
+	Radius pptx.EMU       // glow circle radius
+	Alpha  int            // center OOXML opacity (0..100000); edge fades to 0
 }
 
 type Metadata struct {

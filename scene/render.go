@@ -174,6 +174,36 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(pptx.RadialGradient(stops...)))
 		r.stats.Shapes++
 
+	case BackgroundMesh:
+		if len(bg.Mesh) == 0 {
+			// No glows configured: behave like BackgroundNone (absent config draws
+			// nothing on a light slide; a dark variant still gets its dark canvas).
+			if sl.Variant != VariantDark {
+				return
+			}
+			ps.AddShape(pptx.ShapeRect, full,
+				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorCanvas))))
+			r.stats.Shapes++
+			return
+		}
+		// Base canvas fill (the paper/dark canvas the glows pool over), then the
+		// glows in slice order — deterministic. bg.Color zero = ColorCanvas.
+		ps.AddShape(pptx.ShapeRect, full,
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(bg.Color))))
+		r.stats.Shapes++
+		for _, g := range bg.Mesh {
+			if g.Radius <= 0 {
+				continue
+			}
+			center := g.Anchor.Point(full)
+			gbox := pptx.Box{X: center.X - g.Radius, Y: center.Y - g.Radius, W: 2 * g.Radius, H: 2 * g.Radius}
+			ps.AddShape(pptx.ShapeEllipse, gbox, pptx.WithFill(pptx.RadialGradient(
+				pptx.GradientStop{Pos: 0, Color: pptx.TokenColorAlpha(g.Color, g.Alpha)},
+				pptx.GradientStop{Pos: 1, Color: pptx.TokenColorAlpha(g.Color, 0)},
+			)))
+			r.stats.Shapes++
+		}
+
 	case BackgroundAsset:
 		data, ct, err := r.resolve(bg.AssetID)
 		if err != nil {

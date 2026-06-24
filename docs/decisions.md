@@ -3694,4 +3694,43 @@ pitch warns once and caps at ≤ 2000; deterministic.
 
 ---
 
+## D-112 — Gradient-mesh background (`BackgroundMesh` / `MeshGlow`) (Wave 13 / Phase 78, R13.4)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.4 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) — the
+reference cover and light content slides carry a soft "mesh" glow: diffuse
+colored light pooling at one or two corners over the paper, not a single straight
+gradient. The single linear/radial full-bleed fill cannot produce the multi-pool
+look.
+
+**Decision:** Add a `BackgroundMesh` kind (appended **last** to `BackgroundKind`
+→ existing values byte-identical) plus `MeshGlow{Anchor; Color pptx.ColorRole;
+Radius pptx.EMU; Alpha int}` and `Background.Mesh []MeshGlow`. `renderBackground`
+draws a base `SolidFill(TokenColor(bg.Color))` (zero = `ColorCanvas` = the
+paper/dark canvas) then, for each glow with `Radius > 0`, a radial-gradient
+ellipse centered on `Anchor.Point(full)` fading `TokenColorAlpha(Color, Alpha)`
+(center) → alpha 0 (edge), in slice order (deterministic). An empty `Mesh` follows
+the `BackgroundNone` path (nothing on a light slide; the dark canvas on a dark
+variant) — so "absent config → no shapes".
+
+**Background kind, not a curated ornament.** R13.4's spec offered either a curated
+`gradient_mesh` ornament or a `BackgroundMesh` kind. The Background kind is the
+cleaner full-slide convenience: it composes the base canvas + the pooled glows in
+one self-contained spec at the lowest z-layer, and reuses the existing radial fill
+(D-106) and role/alpha tokens (D-107). Callers who want foreground pools still
+have the role-colored glow *ornaments* (`radial_glow`/`glow_ring`, Phase 73).
+
+**Consequences:** No new theme token (a mechanism over surface roles + the alpha
+token, P2; the soul keeps the alpha subtle, R13.13), no OOXML/`restorenamespaces`
+change (the same `<a:gradFill>`/`<a:path>` radial ellipses the glow ornaments
+emit), deterministic (fixed slice order, integer-EMU). Not asset-bearing, so
+`slideUsesAssets` stays false (parallel-safe). `Background` is already
+non-comparable (the `Stops` slice), so the `Mesh` slice adds no constraint.
+Tested: a 2-glow mesh emits a base rect + 2 distinct-anchor radial ellipses; an
+empty mesh is byte-identical to no background; deterministic; `String() ==
+"mesh"`.
+
+---
+
 *Append new entries below this line.*
