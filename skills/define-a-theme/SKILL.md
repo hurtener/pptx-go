@@ -57,6 +57,15 @@ Fill colors for shapes and surfaces. Construct with `pptx.TokenColor(role)` (or
 | `ColorWarning` | `D97706` | Warning state |
 | `ColorError` | `DC2626` | Error state |
 | `ColorInfo` | `0EA5E9` | Informational state |
+| `ColorPaper` | `FFFFFF` | Off-white "paper" canvas — a tinted alternative to pure white; defaults to `ColorCanvas`, set via `WithPaper` |
+
+`ColorPaper` is a faintly tinted off-white canvas distinct from pure white, for
+a designed paper tone on content slides. It defaults to white (= `ColorCanvas`)
+so it is invisible until you set it, e.g. `pptx.NewTheme(pptx.WithPaper(pptx.RGB("FAFAF8")))`,
+then point a slide's background at it (`scene.Background{Kind: scene.BackgroundColor, Color: pptx.ColorPaper}`).
+It has no theme1.xml slot, so a re-opened deck's theme reads it back at its
+default — set it on the theme you author with (the resolved background color
+itself round-trips on the slide).
 
 ### Text colors — `TextColorRole` → `Theme.Colors.Text[role]`
 
@@ -170,6 +179,9 @@ applies functional options. Unset roles keep their defaults. The options:
 
 - `pptx.WithName(string)` — sets `Theme.Name`.
 - `pptx.WithAccent(pptx.RGB)` — overrides `ColorAccent`.
+- `pptx.WithPaper(pptx.RGB)` — sets `ColorPaper`, the off-white "paper" canvas
+  tint (defaults to white = `ColorCanvas`). Pair it with a `BackgroundColor`
+  background to give content slides a designed paper tone.
 - `pptx.WithFonts(heading, body string)` — sets `HeadingFont`/`BodyFont` **and**
   rewrites the `Typography` families: heading roles (`TypeDisplay`–`TypeH5`) get
   `heading`, mono roles (`TypeMono`, `TypeCode`) are left on the mono face, the

@@ -1505,6 +1505,40 @@ skill, not in this engine.
 
 ---
 
+### Wave 13 — Backgrounds & finish
+
+R13 — the subtle finish that reads "designed": a tinted-paper canvas, radial /
+multi-stop / mesh background gradients, caller-colored decoration, organic
+starfield/density-scaled textures, gradient surface fills, ghost watermarks,
+focal glows, and rounded+shadowed image framing. Most reqs are **field
+extensions** to the existing `Background` struct + new theme tokens (lighter
+than R12's new IR nodes), heavier on the theme/codec + `renderBackground` side.
+Every change is additive and byte-identical when its new field/value is unused.
+`D-059` scope: the engine supplies mechanisms; the soul/composer that *applies*
+them by default (R13.1 paper auto-apply, R13.12 archetype policy, R13.13 subtle
+defaults) is Deckard's product half.
+
+#### Phase 70 — tinted paper canvas (R13.1, HIGH · both — engine half)
+
+**Subsystem:** pptx — Layer 1 builder (theme tokens)
+**RFC sections:** §7.1, §7.3
+**Deps:** none (opens Wave 13); brief 53.
+**What lands (R13.1 engine half):**
+- A `ColorPaper` surface token (appended to the `ColorRole` iota after
+  `ColorInfo`) for a faintly tinted off-white "paper" canvas, plus a
+  `WithPaper(RGB)` theme option. Defaults to `FFFFFF` (= `ColorCanvas`), so a
+  `Background{BackgroundColor, ColorPaper}` slide is byte-identical to a
+  `ColorCanvas` one until a theme/soul overrides the tint.
+- A role **without** a theme1.xml slot (keeps its default on read-back, the
+  `TextMuted` convention); the resolved background RGB still round-trips (G6).
+**Acceptance criteria:**
+- `ColorPaper` exists; `DefaultTheme().ResolveColor(ColorPaper)` == `FFFFFF`;
+  `WithPaper` sets it and `Clone` carries it; a `ColorPaper` (off-white)
+  background's rect fill survives `pptx.Open`; the default-theme case is
+  byte-identical to `ColorCanvas`.
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native

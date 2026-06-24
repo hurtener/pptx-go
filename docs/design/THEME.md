@@ -24,7 +24,17 @@ in the new visual language.
 
 `ColorCanvas`, `ColorSurface`, `ColorSurfaceAlt`, `ColorAccent`,
 `ColorAccentAlt`, `ColorAccentWarm`, `ColorSuccess`, `ColorWarning`,
-`ColorError`, `ColorInfo`.
+`ColorError`, `ColorInfo`, `ColorPaper`.
+
+**Paper canvas** (`ColorPaper`, D-104): a faintly tinted off-white "paper"
+canvas distinct from pure white, for a designed background tone. It defaults to
+`ColorCanvas`'s value (white), so a `Background{BackgroundColor, ColorPaper}`
+slide is byte-identical to a `ColorCanvas` one until a theme overrides the tint
+via `WithPaper(RGB("FAFAF8"))` (a low-chroma off-white). Set it and a theme swap
+re-paints every paper background. `ColorPaper` has **no theme1.xml slot** — like
+`TextMuted` it keeps its in-memory default on read-back (see the
+theme ↔ theme1.xml mapping below); the resolved background RGB still round-trips
+losslessly as the slide rect's `solidFill` (G6).
 
 ### Text colors (`TextColorRole`)
 
@@ -133,6 +143,7 @@ font embedding (RFC §7.5). It is emitted to `templates/_default-theme.pptx`
 | `ColorSurfaceAlt` | `F1F3F5` | | `ColorAccentWarm` | `EA580C` |
 | `ColorSuccess` | `16A34A` | | `ColorWarning` | `D97706` |
 | `ColorError` | `DC2626` | | `ColorInfo` | `0EA5E9` |
+| `ColorPaper` | `FFFFFF` | | | (= `ColorCanvas`; set via `WithPaper`) |
 | `TextPrimary` | `111827` | | `TextSecondary` | `374151` |
 | `TextTertiary` | `6B7280` | | `TextInverse` | `FFFFFF` |
 
@@ -144,7 +155,9 @@ Spacing (pt): XS 2, SM 4, MD 8, LG 16, XL 24, 2XL 40.
 PowerPoint's theme is a positional 12-color scheme plus a major/minor font
 pair. The semantic palette maps onto it by convention — each OOXML slot has
 one canonical semantic owner for writing; each semantic role reads back from
-its slot. Roles without a slot keep their default after a load.
+its slot. Roles without a slot (e.g. `TextMuted`, `ColorPaper`) keep their
+default after a load — the soul/caller owns those tints at author time (D-026);
+their resolved RGB still round-trips wherever it was emitted.
 
 | OOXML slot | written from | read back into |
 |---|---|---|

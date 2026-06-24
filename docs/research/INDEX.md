@@ -332,6 +332,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   synthetic 400/700; embeds one file per bucket (the 4-cut limit). (R9.8, engine.)
 - `01-master-layout-theme-ingestion.md` — how a brand kit's color scheme,
   `clrMap` indirection, and font scheme map onto pptx-go's token roles.
+- `53-tinted-paper-canvas.md` — a `ColorPaper` surface role (appended to the
+  `ColorRole` iota, default `FFFFFF` = canvas so byte-identical) for a faintly
+  tinted off-white "paper" canvas; a role *without* a theme1.xml slot (keeps
+  its default on read-back, like `TextMuted`), but its resolved background RGB
+  round-trips. (R13.1, engine half.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

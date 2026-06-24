@@ -3376,4 +3376,43 @@ The R12 component primitives (28-kind catalog) are complete.
 
 ---
 
+## D-104 — `ColorPaper` tinted-paper canvas token (Wave 13 / Phase 70, R13.1 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.1 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both) wants an
+off-white "paper" canvas (≈ `#FAFAF8`) distinct from pure white — pro reference
+decks never use flat `#FFFFFF` for content. The engine already resolves any
+`ColorRole` for a `BackgroundColor`; the gap is that there is no dedicated
+canvas-tint token separate from white. D-059 puts the engine half here; the soul
+emitting a paper tint and the composer auto-applying it on light slides is
+Deckard's product half.
+
+**Decision:** Add a `ColorPaper` surface role, appended **last** to the
+`ColorRole` iota (after `ColorInfo`) so every prior value is unchanged, plus a
+`WithPaper(RGB)` theme option. It defaults to `FFFFFF` (= `ColorCanvas`) in
+`DefaultTheme`, so a `Background{BackgroundColor, ColorPaper}` slide is
+byte-identical to a `ColorCanvas` one until a theme overrides the tint. No new
+`BackgroundKind`, no OOXML element, no `restorenamespaces` change — a pure
+semantic-token addition; `BackgroundColor` already paints it.
+
+**theme1.xml round-trip:** PowerPoint's theme has exactly 12 OOXML slots
+(`dk1/lt1/dk2/lt2/accent1..6/hlink/folHlink`), all already claimed by the 10
+surface + 2 text roles in `themecodec.go`'s `writeSlots`. There is no spare slot,
+so `ColorPaper` is a **role without a slot** — like `TextMuted` it keeps its
+in-memory default on read-back. This is correct: the soul/caller owns the paper
+tint at author time (D-026); it is not recovered from a re-opened deck's
+theme1.xml. The G6 guarantee is about emitted output, and it holds — a
+`ColorPaper` background resolves to a literal `srgbClr` in the full-slide rect's
+`solidFill`, which round-trips losslessly through `pptx.Open`.
+
+**Consequences:** Foundational for Wave 13; later background work (multi-stop /
+radial / mesh gradients, surface fills) composes the same surface palette.
+`grep` confirms no `[N]ColorRole` arrays or range-over-fixed-roles loops, so the
+appended role breaks nothing. Tested: default == canvas, `WithPaper` + `Clone`
+carry the tint, an off-white background's RGB survives write → reopen → re-write,
+and the default-theme case is byte-identical to `ColorCanvas`.
+
+---
+
 *Append new entries below this line.*

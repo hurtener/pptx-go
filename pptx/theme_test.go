@@ -13,7 +13,7 @@ func TestDefaultThemeResolvesEveryRole(t *testing.T) {
 	surfaces := []pptx.ColorRole{
 		pptx.ColorCanvas, pptx.ColorSurface, pptx.ColorSurfaceAlt, pptx.ColorAccent,
 		pptx.ColorAccentAlt, pptx.ColorAccentWarm, pptx.ColorSuccess, pptx.ColorWarning,
-		pptx.ColorError, pptx.ColorInfo,
+		pptx.ColorError, pptx.ColorInfo, pptx.ColorPaper,
 	}
 	for _, r := range surfaces {
 		if v := th.ResolveColor(r); len(v) != 6 {
@@ -80,6 +80,39 @@ func TestThemeSwapReResolves(t *testing.T) {
 	// The default theme must be unaffected by NewTheme's mutation (Clone).
 	if a.ResolveColor(pptx.ColorAccent) == "FF0000" {
 		t.Fatal("NewTheme leaked a mutation into the default theme")
+	}
+}
+
+// TestColorPaperDefaultIsCanvas verifies ColorPaper defaults to the canvas value
+// (white) so a deck using it is byte-identical until a theme overrides the tint
+// (D-104, R13.1 acceptance 1).
+func TestColorPaperDefaultIsCanvas(t *testing.T) {
+	th := pptx.DefaultTheme()
+	if got := th.ResolveColor(pptx.ColorPaper); got != th.ResolveColor(pptx.ColorCanvas) {
+		t.Errorf("ColorPaper default = %q, want = ColorCanvas %q", got, th.ResolveColor(pptx.ColorCanvas))
+	}
+	if got := th.ResolveColor(pptx.ColorPaper); got != "FFFFFF" {
+		t.Errorf("ColorPaper default = %q, want FFFFFF", got)
+	}
+}
+
+// TestWithPaper verifies WithPaper sets the off-white tint, it resolves, and
+// Clone carries it (D-104, R13.1 acceptance 2).
+func TestWithPaper(t *testing.T) {
+	th := pptx.NewTheme(pptx.WithPaper("FAFAF8"))
+	if got := th.ResolveColor(pptx.ColorPaper); got != "FAFAF8" {
+		t.Errorf("WithPaper: ColorPaper = %q, want FAFAF8", got)
+	}
+	// ColorCanvas stays white — the paper tint is a distinct token.
+	if got := th.ResolveColor(pptx.ColorCanvas); got != "FFFFFF" {
+		t.Errorf("WithPaper leaked into ColorCanvas = %q, want FFFFFF", got)
+	}
+	if got := th.Clone().ResolveColor(pptx.ColorPaper); got != "FAFAF8" {
+		t.Errorf("Clone dropped ColorPaper = %q, want FAFAF8", got)
+	}
+	// The default theme must be unaffected by NewTheme's mutation (Clone).
+	if got := pptx.DefaultTheme().ResolveColor(pptx.ColorPaper); got != "FFFFFF" {
+		t.Errorf("WithPaper leaked into the default theme = %q, want FFFFFF", got)
 	}
 }
 

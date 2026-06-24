@@ -48,6 +48,72 @@ func TestBackground_ColorSlide(t *testing.T) {
 	}
 }
 
+// TestBackground_PaperRoundTrip verifies that a ColorPaper background painted
+// from a theme with an off-white paper tint emits the resolved RGB and survives
+// a write → reopen → re-write cycle (D-104, R13.1 acceptance 3, G6).
+func TestBackground_PaperRoundTrip(t *testing.T) {
+	const paper = "FAFAF8"
+	th := pptx.NewTheme(pptx.WithPaper(paper))
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "bg-paper",
+		Background: scene.Background{
+			Kind:  scene.BackgroundColor,
+			Color: pptx.ColorPaper,
+		},
+		Nodes: []scene.SlideNode{scene.Heading{Text: rt("Title"), Level: 1}},
+	}}}
+	data, stats := render(t, sc, scene.WithTheme(th))
+	if len(stats.Warnings) != 0 {
+		t.Errorf("ColorPaper background: unexpected warnings: %+v", stats.Warnings)
+	}
+
+	// The resolved off-white must appear in the slide XML (not pure white).
+	slideXML := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slideXML, paper) {
+		t.Errorf("slide does not carry the paper tint %s:\n%s", paper, slideXML)
+	}
+
+	// Round-trip: reopen and re-write; the paper tint must persist (G6).
+	pres, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	out, err := pres.WriteToBytes()
+	if err != nil {
+		t.Fatalf("WriteToBytes: %v", err)
+	}
+	if !strings.Contains(zipPart(t, out, "ppt/slides/slide1.xml"), paper) {
+		t.Errorf("paper tint %s did not survive round-trip", paper)
+	}
+
+	// The first shape is the full-slide paper rect with a solid fill.
+	shapes := pres.Slides()[0].Shapes()
+	if len(shapes) == 0 {
+		t.Fatal("no shapes on ColorPaper slide")
+	}
+	if fill := shapes[0].Fill(); fill == nil || fill.Kind() != pptx.FillSolid {
+		t.Errorf("ColorPaper: first shape fill = %v, want FillSolid", fill)
+	}
+}
+
+// TestBackground_PaperDefaultByteIdentical verifies that on the default theme a
+// ColorPaper background is byte-identical to a ColorCanvas one (paper defaults
+// to canvas; D-104, R13.1 acceptance 4).
+func TestBackground_PaperDefaultByteIdentical(t *testing.T) {
+	mk := func(role pptx.ColorRole) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID:         "bg",
+			Background: scene.Background{Kind: scene.BackgroundColor, Color: role},
+			Nodes:      []scene.SlideNode{scene.Heading{Text: rt("Title"), Level: 1}},
+		}}}
+	}
+	paper, _ := render(t, mk(pptx.ColorPaper))
+	canvas, _ := render(t, mk(pptx.ColorCanvas))
+	if !bytes.Equal(paper, canvas) {
+		t.Errorf("default-theme ColorPaper not byte-identical to ColorCanvas (%d vs %d bytes)", len(paper), len(canvas))
+	}
+}
+
 // TestBackground_GradientSlide verifies that a BackgroundGradient slide
 // produces a full-slide gradient-fill rect as the first shape.
 func TestBackground_GradientSlide(t *testing.T) {
