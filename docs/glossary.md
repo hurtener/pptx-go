@@ -646,6 +646,15 @@ Invalid stops (`<2`, `>8`, out of `[0,1]`, or not strictly ascending) record a
 `LayoutWarning` and skip the fill (D-026 — no panic). The slice makes
 `Background` non-comparable. See `DECKARD-PRODUCT-REQUIREMENTS.md` R13.3.
 
+## Radial background
+
+The scene `BackgroundRadial` kind (D-106): a center-out radial slide fill (a
+spotlight/vignette for dark hero/section/closing slides) drawn via
+`pptx.RadialGradient` with a centered 50%-inset circular focal. It consumes the
+same `Background.Stops` (or the legacy 2-role `Background.Gradient`) as the
+linear `BackgroundGradient`. The focal point is centered; a focal-offset knob is
+deferred (center-only in V1). See `DECKARD-PRODUCT-REQUIREMENTS.md` R13.2.
+
 ## Grow-to-fit
 
 The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their

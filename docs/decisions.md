@@ -3450,4 +3450,44 @@ skip; legacy 2-role byte-identical; multi-stop deterministic.
 
 ---
 
+## D-106 — Radial-vignette background (`BackgroundRadial`) (Wave 13 / Phase 72, R13.2)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.2 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) wants a
+center-out radial background (spotlight/vignette) so a dark hero/section/closing
+slide gets depth instead of a flat fill. `pptx.RadialGradient` already exists
+(centered 50%-inset circular focal, behind the glow ornaments, D-041); the scene
+`Background` only exposed a 2-stop *linear* fill, so radial was unreachable.
+
+**Decision:** Add `BackgroundRadial` to `BackgroundKind` (appended **last**, after
+`BackgroundAsset`, so existing values are unchanged → byte-identical).
+`renderBackground` resolves a background's stops via a new shared
+`backgroundGradientStopsFor(bg)` — the multi-stop `Stops` (validated 2..8
+ascending, D-105) when present, else the legacy 2-role `Gradient` pair at Pos 0/1
+— and feeds them to `pptx.RadialGradient(stops...)`. The existing
+`BackgroundGradient` (linear) case is refactored through the same resolver; its
+2-role mapping is identical, so a legacy gradient background stays byte-identical
+(pinned by the existing tests). Invalid explicit stops warn and skip (RFC §10.2,
+D-026 — no panic).
+
+**Center-only focal (deferred offset).** `pptx.RadialGradient` hard-codes a
+centered focal; biasing it needs a focal-rect knob on the builder. R13.2
+explicitly allows *"otherwise document center-only"*, so V1 ships the centered
+spotlight (the common vignette case) and **defers** the focal-offset knob — no
+new `Background` field this phase. This mirrors the Phase-65 ribbon
+diagonal-rotation deferral (D-098): a documented §4.3 deviation, revisited only
+if a real off-center-spotlight case appears (then a builder focal-rect parameter
++ a `Background` focal field).
+
+**Consequences:** Scene-side kind + render case only — no builder change (P1), no
+new OOXML element, no `restorenamespaces` change (`<a:gradFill>`/`<a:path
+path="circle">`/`<a:gs>` already emit via the glow ornaments). Deterministic
+(pure integer-EMU through the existing fill path). Tested: radial (multi-stop and
+legacy 2-role) emits the circular focal and round-trips with
+`GradientRead.Radial == true`; invalid stops warn + skip; deterministic;
+`String() == "radial"`; the refactored linear/legacy paths stay byte-identical.
+
+---
+
 *Append new entries below this line.*

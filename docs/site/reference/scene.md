@@ -29,7 +29,7 @@ type SceneSlide struct {
 }
 
 type Background struct {
-	Kind     BackgroundKind   // None | Color | Gradient | Asset
+	Kind     BackgroundKind   // None | Color | Gradient | Asset | Radial
 	Color    pptx.ColorRole   // solid fill (Kind == BackgroundColor)
 	Gradient [2]pptx.ColorRole // legacy 2-role linear gradient (used when Stops empty)
 	Stops    []GradientStop   // multi-stop gradient: 2..8 ascending stops in [0,1]; supersedes Gradient
@@ -55,8 +55,9 @@ draws nothing. `BackgroundGradient` takes either the legacy two-role `Gradient`
 pair or, for a richer multi-hue wash, a `Stops` list of 2–8 ascending
 `GradientStop`s in `[0,1]` (the `Stops` list supersedes `Gradient` when set;
 invalid stops degrade to a warning and skip the fill — see the decisions
-reference, D-105). Point a `BackgroundColor` at `ColorPaper` (D-104) for a
-tinted off-white paper canvas.
+reference, D-105). `BackgroundRadial` (D-106) draws the same stops as a
+center-out radial spotlight/vignette (centered focal). Point a `BackgroundColor`
+at `ColorPaper` (D-104) for a tinted off-white paper canvas.
 
 ```go
 type LayoutKind int

@@ -268,6 +268,100 @@ func TestBackground_MultiStopDeterministic(t *testing.T) {
 	}
 }
 
+// TestBackground_Radial verifies a BackgroundRadial slide emits a circular-focal
+// radial gradient and round-trips with Radial == true, for both the multi-stop
+// and legacy two-role forms (D-106, R13.2 acceptance 1 + 2).
+func TestBackground_Radial(t *testing.T) {
+	cases := map[string]scene.Background{
+		"multi-stop": {
+			Kind: scene.BackgroundRadial,
+			Stops: []scene.GradientStop{
+				{Pos: 0, Color: pptx.ColorSurface},
+				{Pos: 0.6, Color: pptx.ColorSurfaceAlt},
+				{Pos: 1, Color: pptx.ColorCanvas},
+			},
+		},
+		"legacy two-role": {
+			Kind:     scene.BackgroundRadial,
+			Gradient: [2]pptx.ColorRole{pptx.ColorSurface, pptx.ColorCanvas},
+		},
+	}
+	for name, bg := range cases {
+		t.Run(name, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{ID: "radial", Background: bg}}}
+			data, stats := render(t, sc)
+			if len(stats.Warnings) != 0 {
+				t.Errorf("radial %q: unexpected warnings: %+v", name, stats.Warnings)
+			}
+			// The radial focal marker must be present in the emitted XML.
+			if !strings.Contains(zipPart(t, data, "ppt/slides/slide1.xml"), `<a:path path="circle"`) {
+				t.Errorf("radial %q: missing circular focal path", name)
+			}
+			pres, err := pptx.NewFromBytes(data)
+			if err != nil {
+				t.Fatalf("NewFromBytes: %v", err)
+			}
+			fill := pres.Slides()[0].Shapes()[0].Fill()
+			if fill == nil || fill.Kind() != pptx.FillGradient {
+				t.Fatalf("radial %q: fill kind = %v, want FillGradient", name, fill)
+			}
+			grad, ok := fill.Gradient()
+			if !ok || !grad.Radial {
+				t.Errorf("radial %q: Gradient().Radial = %v (ok=%v), want true", name, grad.Radial, ok)
+			}
+		})
+	}
+}
+
+// TestBackground_RadialInvalidStopsWarn verifies invalid explicit stops on a
+// radial background warn and skip without panicking (D-106, R13.2 acceptance 3).
+func TestBackground_RadialInvalidStopsWarn(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "bad-radial",
+		Background: scene.Background{
+			Kind:  scene.BackgroundRadial,
+			Stops: []scene.GradientStop{{Pos: 0.9, Color: pptx.ColorAccent}, {Pos: 0.1, Color: pptx.ColorCanvas}},
+		},
+	}}}
+	data, stats := render(t, sc)
+	if len(stats.Warnings) != 1 {
+		t.Errorf("radial invalid stops: warnings = %d, want 1 (%+v)", len(stats.Warnings), stats.Warnings)
+	}
+	pres, err := pptx.NewFromBytes(data)
+	if err != nil {
+		t.Fatalf("NewFromBytes: %v", err)
+	}
+	for _, sh := range pres.Slides()[0].Shapes() {
+		if f := sh.Fill(); f != nil && f.Kind() == pptx.FillGradient {
+			t.Error("radial invalid stops: a gradient shape was emitted")
+		}
+	}
+}
+
+// TestBackground_RadialDeterministic verifies a radial background re-renders
+// byte-identically (D-106, R13.2 acceptance 4).
+func TestBackground_RadialDeterministic(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "det-radial",
+		Background: scene.Background{
+			Kind:     scene.BackgroundRadial,
+			Gradient: [2]pptx.ColorRole{pptx.ColorSurface, pptx.ColorCanvas},
+		},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("radial background not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}
+
+// TestBackgroundKind_RadialString verifies the kind's name (D-106).
+func TestBackgroundKind_RadialString(t *testing.T) {
+	if got := scene.BackgroundRadial.String(); got != "radial" {
+		t.Errorf("BackgroundRadial.String() = %q, want radial", got)
+	}
+}
+
 // TestBackground_NoneDrawsNothing verifies that BackgroundNone (the zero value)
 // is byte-identical to a slide with no Background field set at all — both light
 // variant (RFC §10.1 backward-compat guarantee).

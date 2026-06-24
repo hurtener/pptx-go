@@ -157,21 +157,21 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 		r.stats.Shapes++
 
 	case BackgroundGradient:
-		var fill pptx.Fill
-		if len(bg.Stops) > 0 {
-			stops, ok := backgroundGradientStops(bg.Stops)
-			if !ok {
-				r.warn(sl.ID, fmt.Sprintf("background gradient stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
-				return
-			}
-			fill = pptx.LinearGradient(float64(bg.Angle), stops...)
-		} else {
-			fill = pptx.LinearGradient(float64(bg.Angle),
-				pptx.GradientStop{Pos: 0, Color: pptx.TokenColor(bg.Gradient[0])},
-				pptx.GradientStop{Pos: 1, Color: pptx.TokenColor(bg.Gradient[1])},
-			)
+		stops, ok := backgroundGradientStopsFor(bg)
+		if !ok {
+			r.warn(sl.ID, fmt.Sprintf("background gradient stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
+			return
 		}
-		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(fill))
+		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(pptx.LinearGradient(float64(bg.Angle), stops...)))
+		r.stats.Shapes++
+
+	case BackgroundRadial:
+		stops, ok := backgroundGradientStopsFor(bg)
+		if !ok {
+			r.warn(sl.ID, fmt.Sprintf("background radial stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
+			return
+		}
+		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(pptx.RadialGradient(stops...)))
 		r.stats.Shapes++
 
 	case BackgroundAsset:
@@ -187,6 +187,22 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 		r.stats.Shapes++
 		r.stats.Assets++
 	}
+}
+
+// backgroundGradientStopsFor resolves a background's gradient stops, shared by
+// the linear (BackgroundGradient) and radial (BackgroundRadial) paths (D-106). A
+// non-empty Stops list is validated via backgroundGradientStops (2..8 ascending
+// in [0,1]); otherwise the legacy two-role Gradient pair maps to stops at Pos 0
+// and 1. The legacy mapping is identical to the pre-D-106 linear path, so a
+// two-role gradient background stays byte-identical.
+func backgroundGradientStopsFor(bg Background) ([]pptx.GradientStop, bool) {
+	if len(bg.Stops) > 0 {
+		return backgroundGradientStops(bg.Stops)
+	}
+	return []pptx.GradientStop{
+		{Pos: 0, Color: pptx.TokenColor(bg.Gradient[0])},
+		{Pos: 1, Color: pptx.TokenColor(bg.Gradient[1])},
+	}, true
 }
 
 // backgroundGradientStops validates scene gradient stops and maps them to the
