@@ -23,6 +23,13 @@ const (
 	ColorWarning
 	ColorError
 	ColorInfo
+	// ColorPaper is a faintly tinted off-white "paper" canvas, distinct from
+	// pure white, for a designed background tone (D-104). It is appended last so
+	// every prior ColorRole value is unchanged. It defaults to ColorCanvas's
+	// value (white) so a deck is byte-identical until a theme overrides the tint.
+	// ColorPaper has no theme1.xml slot — like TextMuted it keeps its default on
+	// read-back (RFC §7.3); its resolved background RGB still round-trips.
+	ColorPaper
 )
 
 // TextColorRole is a semantic text color for inline runs (RFC §7.1).
@@ -135,9 +142,9 @@ type FontSpec struct {
 type TextCase int
 
 const (
-	CaseNone     TextCase = iota // as authored (no cap attribute)
-	CaseUpper                    // all caps — a:rPr cap="all"
-	CaseSmallCaps                // small caps — a:rPr cap="small"
+	CaseNone      TextCase = iota // as authored (no cap attribute)
+	CaseUpper                     // all caps — a:rPr cap="all"
+	CaseSmallCaps                 // small caps — a:rPr cap="small"
 )
 
 // capAttr returns the OOXML cap attribute value, or "" for CaseNone.
@@ -227,6 +234,13 @@ func WithAccent(c RGB) ThemeOption {
 	return func(t *Theme) { t.Colors.Surfaces[ColorAccent] = c }
 }
 
+// WithPaper overrides the ColorPaper surface tint — the faintly tinted off-white
+// "paper" canvas (D-104). Pass a low-chroma off-white (e.g. RGB("FAFAF8")) to
+// give content slides a designed paper tone; the default is white (= ColorCanvas).
+func WithPaper(c RGB) ThemeOption {
+	return func(t *Theme) { t.Colors.Surfaces[ColorPaper] = c }
+}
+
 // WithFonts overrides the heading and body font families (and updates the
 // Typography families to match).
 func WithFonts(heading, body string) ThemeOption {
@@ -296,6 +310,7 @@ func DefaultTheme() *Theme {
 				ColorWarning:    "D97706",
 				ColorError:      "DC2626",
 				ColorInfo:       "0EA5E9",
+				ColorPaper:      "FFFFFF", // = ColorCanvas; settable to an off-white paper tint (D-104)
 			},
 			Text: map[TextColorRole]RGB{
 				TextPrimary:   "111827",

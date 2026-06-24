@@ -513,6 +513,7 @@ type ThemeOption func(*Theme)
 
 func WithName(name string) ThemeOption
 func WithAccent(c RGB) ThemeOption
+func WithPaper(c RGB) ThemeOption    // off-white "paper" canvas tint (ColorPaper, D-104)
 func WithFonts(heading, body string) ThemeOption
 ```
 
@@ -531,6 +532,7 @@ const (
 	ColorWarning
 	ColorError
 	ColorInfo
+	ColorPaper // off-white "paper" canvas; defaults to ColorCanvas, set via WithPaper (D-104)
 )
 
 type TextColorRole int  // text colors

@@ -308,8 +308,18 @@ type the codec can't emit.
 ## ColorRole
 
 A semantic color role (e.g. `canvas`, `surface`, `accent`, `accent_warm`,
-`success`). Page-level surfaces resolve via the active `Theme`'s
+`success`, `paper`). Page-level surfaces resolve via the active `Theme`'s
 `ColorPalette` to an OOXML color value. See `RFC-001-pptx-go.md §7.1`.
+
+## ColorPaper (paper canvas)
+
+The `ColorPaper` surface role (D-104): a faintly tinted off-white "paper"
+canvas distinct from pure white, for a designed background tone on content
+slides. Defaults to `ColorCanvas`'s value (white) — byte-identical until a theme
+sets a tint via `pptx.WithPaper(RGB("FAFAF8"))` — and is pointed at by a
+`Background{Kind: BackgroundColor, Color: ColorPaper}`. Like `TextMuted` it has
+no theme1.xml slot, so a re-opened deck's theme reads it back at its default; its
+resolved background RGB still round-trips on the slide. See `RFC-001-pptx-go.md §7.1`.
 
 ## Column join
 
