@@ -2,10 +2,10 @@ package ornaments
 
 import "github.com/hurtener/pptx-go/pptx"
 
-// GridDots draws a regular dotted texture: a 6×4 lattice of small accent dots
-// centered in their cells. Deterministic; rotation is ignored (a dot grid is
+// GridDots draws a regular dotted texture: a 6×4 lattice of small role-colored
+// dots centered in their cells. Deterministic; rotation is ignored (a dot grid is
 // symmetric and the builder has no group transform — D-041).
-func GridDots(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
+func GridDots(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole) int {
 	const cols, rows = 6, 4
 	cellW := box.W / cols
 	cellH := box.H / rows
@@ -18,7 +18,7 @@ func GridDots(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
 		for c := 0; c < cols; c++ {
 			x := box.X + cellW*pptx.EMU(c) + cellW/2 - dot/2
 			y := box.Y + cellH*pptx.EMU(r) + cellH/2 - dot/2
-			sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: dot, H: dot}, accent(alpha))
+			sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: dot, H: dot}, roleFill(role, alpha))
 			n++
 		}
 	}
@@ -26,10 +26,10 @@ func GridDots(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
 }
 
 // NoiseOverlay draws a subtle grain: a deterministic sparse scatter of tiny
-// low-alpha accent dots over a fixed lattice (no per-pixel noise natively — a
-// documented approximation, D-041). The opacity is divided down so the grain
+// low-alpha role-colored dots over a fixed lattice (no per-pixel noise natively —
+// a documented approximation, D-041). The opacity is divided down so the grain
 // stays faint.
-func NoiseOverlay(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
+func NoiseOverlay(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole) int {
 	const cols, rows = 12, 8
 	a := alpha / 3
 	if a < 1 {
@@ -49,7 +49,7 @@ func NoiseOverlay(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
 			oy := cellH * pptx.EMU((r*5+c*2)%5) / 6
 			x := box.X + cellW*pptx.EMU(c) + ox
 			y := box.Y + cellH*pptx.EMU(r) + oy
-			sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: dot, H: dot}, accent(a))
+			sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: dot, H: dot}, roleFill(role, a))
 			n++
 		}
 	}

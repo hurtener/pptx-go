@@ -268,12 +268,13 @@ adapts an `asset://<uuid>` helper function. See the
 
 ```go
 type FrameRecipe    = frames.Recipe    // func(sl *pptx.Slide, region pptx.Box) (interior pptx.Box, shapes int)
-type OrnamentRecipe = ornaments.Recipe // func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64) int
+type OrnamentRecipe = ornaments.Recipe // func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int
 
 func ValidateIcon(svg []byte) error
 ```
 A `FrameRecipe` draws a device bezel and returns the interior box; an
-`OrnamentRecipe` draws an ornament at an opacity and rotation. Both compose
+`OrnamentRecipe` draws an ornament at an opacity, rotation, and color role
+(`Decoration.Color`, default `ColorAccent` — D-107). Both compose
 the public `pptx` builder only (P1). `ValidateIcon` checks caller SVG bytes
 against the translator constraints (single path, solid fill, no gradients)
 at registration time. Register caller assets with `WithIconExtension`,

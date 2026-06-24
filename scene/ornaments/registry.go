@@ -16,10 +16,12 @@ import (
 	"github.com/hurtener/pptx-go/pptx"
 )
 
-// Recipe draws an ornament into box at the given OOXML alpha (0..100000) and
-// rotation (degrees), returning the number of shapes emitted. The signature
-// matches the curated recipes in assets/ornaments exactly.
-type Recipe func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64) int
+// Recipe draws an ornament into box at the given OOXML alpha (0..100000),
+// rotation (degrees), and surface color role, returning the number of shapes
+// emitted. The role is the decoration color (Decoration.Color, default
+// ColorAccent — D-107); a recipe may ignore it. The signature matches the
+// curated recipes in assets/ornaments exactly.
+type Recipe func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int
 
 // The reserved curated ornament names (RFC §14.2).
 const (

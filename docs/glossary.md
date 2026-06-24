@@ -414,9 +414,11 @@ Distinct from preset geometry (`a:prstGeom`, a named `ShapeGeometry`).
 A scene IR leaf that places a curated `Ornament` (native) or an asset image
 (`pic`) at an anchored slide position. The box is centered on `Anchor` shifted
 by `Offset`, sized by `Size`; `Bleed` permits it off the slide edge; `Opacity`
-(0..1) and `Rotation` (degrees) style it. Pure visual; carries no text. `Layer`
-is `background` (renders behind body) or `foreground` (renders on top) — the
-renderer imposes that z-order (RFC §10.2).
+(0..1) and `Rotation` (degrees) style it. `Color *pptx.ColorRole` (D-107)
+overrides the ornament's color role (nil = `ColorAccent`, byte-identical), so a
+texture/glow can be neutral grey, inverse-white, or any brand role. Pure visual;
+carries no text. `Layer` is `background` (renders behind body) or `foreground`
+(renders on top) — the renderer imposes that z-order (RFC §10.2).
 
 ## Delta tone
 

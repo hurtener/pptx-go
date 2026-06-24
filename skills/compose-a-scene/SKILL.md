@@ -141,7 +141,7 @@ renders as native PPTX shapes**.
 | `Image` | `AssetID AssetID; Alt string; Frame FrameKind; FrameName string; Crop Crop; Fit Fit` | **picture** |
 | `CodeBlock` | `AssetID AssetID; Language, Caption string` | **picture** |
 | `Chart` | `AssetID AssetID; Caption string` | **picture** |
-| `Decoration` | `Kind DecorationKind; Preset string; AssetID AssetID; Layer Layer; Anchor Anchor; Offset Position; Size Size; Bleed bool; Opacity float64; Rotation float64` | native (preset) / **picture** (asset) |
+| `Decoration` | `Kind DecorationKind; Preset string; AssetID AssetID; Layer Layer; Anchor Anchor; Offset Position; Size Size; Bleed bool; Opacity float64; Rotation float64; Color *pptx.ColorRole` | native (preset) / **picture** (asset). `Color` (a `*pptx.ColorRole`, `nil` = `ColorAccent`) re-colors a preset ornament — set it for a neutral-grey paper grain, an inverse-white starfield, or any brand-role texture/glow |
 
 Supporting enums and structs:
 

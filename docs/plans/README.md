@@ -1577,6 +1577,24 @@ defaults) is Deckard's product half.
   invalid stops warn + skip; re-render is deterministic; unused kind is
   byte-identical to today.
 
+#### Phase 73 — decoration color role (R13.5, CRITICAL · engine)
+
+**Subsystem:** scene (decoration) + assets/ornaments (recipes)
+**RFC sections:** §14.2, §7.1, §10.1
+**Deps:** none; brief 56.
+**What lands (R13.5):**
+- `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`, the D-054 pointer
+  pattern → byte-identical) so a texture/glow/shape can be neutral grey,
+  inverse-white, or any brand role instead of the hardcoded accent.
+- The `ornaments.Recipe` signature gains a trailing `role pptx.ColorRole` (a
+  v0.x public break — `OrnamentRecipe` alias + `WithOrnamentExtension`; CHANGELOG
+  noted); the `accent()` helper becomes `roleFill(role, alpha)` and all 6 curated
+  recipes fill with the supplied role. `render_decoration` resolves the role.
+**Acceptance criteria:**
+- A `Color`-set decoration emits a different `srgbClr` than the accent default;
+  a nil-`Color` decoration is byte-identical per preset; the role threads through
+  all 6 recipes. (`Decoration.Palette` multi-hue scatter → R13.6 starfield.)
+
 ---
 
 ## 4. Post-V1 backlog
