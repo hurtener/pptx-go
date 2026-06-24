@@ -647,6 +647,14 @@ func (r *renderer) renderCardRibbon(ps *pptx.Slide, box pptx.Box, rb *Ribbon, pa
 func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID string) {
 	// box is already clamped to the safe area by renderNode (R11.3/R11.12), so a tall
 	// card never draws past the safe area.
+
+	// Backdrop (D-113): a focal glow/halo drawn behind the card's box, before the
+	// card chrome, so the card fill sits on top. The card box is the decoration's
+	// region, so the glow tracks the card across any layout. nil = byte-identical.
+	if v.Backdrop != nil {
+		r.renderDecoration(ps, box, *v.Backdrop, slideID)
+	}
+
 	body := r.renderCardChrome(ps, box, cardChrome{
 		header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill,
 		fill: v.Fill, fillGradient: v.FillGradient, outline: v.Outline, border: v.BorderStyle, size: v.Size,

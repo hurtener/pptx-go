@@ -1676,6 +1676,21 @@ defaults) is Deckard's product half.
 - A ≥2-glow mesh emits a base rect + one radial ellipse per glow at the specified
   anchors; an empty mesh emits nothing; re-render deterministic.
 
+#### Phase 79 — focal glow behind a card (R13.10, MED · engine)
+
+**Subsystem:** scene — Layer 2 renderer (Card)
+**RFC sections:** §11.2, §14.2, §10.1
+**Deps:** Phase 73 (role glows); brief 62.
+**What lands (R13.10):**
+- `Card.Backdrop *Decoration` drawn behind the card's computed box (before its
+  fill) via the existing `renderDecoration` with the card box as the region — a
+  focal halo that tracks the card across any layout. A center-anchored, bleeding
+  `radial_glow` becomes a halo behind the card. nil = byte-identical.
+**Acceptance criteria:**
+- A `radial_glow` backdrop emits a radial ellipse *before* the card's rounded-rect
+  fill (behind it in z-order), bleeding beyond the box; a nil-backdrop card is
+  byte-identical; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

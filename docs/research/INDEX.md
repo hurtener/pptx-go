@@ -377,6 +377,10 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   fill + N low-alpha caller-anchored radial glows pooled over it (the cover mesh
   look), reusing `pptx.RadialGradient`. Empty mesh → no shapes; byte-identical
   when unused. (R13.4, engine.)
+- `62-focal-glow-backdrop.md` — `Card.Backdrop *Decoration` drawn behind the
+  card's computed box (before its fill) via the existing `renderDecoration` with
+  the card box as the region — a focal halo that tracks the card across any
+  layout. nil = byte-identical. (R13.10, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -247,7 +247,8 @@ header-pill, with leaf children. Renders as a native PPTX shape group.
 The body is top-anchored by default; the opt-in `Card BodyVAlign` distributes it
 vertically. The opt-in `FillGradient` (a `*GradientFill`, D-108) replaces the
 solid `Fill` with a 2-stop linear surface gradient (depth shift); nil = solid.
-See `RFC-001-pptx-go.md §11.2`.
+The opt-in `Backdrop` (a `*Decoration`, D-113) draws a focal glow/halo behind the
+card's box, before its fill; nil = none. See `RFC-001-pptx-go.md §11.2`.
 
 ## Card BodyVAlign
 
