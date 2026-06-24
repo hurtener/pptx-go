@@ -3765,4 +3765,47 @@ a nil-backdrop card is byte-identical and emits no glow; deterministic.
 
 ---
 
+## D-114 — Rounded + shadow image framing (`Image` corner-radius / elevation) (Wave 13 / Phase 80, R13.11)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.11 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) — reference
+figures and logo tiles are framed with consistent rounded corners and a soft drop
+shadow; Deckard images are plain rectangular pics with no radius or shadow, so any
+image-bearing slide loses the rounded, elevated finish the cards already have.
+
+**Decision:** Add builder methods `(*Image).SetCornerRadius(RadiusRole)` and
+`(*Image).SetElevation(ElevationRole)` and scene `Image.CornerRadius RadiusRole` +
+`Image.Elevation ElevationRole`. `SetCornerRadius` sets the picture geometry to
+`roundRect` and converts the absolute token radius to the OOXML adjust against the
+picture box (via the existing `applyCornerRadius`, reconstructing the box from the
+pic transform with a `picBox` helper); `SetElevation` casts a drop shadow via the
+existing `applyShadow`. Both operate on the picture's `spPr` (a
+`*slide.XShapeProperties`, the same type the shape path frames), so this is a thin
+wrapper — no new OOXML, no `restorenamespaces` change (`prstGeom`/`effectLst`/
+`outerShdw` already emit). `renderImage` calls both setters; they self-gate —
+`ResolveRadius(RadiusNone) == 0` returns early (rectangular) and a flat elevation
+is a no-op — so a Phase-10 image (zero tokens) is **byte-identical**.
+
+**G6 round-trip is structural.** The emitted pic carries `<a:prstGeom
+prst="roundRect">` + `<a:effectLst><a:outerShdw>`; both survive a write →
+`pptx.Open` → re-write losslessly (the round-trip golden asserts they persist) —
+the same structural-round-trip proof used for gradient fills (D-105/D-108), so no
+new read accessor is introduced this phase.
+
+**Scope: `Image` only.** R13.11 also names `DecorationAsset`; the scene `Image` is
+the primary case and satisfies the acceptance criterion. The new builder methods
+are reusable for a `Decoration` radius/elevation later (§4.3 deviation).
+
+**Consequences:** A mechanism over the existing radius/elevation tokens (P2; a
+theme swap re-skins both), no new token. Tested: a builder image with
+radius+elevation round-trips with `roundRect` + `outerShdw`; a zero-token image is
+byte-identical to one with no framing calls; a scene `Image` with the tokens emits
+both, and a zero-token scene image is byte-identical. **R13's engine reqs are
+complete** after this phase; R13.12 (soul archetype decor policy) and R13.13
+(subtle-by-default alphas) are the product half (D-059) — the engine supplies the
+mechanisms, the soul applies them.
+
+---
+
 *Append new entries below this line.*

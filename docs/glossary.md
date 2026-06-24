@@ -721,6 +721,16 @@ accent token. Referenced by name from IR nodes that accept an icon (`card`,
 translator (`scene.WithIconExtension`); an SVG outside the subset fails at
 registration. V1 ships a starter set (~16), growing toward ≈60 (D-005, D-040).
 
+## Image framing
+
+Corner-radius + drop-shadow finish on a picture (D-114): the scene
+`Image.CornerRadius` (a `RadiusRole`) clips the pic to a `roundRect` and
+`Image.Elevation` (an `ElevationRole`) casts a soft `<a:outerShdw>`, both resolved
+from the theme's radius/elevation tokens so image finish matches the
+card/surface finish. The builder methods `(*Image).SetCornerRadius`/
+`SetElevation` realize them; the zero tokens leave the picture rectangular and
+shadowless (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R13.11.
+
 ## ImageSource
 
 `pptx.ImageSource` — sealed interface for image input to `Slide.AddImage`,

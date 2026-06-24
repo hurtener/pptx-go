@@ -234,6 +234,46 @@ func (im *Image) SetFit(f Fit) *Image {
 	return im
 }
 
+// SetCornerRadius rounds the picture's corners using a theme radius token (P2,
+// D-114): it sets the picture geometry to roundRect and converts the absolute
+// token radius to the OOXML adjust against the picture box. RadiusNone (the zero
+// value) resolves to 0 and leaves the picture rectangular — byte-identical. The
+// rounded picture matches the card/surface radius finish.
+func (im *Image) SetCornerRadius(role RadiusRole) *Image {
+	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil || im.s == nil {
+		return im
+	}
+	radius := im.s.activeTheme().ResolveRadius(role)
+	if radius <= 0 {
+		return im // RadiusNone: leave the picture rectangular
+	}
+	spPr := im.pic.ShapeProperties
+	spPr.PresetGeom = &slide.XPresetGeometry{Prst: "roundRect", AvLst: &slide.XAvLst{}}
+	applyCornerRadius(spPr, radius, picBox(spPr))
+	return im
+}
+
+// SetElevation casts a soft drop shadow on the picture from a theme elevation
+// token (P2, D-114), matching the card/surface elevation finish. ElevationFlat
+// (the zero value) resolves to a flat elevation and emits no shadow —
+// byte-identical.
+func (im *Image) SetElevation(role ElevationRole) *Image {
+	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil || im.s == nil {
+		return im
+	}
+	applyShadow(im.pic.ShapeProperties, im.s.activeTheme().ResolveElevation(role))
+	return im
+}
+
+// picBox reconstructs the picture's box from its transform (offset + extent).
+func picBox(spPr *slide.XShapeProperties) Box {
+	t := spPr.Transform2D
+	if t == nil || t.Offset == nil || t.Extent == nil {
+		return Box{}
+	}
+	return Box{X: EMU(t.Offset.X), Y: EMU(t.Offset.Y), W: EMU(t.Extent.Cx), H: EMU(t.Extent.Cy)}
+}
+
 // SetRotation rotates the image clockwise by deg degrees about its centre
 // (the picture's <a:xfrm rot>, normalized to [0,360°)).
 func (im *Image) SetRotation(deg float64) *Image {
