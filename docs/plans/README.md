@@ -1611,6 +1611,23 @@ defaults) is Deckard's product half.
   colors (a top-vs-bottom luminance delta); a solid-fill card is byte-identical;
   re-render deterministic.
 
+#### Phase 75 — text/number watermark decoration (R13.9, MED · engine)
+
+**Subsystem:** scene — Layer 2 renderer (decoration)
+**RFC sections:** §14.2, §8.4, §10.1
+**Deps:** Phase 73 (Decoration.Color, D-107); brief 58.
+**What lands (R13.9):**
+- A `DecorationText` kind (appended last) + `Decoration.Text string` /
+  `FontSize float64` (points; 0 = box-height "fill the box" default) so a slide
+  can carry an oversized, low-opacity ghost number/word behind the body.
+- Reuses the `Card.Watermark` text-alpha pattern, `Decoration.Color` (nil =
+  `ColorAccent`), and `Opacity` (→ alpha); sized via `RunStyle.FontScale` (>1
+  grows). Native, decorative (no overflow logic), `LayerBackground`,
+  safe-area-exempt. Unused decorations byte-identical.
+**Acceptance criteria:**
+- A text watermark emits one run with the text + a low `<a:alpha>`; empty `Text`
+  fails validation; curated decorations byte-identical; re-render deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

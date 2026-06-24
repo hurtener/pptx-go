@@ -357,6 +357,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   To pptx.ColorRole; Angle int}`) → `pptx.LinearGradient` for a 2-stop card
   surface depth shift; nil = solid `Fill` (byte-identical). Auto-tint of `To` is
   the soul's (D-026); CardSection/Bento/Container deferred. (R13.8, engine.)
+- `58-text-watermark-decoration.md` — a `DecorationText` kind + `Decoration.Text`
+  / `FontSize` for a slide-level oversized low-opacity ghost number/word behind
+  the body, reusing the `Card.Watermark` text-alpha pattern, `Decoration.Color`
+  (D-107), and `RunStyle.FontScale` (>1 grows) for size. Byte-identical when
+  unused. (R13.9, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

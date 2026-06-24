@@ -59,6 +59,33 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 		}
 		r.stats.Shapes++
 		r.stats.Assets++
+	case DecorationText:
+		// A large, low-opacity text watermark (D-109): one centered TypeDisplay run
+		// sized to the box, colored by Decoration.Color (nil = ColorAccent) at the
+		// opacity alpha. Decorative — no overflow logic (the frame clips). Reuses the
+		// Card.Watermark pattern (D-054); native, deterministic.
+		role := pptx.ColorAccent
+		if v.Color != nil {
+			role = *v.Color
+		}
+		// Size via FontScale (a multiplier on the display role size; >1 grows). The
+		// target points come from FontSize, or the box height ("fill the box").
+		targetPt := v.FontSize
+		if targetPt <= 0 {
+			targetPt = float64(box.H) / float64(pptx.Pt(1))
+		}
+		scale := 1.0
+		if dsz := r.theme.ResolveType(pptx.TypeDisplay).Size; dsz > 0 {
+			scale = targetPt / dsz
+		}
+		tf := ps.AddTextFrame(box).Anchor(pptx.AnchorMiddle)
+		p := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+		p.AddRun(v.Text, pptx.RunStyle{
+			TypeRole:  pptx.TypeDisplay,
+			Color:     pptx.TokenColorAlpha(role, alpha),
+			FontScale: scale,
+		})
+		r.stats.Shapes++
 	}
 }
 

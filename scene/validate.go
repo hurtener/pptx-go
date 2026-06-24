@@ -129,6 +129,10 @@ func validateNode(n SlideNode) error {
 			if v.AssetID == "" {
 				return errors.New("asset decoration requires an asset id")
 			}
+		case DecorationText:
+			if v.Text == "" {
+				return errors.New("text decoration requires text")
+			}
 		default:
 			return fmt.Errorf("invalid decoration kind %d", v.Kind)
 		}

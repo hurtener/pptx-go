@@ -3570,4 +3570,44 @@ byte-identical and emits no surface gradient; both deterministic.
 
 ---
 
+## D-109 — Text/number watermark decoration (`DecorationText`) (Wave 13 / Phase 75, R13.9)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.9 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) — the
+reference uses oversized translucent index numbers (big faint "01/02/03") as a
+structural device. Deckard's `Decoration` is preset-or-asset only (no text mode),
+so a slide-level ghost number had to be faked via a `Card.Watermark`, which
+overflowed. The engine needs a slide-level text watermark.
+
+**Decision:** Add a `DecorationText` kind (appended **last** after
+`DecorationAsset`, so existing kinds are byte-identical) plus `Decoration.Text
+string` and `Decoration.FontSize float64` (points; 0 = a box-height "fill the
+box" default). `renderDecoration` draws one centered `TypeDisplay` run in a text
+frame at the decoration box, colored `TokenColorAlpha(role, opacityAlpha)` (role =
+`Decoration.Color`, nil = `ColorAccent` — D-107), sized via `RunStyle.FontScale =
+targetPt / ResolveType(TypeDisplay).Size` (FontScale > 1 grows — D-074). It
+reuses the `Card.Watermark` text-alpha pattern (D-054). Validation requires a
+non-empty `Text`.
+
+**Mechanism, not opinion (D-026).** The engine draws the glyph at whatever
+`Opacity`/`Color` the caller supplies; it does not impose a default faintness —
+the subtle-alpha band is the soul's (R13.13). Decorative: one centered run, no
+overflow/wrap logic (the frame clips a short number/word). Glyph rotation
+(diagonal "DRAFT") is deferred — the builder has no rotated-text primitive (same
+limit as the ribbon diagonal, D-098).
+
+**Consequences:** Minimal wiring — `DecorationText` is native (not
+`DecorationAsset`), so `nodeUsesAssets` stays false (parallel-safe); it is a
+`Decoration`, so it inherits the renderNode safe-area exemption (decorations
+bleed by design), the layer z-order split (default `LayerBackground` → behind
+body), and the ornament-name validation early-return. No new theme token
+(mechanism over color/type tokens, P2), no OOXML/`restorenamespaces` change (the
+same text-run XML the card watermark emits). Deterministic (integer-EMU box
+height → points → `@sz` 1/100-pt). Tested: a watermark emits the text + a low
+`<a:alpha>`; empty `Text` fails Stage-1; curated decorations byte-identical;
+re-render deterministic.
+
+---
+
 *Append new entries below this line.*

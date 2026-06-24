@@ -242,6 +242,14 @@ re-paints both. nil = the solid `Fill` (byte-identical). A darker-`To` auto-tint
 convenience is the soul's choice (D-026), not the engine's. A mechanism over the
 existing color tokens, not a new token.
 
+**Text watermark** (D-109): the scene `DecorationText` kind draws an oversized,
+low-opacity ghost number/word behind the body. Its color is `Decoration.Color`
+(nil = `ColorAccent`) at the decoration's `Opacity` alpha — a faint colored glyph
+via `TokenColorAlpha` (P2); its size comes from `Decoration.FontSize` (points, or
+a box-height default) applied as a `RunStyle.FontScale` multiplier on the
+`TypeDisplay` role size. A mechanism over the existing color/type tokens, not a
+new token; the caller/soul supplies the subtle alpha (R13.13).
+
 ## Elevation / shadow (mechanism, no new token — D-043)
 
 The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is
