@@ -3415,4 +3415,39 @@ and the default-theme case is byte-identical to `ColorCanvas`.
 
 ---
 
+## D-105 — Multi-stop background gradient (`Background.Stops`) (Wave 13 / Phase 71, R13.3)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.3 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) wants a
+background gradient with an arbitrary number of color stops at caller-chosen
+positions (a 3–4-hue hero wash). The scene `Background` only exposed a fixed
+`Gradient [2]pptx.ColorRole` two-stop linear fill, even though
+`pptx.LinearGradient` already accepts variadic `GradientStop`s — only the scene
+struct capped it at two.
+
+**Decision:** Add a scene `GradientStop{Pos float64; Color pptx.ColorRole}` type
+and a `Background.Stops []GradientStop` field. When `Stops` is non-empty it
+supersedes the legacy `Gradient` pair; `renderBackground` validates it via
+`backgroundGradientStops` (2..8 stops, each `Pos ∈ [0,1]`, strictly ascending) and
+feeds it to `pptx.LinearGradient(angle, stops...)`. When `Stops` is empty the
+legacy two-`TokenColor` path runs unchanged — **byte-identical** to pre-D-105
+output. Invalid stops record exactly one `LayoutWarning` and skip the fill (RFC
+§10.2, D-026 — no panic), consistent with the existing background-asset warning;
+backgrounds are not validated in Stage 1/2, so this is a render-time check.
+
+**Consequences:** A scene-side field extension only — no builder change (P1, no
+new OOXML capability), no new `BackgroundKind`, no OOXML element, no
+`restorenamespaces` change (the legacy path already emits `<a:gradFill>`/`<a:gs>`).
+The slice field makes `Background` (and thus `SceneSlide`) **non-comparable** with
+`==`; tests use byte-comparison / `reflect.DeepEqual` — `grep` confirms no `==`
+on `Background` in non-test code. The mapping is pure integer-EMU/alpha through
+the existing fill path, so output is deterministic regardless of worker count.
+Foundation for R13.2 radial backgrounds (Phase 72), which reuse the same `Stops`
+list with a new `BackgroundRadial` kind feeding `pptx.RadialGradient`. Tested:
+3-stop emits 3 `<a:gs>` + round-trips; `<2`/`>8`/out-of-range/descending warn +
+skip; legacy 2-role byte-identical; multi-stop deterministic.
+
+---
+
 *Append new entries below this line.*

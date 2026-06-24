@@ -210,6 +210,14 @@ a gradient stop's color is any `Color` (typically `TokenColor(role)` or
 `TokenColorAlpha(role, alpha)`), so a theme swap re-renders a glow in the new
 accent. No new token role is introduced; the token taxonomy above is unchanged.
 
+**Multi-stop background gradient** (D-105): the scene `Background.Stops
+[]GradientStop` (each `{Pos float64; Color pptx.ColorRole}`) drives a 2–8-stop
+linear background wash whose stop colors are surface-token roles — so a theme
+swap re-paints every stop (P2). It is a mechanism over the existing color
+tokens, not a new token; the underlying `pptx.LinearGradient` is already
+variadic. An empty `Stops` falls back to the legacy two-role `Background.Gradient`
+pair (byte-identical).
+
 ## Elevation / shadow (mechanism, no new token — D-043)
 
 The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is

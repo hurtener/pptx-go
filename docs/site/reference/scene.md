@@ -20,11 +20,26 @@ type Scene struct {
 }
 
 type SceneSlide struct {
-	ID      string
-	Layout  LayoutKind
-	Nodes   []SlideNode
-	Notes   RichText
-	Variant Variant
+	ID         string
+	Layout     LayoutKind
+	Nodes      []SlideNode
+	Notes      RichText
+	Variant    Variant
+	Background  Background // full-bleed slide background; zero value draws nothing
+}
+
+type Background struct {
+	Kind     BackgroundKind   // None | Color | Gradient | Asset
+	Color    pptx.ColorRole   // solid fill (Kind == BackgroundColor)
+	Gradient [2]pptx.ColorRole // legacy 2-role linear gradient (used when Stops empty)
+	Stops    []GradientStop   // multi-stop gradient: 2..8 ascending stops in [0,1]; supersedes Gradient
+	Angle    int              // linear gradient angle, degrees clockwise from +x
+	AssetID  AssetID          // full-bleed picture (Kind == BackgroundAsset)
+}
+
+type GradientStop struct {
+	Pos   float64        // [0,1]
+	Color pptx.ColorRole
 }
 
 type Metadata struct {
@@ -34,8 +49,14 @@ type Metadata struct {
 }
 ```
 A `Scene` is the input to `Render`; a `SceneSlide` is one slide: a layout
-intent, the top-level node list, optional speaker notes, and a theme
-variant.
+intent, the top-level node list, optional speaker notes, a theme variant, and
+an optional full-bleed `Background`. A zero `Background` (`BackgroundNone`)
+draws nothing. `BackgroundGradient` takes either the legacy two-role `Gradient`
+pair or, for a richer multi-hue wash, a `Stops` list of 2–8 ascending
+`GradientStop`s in `[0,1]` (the `Stops` list supersedes `Gradient` when set;
+invalid stops degrade to a warning and skip the fill — see the decisions
+reference, D-105). Point a `BackgroundColor` at `ColorPaper` (D-104) for a
+tinted off-white paper canvas.
 
 ```go
 type LayoutKind int

@@ -157,10 +157,20 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 		r.stats.Shapes++
 
 	case BackgroundGradient:
-		fill := pptx.LinearGradient(float64(bg.Angle),
-			pptx.GradientStop{Pos: 0, Color: pptx.TokenColor(bg.Gradient[0])},
-			pptx.GradientStop{Pos: 1, Color: pptx.TokenColor(bg.Gradient[1])},
-		)
+		var fill pptx.Fill
+		if len(bg.Stops) > 0 {
+			stops, ok := backgroundGradientStops(bg.Stops)
+			if !ok {
+				r.warn(sl.ID, fmt.Sprintf("background gradient stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
+				return
+			}
+			fill = pptx.LinearGradient(float64(bg.Angle), stops...)
+		} else {
+			fill = pptx.LinearGradient(float64(bg.Angle),
+				pptx.GradientStop{Pos: 0, Color: pptx.TokenColor(bg.Gradient[0])},
+				pptx.GradientStop{Pos: 1, Color: pptx.TokenColor(bg.Gradient[1])},
+			)
+		}
 		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(fill))
 		r.stats.Shapes++
 
@@ -177,6 +187,28 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 		r.stats.Shapes++
 		r.stats.Assets++
 	}
+}
+
+// backgroundGradientStops validates scene gradient stops and maps them to the
+// builder's gradient stops (D-105). It accepts 2..8 stops, each Pos in [0,1] and
+// strictly ascending, and returns (stops, true); any violation returns (nil,
+// false) so renderBackground can warn and skip (RFC §10.2, D-026 — no panic).
+// The mapping is pure (TokenColor + Pos), so output is deterministic regardless
+// of worker count.
+func backgroundGradientStops(in []GradientStop) ([]pptx.GradientStop, bool) {
+	if len(in) < 2 || len(in) > 8 {
+		return nil, false
+	}
+	out := make([]pptx.GradientStop, len(in))
+	prev := -1.0
+	for i, s := range in {
+		if s.Pos < 0 || s.Pos > 1 || s.Pos <= prev {
+			return nil, false
+		}
+		prev = s.Pos
+		out[i] = pptx.GradientStop{Pos: s.Pos, Color: pptx.TokenColor(s.Color)}
+	}
+	return out, true
 }
 
 // slideUsesAssets reports whether composing sl may register global media (images,
