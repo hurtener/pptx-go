@@ -17,11 +17,14 @@ import (
 )
 
 // Recipe draws an ornament into box at the given OOXML alpha (0..100000),
-// rotation (degrees), and surface color role, returning the number of shapes
-// emitted. The role is the decoration color (Decoration.Color, default
-// ColorAccent — D-107); a recipe may ignore it. The signature matches the
-// curated recipes in assets/ornaments exactly.
-type Recipe func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int
+// rotation (degrees), surface color role, and lattice pitch (EMU), returning the
+// number of shapes emitted. The role is the decoration color (Decoration.Color,
+// default ColorAccent — D-107). The pitch is the pattern spacing
+// (Decoration.Pitch, D-111): pattern recipes (grid_dots/noise_overlay/starfield)
+// derive their repeat count from it (0 = a legacy fixed count); the others ignore
+// it. A recipe may ignore either. The signature matches the curated recipes in
+// assets/ornaments exactly.
+type Recipe func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole, pitch pptx.EMU) int
 
 // The reserved curated ornament names (RFC §14.2).
 const (

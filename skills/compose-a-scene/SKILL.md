@@ -166,6 +166,11 @@ Supporting enums and structs:
   (an organic scatter of size/alpha-varied dots — a dark-slide starfield; more
   dots over a bigger `Size`/`Bleed` box), `radial_glow`, `glow_ring`,
   `corner_bracket`, `chevron_arrow`. Set `Color` to recolor any of them.
+- `Decoration.Pitch` (EMU) sets the lattice spacing for the pattern ornaments
+  (`grid_dots` / `noise_overlay` / `starfield`): their dot count derives from the
+  box at that pitch, so a full-bleed texture keeps a fine, consistent density
+  (e.g. `Pitch: pptx.In(0.4)` over a full-slide box). 0 = the legacy fixed count.
+  Capped for file size (a too-fine pitch warns and stops at the cap).
 
 ### Container nodes
 

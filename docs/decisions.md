@@ -3648,4 +3648,50 @@ dots.
 
 ---
 
+## D-111 — Pattern density / pitch (`Decoration.Pitch`) + 2nd `Recipe` break (Wave 13 / Phase 77, R13.7)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.7 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) — `grid_dots`
+is a fixed 6×4 lattice and `noise_overlay` a fixed 12×8 regardless of box size,
+so a full-bleed texture is 24 dots smeared across 13 inches, not the fine,
+consistent dot grid the reference uses. The pattern repeat count must derive from
+a caller pitch.
+
+**Decision:** Extend the `ornaments.Recipe` signature with a trailing `pitch
+pptx.EMU` (a second v0.x break this wave, after D-107's `role`) and add
+`Decoration.Pitch pptx.EMU`. The three pattern recipes (`GridDots`,
+`NoiseOverlay`, `Starfield`) compute `cols = box.W/pitch`, `rows = box.H/pitch`
+when `pitch > 0` (via the shared `patternDims`), else their legacy fixed counts
+(6×4 / 12×8 / `starfieldPitch`). Each caps at `patternMaxDots` (2000).
+`render_decoration` passes `v.Pitch` and emits one `LayoutWarning` when `Pitch >
+0`, the preset is a pattern (`grid_dots`/`noise_overlay`/`starfield`), and the
+projected lattice exceeds the cap. The four non-pattern recipes take and ignore
+the param.
+
+**Why a 2nd positional break, not a struct refactor.** A params-struct `Recipe`
+(absorbing alpha/rotation/role/pitch) would future-proof against further
+additions, but it is a much larger churn across all seven recipes + caller
+extensions. The minimal trailing-positional add mirrors D-107 and is mechanical;
+the struct refactor is recorded as a V2 cleanup. Both breaks are documented in
+`CHANGELOG.md`.
+
+**Cap in the recipe, warning in render_decoration.** A curated recipe has no
+`r.warn`/`slideID`, so the file-size cap lives in the recipe (silent) and the
+operator-facing warning lives in `render_decoration` (where `slideID` is in
+scope). The warning uses an upper-bound projection (`cols*rows`, before the
+sieve), gated to the pattern presets so a glow with a stray `Pitch` does not
+false-warn. `ornamentPatternCap` mirrors `assets/ornaments.patternMaxDots` (kept
+in sync by the cap test).
+
+**Consequences:** `pitch == 0` (every existing deck — the field is new) keeps the
+legacy fixed counts → byte-identical; the starfield's `pitch == 0` path uses its
+`starfieldPitch` default, identical to Phase 76. No new theme token (P2), no
+OOXML/`restorenamespaces` change, deterministic (integer division, no RNG —
+D-035). Tested: `grid_dots` at 0.4in over a 13in box yields ≫ 24 dots; a smaller
+box proportionally fewer; a legacy pattern byte-identical per preset; a tiny
+pitch warns once and caps at ≤ 2000; deterministic.
+
+---
+
 *Append new entries below this line.*

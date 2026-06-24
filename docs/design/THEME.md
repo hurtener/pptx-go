@@ -232,7 +232,10 @@ pattern → byte-identical). The curated ornament recipes (`grid_dots`,
 `chevron_arrow`)
 fill with the supplied role via `roleFill(role, alpha)`, so a texture/glow can be
 neutral grey, inverse-white, or any brand role and a theme swap re-paints it
-(P2). It is a mechanism over the existing color tokens, not a new token; the
+(P2). The pattern recipes (`grid_dots`, `noise_overlay`, `starfield`) also take a
+`Decoration.Pitch` (D-111): the dot count derives from the box at that EMU
+spacing (0 = a legacy fixed count, byte-identical) so a full-bleed texture keeps a
+consistent visual density. It is a mechanism over the existing color tokens, not a new token; the
 `ornaments.Recipe` signature carries the role as its last parameter.
 
 **Surface fill gradient** (D-108): the scene `Card.FillGradient *GradientFill`

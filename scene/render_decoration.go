@@ -39,7 +39,12 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 		if v.Color != nil {
 			role = *v.Color
 		}
-		r.stats.Shapes += recipe(ps, box, alpha, v.Rotation, role)
+		// A caller pitch over a large box can project past the pattern cap; warn
+		// once before the recipe silently caps it (R13.7, D-111).
+		if v.Pitch > 0 && isPatternPreset(v.Preset) && patternProjection(box, v.Pitch) > ornamentPatternCap {
+			r.warn(slideID, fmt.Sprintf("decoration %q at pitch %d projects past the %d-dot cap; increase the pitch", v.Preset, v.Pitch, ornamentPatternCap))
+		}
+		r.stats.Shapes += recipe(ps, box, alpha, v.Rotation, role, v.Pitch)
 	case DecorationAsset:
 		data, ct, err := r.resolve(v.AssetID)
 		if err != nil {
@@ -87,6 +92,40 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 		})
 		r.stats.Shapes++
 	}
+}
+
+// ornamentPatternCap mirrors assets/ornaments.patternMaxDots — the dot cap a
+// pattern recipe enforces. render_decoration warns when a caller pitch projects
+// past it (the recipe then caps silently). Kept in sync by the pitch-cap test.
+const ornamentPatternCap = 2000
+
+// isPatternPreset reports whether name is a lattice pattern ornament whose dot
+// count derives from Decoration.Pitch (so a cap projection warning applies).
+func isPatternPreset(name string) bool {
+	switch name {
+	case ornaments.NameGridDots, ornaments.NameNoiseOverlay, ornaments.NameStarfield:
+		return true
+	default:
+		return false
+	}
+}
+
+// patternProjection is the upper-bound dot count for a pattern lattice at pitch
+// over box (cols*rows). Used only to decide whether to warn (the recipe sieves
+// some cells, so the real count is ≤ this).
+func patternProjection(box pptx.Box, pitch pptx.EMU) int {
+	if pitch <= 0 {
+		return 0
+	}
+	cols := int(box.W / pitch)
+	rows := int(box.H / pitch)
+	if cols < 1 {
+		cols = 1
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	return cols * rows
 }
 
 // decorationBox positions the ornament box so its anchor-corresponding point

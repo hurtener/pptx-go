@@ -195,12 +195,14 @@ changes.
 
 ### Changed
 
-- `scene.OrnamentRecipe` (`scene/ornaments.Recipe`) gains a trailing
-  `role pptx.ColorRole` parameter (`func(sl, box, alpha, rotationDeg, role) int`)
-  so a decoration can choose its color via `Decoration.Color *pptx.ColorRole`
-  (nil = `ColorAccent`, byte-identical). Caller ornament extensions registered
-  with `WithOrnamentExtension` must add the `role` argument (they may ignore it).
-  Pre-V1 (`v0.x`) breaking change (D-107).
+- `scene.OrnamentRecipe` (`scene/ornaments.Recipe`) gains two trailing
+  parameters: `role pptx.ColorRole` (D-107) and `pitch pptx.EMU` (D-111) —
+  `func(sl, box, alpha, rotationDeg, role, pitch) int`. A decoration chooses its
+  color via `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`,
+  byte-identical) and its pattern density via `Decoration.Pitch pptx.EMU`
+  (0 = the legacy fixed lattice count, byte-identical). Caller ornament
+  extensions registered with `WithOrnamentExtension` must add the `role` and
+  `pitch` arguments (they may ignore them). Pre-V1 (`v0.x`) breaking change.
 - Module path is now `github.com/hurtener/pptx-go`.
 - Project is licensed under Apache-2.0; the upstream MIT license is
   preserved at `LICENSE.upstream`.
