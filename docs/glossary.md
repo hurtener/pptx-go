@@ -418,9 +418,12 @@ A scene IR leaf that places a curated `Ornament` (native) or an asset image
 by `Offset`, sized by `Size`; `Bleed` permits it off the slide edge; `Opacity`
 (0..1) and `Rotation` (degrees) style it. `Color *pptx.ColorRole` (D-107)
 overrides the ornament's color role (nil = `ColorAccent`, byte-identical), so a
-texture/glow can be neutral grey, inverse-white, or any brand role. Pure visual;
-carries no text. `Layer` is `background` (renders behind body) or `foreground`
-(renders on top) — the renderer imposes that z-order (RFC §10.2).
+texture/glow can be neutral grey, inverse-white, or any brand role. The
+`DecorationText` kind (D-109) instead draws an oversized, low-opacity ghost
+number/word (`Text` + optional `FontSize`) behind the body — colored by `Color`
+at the `Opacity` alpha. Otherwise pure visual; carries no text. `Layer` is
+`background` (renders behind body) or `foreground` (renders on top) — the
+renderer imposes that z-order (RFC §10.2).
 
 ## Delta tone
 

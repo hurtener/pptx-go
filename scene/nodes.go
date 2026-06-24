@@ -420,6 +420,10 @@ const (
 	DecorationPreset DecorationKind = iota
 	// DecorationAsset renders caller-supplied bytes as a pic.
 	DecorationAsset
+	// DecorationText renders a large, low-opacity text watermark (an oversized
+	// ghost number/word behind the body) from Decoration.Text (D-109). Appended
+	// last so existing DecorationKind values are unchanged (byte-identical).
+	DecorationText
 )
 
 // Layer selects whether a decoration renders behind or above body content.
@@ -461,7 +465,15 @@ type Decoration struct {
 	// value is ColorCanvas, a real color (the D-054 pattern). Set it to render a
 	// neutral-grey paper grain, an inverse-white starfield, or any brand-role
 	// texture/glow. Applies to DecorationPreset; an asset decoration ignores it.
+	// For DecorationText it colors the watermark glyph (nil = ColorAccent).
 	Color *pptx.ColorRole
+	// Text is the watermark string for DecorationText (an oversized ghost
+	// number/word, e.g. "03"); ignored by other kinds. Empty fails validation
+	// for DecorationText (D-109).
+	Text string
+	// FontSize is the watermark text size in points for DecorationText; 0 uses a
+	// box-height "fill the box" default. Ignored by other kinds (D-109).
+	FontSize float64
 }
 
 func (Decoration) NodeKind() NodeKind { return KindDecoration }

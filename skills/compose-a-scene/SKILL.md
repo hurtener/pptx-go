@@ -141,7 +141,7 @@ renders as native PPTX shapes**.
 | `Image` | `AssetID AssetID; Alt string; Frame FrameKind; FrameName string; Crop Crop; Fit Fit` | **picture** |
 | `CodeBlock` | `AssetID AssetID; Language, Caption string` | **picture** |
 | `Chart` | `AssetID AssetID; Caption string` | **picture** |
-| `Decoration` | `Kind DecorationKind; Preset string; AssetID AssetID; Layer Layer; Anchor Anchor; Offset Position; Size Size; Bleed bool; Opacity float64; Rotation float64; Color *pptx.ColorRole` | native (preset) / **picture** (asset). `Color` (a `*pptx.ColorRole`, `nil` = `ColorAccent`) re-colors a preset ornament — set it for a neutral-grey paper grain, an inverse-white starfield, or any brand-role texture/glow |
+| `Decoration` | `Kind DecorationKind; Preset string; AssetID AssetID; Text string; FontSize float64; Layer Layer; Anchor Anchor; Offset Position; Size Size; Bleed bool; Opacity float64; Rotation float64; Color *pptx.ColorRole` | native (preset) / **picture** (asset) / **text watermark**. `Kind` = `DecorationPreset` / `DecorationAsset` / `DecorationText`. `Color` (a `*pptx.ColorRole`, `nil` = `ColorAccent`) re-colors a preset ornament — set it for a neutral-grey paper grain, an inverse-white starfield, or any brand-role texture/glow. `DecorationText` draws an oversized, low-opacity ghost number/word (`Text`, sized by `FontSize` in points or a box-height default) behind the body — colored by `Color` at the `Opacity` alpha; set a low `Opacity` (e.g. 0.08) for a faint structural number |
 
 Supporting enums and structs:
 

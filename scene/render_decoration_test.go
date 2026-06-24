@@ -234,3 +234,57 @@ func mustRender(t *testing.T, sc scene.Scene) []byte {
 	data, _ := render(t, sc)
 	return data
 }
+
+// TestDecoration_TextWatermark is R13.9 acceptance 1: a DecorationText renders one
+// run carrying the text and a low <a:alpha> (from Opacity) (D-109).
+func TestDecoration_TextWatermark(t *testing.T) {
+	grey := pptx.ColorSurfaceAlt
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "w",
+		Nodes: []scene.SlideNode{scene.Decoration{
+			Kind: scene.DecorationText, Text: "03", Color: &grey, Opacity: 0.08,
+			Anchor: scene.AnchorCenter, Size: scene.Size{W: pptx.In(6), H: pptx.In(6)},
+		}},
+	}}}
+	data, stats := render(t, sc)
+	if len(stats.Warnings) != 0 {
+		t.Errorf("text watermark: unexpected warnings: %+v", stats.Warnings)
+	}
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	if !strings.Contains(slide, ">03<") {
+		t.Errorf("text watermark missing the text run:\n%s", slide)
+	}
+	if !strings.Contains(slide, `<a:alpha val="8000"`) {
+		t.Errorf("text watermark missing the low alpha (8000):\n%s", slide)
+	}
+}
+
+// TestDecoration_TextWatermarkEmpty is R13.9 acceptance 2: an empty Text fails
+// Stage-1 validation (D-109).
+func TestDecoration_TextWatermarkEmpty(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:    "we",
+		Nodes: []scene.SlideNode{scene.Decoration{Kind: scene.DecorationText, Anchor: scene.AnchorCenter}},
+	}}}
+	if _, err := scene.Render(pptx.New(), sc); err == nil || !strings.Contains(err.Error(), "text") {
+		t.Fatalf("empty text watermark not rejected; err = %v", err)
+	}
+}
+
+// TestDecoration_TextWatermarkDeterministic is R13.9 acceptance 3: a text
+// watermark re-renders byte-identically (D-109).
+func TestDecoration_TextWatermarkDeterministic(t *testing.T) {
+	grey := pptx.ColorSurfaceAlt
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "wd",
+		Nodes: []scene.SlideNode{scene.Decoration{
+			Kind: scene.DecorationText, Text: "02", Color: &grey, Opacity: 0.1,
+			Anchor: scene.AnchorTopRight,
+		}},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("text watermark not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+}
