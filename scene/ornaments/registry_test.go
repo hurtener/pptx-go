@@ -8,7 +8,9 @@ import (
 	"github.com/hurtener/pptx-go/scene/ornaments"
 )
 
-func noopRecipe(_ *pptx.Slide, _ pptx.Box, _ int, _ float64, _ pptx.ColorRole) int { return 0 }
+func noopRecipe(_ *pptx.Slide, _ pptx.Box, _ int, _ float64, _ pptx.ColorRole, _ pptx.EMU) int {
+	return 0
+}
 
 // TestCurated_HasSixOrnaments checks the curated factory exposes the six
 // reserved names and resolves each.

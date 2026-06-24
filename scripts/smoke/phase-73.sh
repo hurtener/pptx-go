@@ -27,7 +27,7 @@ grep_check() {
 	else fail "$desc" "pattern not found: $pat"; fi
 }
 if CGO_ENABLED=0 go build ./... >/dev/null 2>&1; then ok "library builds CGo-free"; else fail "library builds CGo-free" "go build failed"; fi
-grep_check "Recipe signature carries role"       scene/ornaments/registry.go 'role pptx.ColorRole) int'
+grep_check "Recipe signature carries role"       scene/ornaments/registry.go 'role pptx.ColorRole'
 grep_check "roleFill helper"                     assets/ornaments/ornaments.go 'func roleFill'
 grep_check "Decoration.Color field"              scene/nodes.go 'Color \*pptx.ColorRole'
 grep_check "render_decoration resolves role"     scene/render_decoration.go 'role := pptx.ColorAccent'

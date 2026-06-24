@@ -367,6 +367,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   param, since the `Recipe` signature is fixed) perturbed by a deterministic
   integer hash, with per-dot size + alpha variance and the D-107 role color.
   Capped for file size; multi-hue `Decoration.Palette` deferred. (R13.6, engine.)
+- `60-pattern-density-pitch.md` — thread a trailing `pitch pptx.EMU` through the
+  `Recipe` signature (a 2nd v0.x break) + `Decoration.Pitch`, so `grid_dots` /
+  `noise_overlay` / `starfield` derive their count from the box at a caller pitch
+  (consistent visual density at any box size). `pitch == 0` = the legacy fixed
+  count (byte-identical); capped with a past-cap `LayoutWarning`. (R13.7, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

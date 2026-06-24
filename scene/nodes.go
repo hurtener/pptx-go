@@ -474,6 +474,12 @@ type Decoration struct {
 	// FontSize is the watermark text size in points for DecorationText; 0 uses a
 	// box-height "fill the box" default. Ignored by other kinds (D-109).
 	FontSize float64
+	// Pitch is the lattice spacing (EMU) for the pattern ornaments (grid_dots /
+	// noise_overlay / starfield): their dot count derives from the box at this
+	// pitch, so a full-bleed texture keeps a consistent visual density. 0 (the
+	// zero value) keeps each pattern's legacy fixed count — byte-identical.
+	// Ignored by non-pattern presets and other kinds (D-111).
+	Pitch pptx.EMU
 }
 
 func (Decoration) NodeKind() NodeKind { return KindDecoration }

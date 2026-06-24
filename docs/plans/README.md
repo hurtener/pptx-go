@@ -1644,6 +1644,23 @@ defaults) is Deckard's product half.
 - A starfield emits dots of ≥2 sizes and ≥2 alphas at irregular spacing; a bigger
   box yields more dots; two renders byte-identical; the curated set is seven.
 
+#### Phase 77 — pattern density / pitch (R13.7, MED · engine)
+
+**Subsystem:** assets/ornaments (recipes) + scene (decoration)
+**RFC sections:** §14.2, §10.1, §10.2
+**Deps:** Phase 73 (role recipe), Phase 76 (starfield); brief 60.
+**What lands (R13.7):**
+- A trailing `pitch pptx.EMU` on the `Recipe` signature (2nd v0.x break this
+  wave) + `Decoration.Pitch` so `grid_dots` / `noise_overlay` / `starfield`
+  derive their count from the box at a caller pitch (`cols = box.W/pitch`), for a
+  consistent fine texture at any box size. `pitch == 0` keeps the legacy fixed
+  counts (6×4 / 12×8 / starfield default) → byte-identical. Capped at
+  `patternMaxDots` with a past-cap `LayoutWarning` (in `render_decoration`).
+**Acceptance criteria:**
+- `grid_dots` at 0.4in over a 13in box yields ~32 columns (≫ 6); a smaller box
+  proportionally fewer; a legacy (`Pitch == 0`) pattern is byte-identical; a tiny
+  pitch warns + caps; deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

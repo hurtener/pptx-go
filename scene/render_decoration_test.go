@@ -114,7 +114,7 @@ func TestDecoration_PresetOpacity(t *testing.T) {
 // TestDecoration_OrnamentExtension is acceptance criterion 8: a caller ornament
 // registered via WithOrnamentExtension renders.
 func TestDecoration_OrnamentExtension(t *testing.T) {
-	custom := func(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole) int {
+	custom := func(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, _ pptx.EMU) int {
 		sl.AddShape(pptx.ShapeRect, box, pptx.WithFill(pptx.SolidFill(pptx.TokenColorAlpha(role, alpha))))
 		return 1
 	}
@@ -355,4 +355,86 @@ func TestDecoration_Starfield(t *testing.T) {
 func countShapes(t *testing.T, data []byte) int {
 	t.Helper()
 	return strings.Count(zipPart(t, data, "ppt/slides/slide1.xml"), `prst="ellipse"`)
+}
+
+// TestDecoration_PatternPitch is R13.7 acceptance 1+2+4: grid_dots at a fine
+// pitch over a big box yields many more columns than the legacy 6; a smaller box
+// at the same pitch yields proportionally fewer; re-render is deterministic
+// (D-111).
+func TestDecoration_PatternPitch(t *testing.T) {
+	mk := func(w, h pptx.EMU, pitch pptx.EMU) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "p",
+			Nodes: []scene.SlideNode{scene.Decoration{
+				Kind: scene.DecorationPreset, Preset: ornaments.NameGridDots,
+				Bleed: true, Anchor: scene.AnchorCenter,
+				Size: scene.Size{W: w, H: h}, Pitch: pitch,
+			}},
+		}}}
+	}
+	bigData, big := render(t, mk(pptx.In(13), pptx.In(7), pptx.In(0.4)))
+	if len(big.Warnings) != 0 {
+		t.Errorf("pitched grid: unexpected warnings: %+v", big.Warnings)
+	}
+	// 13in / 0.4in ≈ 32 columns × 17 rows ≈ 544 dots — far more than the legacy 24.
+	if big.Shapes < 100 {
+		t.Errorf("pitched grid over a 13in box: %d dots, want >> 24", big.Shapes)
+	}
+	// A smaller box at the same pitch yields proportionally fewer dots.
+	_, small := render(t, mk(pptx.In(3), pptx.In(3), pptx.In(0.4)))
+	if small.Shapes >= big.Shapes {
+		t.Errorf("pitch density: small box %d dots >= big box %d", small.Shapes, big.Shapes)
+	}
+	// Determinism.
+	again, _ := render(t, mk(pptx.In(13), pptx.In(7), pptx.In(0.4)))
+	if !bytes.Equal(bigData, again) {
+		t.Errorf("pitched grid not deterministic (%d vs %d bytes)", len(bigData), len(again))
+	}
+}
+
+// TestDecoration_PatternPitchLegacyByteIdentical is R13.7 acceptance 2: a
+// Pitch == 0 (legacy) pattern decoration is byte-identical across renders and
+// keeps the fixed lattice count, for each pattern preset (D-111).
+func TestDecoration_PatternPitchLegacyByteIdentical(t *testing.T) {
+	for _, preset := range []string{ornaments.NameGridDots, ornaments.NameNoiseOverlay, ornaments.NameStarfield} {
+		t.Run(preset, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{
+				ID: "l",
+				Nodes: []scene.SlideNode{scene.Decoration{
+					Kind: scene.DecorationPreset, Preset: preset, Anchor: scene.AnchorCenter,
+				}},
+			}}}
+			a, _ := render(t, sc)
+			b, _ := render(t, sc)
+			if !bytes.Equal(a, b) {
+				t.Errorf("%s legacy (Pitch 0) not deterministic (%d vs %d bytes)", preset, len(a), len(b))
+			}
+		})
+	}
+}
+
+// TestDecoration_PatternPitchCapWarns is R13.7 acceptance 3: a tiny pitch over a
+// full-bleed box records one cap warning and emits no more than the cap (D-111).
+func TestDecoration_PatternPitchCapWarns(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "cap",
+		Nodes: []scene.SlideNode{scene.Decoration{
+			Kind: scene.DecorationPreset, Preset: ornaments.NameGridDots,
+			Bleed: true, Anchor: scene.AnchorCenter,
+			Size: scene.Size{W: pptx.In(13), H: pptx.In(7)}, Pitch: pptx.In(0.05),
+		}},
+	}}}
+	_, stats := render(t, sc)
+	var caps int
+	for _, w := range stats.Warnings {
+		if strings.Contains(w.Message, "cap") {
+			caps++
+		}
+	}
+	if caps != 1 {
+		t.Errorf("tiny-pitch grid: %d cap warnings, want 1 (%+v)", caps, stats.Warnings)
+	}
+	if stats.Shapes > 2000 {
+		t.Errorf("tiny-pitch grid emitted %d dots, want <= 2000 cap", stats.Shapes)
+	}
 }
