@@ -160,8 +160,12 @@ Supporting enums and structs:
   `WithFrameExtension` frame. `Crop`/`Fit` are re-exported builder types
   (`FitFill` is the default).
 - `DecorationKind` = `DecorationPreset` (curated ornament, native) /
-  `DecorationAsset` (caller bytes, picture); `Layer` = `LayerBackground`,
-  `LayerForeground`. `Opacity` is `0..1` (0 = opaque).
+  `DecorationAsset` (caller bytes, picture) / `DecorationText` (text watermark);
+  `Layer` = `LayerBackground`, `LayerForeground`. `Opacity` is `0..1` (0 = opaque).
+- Curated ornament `Preset` names: `grid_dots`, `noise_overlay`, `starfield`
+  (an organic scatter of size/alpha-varied dots — a dark-slide starfield; more
+  dots over a bigger `Size`/`Bleed` box), `radial_glow`, `glow_ring`,
+  `corner_bracket`, `chevron_arrow`. Set `Color` to recolor any of them.
 
 ### Container nodes
 

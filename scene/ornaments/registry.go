@@ -31,6 +31,7 @@ const (
 	NameCornerBracket = "corner_bracket"
 	NameChevronArrow  = "chevron_arrow"
 	NameNoiseOverlay  = "noise_overlay"
+	NameStarfield     = "starfield" // organic scatter of size/alpha-varied dots (R13.6, D-110)
 )
 
 // Registry is an immutable, name-keyed set of ornament recipes. Lookup and Names
@@ -48,6 +49,7 @@ func Curated() *Registry {
 		NameCornerBracket: assetornaments.CornerBracket,
 		NameChevronArrow:  assetornaments.ChevronArrow,
 		NameNoiseOverlay:  assetornaments.NoiseOverlay,
+		NameStarfield:     assetornaments.Starfield,
 	}}
 }
 

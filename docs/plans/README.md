@@ -1628,6 +1628,22 @@ defaults) is Deckard's product half.
 - A text watermark emits one run with the text + a low `<a:alpha>`; empty `Text`
   fails validation; curated decorations byte-identical; re-render deterministic.
 
+#### Phase 76 — starfield scatter ornament (R13.6, HIGH · engine)
+
+**Subsystem:** assets/ornaments (recipe) + scene/ornaments (registry)
+**RFC sections:** §14.2, §14.4, §10.1
+**Deps:** Phase 73 (role recipe, D-107); brief 59.
+**What lands (R13.6):**
+- A curated `starfield` ornament: a deterministic, irregular scatter of
+  role-colored dots with per-dot size (`{1,2,3}pt`) and alpha (`{35,60,100}%`)
+  variance, hash-perturbed (no RNG/clock — D-035). The dot count derives from the
+  box size at a fixed pitch (a full-bleed box → dense, a small box → sparse), so
+  the caller controls density by sizing the decoration; capped for file size. An
+  explicit caller pitch/density is R13.7; multi-hue `Decoration.Palette` deferred.
+**Acceptance criteria:**
+- A starfield emits dots of ≥2 sizes and ≥2 alphas at irregular spacing; a bigger
+  box yields more dots; two renders byte-identical; the curated set is seven.
+
 ---
 
 ## 4. Post-V1 backlog

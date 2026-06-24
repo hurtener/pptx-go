@@ -17,6 +17,7 @@ func curated() map[string]recipe {
 		"corner_bracket": assetornaments.CornerBracket,
 		"chevron_arrow":  assetornaments.ChevronArrow,
 		"noise_overlay":  assetornaments.NoiseOverlay,
+		"starfield":      assetornaments.Starfield,
 	}
 }
 

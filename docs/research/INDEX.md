@@ -362,6 +362,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   the body, reusing the `Card.Watermark` text-alpha pattern, `Decoration.Color`
   (D-107), and `RunStyle.FontScale` (>1 grows) for size. Byte-identical when
   unused. (R13.9, engine.)
+- `59-starfield-scatter-ornament.md` — a curated `starfield` ornament: a
+  box-derived lattice (count scales with the box at a fixed pitch — no caller
+  param, since the `Recipe` signature is fixed) perturbed by a deterministic
+  integer hash, with per-dot size + alpha variance and the D-107 role color.
+  Capped for file size; multi-hue `Decoration.Palette` deferred. (R13.6, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
