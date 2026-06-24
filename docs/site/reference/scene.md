@@ -297,6 +297,7 @@ const (
 	NameCornerBracket = "corner_bracket"
 	NameChevronArrow  = "chevron_arrow"
 	NameNoiseOverlay  = "noise_overlay"
+	NameStarfield     = "starfield" // organic scatter, size/alpha-varied dots
 )
 
 // scene/frames — curated device-frame names:

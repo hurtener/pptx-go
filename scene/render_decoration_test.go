@@ -2,6 +2,7 @@ package scene_test
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -9,6 +10,16 @@ import (
 	"github.com/hurtener/pptx-go/scene"
 	"github.com/hurtener/pptx-go/scene/ornaments"
 )
+
+// regexpAll returns the first capture group of every match of pat in s.
+func regexpAll(pat, s string) []string {
+	re := regexp.MustCompile(pat)
+	var out []string
+	for _, m := range re.FindAllStringSubmatch(s, -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
 
 // TestDecoration_CuratedOrnaments is acceptance criterion 6 (PR #2): each
 // curated ornament renders at least one shape with no validation error.
@@ -287,4 +298,61 @@ func TestDecoration_TextWatermarkDeterministic(t *testing.T) {
 	if !bytes.Equal(a, b) {
 		t.Errorf("text watermark not deterministic (%d vs %d bytes)", len(a), len(b))
 	}
+}
+
+// TestDecoration_Starfield is R13.6 acceptance 1-3: a starfield over a full-bleed
+// box emits dots of >=2 distinct sizes and >=2 distinct alphas, a bigger box
+// yields more dots, the role colors them, and two renders are byte-identical
+// (D-110).
+func TestDecoration_Starfield(t *testing.T) {
+	white := pptx.ColorSurface
+	mk := func(w, h pptx.EMU) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "sf",
+			Nodes: []scene.SlideNode{scene.Decoration{
+				Kind: scene.DecorationPreset, Preset: ornaments.NameStarfield,
+				Color: &white, Opacity: 0.5, Bleed: true, Anchor: scene.AnchorCenter,
+				Size: scene.Size{W: w, H: h},
+			}},
+		}}}
+	}
+	big, stats := render(t, mk(pptx.In(10), pptx.In(7)))
+	if len(stats.Warnings) != 0 {
+		t.Errorf("starfield: unexpected warnings: %+v", stats.Warnings)
+	}
+	slide := zipPart(t, big, "ppt/slides/slide1.xml")
+
+	// >=2 distinct dot sizes: the ellipse extents (a:ext cx="...").
+	sizes := map[string]bool{}
+	for _, m := range regexpAll(`<a:ext cx="(\d+)" cy="\d+"`, slide) {
+		sizes[m] = true
+	}
+	if len(sizes) < 2 {
+		t.Errorf("starfield: %d distinct dot sizes, want >=2", len(sizes))
+	}
+	// >=2 distinct alphas.
+	alphas := map[string]bool{}
+	for _, m := range regexpAll(`<a:alpha val="(\d+)"`, slide) {
+		alphas[m] = true
+	}
+	if len(alphas) < 2 {
+		t.Errorf("starfield: %d distinct dot alphas, want >=2", len(alphas))
+	}
+
+	// A bigger box yields more dots than a smaller box (box-as-density).
+	small, _ := render(t, mk(pptx.In(3), pptx.In(3)))
+	if nbig, nsmall := stats.Shapes, countShapes(t, small); nbig <= nsmall {
+		t.Errorf("starfield density: big box %d dots, small box %d — want big > small", nbig, nsmall)
+	}
+
+	// Determinism.
+	again, _ := render(t, mk(pptx.In(10), pptx.In(7)))
+	if !bytes.Equal(big, again) {
+		t.Errorf("starfield not deterministic (%d vs %d bytes)", len(big), len(again))
+	}
+}
+
+func countShapes(t *testing.T, data []byte) int {
+	t.Helper()
+	return strings.Count(zipPart(t, data, "ppt/slides/slide1.xml"), `prst="ellipse"`)
 }

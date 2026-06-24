@@ -14,7 +14,7 @@ func noopRecipe(_ *pptx.Slide, _ pptx.Box, _ int, _ float64, _ pptx.ColorRole) i
 // reserved names and resolves each.
 func TestCurated_HasSixOrnaments(t *testing.T) {
 	reg := ornaments.Curated()
-	want := []string{"chevron_arrow", "corner_bracket", "glow_ring", "grid_dots", "noise_overlay", "radial_glow"} // sorted
+	want := []string{"chevron_arrow", "corner_bracket", "glow_ring", "grid_dots", "noise_overlay", "radial_glow", "starfield"} // sorted
 	if got := reg.Names(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("Names() = %v, want %v", got, want)
 	}

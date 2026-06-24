@@ -228,7 +228,8 @@ focal-offset knob is deferred — D-106).
 **Decoration color role** (D-107): the scene `Decoration.Color *pptx.ColorRole`
 overrides the ornament's color role (nil = `ColorAccent`, the D-054 pointer
 pattern → byte-identical). The curated ornament recipes (`grid_dots`,
-`noise_overlay`, `radial_glow`, `glow_ring`, `corner_bracket`, `chevron_arrow`)
+`noise_overlay`, `starfield`, `radial_glow`, `glow_ring`, `corner_bracket`,
+`chevron_arrow`)
 fill with the supplied role via `roleFill(role, alpha)`, so a texture/glow can be
 neutral grey, inverse-white, or any brand role and a theme swap re-paints it
 (P2). It is a mechanism over the existing color tokens, not a new token; the

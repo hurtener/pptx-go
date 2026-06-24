@@ -828,10 +828,12 @@ XLSX. Lives under `internal/opc`.
 
 A curated preset decoration shape recipe in the `assets/ornaments/`
 registry: `glow_ring`, `radial_glow`, `grid_dots`, `corner_bracket`,
-`chevron_arrow`, `noise_overlay`. Rendered as native PPTX shapes in the
-active accent token, at a caller opacity and rotation (the glows use radial
-`Gradient fill`s; `noise_overlay` is a deterministic sparse-dot grain
-approximation — D-041). `chevron_arrow` and `corner_bracket` honor `Rotation`
+`chevron_arrow`, `noise_overlay`, `starfield`. Rendered as native PPTX shapes in
+the decoration's color role (default accent — D-107), at a caller opacity and
+rotation (the glows use radial `Gradient fill`s; `noise_overlay` is a
+deterministic sparse-dot grain approximation — D-041; `starfield` (D-110) is an
+organic, box-derived scatter of dots with per-dot size and alpha variance,
+hash-perturbed and deterministic). `chevron_arrow` and `corner_bracket` honor `Rotation`
 to orient (the bracket snaps to 0/90/180/270 = top-left/top-right/bottom-right/
 bottom-left, paired with the matching corner `Anchor`). Selected by a
 `Decoration`'s `Preset` name; callers add more via

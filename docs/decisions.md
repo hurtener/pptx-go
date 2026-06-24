@@ -3610,4 +3610,42 @@ re-render deterministic.
 
 ---
 
+## D-110 — Starfield scatter ornament (`starfield`) (Wave 13 / Phase 76, R13.6)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.6 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) — the
+reference's dark slides carry an irregular, sparse starfield (dots of varying
+size and opacity) for depth. Deckard's only scatter is `noise_overlay`, a uniform
+lattice of identical dots — it cannot produce the organic look.
+
+**Decision:** Add a curated `starfield` ornament
+(`assets/ornaments.Starfield`, registered `NameStarfield = "starfield"`): a
+box-derived lattice (`cols = box.W/pitch`, `rows = box.H/pitch`) where each cell's
+index is run through a fixed integer hash to perturb the dot position, pick its
+size from `{1,2,3}pt`, pick its alpha from `{35,60,100}%` of the caller alpha, and
+sieve ~20% of cells empty for sparseness. The dot color is the recipe's `role`
+(Decoration.Color, default accent — D-107). No `math/rand`, no clock (D-035) — two
+renders are byte-identical. The total is capped at 2000 dots to protect part size.
+
+**Density via the box, not a caller param.** The `Recipe` signature
+(`func(sl, box, alpha, rotationDeg, role) int`) has no pitch/density parameter,
+and changing it again would be a third break this wave. So the dot count derives
+from the box size at a fixed internal pitch: a full-bleed box (with `Bleed`) gets
+a dense field, a small box a sparse one — the caller controls density by sizing
+the decoration. An explicit caller pitch/density (and the past-cap
+`LayoutWarning`) is R13.7's scope; the curated recipe has no `r.warn` hook, so the
+cap is silent here. Multi-hue `Decoration.Palette` scatter (deferred from R13.5)
+stays deferred — a `[]ColorRole` cannot flow through the fixed `Recipe` signature.
+
+**Consequences:** Additive — the closed curated-name set grows to seven
+(`TestCurated_HasSixOrnaments` updated), existing ornaments unchanged. No new
+theme token (the dot color is a role, P2), no OOXML/`restorenamespaces` change
+(the same `a:prstGeom` ellipses + `a:solidFill`/`a:alpha` the other patterns
+emit). Tested: ≥2 distinct dot sizes and ≥2 distinct alphas; a bigger box yields
+more dots than a smaller one; two renders byte-identical; the role colors the
+dots.
+
+---
+
 *Append new entries below this line.*
