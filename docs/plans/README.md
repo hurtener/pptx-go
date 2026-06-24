@@ -1595,6 +1595,22 @@ defaults) is Deckard's product half.
   a nil-`Color` decoration is byte-identical per preset; the role threads through
   all 6 recipes. (`Decoration.Palette` multi-hue scatter → R13.6 starfield.)
 
+#### Phase 74 — surface fill gradient (R13.8, MED · engine)
+
+**Subsystem:** scene — Layer 2 renderer (Card surface)
+**RFC sections:** §11.1, §7.1, §10.1
+**Deps:** none; brief 57.
+**What lands (R13.8):**
+- A `GradientFill{From, To pptx.ColorRole; Angle int}` type + `Card.FillGradient
+  *GradientFill` so a card surface can carry a 2-stop top-to-bottom depth shift
+  via `pptx.LinearGradient`. nil = the solid `Fill` (byte-identical).
+- Both stops are explicit token roles; an auto-darker-`To` convenience is the
+  soul's (D-026). CardSection/Bento/Container deferred; the type is reusable.
+**Acceptance criteria:**
+- A `FillGradient` card emits a `<a:gradFill>` surface with the `From`/`To`
+  colors (a top-vs-bottom luminance delta); a solid-fill card is byte-identical;
+  re-render deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

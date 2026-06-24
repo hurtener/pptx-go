@@ -245,7 +245,9 @@ reserves a band so the card body shifts down below it; `RibbonCornerStar` is a s
 A scene IR container node — accent strip + optional icon / eyebrow /
 header-pill, with leaf children. Renders as a native PPTX shape group.
 The body is top-anchored by default; the opt-in `Card BodyVAlign` distributes it
-vertically. See `RFC-001-pptx-go.md §11.2`.
+vertically. The opt-in `FillGradient` (a `*GradientFill`, D-108) replaces the
+solid `Fill` with a 2-stop linear surface gradient (depth shift); nil = solid.
+See `RFC-001-pptx-go.md §11.2`.
 
 ## Card BodyVAlign
 

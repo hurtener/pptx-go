@@ -353,6 +353,10 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   add `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`, byte-identical —
   the D-054 pointer pattern). Lets textures/glows be neutral grey, inverse-white,
   or any brand role. (R13.5, engine; `Decoration.Palette` multi-hue → R13.6.)
+- `57-surface-fill-gradient.md` — add `Card.FillGradient *GradientFill` (`{From,
+  To pptx.ColorRole; Angle int}`) → `pptx.LinearGradient` for a 2-stop card
+  surface depth shift; nil = solid `Fill` (byte-identical). Auto-tint of `To` is
+  the soul's (D-026); CardSection/Bento/Container deferred. (R13.8, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

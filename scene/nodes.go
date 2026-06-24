@@ -878,18 +878,24 @@ const (
 // their zero values reproduce the pre-Phase-14 render byte-for-byte.
 type Card struct {
 	node
-	Header      string
-	Eyebrow     string // kicker label above the header
-	Icon        string // curated/extension icon name (closed-name; Stage-1 validated)
-	HeaderPill  string // pill badge text, right of the header row
-	Body        []SlideNode
-	BodyLayout  BodyLayout
-	Fill        ColorRole
-	Outline     bool        // legacy border shorthand; see BorderStyle (D-043)
-	BorderStyle BorderStyle // explicit border; BorderDefault defers to Outline
-	Size        CardSize    // interior padding scale
-	Layout      CardLayout  // header arrangement
-	Elevation   ElevationRole
+	Header     string
+	Eyebrow    string // kicker label above the header
+	Icon       string // curated/extension icon name (closed-name; Stage-1 validated)
+	HeaderPill string // pill badge text, right of the header row
+	Body       []SlideNode
+	BodyLayout BodyLayout
+	Fill       ColorRole
+	// FillGradient, when non-nil, replaces the solid Fill with a 2-stop linear
+	// gradient surface (From→To at Angle degrees clockwise from +x) for a subtle
+	// top-to-bottom depth shift (D-108). nil = solid Fill (byte-identical). Both
+	// stops resolve against the active theme (P2); a darker-To auto-tint is the
+	// soul's choice (D-026), not the engine's.
+	FillGradient *GradientFill
+	Outline      bool        // legacy border shorthand; see BorderStyle (D-043)
+	BorderStyle  BorderStyle // explicit border; BorderDefault defers to Outline
+	Size         CardSize    // interior padding scale
+	Layout       CardLayout  // header arrangement
+	Elevation    ElevationRole
 	// Rich visuals (D-054). Optional; each zero value (nil / "") omits its
 	// element, so a card that sets none renders byte-for-byte as before. The two
 	// colors are *ColorRole, not ColorRole, because ColorRole's zero value is a
@@ -917,6 +923,17 @@ type Card struct {
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }
+
+// GradientFill is an optional 2-stop linear surface fill for a Card (D-108): a
+// From→To linear gradient at Angle degrees clockwise from the positive x-axis
+// (0 = left→right, 90 = top→bottom). Both stops are surface color roles resolved
+// against the active theme, so a theme swap re-paints both (P2). A nil
+// *GradientFill leaves the card on its solid Fill (byte-identical).
+type GradientFill struct {
+	From  ColorRole
+	To    ColorRole
+	Angle int
+}
 
 // RibbonPos selects where a Card.Ribbon is pinned (R12.3, D-098). The zero value
 // RibbonTopBar is a full-width tab across the card's top edge that reserves its own band

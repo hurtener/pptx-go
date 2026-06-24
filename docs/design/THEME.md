@@ -234,6 +234,14 @@ neutral grey, inverse-white, or any brand role and a theme swap re-paints it
 (P2). It is a mechanism over the existing color tokens, not a new token; the
 `ornaments.Recipe` signature carries the role as its last parameter.
 
+**Surface fill gradient** (D-108): the scene `Card.FillGradient *GradientFill`
+(`{From, To pptx.ColorRole; Angle int}`) replaces a card's solid `Fill` with a
+2-stop linear gradient for a subtle top-to-bottom depth shift, mapped to
+`pptx.LinearGradient`. Both stops are surface token roles (P2); a theme swap
+re-paints both. nil = the solid `Fill` (byte-identical). A darker-`To` auto-tint
+convenience is the soul's choice (D-026), not the engine's. A mechanism over the
+existing color tokens, not a new token.
+
 ## Elevation / shadow (mechanism, no new token — D-043)
 
 The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is
