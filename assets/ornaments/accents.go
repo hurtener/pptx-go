@@ -11,15 +11,15 @@ import (
 // the orientation is exact without a group transform): 0 = top-left, 90 =
 // top-right, 180 = bottom-right, 270 = bottom-left. Pair the rotation with the
 // Decoration's corner anchor to frame a slide (e.g. AnchorBottomRight + 180).
-func CornerBracket(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64) int {
+func CornerBracket(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int {
 	thick := minEMU(box.W, box.H) / 12
 	if thick < pptx.Pt(2) {
 		thick = pptx.Pt(2)
 	}
 	arm := minEMU(box.W, box.H) / 2
 	h, v := cornerArms(box, thick, arm, quadrant(rotationDeg))
-	sl.AddShape(pptx.ShapeRect, h, accent(alpha))
-	sl.AddShape(pptx.ShapeRect, v, accent(alpha))
+	sl.AddShape(pptx.ShapeRect, h, roleFill(role, alpha))
+	sl.AddShape(pptx.ShapeRect, v, roleFill(role, alpha))
 	return 2
 }
 
@@ -54,8 +54,8 @@ func cornerArms(box pptx.Box, thick, arm pptx.EMU, q int) (h, v pptx.Box) {
 
 // ChevronArrow draws a directional chevron accent. It is a single shape, so it
 // honors the caller rotation (a chevron is the ornament rotation is meant for).
-func ChevronArrow(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64) int {
-	opts := []pptx.ShapeOption{accent(alpha)}
+func ChevronArrow(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int {
+	opts := []pptx.ShapeOption{roleFill(role, alpha)}
 	if rotationDeg != 0 {
 		opts = append(opts, pptx.WithRotation(rotationDeg))
 	}

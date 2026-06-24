@@ -456,6 +456,12 @@ type Decoration struct {
 	Bleed    bool     // allow the box to extend past the slide edge
 	Opacity  float64  // 0..1; 0 = fully opaque
 	Rotation float64  // degrees clockwise
+	// Color overrides the ornament's color role (D-107). nil = ColorAccent
+	// (byte-identical to pre-D-107 output) — a pointer because ColorRole's zero
+	// value is ColorCanvas, a real color (the D-054 pattern). Set it to render a
+	// neutral-grey paper grain, an inverse-white starfield, or any brand-role
+	// texture/glow. Applies to DecorationPreset; an asset decoration ignores it.
+	Color *pptx.ColorRole
 }
 
 func (Decoration) NodeKind() NodeKind { return KindDecoration }

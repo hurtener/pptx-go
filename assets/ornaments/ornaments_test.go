@@ -7,7 +7,7 @@ import (
 	"github.com/hurtener/pptx-go/pptx"
 )
 
-type recipe = func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64) int
+type recipe = func(sl *pptx.Slide, box pptx.Box, alpha int, rotationDeg float64, role pptx.ColorRole) int
 
 func curated() map[string]recipe {
 	return map[string]recipe{
@@ -31,11 +31,11 @@ func TestOrnamentRecipes_EmitShapes(t *testing.T) {
 	box := pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(3), H: pptx.In(3)}
 	for name, rec := range curated() {
 		t.Run(name, func(t *testing.T) {
-			n1 := rec(newSlide(t), box, pptx.AlphaOpaque, 0)
+			n1 := rec(newSlide(t), box, pptx.AlphaOpaque, 0, pptx.ColorAccent)
 			if n1 < 1 {
 				t.Fatalf("%s emitted %d shapes, want >= 1", name, n1)
 			}
-			if n2 := rec(newSlide(t), box, pptx.AlphaOpaque, 0); n2 != n1 {
+			if n2 := rec(newSlide(t), box, pptx.AlphaOpaque, 0, pptx.ColorAccent); n2 != n1 {
 				t.Errorf("%s shape count not deterministic: %d vs %d", name, n1, n2)
 			}
 		})
@@ -46,7 +46,7 @@ func TestOrnamentRecipes_EmitShapes(t *testing.T) {
 // without panicking (the rotation-honoring ornament).
 func TestChevronArrow_Rotation(t *testing.T) {
 	box := pptx.Box{X: pptx.In(1), Y: pptx.In(1), W: pptx.In(2), H: pptx.In(2)}
-	if n := assetornaments.ChevronArrow(newSlide(t), box, pptx.AlphaOpaque, 90); n != 1 {
+	if n := assetornaments.ChevronArrow(newSlide(t), box, pptx.AlphaOpaque, 90, pptx.ColorAccent); n != 1 {
 		t.Errorf("ChevronArrow emitted %d shapes, want 1", n)
 	}
 }

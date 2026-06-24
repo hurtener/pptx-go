@@ -3490,4 +3490,46 @@ legacy 2-role) emits the circular focal and round-trips with
 
 ---
 
+## D-107 — Decoration color role (`Decoration.Color`) + `Recipe` signature break (Wave 13 / Phase 73, R13.5)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.5 (`DECKARD-PRODUCT-REQUIREMENTS.md`, CRITICAL · engine) — every
+curated ornament hard-codes `pptx.ColorAccent`, so neutral-grey paper grain, a
+white starfield, or multi-color confetti (the reference's decoration palette) are
+unreachable and Deckard omits decoration. The engine must let the caller pick the
+decoration color.
+
+**Decision:** Add `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`) and
+thread a trailing `role pptx.ColorRole` parameter through the `ornaments.Recipe`
+signature and all six curated recipes; the `accent(alpha)` helper becomes
+`roleFill(role, alpha)`, and the glow recipes use the role in their gradient
+stops. `render_decoration` resolves `role := ColorAccent; if v.Color != nil {
+role = *v.Color }` and passes it. A nil `Color` → `ColorAccent` → every recipe
+fills exactly as before → **byte-identical**.
+
+**`Color` is a pointer (§4.3 deviation).** R13.5's spec text says
+`Decoration.Color pptx.ColorRole` (zero = ColorAccent). But `ColorRole`'s zero is
+`ColorCanvas` (a real color), so a value field could not mean "accent by default"
+without remapping zero — which would make `ColorCanvas` decoration impossible.
+Use `*pptx.ColorRole` (nil = accent), the same resolution D-054 reached for
+`Card.HeaderFill`/`StatusDot` and D-098 for `Ribbon.Color`.
+
+**Public `Recipe` signature break.** `ornaments.Recipe` is exported (aliased as
+`scene.OrnamentRecipe`, registered via `scene.WithOrnamentExtension`). Adding the
+`role` parameter is a v0.x breaking change — caller ornament extensions must add
+the (possibly-ignored) `role` arg. The spec explicitly calls for changing the
+signature; the break is documented in `CHANGELOG.md` under Changed.
+
+**Consequences:** No new theme token (a mechanism over existing surface roles, P2),
+no OOXML/`restorenamespaces` change (same `<a:solidFill>`/`<a:gradFill>` shapes,
+different resolved `srgbClr`), deterministic. `Decoration.Palette []pptx.ColorRole`
+for multi-hue scatter is **deferred** to R13.6 (starfield), which will cycle the
+single-color mechanism this phase ships. Tested: a `Color`-set decoration emits a
+different `srgbClr` than the accent default; a nil-`Color` decoration is
+byte-identical per curated preset; the role threads through all six recipes
+(solid + glow); the caller-extension path compiles and renders with the role.
+
+---
+
 *Append new entries below this line.*

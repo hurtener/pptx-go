@@ -1,6 +1,7 @@
 package scene_test
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -102,8 +103,8 @@ func TestDecoration_PresetOpacity(t *testing.T) {
 // TestDecoration_OrnamentExtension is acceptance criterion 8: a caller ornament
 // registered via WithOrnamentExtension renders.
 func TestDecoration_OrnamentExtension(t *testing.T) {
-	custom := func(sl *pptx.Slide, box pptx.Box, alpha int, _ float64) int {
-		sl.AddShape(pptx.ShapeRect, box, pptx.WithFill(pptx.SolidFill(pptx.TokenColorAlpha(pptx.ColorAccent, alpha))))
+	custom := func(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole) int {
+		sl.AddShape(pptx.ShapeRect, box, pptx.WithFill(pptx.SolidFill(pptx.TokenColorAlpha(role, alpha))))
 		return 1
 	}
 	sc := scene.Scene{Slides: []scene.SceneSlide{{
@@ -177,4 +178,59 @@ func TestDecoration_AssetRotationOpacity(t *testing.T) {
 	if !strings.Contains(slide, `<a:alphaModFix amt="50000"`) {
 		t.Errorf("asset decoration missing opacity (alphaModFix):\n%s", slide)
 	}
+}
+
+// TestDecoration_ColorRole is R13.5 acceptance 1: a decoration with an explicit
+// Color renders a different srgbClr than the accent default for the same preset
+// (D-107).
+func TestDecoration_ColorRole(t *testing.T) {
+	role := pptx.ColorError // DC2626, distinct from the default accent 2563EB
+	mk := func(color *pptx.ColorRole) scene.Scene {
+		return scene.Scene{Slides: []scene.SceneSlide{{
+			ID: "c",
+			Nodes: []scene.SlideNode{scene.Decoration{
+				Kind: scene.DecorationPreset, Preset: ornaments.NameGridDots,
+				Anchor: scene.AnchorCenter, Color: color,
+			}},
+		}}}
+	}
+	accent := zipPart(t, mustRender(t, mk(nil)), "ppt/slides/slide1.xml")
+	custom := zipPart(t, mustRender(t, mk(&role)), "ppt/slides/slide1.xml")
+
+	if !strings.Contains(accent, "2563EB") {
+		t.Errorf("default decoration did not use the accent color 2563EB")
+	}
+	if !strings.Contains(custom, "DC2626") {
+		t.Errorf("Color=ColorError decoration did not use DC2626")
+	}
+	if strings.Contains(custom, "2563EB") {
+		t.Errorf("Color=ColorError decoration leaked the accent color 2563EB")
+	}
+}
+
+// TestDecoration_ColorNilByteIdentical is R13.5 acceptance 2: a nil Color
+// decoration is byte-identical to itself across renders (and uses the accent
+// default), for every curated preset (D-107).
+func TestDecoration_ColorNilByteIdentical(t *testing.T) {
+	for _, preset := range ornaments.Curated().Names() {
+		t.Run(preset, func(t *testing.T) {
+			sc := scene.Scene{Slides: []scene.SceneSlide{{
+				ID: "n",
+				Nodes: []scene.SlideNode{scene.Decoration{
+					Kind: scene.DecorationPreset, Preset: preset, Anchor: scene.AnchorCenter,
+				}},
+			}}}
+			a := mustRender(t, sc)
+			b := mustRender(t, sc)
+			if !bytes.Equal(a, b) {
+				t.Errorf("%s nil-Color decoration not deterministic (%d vs %d bytes)", preset, len(a), len(b))
+			}
+		})
+	}
+}
+
+func mustRender(t *testing.T, sc scene.Scene) []byte {
+	t.Helper()
+	data, _ := render(t, sc)
+	return data
 }

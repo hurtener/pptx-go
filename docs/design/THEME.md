@@ -225,6 +225,15 @@ spotlight/vignette), consuming the same token-role `Stops` (or the legacy 2-role
 new token; a theme swap re-paints it. The focal point is centered (the
 focal-offset knob is deferred — D-106).
 
+**Decoration color role** (D-107): the scene `Decoration.Color *pptx.ColorRole`
+overrides the ornament's color role (nil = `ColorAccent`, the D-054 pointer
+pattern → byte-identical). The curated ornament recipes (`grid_dots`,
+`noise_overlay`, `radial_glow`, `glow_ring`, `corner_bracket`, `chevron_arrow`)
+fill with the supplied role via `roleFill(role, alpha)`, so a texture/glow can be
+neutral grey, inverse-white, or any brand role and a theme swap re-paints it
+(P2). It is a mechanism over the existing color tokens, not a new token; the
+`ornaments.Recipe` signature carries the role as its last parameter.
+
 ## Elevation / shadow (mechanism, no new token — D-043)
 
 The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is

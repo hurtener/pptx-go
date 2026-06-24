@@ -12,10 +12,12 @@ package ornaments
 
 import "github.com/hurtener/pptx-go/pptx"
 
-// accent is a solid accent-token fill at the given OOXML alpha (the ornament
-// color path — P2). alpha == 0 is fully transparent; AlphaOpaque is solid.
-func accent(alpha int) pptx.ShapeOption {
-	return pptx.WithFill(pptx.SolidFill(pptx.TokenColorAlpha(pptx.ColorAccent, alpha)))
+// roleFill is a solid surface-token fill in role at the given OOXML alpha (the
+// ornament color path — P2, D-107). The caller chooses the role (Decoration.Color,
+// default ColorAccent), so a texture/glow/shape can be neutral grey, inverse-white,
+// or any brand role. alpha == 0 is fully transparent; AlphaOpaque is solid.
+func roleFill(role pptx.ColorRole, alpha int) pptx.ShapeOption {
+	return pptx.WithFill(pptx.SolidFill(pptx.TokenColorAlpha(role, alpha)))
 }
 
 // minEMU returns the smaller of a and b.

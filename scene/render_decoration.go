@@ -33,7 +33,13 @@ func (r *renderer) renderDecoration(ps *pptx.Slide, region pptx.Box, v Decoratio
 			r.warn(slideID, fmt.Sprintf("decoration ornament %q not registered; skipped", v.Preset))
 			return
 		}
-		r.stats.Shapes += recipe(ps, box, alpha, v.Rotation)
+		// Decoration.Color overrides the ornament color role; nil = ColorAccent
+		// (byte-identical to pre-D-107 output).
+		role := pptx.ColorAccent
+		if v.Color != nil {
+			role = *v.Color
+		}
+		r.stats.Shapes += recipe(ps, box, alpha, v.Rotation, role)
 	case DecorationAsset:
 		data, ct, err := r.resolve(v.AssetID)
 		if err != nil {

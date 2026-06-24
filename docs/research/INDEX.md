@@ -348,6 +348,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   spotlight/vignette); reuses the Phase-71 stops resolver (multi-stop or legacy
   2-role). Focal-offset knob deferred (center-only, documented). Byte-identical
   when unused. (R13.2, engine.)
+- `56-decoration-color-role.md` — thread a `role pptx.ColorRole` through the
+  `ornaments.Recipe` signature (a v0.x public break) + all 6 curated recipes, and
+  add `Decoration.Color *pptx.ColorRole` (nil = `ColorAccent`, byte-identical —
+  the D-054 pointer pattern). Lets textures/glows be neutral grey, inverse-white,
+  or any brand role. (R13.5, engine; `Decoration.Palette` multi-hue → R13.6.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
