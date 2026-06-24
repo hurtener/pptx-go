@@ -3733,4 +3733,36 @@ empty mesh is byte-identical to no background; deterministic; `String() ==
 
 ---
 
+## D-113 — Focal glow behind a card (`Card.Backdrop`) (Wave 13 / Phase 79, R13.10)
+
+**Status:** Accepted. **Date:** 2026-06-24.
+
+**Context:** R13.10 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · engine) — the
+reference puts a soft glow precisely behind a focal element (a card sits in a
+faint halo). Deckard decorations anchor only to the slide region, not a computed
+node box, so a glow behind the middle card across any layout is unreachable.
+
+**Decision:** Add `Card.Backdrop *Decoration`. `renderCard` draws it via
+`r.renderDecoration(ps, box, *v.Backdrop, slideID)` **before** `renderCardChrome`,
+passing the card's computed, safe-area-clamped box as the decoration's region. So
+a center-anchored, larger-than-card, bleeding `radial_glow` becomes a halo
+centered on the card that spills beyond it and sits behind the card's fill
+(z-order: backdrop first, chrome on top). nil = nothing (byte-identical). This is
+the simplest additive form the req names (option (a), a `Card`/`Container` field);
+a general node-relative anchor (option (b)) is broader and deferred — the
+`Card.Backdrop` form covers the motivating focal-card case.
+
+**Consequences:** No renderer change beyond the one call — `renderDecoration`
+already places a decoration within an arbitrary region. No new theme token (the
+glow color is a surface role + the decoration's `Opacity` alpha, P2; the soul
+keeps it subtle, R13.13), no OOXML/`restorenamespaces` change. `Card` is already
+non-comparable (`Body []SlideNode`), so the pointer adds no constraint. The caller
+sets `Bleed: true` for the halo (the existing off-region warning is suppressed,
+as for slide-region decorations); the R13.7 pitch-cap warning only fires for
+pattern presets, so a glow backdrop never trips it. Tested: a `radial_glow`
+backdrop's radial ellipse precedes the card's `roundRect` fill in the slide XML;
+a nil-backdrop card is byte-identical and emits no glow; deterministic.
+
+---
+
 *Append new entries below this line.*

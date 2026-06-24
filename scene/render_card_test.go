@@ -376,3 +376,55 @@ func TestCardFillGradient_Deterministic(t *testing.T) {
 		t.Errorf("gradient card not deterministic (%d vs %d bytes)", len(a), len(b))
 	}
 }
+
+// TestCardBackdrop is R13.10 acceptance 1: a card with a radial_glow Backdrop
+// emits a radial-gradient ellipse before the card's rounded-rect fill (behind it
+// in z-order) (D-113).
+func TestCardBackdrop(t *testing.T) {
+	accent := pptx.ColorAccent
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "bd",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Focal", Fill: pptx.ColorSurface,
+			Backdrop: &scene.Decoration{
+				Kind: scene.DecorationPreset, Preset: "radial_glow",
+				Color: &accent, Opacity: 0.18, Anchor: scene.AnchorCenter,
+				Size: scene.Size{W: pptx.In(6), H: pptx.In(6)}, Bleed: true,
+			},
+			Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+		}},
+	}}}
+	data, stats := render(t, sc)
+	if len(stats.Warnings) != 0 {
+		t.Errorf("backdrop: unexpected warnings: %+v", stats.Warnings)
+	}
+	slide := zipPart(t, data, "ppt/slides/slide1.xml")
+	glow := strings.Index(slide, `path="circle"`)    // the radial backdrop
+	fill := strings.Index(slide, `prst="roundRect"`) // the card surface
+	if glow < 0 || fill < 0 {
+		t.Fatalf("missing markers: glow=%d fill=%d\n%s", glow, fill, slide)
+	}
+	if glow >= fill {
+		t.Errorf("backdrop z-order: glow(%d) should precede card fill(%d)", glow, fill)
+	}
+}
+
+// TestCardBackdrop_NilByteIdentical is R13.10 acceptance 2+3: a nil-Backdrop card
+// is byte-identical across renders (D-113).
+func TestCardBackdrop_NilByteIdentical(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "nb",
+		Nodes: []scene.SlideNode{scene.Card{
+			Header: "Plain", Fill: pptx.ColorSurface,
+			Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("x")}}},
+		}},
+	}}}
+	a, _ := render(t, sc)
+	b, _ := render(t, sc)
+	if !bytes.Equal(a, b) {
+		t.Errorf("nil-backdrop card not deterministic (%d vs %d bytes)", len(a), len(b))
+	}
+	if strings.Contains(zipPart(t, a, "ppt/slides/slide1.xml"), `path="circle"`) {
+		t.Errorf("nil-backdrop card unexpectedly emitted a radial glow")
+	}
+}

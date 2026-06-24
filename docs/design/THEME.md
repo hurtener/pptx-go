@@ -246,6 +246,13 @@ spacing (0 = a legacy fixed count, byte-identical) so a full-bleed texture keeps
 consistent visual density. It is a mechanism over the existing color tokens, not a new token; the
 `ornaments.Recipe` signature carries the role as its last parameter.
 
+**Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
+decoration (typically a role-colored `radial_glow`) behind the card's computed
+box, before its fill — a focal halo. It composes the decoration node + the glow
+recipe (D-107) at the card's box; no new token, the glow color is a surface role
+and the alpha is the decoration's `Opacity` (kept subtle by the soul, R13.13).
+nil = no backdrop (byte-identical).
+
 **Surface fill gradient** (D-108): the scene `Card.FillGradient *GradientFill`
 (`{From, To pptx.ColorRole; Angle int}`) replaces a card's solid `Fill` with a
 2-stop linear gradient for a subtle top-to-bottom depth shift, mapped to

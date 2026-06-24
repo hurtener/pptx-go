@@ -938,6 +938,12 @@ type Card struct {
 	// the header text flow (distinct from HeaderPill); a RibbonTopBar shifts the body
 	// down. nil = no ribbon, byte-identical.
 	Ribbon *Ribbon
+	// Backdrop is an optional decoration drawn behind the card's computed box,
+	// before its fill (D-113) — a focal glow/halo that tracks the card across any
+	// layout. Typically a center-anchored, bleeding radial_glow. nil = none,
+	// byte-identical. The card box is passed as the decoration's region, so the
+	// glow centers on the card and (with Bleed) spills beyond it behind the fill.
+	Backdrop *Decoration
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }
