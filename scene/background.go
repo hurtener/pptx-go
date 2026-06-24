@@ -26,6 +26,13 @@ const (
 	// BackgroundAsset fills the slide canvas with a full-bleed picture resolved
 	// via Background.AssetID from the render's AssetResolver.
 	BackgroundAsset
+
+	// BackgroundRadial fills the slide canvas with a center-out radial gradient
+	// (a spotlight/vignette) from Background.Stops, or the legacy two-role
+	// Background.Gradient pair when Stops is empty. The focal point is centered
+	// (a 50%-inset circle); a focal offset is not yet exposed (D-106). Appended
+	// last so existing BackgroundKind values are unchanged (byte-identical).
+	BackgroundRadial
 )
 
 // GradientStop is one color stop in a multi-stop background gradient (D-105).
@@ -47,6 +54,8 @@ func (k BackgroundKind) String() string {
 		return "gradient"
 	case BackgroundAsset:
 		return "asset"
+	case BackgroundRadial:
+		return "radial"
 	default:
 		return "none"
 	}

@@ -343,6 +343,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   field extension. Empty `Stops` → legacy 2-role path (byte-identical); invalid
   stops → `LayoutWarning` + skip (D-026); the slice makes `Background`
   non-comparable. (R13.3, engine; foundation for R13.2 radial.)
+- `55-radial-vignette-background.md` — add a `BackgroundRadial` kind feeding the
+  already-variadic `pptx.RadialGradient` (centered 50%-inset focal — a
+  spotlight/vignette); reuses the Phase-71 stops resolver (multi-stop or legacy
+  2-role). Focal-offset knob deferred (center-only, documented). Byte-identical
+  when unused. (R13.2, engine.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

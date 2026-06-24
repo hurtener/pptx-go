@@ -218,6 +218,13 @@ tokens, not a new token; the underlying `pptx.LinearGradient` is already
 variadic. An empty `Stops` falls back to the legacy two-role `Background.Gradient`
 pair (byte-identical).
 
+**Radial background** (D-106): `BackgroundRadial` emits a center-out radial fill
+via `pptx.RadialGradient` (a centered 50%-inset circular focal — a
+spotlight/vignette), consuming the same token-role `Stops` (or the legacy 2-role
+`Gradient`). Like the linear path it is a mechanism over the color tokens, not a
+new token; a theme swap re-paints it. The focal point is centered (the
+focal-offset knob is deferred — D-106).
+
 ## Elevation / shadow (mechanism, no new token — D-043)
 
 The drop-shadow primitive `pptx.WithElevation(role)` / `pptx.WithShadow(e)` is

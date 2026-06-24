@@ -53,7 +53,7 @@ z-layer). A zero `Background` (`BackgroundNone`) draws nothing. The kinds:
 
 ```go
 type Background struct {
-    Kind     BackgroundKind    // BackgroundNone | BackgroundColor | BackgroundGradient | BackgroundAsset
+    Kind     BackgroundKind    // BackgroundNone | BackgroundColor | BackgroundGradient | BackgroundAsset | BackgroundRadial
     Color    pptx.ColorRole    // BackgroundColor — solid fill (e.g. pptx.ColorPaper for a tinted paper canvas)
     Gradient [2]pptx.ColorRole // BackgroundGradient — legacy 2-role linear gradient (used when Stops is empty)
     Stops    []scene.GradientStop // BackgroundGradient — multi-stop wash: 2..8 ascending stops in [0,1]
@@ -82,6 +82,20 @@ Background: scene.Background{
 the renderer records one warning and skips the fill (it never panics). An empty
 `Stops` falls back to the two-role `Gradient` pair (byte-identical to the
 2-stop form).
+
+For a center-out spotlight/vignette (good behind a dark hero or closing slide),
+use `BackgroundRadial` — it draws the same `Stops` (or the 2-role `Gradient`) as
+a radial fill with a centered focal:
+
+```go
+Background: scene.Background{
+    Kind: scene.BackgroundRadial,
+    Stops: []scene.GradientStop{
+        {Pos: 0, Color: pptx.ColorSurface}, // brighter center
+        {Pos: 1, Color: pptx.ColorCanvas},  // darker edges
+    },
+},
+```
 
 **`LayoutKind`** — `LayoutCover`, `LayoutTitleContent`, `LayoutTwoColumn`,
 `LayoutCardGrid`, `LayoutFullBleed`, `LayoutBlank`. A structural intent; it maps

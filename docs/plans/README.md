@@ -1557,6 +1557,26 @@ defaults) is Deckard's product half.
   re-render is deterministic. Foundation for R13.2 radial (Phase 72): the same
   `Stops` + a `BackgroundRadial` kind feeding `pptx.RadialGradient`.
 
+#### Phase 72 — radial-vignette background (R13.2, HIGH · engine)
+
+**Subsystem:** scene — Layer 2 renderer (Background)
+**RFC sections:** §10.1, §10.2
+**Deps:** Phase 71 (stops resolver, D-105); brief 55.
+**What lands (R13.2):**
+- A `BackgroundRadial` kind (appended last) that emits a center-out radial fill
+  via `pptx.RadialGradient` (centered 50%-inset focal — a spotlight/vignette for
+  dark hero/section/closing slides). It reuses the Phase-71 stops via a shared
+  `backgroundGradientStopsFor` resolver — multi-stop `Stops` or the legacy 2-role
+  `Gradient` pair. The `BackgroundGradient` (linear) case is refactored through
+  the same resolver, byte-identical.
+- Center-only focal: the focal-offset knob on `pptx.RadialGradient` is deferred
+  (documented in D-106); no new `Background` field this phase.
+**Acceptance criteria:**
+- A `BackgroundRadial` slide emits `<a:path path="circle">` and round-trips with
+  `GradientRead.Radial == true`; works with explicit `Stops` or the 2-role pair;
+  invalid stops warn + skip; re-render is deterministic; unused kind is
+  byte-identical to today.
+
 ---
 
 ## 4. Post-V1 backlog
