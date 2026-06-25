@@ -104,6 +104,36 @@ func validateNode(n SlideNode) error {
 		if v.MaxHeight < 0 {
 			return fmt.Errorf("lockup max height %d must be >= 0", v.MaxHeight)
 		}
+	case Timeline:
+		lanes := v.Lanes
+		total := len(v.Milestones)
+		for _, ln := range lanes {
+			total += len(ln.Milestones)
+		}
+		if total == 0 {
+			return errors.New("timeline requires at least one milestone")
+		}
+		check := func(ms []Milestone, where string) error {
+			for i, m := range ms {
+				if m.Position < 0 || m.Position > 1 {
+					return fmt.Errorf("timeline %s milestone %d position %g out of [0,1]", where, i, m.Position)
+				}
+			}
+			return nil
+		}
+		if err := check(v.Milestones, "top-level"); err != nil {
+			return err
+		}
+		for li, ln := range lanes {
+			if err := check(ln.Milestones, fmt.Sprintf("lane %d", li)); err != nil {
+				return err
+			}
+		}
+		for i, b := range v.Bands {
+			if b.From < 0 || b.From > 1 || b.To < 0 || b.To > 1 || b.From > b.To {
+				return fmt.Errorf("timeline band %d span [%g,%g] invalid (need 0<=From<=To<=1)", i, b.From, b.To)
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

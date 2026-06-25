@@ -407,6 +407,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `applyStyling`); nil = the plain banded table (byte-identical). CellKind glyphs
   are *not* a native-`a:tbl` feature (cells hold only text) — composed with a
   `Bento` of `Checklist`/`IconRows` (D-095/D-100). (R14.3, engine half; D-118.)
+- `67-timeline-roadmap.md` — a NEW `Timeline` IR node: a horizontal axis with
+  milestones at proportional `0..1` positions, optional phase `Bands` behind it,
+  and optional swimlanes (`Lanes`). Markers (accent dots / curated icons), the
+  axis line, and staggered labels compose from native preset shapes (no media);
+  integer-EMU layout is deterministic. `AccentIndex` cycles a pinned token set.
+  Catalog 28 → 29; vertical orientation + a date milestone type deferred. (R14.4,
+  engine; D-119.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -148,3 +148,46 @@ decoration := scene.Decoration{
 	Opacity: 0.2,
 }
 ```
+
+## Timeline (roadmap)
+
+A roadmap / timeline: a horizontal axis with milestones placed at proportional
+positions, optional phase bands behind the axis, and optional swimlanes (rows).
+Markers (an accent dot, or a curated `Icon`), the axis line, and labels render
+**natively** (no media); labels stagger above/below the axis to avoid collision.
+The caller maps dates to `0..1` positions; the engine places the fraction
+deterministically.
+
+Empty `Lanes` renders one implicit lane from the top-level `Milestones`; non-empty
+`Lanes` renders swimlane rows (each a left-gutter label + its own axis). `Bands`
+span the full timeline width behind every lane.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Milestones` | `[]Milestone` | Single-lane milestones (used when `Lanes` is empty) |
+| `Lanes` | `[]TimelineLane` | Swimlane rows; supersedes `Milestones` when non-empty |
+| `Bands` | `[]TimelineBand` | Phase/horizon regions drawn behind the axis |
+
+`Milestone` fields: `Position float64` (0..1 along the axis), `Label`, `Detail`
+`string`, `Icon string` (replaces the dot marker), `AccentIndex int` (selects the
+marker color from a pinned token cycle; 0 = accent).
+
+`TimelineLane` fields: `Label string`, `Milestones []Milestone`.
+
+`TimelineBand` fields: `From`, `To float64` (0..1), `Label string`, `Fill
+ColorRole`.
+
+```go
+timeline := scene.Timeline{
+	Bands: []scene.TimelineBand{
+		{From: 0, To: 0.5, Label: "Now", Fill: pptx.ColorAccent},
+		{From: 0.5, To: 1, Label: "Next", Fill: pptx.ColorInfo},
+	},
+	Lanes: []scene.TimelineLane{
+		{Label: "Platform", Milestones: []scene.Milestone{
+			{Position: 0.1, Label: "Beta", Icon: "star"},
+			{Position: 0.8, Label: "GA", Detail: "Q4"},
+		}},
+	},
+}
+```

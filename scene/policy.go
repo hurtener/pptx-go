@@ -45,6 +45,7 @@ var policyTable = map[NodeKind]Policy{
 	KindBanner:         {},               // native filled strip + text + icon; children per their own policy
 	KindIconRows:       {},               // native icon + text rows + optional pill frame (no asset)
 	KindLockup:         {HasAsset: true}, // asset logo → pic; icon variant is native (cf. Decoration)
+	KindTimeline:       {},               // native axis + marker dots + custGeom icons (no asset)
 }
 
 // PolicyFor returns the rendering policy for a node kind.

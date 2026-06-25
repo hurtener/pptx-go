@@ -693,6 +693,18 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## Timeline (roadmap)
+
+The scene `Timeline` node (D-119): a horizontal axis with `Milestones` placed at
+proportional `0..1` positions, optional phase `Bands` behind the axis (each
+spanning `[From,To]`), and optional swimlanes (`Lanes`, each a left-gutter label +
+its own axis). Markers are accent dots (or a curated `Icon`), the axis is a line,
+and milestone labels stagger above/below the axis (clamped on-canvas) to avoid
+collision. `Milestone.AccentIndex` cycles a pinned set of token colors. All
+geometry is integer EMU (worker-count deterministic). The caller maps dates to
+`0..1` positions; the engine places the fraction (D-026). Distinct from `Flow`,
+which is an equal-step linear pipeline. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.4.
+
 ## Table style (comparison matrix)
 
 The scene `Table.Style` (a `*TableStyle` = `{HeaderFill, Zebra bool; HighlightCol

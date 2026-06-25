@@ -30,6 +30,7 @@ func allNodes() []scene.SlideNode {
 		scene.Banner{Lead: scene.RichText{{Text: "Big takeaway"}}},
 		scene.IconRows{Rows: []scene.IconRow{{Label: scene.RichText{{Text: "row"}}}}},
 		scene.Lockup{Caption: "POWERED BY", AssetID: "a"},
+		scene.Timeline{Milestones: []scene.Milestone{{Position: 0.5, Label: "M1"}}},
 	}
 }
 
@@ -47,8 +48,8 @@ func TestCatalog_KindsDistinct(t *testing.T) {
 			t.Errorf("node %T has no String()", n)
 		}
 	}
-	if len(seen) != 28 {
-		t.Errorf("catalog has %d distinct kinds, want 28", len(seen))
+	if len(seen) != 29 {
+		t.Errorf("catalog has %d distinct kinds, want 29", len(seen))
 	}
 }
 

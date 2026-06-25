@@ -4048,4 +4048,53 @@ recipe + a soul archetype default for table styling) lives in Deckard (D-059).
 
 ---
 
+## D-119 — Timeline / roadmap node (`Timeline`) (Wave 14 / Phase 84, R14.4)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.4 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) — strategy
+and investor decks need a "where we're going" roadmap: a time axis with non-uniform
+milestones, phase/horizon bands, and swimlanes. `Flow` renders an equal-step linear
+pipeline and cannot express any of that.
+
+**Decision:** Add a new `Timeline` scene IR node (the catalog grows 28 → 29):
+`Timeline{Milestones []Milestone; Lanes []TimelineLane; Bands []TimelineBand}`,
+with `Milestone{Position float64; Label, Detail, Icon string; AccentIndex int}`,
+`TimelineLane{Label string; Milestones []Milestone}`, and `TimelineBand{From, To
+float64; Label string; Fill ColorRole}`. `renderTimeline` reserves a band-label
+strip (top) and a lane-label gutter (left), draws the phase bands (low-alpha rects
++ labels) behind everything, then one lane per row: an axis line + per-milestone
+marker (an accent dot, or a curated icon when `Icon` is set) + a staggered label
+(above for even index, below for odd, clamped to the axis box to avoid collision).
+Empty `Lanes` ⇒ one implicit lane from the top-level `Milestones`.
+
+**Proportional positions, not dates.** Each milestone's `Position` is a `0..1`
+fraction of the axis width (`cx = lane.X + Position*lane.W`, integer EMU). The
+caller/soul maps dates → fractions at author time; a `date` milestone type would
+push date arithmetic + locale formatting into the engine (R14.13 territory) — out
+of scope here. This keeps the layout pure and worker-count deterministic (D-026 —
+the engine places the fraction; the caller decides positions/phases/accents).
+
+**Native, no media.** Markers / axis / labels compose from existing preset shapes
+(`ShapeLine`, `ShapeEllipse`, `AddIcon`, text frames) — no new builder capability
+(P1); `nodeUsesAssets:false` (parallel-safe) and policy `HasAsset:false` (it
+carries no `AssetID` field). `AccentIndex` cycles a pinned set of existing token
+roles `[ColorAccent, ColorAccentAlt, ColorInfo, ColorSuccess, ColorWarning]` (P2),
+anticipating the Wave-15 multi-accent palette without depending on it.
+
+**Deferred (§4.3):** vertical orientation (horizontal is the dominant roadmap; the
+lane/axis math transposes cleanly later) and a `date` milestone type + tick labels
+(ties to R14.13).
+
+**Consequences:** The timeline/roadmap class is reachable; a deck with no Timeline
+is byte-identical (a new node is absent until used). The full new-node wiring
+landed (KindTimeline appended last, policy/validate/renderNode/preferredHeight/
+nodeUsesAssets/walkIconRefs, catalog count 28 → 29, integration kind-loop bound
+`..KindTimeline`). Tested: a 6-milestone / 3-band / 2-lane roadmap renders within
+the safe area (conformant, warning-free); the single-lane path; an out-of-range
+position fails Stage-1 validation; worker-count determinism; an adversarial dense
+roadmap with long labels stays on-canvas.
+
+---
+
 *Append new entries below this line.*

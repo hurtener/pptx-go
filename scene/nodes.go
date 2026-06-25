@@ -43,6 +43,7 @@ const (
 	KindBanner
 	KindIconRows
 	KindLockup
+	KindTimeline
 )
 
 // String returns the node kind's IR name.
@@ -104,6 +105,8 @@ func (k NodeKind) String() string {
 		return "icon_rows"
 	case KindLockup:
 		return "lockup"
+	case KindTimeline:
+		return "timeline"
 	default:
 		return "unknown"
 	}
@@ -771,6 +774,59 @@ type Lockup struct {
 }
 
 func (Lockup) NodeKind() NodeKind { return KindLockup }
+
+// Timeline is a roadmap / timeline node (R14.4, D-119): a horizontal axis with
+// milestones placed at caller-specified proportional positions, optional phase
+// bands behind them, and optional swimlanes (rows). Markers, the axis line, and
+// labels compose from native preset shapes (no media). Labels stagger above /
+// below the axis to avoid collision. Additive: a deck with no Timeline is
+// byte-identical (it is a new node — unused means absent).
+//
+// Either Milestones (a single implicit lane) or Lanes (explicit swimlanes) drives
+// the markers; Lanes, when non-empty, supersedes Milestones. Bands span the full
+// timeline width behind every lane.
+type Timeline struct {
+	node
+	// Milestones is the single-lane milestone list, used when Lanes is empty.
+	Milestones []Milestone
+	// Lanes are swimlanes (rows), each with its own milestones; supersedes
+	// Milestones when non-empty.
+	Lanes []TimelineLane
+	// Bands are optional phase/horizon regions drawn behind the axis, each
+	// spanning [From,To] of the timeline width.
+	Bands []TimelineBand
+}
+
+func (Timeline) NodeKind() NodeKind { return KindTimeline }
+
+// Milestone is one point on a Timeline axis (D-119). Position is the proportional
+// location along the axis in [0,1]; Label is the marker heading, Detail an
+// optional sub-line; Icon (optional, curated/extension) replaces the dot marker;
+// AccentIndex selects the marker color from a pinned token cycle (0 = ColorAccent).
+type Milestone struct {
+	Position    float64
+	Label       string
+	Detail      string
+	Icon        string
+	AccentIndex int
+}
+
+// TimelineLane is one swimlane (row) of a Timeline (D-119): a left-gutter Label
+// and its own milestones placed along the lane's axis.
+type TimelineLane struct {
+	Label      string
+	Milestones []Milestone
+}
+
+// TimelineBand is a phase/horizon region behind a Timeline axis (D-119): it spans
+// [From,To] (each in [0,1]) of the timeline width, filled with Fill (a surface
+// role, low-alpha) and labeled at the top.
+type TimelineBand struct {
+	From  float64
+	To    float64
+	Label string
+	Fill  ColorRole
+}
 
 // ============================================================================
 // Container nodes (RFC §11.2)

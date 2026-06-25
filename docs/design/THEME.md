@@ -294,6 +294,14 @@ matrix. A mechanism over the existing color tokens, not a new token; nil `Style`
 keeps the plain banded table (byte-identical). Cell-value glyphs are composed with
 `Bento`+`Checklist`, not a `Table` field (a native table cell holds only text).
 
+**Timeline colors** (D-119): the scene `Timeline` node colors its phase `Bands`
+from a surface role (low-alpha) and its milestone markers from a pinned cycle of
+token roles (`Milestone.AccentIndex` → `[ColorAccent, ColorAccentAlt, ColorInfo,
+ColorSuccess, ColorWarning]`), with the axis in `ColorSurfaceAlt` and labels in
+the text tokens. All token-resolved (P2), so a theme swap re-skins the roadmap;
+the soul drives which accent index each phase uses (D-026). A mechanism over the
+existing color tokens, not a new token.
+
 **Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
 decoration (typically a role-colored `radial_glow`) behind the card's computed
 box, before its fill — a focal halo. It composes the decoration node + the glow
