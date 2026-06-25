@@ -150,6 +150,22 @@ func adversarialScene() scene.Scene {
 					}},
 				}},
 			}},
+			// A fully-styled comparison matrix (R14.3): header band + grouped header
+			// row + zebra + highlighted column + row labels, with long wrapping cells.
+			// The table graphic frame must stay on-canvas; header text must contrast.
+			scene.SceneSlide{ID: fmt.Sprintf("matrix-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Table{
+					Headers: []scene.RichText{rt("Capability under evaluation"), rt("Free"), rt("Pro"), rt("Enterprise")},
+					Rows: [][]scene.RichText{
+						{rt(longText), rt("—"), rt("Included"), rt("Included")},
+						{rt(longText), rt("—"), rt("99.9%"), rt("99.99%")},
+					},
+					Style: &scene.TableStyle{
+						HeaderFill: true, Zebra: true, HighlightCol: 4, RowLabelCol: true,
+						HeaderGroups: []scene.HeaderGroup{{Label: "Plan", Span: 1}, {Label: "Paid tiers", Span: 3}},
+					},
+				},
+			}},
 		)
 	}
 	return scene.Scene{Slides: slides}

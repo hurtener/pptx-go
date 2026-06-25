@@ -285,6 +285,15 @@ shape's corner radius still clips the image; cover-fit center-crops the
 overflowing axis (from the format-header dims, §7/D-046) so there is no
 distortion. `""` / nil leaves the token fill in place (byte-identical).
 
+**Table style** (D-118): the scene `Table.Style *TableStyle` styles a comparison
+matrix from theme tokens — a header band + highlighted column use `ColorAccent`
+(with `onCardSurface` auto-contrast text, D-082); zebra striping + the row-label
+column use `ColorSurfaceAlt`; the highlighted column adds a heavier `ColorAccent`
+border. All fills/borders are token-resolved (P2), so a theme swap re-skins the
+matrix. A mechanism over the existing color tokens, not a new token; nil `Style`
+keeps the plain banded table (byte-identical). Cell-value glyphs are composed with
+`Bento`+`Checklist`, not a `Table` field (a native table cell holds only text).
+
 **Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
 decoration (typically a role-colored `radial_glow`) behind the card's computed
 box, before its fill — a focal halo. It composes the decoration node + the glow

@@ -1783,6 +1783,29 @@ of `both`. Several reqs are genuinely new scene IR nodes (the catalog grows past
 that *declares* a cover uses a photo background, and the MCP field supplying a
 per-slide photo AssetID) lives in Deckard (D-059).
 
+#### Phase 83 — styled table / comparison matrix (R14.3, HIGH · both — engine half)
+
+**Subsystem:** scene (Table node + renderer)
+**RFC sections:** §11.1, §12, §10.1, §7.1
+**Deps:** D-082, D-095/D-100; brief 66.
+**What lands (R14.3):**
+- An additive `scene.Table.Style *TableStyle{HeaderFill, Zebra bool; HighlightCol
+  int; RowLabelCol bool; HeaderGroups []HeaderGroup{Label; Span}}` that renders a
+  feature×plan comparison matrix: an accent header band (with auto-contrast text,
+  D-082), zebra body striping, a highlighted (accent-tinted, heavier-bordered)
+  column, an emphasized row-label column, and a grouped header row (merged spans).
+  All token-driven. The styled path sets every cell fill explicitly (it avoids the
+  builder's `applyStyling`, which would clobber them); a nil `Style` keeps the
+  plain banded table (byte-identical).
+- **Cell-value glyphs (check/cross/dot/mini-bar) are not a `Table` field**
+  (D-118): a native OOXML table cell holds only a text body (no shapes), and font
+  glyphs would reintroduce the empty-box risk D-095 fixed — the matrix-with-glyphs
+  case is composed with a `Bento` of `Checklist`/`IconRows` cells (already shipped).
+**Acceptance criteria:**
+- A styled matrix renders the band/zebra/highlight/row-labels in tokens
+  (conformant, warning-free); a grouped header merges its spans (`gridSpan`); a nil
+  `Style` is byte-identical; the styled table is worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

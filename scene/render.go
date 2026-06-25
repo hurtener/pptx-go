@@ -795,8 +795,13 @@ const (
 // no width/theme), which keeps single-line tables byte-identical.
 func tableHeight(v Table, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 	cols := tableColumns(v)
+	// A grouped header (R14.3) adds one row above the headers.
+	groupRows := 0
+	if v.Style != nil && len(v.Style.HeaderGroups) > 0 {
+		groupRows = 1
+	}
 	if cols < 1 || avail <= 0 || theme == nil {
-		rows := len(v.Rows)
+		rows := len(v.Rows) + groupRows
 		if len(v.Headers) > 0 {
 			rows++
 		}
@@ -808,6 +813,7 @@ func tableHeight(v Table, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 	}
 	colW := avail / pptx.EMU(cols)
 	var h pptx.EMU
+	h += pptx.In(0.4) * pptx.EMU(groupRows) // grouped header row (single line of labels)
 	if len(v.Headers) > 0 {
 		h += tableRowHeight(v.Headers, colW, theme)
 	}

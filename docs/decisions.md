@@ -3991,4 +3991,61 @@ archetype declaring a cover uses a photo background + an MCP per-slide photo
 
 ---
 
+## D-118 — Styled table / comparison matrix (`Table.Style`) (Wave 14 / Phase 83, R14.3)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.3 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both — engine half) —
+a feature-by-plan comparison matrix is the most common enterprise/SaaS slide, but
+the scene `Table` is plain RichText cells: no header band, zebra, highlighted
+column, row labels, or grouped headers. The data-table class falls back to an
+unstyled grid.
+
+**Decision:** Add an additive `Table.Style *TableStyle{HeaderFill, Zebra bool;
+HighlightCol int; RowLabelCol bool; HeaderGroups []HeaderGroup{Label; Span}}`.
+`renderTable` branches on it: a **nil** `Style` runs the existing plain path
+(`SetHeaderRow().SetBanding()`) verbatim — **byte-identical**; a **non-nil** `Style`
+runs `renderStyledTable`, composing the native-table builder (`Cell.SetFill`,
+`SetBorders`, `MergeRight`) to set every cell fill **explicitly**:
+
+- *Header band* — the header row gets a `ColorAccent` fill with `cellTextOn`
+  auto-contrast text (the inverse text token on the dark accent, D-082).
+- *Zebra* — odd body rows get a subtle `ColorSurfaceAlt` fill.
+- *Highlighted column* — the 1-based `HighlightCol`'s cells get a low-alpha accent
+  tint (a pinned `tableHighlightAlpha`, the color a token) + a heavier
+  `ColorAccent` border.
+- *Row-label column* — the first column's body cells get `ColorSurfaceAlt` + bold.
+- *Grouped header* — a row above the headers, each group `MergeRight(Span)` with an
+  accent band and contrast label.
+
+The styled path **must not** call `SetHeaderRow`/`SetBanding`: those run
+`applyStyling`, which sets header/odd-row fills *after* the call and would clobber
+the explicit `SetFill`s. `tableHeight` adds one row when `HeaderGroups` is
+non-empty so the slot estimate (and the R11.3 overflow clamp) stays truthful. All
+colors are theme tokens (P2); the engine draws the mechanism and the soul drives
+which columns/headers are emphasized (D-026). No new builder capability (P1) and
+no new IR node — the catalog stays at 28 kinds.
+
+**CellKind glyphs are deliberately *not* a `Table` field.** R14.3's spec also
+names per-cell check / cross / dot / mini-bar values "as native shapes". A native
+OOXML table cell (`a:tc`) holds only a text body — **no** `pic`/shape children — so
+those glyphs cannot be embedded as native shapes, and rendering them as font
+glyphs would reintroduce the empty-box risk D-095 fixed (it chose `custGeom` over
+font checkboxes). The matrix-with-glyphs use case is already served by a `Bento`
+of `Checklist` / `IconRows` cells (the glyph nodes shipped in D-095 / D-100; the
+requirement's own gap text notes ref-07 renders its matrix as a Bento). A future
+shape-grid "matrix" node could embed glyphs natively if demand warrants — but a
+styled native `Table` is the right home for header band / zebra / highlight /
+grouped headers, not for glyph cells.
+
+**Consequences:** Any data table or comparison matrix renders as a designed,
+on-brand grid; a `Table` with a nil `Style` is byte-identical. Tested: a styled
+matrix emits the accent + surfaceAlt fills and is conformant (warning-free); a
+grouped header merges its spans (`gridSpan`); a nil `Style` is byte-identical; the
+styled table is worker-count deterministic; an adversarial fully-styled matrix
+with long wrapping cells stays on-canvas. The product half (a "comparison-matrix"
+recipe + a soul archetype default for table styling) lives in Deckard (D-059).
+
+---
+
 *Append new entries below this line.*

@@ -400,6 +400,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `blipFill` under `spPr` → `a:` (vs the pic's `p:`). "" / nil byte-identical;
   policy stays `HasAsset:false` (native chrome, not a pic). (R14.1, engine half,
   part 2; D-117.)
+- `66-styled-table-matrix.md` — styled comparison matrix: additive scene
+  `Table.Style *TableStyle{HeaderFill, Zebra, HighlightCol, RowLabelCol,
+  HeaderGroups}` composes the native-table builder (`SetFill`/`SetBorders`/
+  `MergeRight`), controlling every cell fill explicitly (the styled path avoids
+  `applyStyling`); nil = the plain banded table (byte-identical). CellKind glyphs
+  are *not* a native-`a:tbl` feature (cells hold only text) — composed with a
+  `Bento` of `Checklist`/`IconRows` (D-095/D-100). (R14.3, engine half; D-118.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
