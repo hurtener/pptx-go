@@ -78,6 +78,7 @@ type shapeConfig struct {
 	shadow     *Elevation     // literal drop shadow; nil = unset
 	shadowRole *ElevationRole // token drop shadow; resolved at AddShape; wins over shadow
 	imageFill  ImageSource    // cover-fit image surface fill; nil = unset (wins over fill)
+	flipV      bool           // mirror vertically (xfrm flipV)
 }
 
 // ShapeOption configures a shape at creation time.
@@ -115,6 +116,14 @@ func WithRadius(role RadiusRole) ShapeOption {
 // (OOXML <a:xfrm rot>, D-041). The angle is normalized to [0, 360°).
 func WithRotation(deg float64) ShapeOption {
 	return func(c *shapeConfig) { c.rotation = &deg }
+}
+
+// WithFlipV mirrors the shape vertically (OOXML <a:xfrm flipV>). It lets a
+// directional shape — e.g. a ShapeLine — draw from the bottom-left to the
+// top-right of its (positive-extent) box, so an upward diagonal line is
+// expressible without a negative extent. Byte-identical when not set.
+func WithFlipV(flip bool) ShapeOption {
+	return func(c *shapeConfig) { c.flipV = flip }
 }
 
 // WithElevation casts a drop shadow from the active theme's Elevation token for
@@ -186,6 +195,9 @@ func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shap
 
 	if cfg.rotation != nil && sp.ShapeProperties.Transform2D != nil {
 		sp.ShapeProperties.Transform2D.Rotation = normalizeAngle60k(*cfg.rotation)
+	}
+	if cfg.flipV && sp.ShapeProperties.Transform2D != nil {
+		sp.ShapeProperties.Transform2D.FlipV = true
 	}
 
 	// Drop shadow (D-043): token role resolves against the active theme; a literal

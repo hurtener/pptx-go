@@ -134,6 +134,24 @@ func validateNode(n SlideNode) error {
 				return fmt.Errorf("timeline band %d span [%g,%g] invalid (need 0<=From<=To<=1)", i, b.From, b.To)
 			}
 		}
+	case DataMark:
+		if v.Kind < DataMarkBar || v.Kind > DataMarkSparkline {
+			return fmt.Errorf("data_mark kind %d out of range", v.Kind)
+		}
+		if v.Kind == DataMarkBar {
+			if v.Value < 0 || v.Value > 1 {
+				return fmt.Errorf("data_mark bar value %g out of [0,1]", v.Value)
+			}
+		} else {
+			if len(v.Values) == 0 {
+				return errors.New("data_mark bars/sparkline requires at least one value")
+			}
+			for i, val := range v.Values {
+				if val < 0 || val > 1 {
+					return fmt.Errorf("data_mark value %d (%g) out of [0,1]", i, val)
+				}
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

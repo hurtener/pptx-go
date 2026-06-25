@@ -191,3 +191,29 @@ timeline := scene.Timeline{
 	},
 }
 ```
+
+## DataMark (native micro-chart)
+
+A crisp, brand-colored vector micro-chart drawn entirely from preset shapes —
+**native**, no raster, no AssetResolver. `Kind` selects the shape; values are
+`0..1`; it sizes to its box and embeds in a Card/Bento cell.
+
+`DataMarkKind` values: `DataMarkBar` (a progress/capacity bar — a track + a fill to
+`Value`, with an optional inline `Label`; `Orientation` `FlowHorizontal` (default)
+or `FlowVertical`), `DataMarkBars` (a small bar group, one bar per `Values` entry),
+`DataMarkSparkline` (a trend polyline through `Values` with an accent end dot).
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Kind` | `DataMarkKind` | The mark shape |
+| `Value` | `float64` | 0..1 fraction for `DataMarkBar` |
+| `Values` | `[]float64` | 0..1 fractions for `DataMarkBars` / `DataMarkSparkline` |
+| `Orientation` | `FlowOrientation` | `DataMarkBar` direction (horizontal default / vertical) |
+| `Color` | `*ColorRole` | Mark color (nil = accent); the track is always `ColorSurfaceAlt` |
+| `Label` | `string` | Optional inline label (right of a horizontal bar) |
+
+```go
+bar := scene.DataMark{Kind: scene.DataMarkBar, Value: 0.92, Label: "92%"}
+bars := scene.DataMark{Kind: scene.DataMarkBars, Values: []float64{0.3, 0.6, 0.9, 0.5}}
+spark := scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.8, 0.4, 1.0}}
+```

@@ -44,6 +44,7 @@ const (
 	KindIconRows
 	KindLockup
 	KindTimeline
+	KindDataMark
 )
 
 // String returns the node kind's IR name.
@@ -107,6 +108,8 @@ func (k NodeKind) String() string {
 		return "lockup"
 	case KindTimeline:
 		return "timeline"
+	case KindDataMark:
+		return "data_mark"
 	default:
 		return "unknown"
 	}
@@ -871,6 +874,54 @@ type TimelineBand struct {
 	To    float64
 	Label string
 	Fill  ColorRole
+}
+
+// DataMarkKind selects a native micro-chart shape (R14.8, D-122). The bar-family
+// marks (Bar, Bars, Sparkline) are pure rect/line geometry — crisp native vector,
+// no rasterizer. Arc-based marks (donut, gauge) are a follow-up (Phase 88).
+type DataMarkKind int
+
+const (
+	// DataMarkBar is a single progress/capacity bar: a track + a fill to Value.
+	DataMarkBar DataMarkKind = iota
+	// DataMarkBars is a small bar group, one bar per Values entry.
+	DataMarkBars
+	// DataMarkSparkline is a polyline through Values (a trend line).
+	DataMarkSparkline
+)
+
+// DataMark is a native (no-raster) micro-chart (R14.8, D-122): a crisp,
+// brand-colored vector data mark drawn entirely from preset shapes — a progress
+// bar, a small bar group, or a sparkline. It is driven by numeric values in
+// [0,1] and theme colors, sizes to its box, and embeds in a Card/Bento cell.
+// Pure integer-EMU geometry → byte-identical across renders/worker counts; no
+// AssetResolver. A deck with no DataMark is byte-identical (a new node, absent
+// until used).
+type DataMark struct {
+	node
+	// Kind selects the mark shape.
+	Kind DataMarkKind
+	// Value is the single fraction in [0,1] for DataMarkBar.
+	Value float64
+	// Values are the per-element fractions in [0,1] for DataMarkBars / Sparkline.
+	Values []float64
+	// Orientation selects a horizontal (default) or vertical DataMarkBar.
+	Orientation FlowOrientation
+	// Color overrides the mark color role; nil = ColorAccent (the track is always
+	// ColorSurfaceAlt). The D-054 pointer pattern (ColorRole zero = a real color).
+	Color *ColorRole
+	// Label is an optional inline caption (drawn to the right of a horizontal bar).
+	Label string
+}
+
+func (DataMark) NodeKind() NodeKind { return KindDataMark }
+
+// markColor resolves a DataMark's mark color role (nil = ColorAccent).
+func (d DataMark) markColor() ColorRole {
+	if d.Color != nil {
+		return *d.Color
+	}
+	return ColorAccent
 }
 
 // ============================================================================

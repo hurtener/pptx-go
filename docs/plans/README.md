@@ -1868,6 +1868,29 @@ per-slide photo AssetID) lives in Deckard (D-059).
 - 4000 + USD → "$4,000+" one line; 0.92 + percent → "92%"; 4000 + de-DE →
   "4.000"; deterministic; a raw-string Stat is unchanged.
 
+#### Phase 87 — native vector micro-charts (R14.8, HIGH · engine — part 1)
+
+**Subsystem:** scene (new IR node) + pptx (a `WithFlipV` shape option)
+**RFC sections:** §11, §12, §10.1, §7.1
+**Deps:** brief 70.
+**What lands (R14.8, part 1):**
+- A new `scene.DataMark` node (catalog 29 → 30) — native (no-raster) vector
+  micro-charts drawn from preset rects + lines in theme colors: `DataMarkBar` (a
+  progress/capacity bar with an optional inline label; horizontal or vertical),
+  `DataMarkBars` (a small bar group), and `DataMarkSparkline` (a trend polyline
+  with an end dot). Values are `0..1`; integer-EMU geometry is worker-count
+  deterministic; it embeds in a Card/Bento cell; `nodeUsesAssets:false`,
+  `HasAsset:false`. `Color *ColorRole` (nil = accent); track = SurfaceAlt.
+- A new `pptx.WithFlipV(bool)` shape option lets a sparkline's upward segment draw
+  without a negative extent.
+**Acceptance criteria:**
+- A bar fills to its value in soul colors (native rounded rects, conformant); a
+  bar group + a sparkline (with an upward `flipV` segment) render natively; a
+  DataMark embeds in a card without overflow; an out-of-range value fails Stage-1
+  validation; the marks are worker-count deterministic.
+- **Deferred (§4.3):** donut + gauge (arc-based) → Phase 88 (a `blockArc`
+  adjust-guide builder seam; the icon translator forbids elliptical arcs, D-040).
+
 ---
 
 ## 4. Post-V1 backlog

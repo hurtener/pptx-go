@@ -169,6 +169,15 @@ func adversarialScene() scene.Scene {
 					},
 				},
 			}},
+			// Native micro-charts (R14.8): a labeled progress bar, a bar group, and a
+			// sparkline (with an upward segment) in a Fill card — all must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("dataviz-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Card{Header: "KPIs", Fill: scene.ColorSurface, BodyVAlign: scene.VAlignFill, Body: []scene.SlideNode{
+					scene.DataMark{Kind: scene.DataMarkBar, Value: 0.92, Label: "92%"},
+					scene.DataMark{Kind: scene.DataMarkBars, Values: []float64{0.3, 0.6, 0.9, 0.5, 0.7}},
+					scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.8, 0.4, 1.0, 0.6, 0.9}},
+				}},
+			}},
 			// An enriched testimonial (R14.5): oversized quote mark + a long multi-line
 			// quote + structured attribution. The mark, text, and strip must stay on-canvas.
 			scene.SceneSlide{ID: fmt.Sprintf("testimonial-%v", variant), Variant: variant, Nodes: []scene.SlideNode{

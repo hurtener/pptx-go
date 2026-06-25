@@ -428,6 +428,12 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   unaffected (byte-identical); a mechanism (D-026), not a visual token. Closes
   R14.2's number-format engine atom (the rest of R14.2 is product, D-004).
   (R14.13, engine half; D-121.)
+- `70-native-dataviz.md` — a NEW `DataMark` node: native (no-raster) vector
+  micro-charts — a progress `Bar`, a `Bars` group, and a `Sparkline` — from preset
+  rects + lines in theme colors; values 0..1, integer-EMU deterministic, embeds in
+  a card/cell. A new `pptx.WithFlipV` shape option lets sparkline upward segments
+  draw without a negative extent. Catalog 29 → 30. Arc-based marks (donut, gauge)
+  → Phase 88 (a `blockArc` adjust-guide builder seam). (R14.8, engine; D-122.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
