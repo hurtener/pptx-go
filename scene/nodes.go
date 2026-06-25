@@ -374,9 +374,47 @@ type Table struct {
 	Headers []RichText
 	Rows    [][]RichText
 	Caption string
+	// Style, when non-nil, applies comparison-matrix styling — a header band,
+	// zebra body striping, a highlighted column, an emphasized row-label column,
+	// and grouped header spans — all from theme tokens (R14.3, D-118). nil leaves
+	// the plain banded table (byte-identical). A non-nil Style controls every cell
+	// fill explicitly (it does not use the builder's default header/row banding).
+	Style *TableStyle
 }
 
 func (Table) NodeKind() NodeKind { return KindTable }
+
+// TableStyle is the additive visual styling for a comparison-matrix Table
+// (R14.3, D-118). Every field's zero value reproduces an unstyled column, so a
+// caller turns features on one at a time. Colors resolve from theme tokens (P2):
+// the header band and highlighted column use ColorAccent, zebra and the row-label
+// column use ColorSurfaceAlt. Cell-value glyphs (check / cross / dot / mini-bar)
+// are intentionally not a Table feature — a native OOXML table cell holds only a
+// text body (no shape children), so they are composed instead with a Bento of
+// Checklist / IconRows cells (the glyph nodes already shipped — D-095/D-100).
+type TableStyle struct {
+	// HeaderFill fills the header row with the accent band (contrast text).
+	HeaderFill bool
+	// Zebra alternates a subtle SurfaceAlt fill on odd body rows.
+	Zebra bool
+	// HighlightCol is the 1-based column to emphasize (accent tint + heavier
+	// accent border) — e.g. a "recommended" plan column. 0 (the zero value) = none.
+	HighlightCol int
+	// RowLabelCol emphasizes the first column as row labels (SurfaceAlt fill + bold).
+	RowLabelCol bool
+	// HeaderGroups, when non-empty, adds a grouped header row above the headers:
+	// each group's Label spans Span columns (merged), laid left-to-right from
+	// column 0. The spans should sum to the column count.
+	HeaderGroups []HeaderGroup
+}
+
+// HeaderGroup is one merged span in a Table's grouped header row (D-118).
+type HeaderGroup struct {
+	// Label is the group heading (e.g. "Enterprise").
+	Label string
+	// Span is the number of columns the group covers (>= 1).
+	Span int
+}
 
 // FlowOrientation selects a flow's direction.
 type FlowOrientation int

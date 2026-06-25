@@ -693,6 +693,20 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## Table style (comparison matrix)
+
+The scene `Table.Style` (a `*TableStyle` = `{HeaderFill, Zebra bool; HighlightCol
+int; RowLabelCol bool; HeaderGroups []HeaderGroup}`, D-118) turns a plain `Table`
+into a designed comparison matrix: an accent header band (auto-contrast text), a
+zebra body stripe, a highlighted (accent-tinted, heavier-bordered) column, an
+emphasized row-label column, and a grouped header row (merged column spans). All
+fills/borders resolve from theme tokens; the styled path sets every cell fill
+explicitly (it does not use the builder's default banding). nil = the plain banded
+table (byte-identical). Cell-value glyphs (check/cross/dot/bar) are *not* a `Table`
+field — a native OOXML table cell holds only text, so a glyph matrix is composed
+with a `Bento` of `Checklist`/`IconRows` cells. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.3.
+
 ## Image surface fill
 
 Filling a shape's interior — or a `Card`'s surface (`Card.ImageFill`, an
