@@ -79,14 +79,19 @@ func adversarialScene() scene.Scene {
 					Left:  []scene.SlideNode{scene.Heading{Text: rt(longText), Level: 2, AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}},
 					Right: []scene.SlideNode{scene.Heading{Text: rt(longText), Level: 2, AutoFit: true}, scene.Prose{Paragraphs: []scene.RichText{rt(longText)}}}},
 			}},
-			// A tall stat strip + hero that would overflow without the guards.
-			scene.SceneSlide{ID: fmt.Sprintf("strip-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
-				scene.Hero{Title: longText, AutoFit: true},
-				scene.Grid{Columns: 4, Cells: []scene.SlideNode{
-					scene.Stat{Value: "$4,000,000+", Label: "a", AutoFit: true}, scene.Stat{Value: "99.999%", Label: "b", AutoFit: true},
-					scene.Stat{Value: "1,234,567", Label: "c", AutoFit: true}, scene.Stat{Value: "$12.5M", Label: "d", AutoFit: true},
+			// A tall stat strip + hero that would overflow without the guards, over a
+			// gradient legibility scrim (R14.1): the scrim overlay must not displace
+			// content and text must stay on-canvas above it.
+			scene.SceneSlide{ID: fmt.Sprintf("strip-%v", variant), Variant: variant,
+				Background: scene.Background{Kind: scene.BackgroundColor, Color: scene.ColorAccent,
+					Scrim: &scene.Scrim{Color: scene.ColorSurface, Opacity: 40000, Gradient: true}},
+				Nodes: []scene.SlideNode{
+					scene.Hero{Title: longText, AutoFit: true},
+					scene.Grid{Columns: 4, Cells: []scene.SlideNode{
+						scene.Stat{Value: "$4,000,000+", Label: "a", AutoFit: true}, scene.Stat{Value: "99.999%", Label: "b", AutoFit: true},
+						scene.Stat{Value: "1,234,567", Label: "c", AutoFit: true}, scene.Stat{Value: "$12.5M", Label: "d", AutoFit: true},
+					}},
 				}},
-			}},
 			// Buttons (R12.1): a long-label primary (forces width clamp + label fitScale),
 			// a ghost outline + leading icon, and a button last in a card body (must stay
 			// inside the card padding). Centered so the offset path is exercised too.

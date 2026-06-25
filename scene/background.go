@@ -56,6 +56,50 @@ type MeshGlow struct {
 	Alpha int
 }
 
+// Scrim is an optional darkening (or tinting) overlay drawn over a slide's
+// background fill so text reads legibly over a photographic or busy background
+// (R14.1). It is a general mechanism: the engine draws it; the caller (soul)
+// chooses the color and opacity that meet its contrast target (D-026). A nil
+// Background.Scrim draws nothing (byte-identical).
+//
+// Color is the overlay's surface color role (resolved against the active theme).
+// The zero value (ColorCanvas) is a real color (white), so set it deliberately —
+// a darkening scrim typically uses a dark surface or a literal-backed role.
+//
+// Opacity is the overlay's OOXML opacity (0..100000); 0 draws an invisible
+// overlay. For a solid scrim the whole overlay carries Opacity; for a gradient
+// scrim the dense edge carries Opacity and the opposite edge is transparent.
+//
+// Gradient, when true, draws a linear gradient scrim (transparent → Color at
+// Opacity) instead of a flat wash — the classic bottom-heavy caption scrim.
+// GradientAngle (degrees clockwise from the positive x-axis; 0° = left-to-right,
+// 90° = top-to-bottom) orients it; the zero value defaults to 90° (top
+// transparent, bottom dense). Gradient is ignored for a solid scrim.
+type Scrim struct {
+	// Color is the overlay's surface color role.
+	Color pptx.ColorRole
+	// Opacity is the dense edge's OOXML opacity (0..100000).
+	Opacity int
+	// Gradient selects a transparent→Color linear gradient overlay when true,
+	// else a flat solid wash at Opacity.
+	Gradient bool
+	// GradientAngle orients a gradient scrim in degrees; zero defaults to 90°.
+	GradientAngle int
+}
+
+// Duotone is an optional two-tone recolor applied to a photographic background
+// (R14.1): the photo's shadows map to Shadow and its highlights to Highlight,
+// producing an on-brand tint. Both are surface color roles resolved against the
+// active theme (P2), so a theme swap re-tints the photo. A nil Background.Duotone
+// leaves the photo at its natural colors (byte-identical). Applies only when
+// Kind == BackgroundAsset.
+type Duotone struct {
+	// Shadow is the role the photo's dark tones map to.
+	Shadow pptx.ColorRole
+	// Highlight is the role the photo's light tones map to.
+	Highlight pptx.ColorRole
+}
+
 // GradientStop is one color stop in a multi-stop background gradient (D-105).
 // Pos is the stop position in [0,1] (0 = start, 1 = end); Color is a surface
 // role resolved against the active theme so a theme swap re-paints the stop (P2).
@@ -142,6 +186,16 @@ type Background struct {
 	// the base canvas fill in slice order. Empty draws nothing (absent config).
 	// Adds no comparability constraint beyond the Stops slice above.
 	Mesh []MeshGlow
+
+	// Scrim is an optional darkening/tinting overlay drawn over the background
+	// fill for text legibility over a photo or busy background (R14.1). nil draws
+	// nothing (byte-identical). It applies over any drawn background kind.
+	Scrim *Scrim
+
+	// Duotone is an optional two-tone recolor of a photographic background
+	// (R14.1), applied only when Kind == BackgroundAsset. nil leaves the photo at
+	// its natural colors (byte-identical).
+	Duotone *Duotone
 }
 
 // ─── VariantDark pinned palette ──────────────────────────────────────────────

@@ -386,6 +386,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `applyCornerRadius`/`applyShadow` on the pic spPr) + scene `Image.CornerRadius`
   / `Elevation`; zero tokens self-gate (byte-identical), structural G6 round-trip.
   (R13.11, engine; `DecorationAsset` framing deferred.)
+- `64-photographic-background.md` — the photographic-imagery class: a slide
+  background legibility `Scrim` (solid or transparent→color gradient overlay drawn
+  after any base fill) + a `Duotone` two-tone recolor of a photo background,
+  realized by a new builder `(*Image).SetDuotone(shadow, highlight Color)` emitting
+  an `<a:duotone>` blip effect (registered in `restorenamespaces`). nil = byte-
+  identical; structural G6 round-trip + read accessor. (R14.1, engine half;
+  image-as-card-fill → Phase 82, uniform cover-fit → V1.x.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

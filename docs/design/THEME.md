@@ -255,6 +255,26 @@ methods `(*Image).SetCornerRadius`/`SetElevation` wrap the same
 zero values) leave the picture rectangular and shadowless (byte-identical). A
 mechanism over the existing tokens, not a new token.
 
+**Background scrim** (D-116): the scene `Background.Scrim *Scrim{Color
+pptx.ColorRole; Opacity int; Gradient bool; GradientAngle int}` draws a
+darkening/tinting overlay over any drawn background fill so text reads legibly
+over a photo or busy background. It is a full-slide rect — `SolidFill(
+TokenColorAlpha(Color, Opacity))` or, for `Gradient`, a `LinearGradient` running
+transparent → `Color` at `Opacity` along `GradientAngle` (zero → 90°, top
+transparent, bottom dense). The color is a surface role (P2) so a theme swap
+re-paints it; the soul picks the color/opacity to meet its contrast target
+(D-026). nil = no overlay (byte-identical). A mechanism over the existing color
+tokens, not a new token.
+
+**Photo duotone** (D-116): the scene `Background.Duotone *Duotone{Shadow,
+Highlight pptx.ColorRole}` recolors a photographic background (`BackgroundAsset`)
+into a two-tone brand tint — the photo's shadows map to `Shadow`, its highlights
+to `Highlight` — via the builder `(*Image).SetDuotone(shadow, highlight Color)`,
+which emits an `<a:duotone>` blip effect. Both are surface roles resolved against
+the active theme (P2), so a theme swap re-tints the photo. nil = the photo's
+natural colors (byte-identical). A mechanism over the existing color tokens, not a
+new token.
+
 **Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
 decoration (typically a role-colored `radial_glow`) behind the card's computed
 box, before its fill — a focal halo. It composes the decoration node + the glow

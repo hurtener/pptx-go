@@ -672,6 +672,27 @@ anchors over the canvas, drawn via `pptx.RadialGradient` in slice order
 (deterministic). An empty `Mesh` draws nothing. See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R13.4.
 
+## Background scrim
+
+The opt-in `Background.Scrim` (a `*Scrim` = `{Color pptx.ColorRole; Opacity int;
+Gradient bool; GradientAngle int}`, D-116): a darkening/tinting overlay drawn over
+any drawn background fill so overlay text reads legibly over a photo or busy
+background. It is a full-slide rect — a solid wash at `Opacity`, or (with
+`Gradient`) a transparent→`Color` linear gradient along `GradientAngle` (zero →
+90°, top transparent, bottom dense). The color is a surface token (P2); the soul
+picks the color/opacity to meet its contrast target (D-026). nil = no overlay
+(byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
+
+## Photo duotone
+
+A two-tone brand recolor of a photographic background (`Background.Duotone`, a
+`*Duotone` = `{Shadow, Highlight pptx.ColorRole}`, D-116): the photo's shadows map
+to `Shadow` and its highlights to `Highlight`. Realized by the builder
+`(*pptx.Image).SetDuotone(shadow, highlight Color)`, which emits an `<a:duotone>`
+blip effect; both colors are surface tokens resolved against the active theme (P2)
+so a theme swap re-tints the photo. nil = the photo's natural colors
+(byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
+
 ## Grow-to-fit
 
 The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their

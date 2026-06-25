@@ -265,6 +265,44 @@ func (im *Image) SetElevation(role ElevationRole) *Image {
 	return im
 }
 
+// SetDuotone recolors the picture as a two-tone (duotone) image: the picture's
+// shadows map to shadow and its highlights to highlight, producing an on-brand
+// tint of a photo (R14.1). Both colors accept theme tokens or literals (P2), so
+// a theme swap re-tints the photo. A nil color on either side leaves the picture
+// un-recolored (byte-identical). The colors are resolved against the active
+// theme at call time and emitted as literal <a:srgbClr> values inside an
+// <a:duotone> blip effect.
+func (im *Image) SetDuotone(shadow, highlight Color) *Image {
+	if im == nil || im.pic == nil || im.pic.BlipFill == nil || im.pic.BlipFill.Blip == nil || im.s == nil {
+		return im
+	}
+	if shadow == nil || highlight == nil {
+		return im // need both tones; leave the picture un-recolored
+	}
+	t := im.s.activeTheme()
+	im.pic.BlipFill.Blip.Duotone = &slide.XDuotone{
+		Colors: []slide.XSrgbClr{
+			{Val: string(shadow.resolve(t).rgb)},
+			{Val: string(highlight.resolve(t).rgb)},
+		},
+	}
+	return im
+}
+
+// Duotone returns the picture's two-tone (shadow, highlight) recolor as resolved
+// hex values and ok=true when a duotone effect is set (the read inverse of
+// SetDuotone); ok=false when the picture is not recolored.
+func (im *Image) Duotone() (shadow, highlight RGB, ok bool) {
+	if im == nil || im.pic == nil || im.pic.BlipFill == nil || im.pic.BlipFill.Blip == nil {
+		return "", "", false
+	}
+	d := im.pic.BlipFill.Blip.Duotone
+	if d == nil || len(d.Colors) != 2 {
+		return "", "", false
+	}
+	return RGB(d.Colors[0].Val), RGB(d.Colors[1].Val), true
+}
+
 // picBox reconstructs the picture's box from its transform (offset + extent).
 func picBox(spPr *slide.XShapeProperties) Box {
 	t := spPr.Transform2D
