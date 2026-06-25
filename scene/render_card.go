@@ -106,11 +106,12 @@ type cardChrome struct {
 	size         CardSize
 	layout       CardLayout
 	elevation    ElevationRole
-	headerFill   *ColorRole // banded header region; nil = no band
-	statusDot    *ColorRole // top-right status dot; nil = no dot
-	watermark    string     // faint label behind the body; "" = none
-	paddingScale int        // basis-point multiplier on the size padding; 0/10000 = unchanged (D-076)
-	ribbon       *Ribbon    // pinned emphasis badge; nil = none (R12.3, D-098)
+	headerFill   *ColorRole       // banded header region; nil = no band
+	statusDot    *ColorRole       // top-right status dot; nil = no dot
+	watermark    string           // faint label behind the body; "" = none
+	paddingScale int              // basis-point multiplier on the size padding; 0/10000 = unchanged (D-076)
+	ribbon       *Ribbon          // pinned emphasis badge; nil = none (R12.3, D-098)
+	imageFill    pptx.ImageSource // cover-fit photo surface fill; nil = solid/gradient fill (R14.1, D-117)
 }
 
 // Ribbon geometry (R12.3, D-098). Pinned layout metrics — a top-bar band height, a
@@ -366,6 +367,12 @@ func (r *renderer) renderCardChrome(ps *pptx.Slide, box pptx.Box, c cardChrome, 
 	opts := []pptx.ShapeOption{
 		pptx.WithRadius(pptx.RadiusLG),
 		pptx.WithFill(surfaceFill),
+	}
+	// Image surface fill (R14.1, D-117): a cover-fit photo replaces the solid /
+	// gradient fill while the RadiusLG geometry still clips the corners. nil =
+	// the solid/gradient fill above (byte-identical).
+	if c.imageFill != nil {
+		opts = append(opts, pptx.WithImageFill(c.imageFill))
 	}
 	switch c.border {
 	case BorderNone:
@@ -655,12 +662,24 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 		r.renderDecoration(ps, box, *v.Backdrop, slideID)
 	}
 
+	// ImageFill (R14.1, D-117): resolve the cover-fit photo surface up front; a
+	// missing/unresolvable asset warns and falls back to the solid/gradient fill.
+	var imageFill pptx.ImageSource
+	if v.ImageFill != "" {
+		if data, ct, err := r.resolve(v.ImageFill); err == nil {
+			imageFill = pptx.ImageBytes(data, ct)
+			r.stats.Assets++
+		} else {
+			r.warn(slideID, fmt.Sprintf("card image fill %q unresolved: %v", v.ImageFill, err))
+		}
+	}
+
 	body := r.renderCardChrome(ps, box, cardChrome{
 		header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill,
 		fill: v.Fill, fillGradient: v.FillGradient, outline: v.Outline, border: v.BorderStyle, size: v.Size,
 		layout: v.Layout, elevation: v.Elevation,
 		headerFill: v.HeaderFill, statusDot: v.StatusDot, watermark: v.Watermark,
-		paddingScale: v.PaddingScale, ribbon: v.Ribbon,
+		paddingScale: v.PaddingScale, ribbon: v.Ribbon, imageFill: imageFill,
 	}, slideID)
 
 	if v.BodyLayout == BodyHorizontal && len(v.Body) > 0 {

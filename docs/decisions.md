@@ -3928,4 +3928,67 @@ byte-identical, worker-count determinism; an adversarial scrim slide.
 
 ---
 
+## D-117 — Image-as-card-fill: cover-fit photo surface (Wave 14 / Phase 82, R14.1 part 2)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.1's spec (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both — engine
+half) names three photographic atoms: a full-bleed photo background, a scrim +
+duotone (Phase 81, D-116), and **image-as-fill** — filling a Card/panel surface
+with a cover-fit photo instead of a solid color. This phase lands the last as a
+general builder mechanism plus the Card wiring (the §4.3 split queued in D-116).
+
+**Decision:**
+
+- **Codec.** `XShapeProperties` gains `BlipFill *XBlipFillProperties` (the same
+  struct the picture path uses) — a shape's `<a:blipFill>` surface fill alongside
+  `solidFill`/`gradFill`/`noFill`. The `restorenamespaces` `prefixFor` gains a
+  context rule: `blipFill` under parent `spPr` emits `a:blipFill` (DrawingML),
+  distinct from a picture's `p:blipFill` (PresentationML) — the same context
+  mechanism already used for `txBody` (`a:` inside a table cell, `p:` in a shape).
+  Without it the shape fill would emit bare-prefixed `p:blipFill` = invalid OOXML
+  (and the reader, matching by local name, would *hide* it — so the test asserts
+  the literal `<a:blipFill` bytes, the Phase-67 lesson).
+- **Builder.** `pptx.WithImageFill(src ImageSource)` ShapeOption: at `AddShape`
+  (which holds the slide handle `applyFill` lacks), resolve the source, register
+  the part via `addImagePart`, and set `BlipFill{Blip{embed}, SrcRect:
+  coverSrcRect(bytes, box), Stretch{fillRect}}`, clearing any solid/gradient/no
+  fill. It wins over `WithFill`; the shape geometry still clips the photo.
+  `coverSrcRect` reads the image's format-header dimensions
+  (`image.DecodeConfig` — not pixel data, §7/D-046; the chart composer reads the
+  same header) and center-crops the overflowing axis with an integer-permille
+  `<a:srcRect>`, so the photo covers the box with no distortion at any aspect; an
+  unreadable header falls back to a plain stretch.
+- **Scene.** `Card.ImageFill AssetID` fills the card surface with a resolved photo
+  instead of its solid/gradient `Fill`; `renderCardChrome` appends `WithImageFill`
+  to the surface `AddShape` (the `RadiusLG` geometry still clips the corners).
+  `renderCard` resolves the ID up front; a miss warns and falls back (RFC §10.2).
+  `nodeUsesAssets(Card)` returns true when `ImageFill != ""` so the slide composes
+  in the sequential pass and media part numbering stays deterministic.
+
+**Policy stays `HasAsset:false`.** `TestPolicy_MatchesStructs` ties `HasAsset` to a
+field literally named `AssetID`; the card still renders as native chrome (the
+photo is a *fill*, not the node-as-pic), so the field is named `ImageFill` and
+`KindCard` is unchanged. The catalog stays at 28 kinds (no new node).
+
+**Deferred (§4.3).** Bento cell / column image fill — the `WithImageFill`
+mechanism is general and those surfaces would route through it identically; Card
+is the primary surface and satisfies the acceptance criterion.
+
+**G6 is structural.** The emitted `<a:blipFill>` (+ `srcRect`) survives a write →
+`pptx.Open` → re-write losslessly (the round-trip test asserts it persists) — the
+same structural proof used for duotone (D-116) and framing (D-114); no new read
+accessor.
+
+**Consequences:** **R14.1 is complete** — the photographic class (full-bleed photo
+background + scrim + duotone, D-116; image-as-card-fill, D-117) is reachable. A
+deck with no `ImageFill` is byte-identical. Tested: builder emit (literal
+`<a:blipFill`), cover-crop (wide → l/r, tall → t/b, match → none), nil
+byte-identical, round-trip; scene card resolves + emits warning-free, missing
+warns, empty byte-identical, worker-count deterministic. The product half (a soul
+archetype declaring a cover uses a photo background + an MCP per-slide photo
+`AssetID`) lives in Deckard (D-059).
+
+---
+
 *Append new entries below this line.*

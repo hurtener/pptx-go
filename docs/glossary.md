@@ -693,6 +693,17 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## Image surface fill
+
+Filling a shape's interior — or a `Card`'s surface (`Card.ImageFill`, an
+`AssetID`) — with a cover-fit photo instead of a solid/gradient color (D-117). The
+builder `pptx.WithImageFill(src)` shape option emits an `<a:blipFill>` on the
+shape's `spPr` (an `a:`-namespaced fill, distinct from a picture's `p:blipFill`);
+the image is center-cropped on the overflowing axis (`<a:srcRect>` from the
+format-header dims — §7/D-046) so it covers without distortion, and the shape's
+corner radius still clips it. `""` / nil leaves the prior fill (byte-identical).
+See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
+
 ## Grow-to-fit
 
 The body-stack layout mode (`VAlignFill`) that, after the fixed leaves take their

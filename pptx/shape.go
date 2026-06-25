@@ -77,6 +77,7 @@ type shapeConfig struct {
 	rotation   *float64       // degrees clockwise; nil = unset
 	shadow     *Elevation     // literal drop shadow; nil = unset
 	shadowRole *ElevationRole // token drop shadow; resolved at AddShape; wins over shadow
+	imageFill  ImageSource    // cover-fit image surface fill; nil = unset (wins over fill)
 }
 
 // ShapeOption configures a shape at creation time.
@@ -87,6 +88,19 @@ func WithFill(f Fill) ShapeOption { return func(c *shapeConfig) { c.fill = f } }
 
 // WithLine sets the shape's outline.
 func WithLine(l Line) ShapeOption { return func(c *shapeConfig) { c.line = l } }
+
+// WithImageFill fills the shape's interior with an image (a `<a:blipFill>`)
+// instead of a solid/gradient fill — a photo-as-surface for cards and panels
+// (R14.1). The image is cover-fit: scaled to fill the shape and center-cropped on
+// the overflowing axis (computed from the image's format-header dimensions —
+// §7/D-046, not pixel data — so there is no distortion at any aspect; an
+// unreadable header falls back to a plain stretch). It wins over WithFill. The
+// shape's geometry/corner-radius still clips the fill, so an image-filled
+// roundRect keeps its rounded corners. A nil source or an unreadable image leaves
+// the prior fill unchanged.
+func WithImageFill(src ImageSource) ShapeOption {
+	return func(c *shapeConfig) { c.imageFill = src }
+}
 
 // WithRadius sets a rounded-corner radius from a theme radius token (P2). It
 // applies to ShapeRoundRect only — the corner radius is OOXML's roundRect adjust
@@ -147,6 +161,22 @@ func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shap
 	theme := s.activeTheme()
 	if cfg.fill != nil {
 		cfg.fill.applyFill(sp.ShapeProperties, theme)
+	}
+	// Image fill (R14.1): replaces any solid/gradient fill with a cover-fit
+	// <a:blipFill>. The part is registered here (the option layer has no slide
+	// handle); an unreadable source leaves the prior fill in place.
+	if cfg.imageFill != nil {
+		if img, err := cfg.imageFill.resolveImage(); err == nil {
+			rID := s.addImagePart(img.bytes, img.ext)
+			sp.ShapeProperties.SolidFill = nil
+			sp.ShapeProperties.GradientFill = nil
+			sp.ShapeProperties.NoFill = nil
+			sp.ShapeProperties.BlipFill = &slide.XBlipFillProperties{
+				Blip:    &slide.XBlip{Embed: rID},
+				SrcRect: coverSrcRect(img.bytes, box),
+				Stretch: &slide.XStretchProperties{FillRect: &slide.XFillRectProperties{}},
+			}
+		}
 	}
 	cfg.line.apply(sp.ShapeProperties, theme)
 

@@ -275,6 +275,16 @@ the active theme (P2), so a theme swap re-tints the photo. nil = the photo's
 natural colors (byte-identical). A mechanism over the existing color tokens, not a
 new token.
 
+**Image surface fill** (D-117): the builder `pptx.WithImageFill(src ImageSource)`
+shape option fills a shape's interior with a cover-fit photo (`<a:blipFill>`)
+instead of a solid/gradient fill, and the scene `Card.ImageFill` (an `AssetID`
+resolved via the `AssetResolver`) fills a card surface with a photo. It is **not**
+a theme token — it is caller-supplied image bytes (a mechanism, D-026); it
+*replaces* the surface fill, so a card swaps from a token color to a photo. The
+shape's corner radius still clips the image; cover-fit center-crops the
+overflowing axis (from the format-header dims, §7/D-046) so there is no
+distortion. `""` / nil leaves the token fill in place (byte-identical).
+
 **Card backdrop glow** (D-113): the scene `Card.Backdrop *Decoration` draws a
 decoration (typically a role-colored `radial_glow`) behind the card's computed
 box, before its fill — a focal halo. It composes the decoration node + the glow

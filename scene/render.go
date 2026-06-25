@@ -343,9 +343,10 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Grid:
 		return nodesUseAssets(v.Cells)
 	case Card:
-		// The card chrome (incl. a native custGeom icon) registers no media; only
-		// an asset-bearing body node does (D-015, D-043).
-		return nodesUseAssets(v.Body)
+		// The card chrome (incl. a native custGeom icon) registers no media; an
+		// asset-bearing body node does (D-015, D-043), as does a cover-fit photo
+		// surface fill (ImageFill registers a media part — R14.1, D-117).
+		return v.ImageFill != "" || nodesUseAssets(v.Body)
 	case CardSection:
 		return nodesUseAssets(v.Body)
 	case Bento:

@@ -118,6 +118,12 @@ func prefixFor(local string, parents []string) string {
 	if local == "txBody" && len(parents) > 0 && parents[len(parents)-1] == "tc" {
 		return "a"
 	}
+	// "blipFill" is <p:blipFill> inside a picture (<p:pic>, the default below) but
+	// <a:blipFill> as a shape's image fill (inside <p:spPr>) — the same local name,
+	// different namespace by parent. A bare a:blipFill would otherwise emit as p:.
+	if local == "blipFill" && len(parents) > 0 && parents[len(parents)-1] == "spPr" {
+		return "a"
+	}
 	return elementPrefix(local)
 }
 
@@ -216,7 +222,7 @@ var elementNS = map[string]string{
 	"srgbClr": "a", "schemeClr": "a", "sysClr": "a", "scrgbClr": "a", "prstClr": "a",
 	"gs": "a", "gsLst": "a", "lin": "a", "alpha": "a", "lumMod": "a", "lumOff": "a",
 	"fillToRect": "a",
-	"ln": "a", "prstDash": "a", "lstStyle": "a", "bodyPr": "a",
+	"ln":         "a", "prstDash": "a", "lstStyle": "a", "bodyPr": "a",
 	"effectLst": "a", "outerShdw": "a",
 	"normAutofit": "a", "spAutoFit": "a", "noAutofit": "a", "highlight": "a",
 	"p": "a", "pPr": "a", "r": "a", "rPr": "a", "t": "a", "br": "a", "fld": "a",

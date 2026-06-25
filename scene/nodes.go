@@ -951,6 +951,15 @@ type Card struct {
 	// byte-identical. The card box is passed as the decoration's region, so the
 	// glow centers on the card and (with Bleed) spills beyond it behind the fill.
 	Backdrop *Decoration
+	// ImageFill fills the card surface with a cover-fit photo (resolved via the
+	// render's AssetResolver) instead of the solid Fill / FillGradient — the
+	// image-as-surface treatment for photographic cards (R14.1, D-117). The card's
+	// rounded corners still clip the image. "" = the solid/gradient Fill
+	// (byte-identical). A missing resolver or unresolvable ID records a
+	// LayoutWarning and falls back to the Fill (RFC §10.2 — degrade, no panic).
+	// The field is named ImageFill, not AssetID, because the card still renders as
+	// native chrome (not a pic), so its policy stays HasAsset:false.
+	ImageFill AssetID
 }
 
 func (Card) NodeKind() NodeKind { return KindCard }
