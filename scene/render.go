@@ -140,51 +140,89 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 	full := pptx.Box{X: 0, Y: 0, W: pptx.EMU(cx), H: pptx.EMU(cy)}
 	bg := sl.Background
 
+	// Draw the base fill; only overlay a scrim when a fill was actually drawn so a
+	// scrim never hangs over an empty (BackgroundNone, light) slide.
+	if r.drawBackgroundFill(ps, sl, full, bg) && bg.Scrim != nil {
+		r.renderScrim(ps, full, *bg.Scrim)
+	}
+}
+
+// renderScrim draws a darkening/tinting overlay over the slide's background fill
+// for text legibility (R14.1). It is a pure mechanism (D-026): the caller chooses
+// the color/opacity. A gradient scrim runs transparent → Color at Opacity along
+// GradientAngle (zero defaults to 90°, top transparent → bottom dense).
+func (r *renderer) renderScrim(ps *pptx.Slide, full pptx.Box, s Scrim) {
+	var fill pptx.Fill
+	if s.Gradient {
+		angle := s.GradientAngle
+		if angle == 0 {
+			angle = 90
+		}
+		fill = pptx.LinearGradient(float64(angle),
+			pptx.GradientStop{Pos: 0, Color: pptx.TokenColorAlpha(s.Color, 0)},
+			pptx.GradientStop{Pos: 1, Color: pptx.TokenColorAlpha(s.Color, s.Opacity)},
+		)
+	} else {
+		fill = pptx.SolidFill(pptx.TokenColorAlpha(s.Color, s.Opacity))
+	}
+	ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(fill))
+	r.stats.Shapes++
+}
+
+// drawBackgroundFill draws the slide's base background fill and reports whether
+// anything was drawn (so the caller knows whether a scrim overlay applies). It is
+// the body of renderBackground; splitting it lets the scrim overlay run after a
+// successful fill regardless of kind.
+func (r *renderer) drawBackgroundFill(ps *pptx.Slide, sl *SceneSlide, full pptx.Box, bg Background) bool {
 	switch bg.Kind {
 	case BackgroundNone:
 		if sl.Variant != VariantDark {
-			return // no background fill; byte-identical to pre-Phase-13 output
+			return false // no background fill; byte-identical to pre-Phase-13 output
 		}
 		// Dark variant with no explicit background: fill the canvas with the
 		// dark canvas color so the slide is not transparently white.
 		ps.AddShape(pptx.ShapeRect, full,
 			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorCanvas))))
 		r.stats.Shapes++
+		return true
 
 	case BackgroundColor:
 		ps.AddShape(pptx.ShapeRect, full,
 			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(bg.Color))))
 		r.stats.Shapes++
+		return true
 
 	case BackgroundGradient:
 		stops, ok := backgroundGradientStopsFor(bg)
 		if !ok {
 			r.warn(sl.ID, fmt.Sprintf("background gradient stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
-			return
+			return false
 		}
 		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(pptx.LinearGradient(float64(bg.Angle), stops...)))
 		r.stats.Shapes++
+		return true
 
 	case BackgroundRadial:
 		stops, ok := backgroundGradientStopsFor(bg)
 		if !ok {
 			r.warn(sl.ID, fmt.Sprintf("background radial stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
-			return
+			return false
 		}
 		ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(pptx.RadialGradient(stops...)))
 		r.stats.Shapes++
+		return true
 
 	case BackgroundMesh:
 		if len(bg.Mesh) == 0 {
 			// No glows configured: behave like BackgroundNone (absent config draws
 			// nothing on a light slide; a dark variant still gets its dark canvas).
 			if sl.Variant != VariantDark {
-				return
+				return false
 			}
 			ps.AddShape(pptx.ShapeRect, full,
 				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorCanvas))))
 			r.stats.Shapes++
-			return
+			return true
 		}
 		// Base canvas fill (the paper/dark canvas the glows pool over), then the
 		// glows in slice order — deterministic. bg.Color zero = ColorCanvas.
@@ -203,20 +241,27 @@ func (r *renderer) renderBackground(ps *pptx.Slide, sl *SceneSlide) {
 			)))
 			r.stats.Shapes++
 		}
+		return true
 
 	case BackgroundAsset:
 		data, ct, err := r.resolve(bg.AssetID)
 		if err != nil {
 			r.warn(sl.ID, fmt.Sprintf("background asset %q unresolved: %v", bg.AssetID, err))
-			return
+			return false
 		}
-		if _, aerr := ps.AddImage(pptx.ImageBytes(data, ct), full); aerr != nil {
+		img, aerr := ps.AddImage(pptx.ImageBytes(data, ct), full)
+		if aerr != nil {
 			r.warn(sl.ID, fmt.Sprintf("background image %q: %v", bg.AssetID, aerr))
-			return
+			return false
+		}
+		if bg.Duotone != nil {
+			img.SetDuotone(pptx.TokenColor(bg.Duotone.Shadow), pptx.TokenColor(bg.Duotone.Highlight))
 		}
 		r.stats.Shapes++
 		r.stats.Assets++
+		return true
 	}
+	return false
 }
 
 // backgroundGradientStopsFor resolves a background's gradient stops, shared by

@@ -36,6 +36,8 @@ type Background struct {
 	Angle    int              // linear gradient angle, degrees clockwise from +x
 	AssetID  AssetID          // full-bleed picture (Kind == BackgroundAsset)
 	Mesh     []MeshGlow       // base canvas + pooled radial glows (Kind == BackgroundMesh)
+	Scrim    *Scrim           // legibility overlay over any drawn fill; nil = none
+	Duotone  *Duotone         // two-tone recolor of a photo background (BackgroundAsset); nil = none
 }
 
 type GradientStop struct {
@@ -48,6 +50,23 @@ type MeshGlow struct {
 	Color  pptx.ColorRole // glow color role
 	Radius pptx.EMU       // glow circle radius
 	Alpha  int            // center OOXML opacity (0..100000); edge fades to 0
+}
+
+// Scrim is a darkening/tinting overlay over the background fill for text
+// legibility over a photo or busy background. A solid wash, or (Gradient) a
+// transparent→Color linear gradient along GradientAngle (zero → 90°).
+type Scrim struct {
+	Color         pptx.ColorRole // overlay surface role (P2)
+	Opacity       int            // dense-edge OOXML opacity (0..100000)
+	Gradient      bool           // gradient overlay vs flat wash
+	GradientAngle int            // gradient angle, degrees; zero → 90°
+}
+
+// Duotone recolors a photo background into two brand tones: shadows → Shadow,
+// highlights → Highlight (both surface roles; a theme swap re-tints).
+type Duotone struct {
+	Shadow    pptx.ColorRole
+	Highlight pptx.ColorRole
 }
 
 type Metadata struct {

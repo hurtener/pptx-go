@@ -541,15 +541,26 @@ type XSrcRect struct {
 }
 
 // XBlip holds a picture reference, with an optional alpha modulation effect
-// (<a:alphaModFix amt="">) for image opacity.
+// (<a:alphaModFix amt="">) for image opacity and an optional duotone recolor
+// (<a:duotone>) for a two-tone brand tint.
 type XBlip struct {
 	Embed       string        `xml:"rembed,attr,omitempty"`
 	AlphaModFix *XAlphaModFix `xml:"alphaModFix,omitempty"`
+	Duotone     *XDuotone     `xml:"duotone,omitempty"`
 }
 
 // XAlphaModFix is <a:alphaModFix amt="0..100000"> — scales a picture's opacity.
 type XAlphaModFix struct {
 	Amt int `xml:"amt,attr"`
+}
+
+// XDuotone is <a:duotone> — a blip recolor effect that maps the picture's
+// shadows to the first color and its highlights to the second, producing a
+// two-tone (duotone) tint. CT_Duotone takes exactly two color children; here
+// they are plain <a:srgbClr> values.
+type XDuotone struct {
+	XMLName struct{}   `xml:"duotone"`
+	Colors  []XSrgbClr `xml:"srgbClr"`
 }
 
 // XFillProperties holds fill properties.

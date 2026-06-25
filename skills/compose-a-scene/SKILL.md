@@ -60,12 +60,34 @@ type Background struct {
     Angle    int               // linear gradient angle (degrees clockwise from +x; 0 = left→right, 90 = top→bottom)
     AssetID  scene.AssetID     // BackgroundAsset — full-bleed picture (needs an AssetResolver)
     Mesh     []scene.MeshGlow  // BackgroundMesh — N pooled radial glows over the base canvas
+    Scrim    *scene.Scrim      // legibility overlay over any drawn fill; nil = none
+    Duotone  *scene.Duotone    // two-tone recolor of a photo background (BackgroundAsset); nil = none
 }
 
 type MeshGlow struct { Anchor Anchor; Color pptx.ColorRole; Radius pptx.EMU; Alpha int } // a soft pooled glow
 
 type GradientStop struct { Pos float64; Color pptx.ColorRole } // Pos in [0,1]
+
+type Scrim struct { Color pptx.ColorRole; Opacity int; Gradient bool; GradientAngle int } // darkening/tinting overlay
+type Duotone struct { Shadow, Highlight pptx.ColorRole } // photo shadows → Shadow, highlights → Highlight
 ```
+
+For a **photographic** slide — a full-bleed photo with legible overlay text —
+set `Kind: BackgroundAsset` with an `AssetID`, tint it on-brand with `Duotone`,
+and guarantee text legibility with a gradient `Scrim`:
+
+```go
+Background: scene.Background{
+    Kind:    scene.BackgroundAsset,
+    AssetID: "asset://cover-photo",
+    Duotone: &scene.Duotone{Shadow: pptx.ColorAccent, Highlight: pptx.ColorCanvas},
+    Scrim:   &scene.Scrim{Color: pptx.ColorSurface, Opacity: 55000, Gradient: true},
+},
+```
+
+The `Scrim` works over any background kind (it darkens whatever fill was drawn);
+`Duotone` applies only to a `BackgroundAsset` photo. Both use theme tokens, so a
+theme swap re-tints. A nil `Scrim`/`Duotone` renders byte-identically.
 
 For a multi-hue hero wash, set `Stops` (it supersedes `Gradient`):
 

@@ -469,6 +469,8 @@ func (im *Image) SetOpacity(alpha int) *Image
 func (im *Image) Opacity() int
 func (im *Image) SetCornerRadius(role RadiusRole) *Image  // roundRect-clip the picture (D-114)
 func (im *Image) SetElevation(role ElevationRole) *Image  // soft drop shadow on the picture (D-114)
+func (im *Image) SetDuotone(shadow, highlight Color) *Image  // two-tone recolor via <a:duotone> (D-116)
+func (im *Image) Duotone() (shadow, highlight RGB, ok bool)  // read inverse of SetDuotone
 func (im *Image) Bytes() ([]byte, error)
 ```
 Typed mutators and read accessors over an inserted image (P3).

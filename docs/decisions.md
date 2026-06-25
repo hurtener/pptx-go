@@ -3870,4 +3870,62 @@ production behavior changed.
 
 ---
 
+## D-116 — Photographic-imagery background class: scrim + duotone (Wave 14 / Phase 81, R14.1)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.1 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both — engine half)
+— the photo-driven slide class (full-bleed photo covers with text overlays,
+on-brand-tinted imagery) is the most common professional class still unreachable.
+The full-bleed photo background itself already exists (`BackgroundAsset`); the
+gaps are a **scrim** (a darkening/tinting overlay that guarantees text legibility
+over a busy photo) and a **duotone** (a two-tone brand recolor of a photo).
+
+**Decision:** Add two engine atoms, both additive and byte-identical when unused:
+
+1. **Scrim** — `scene.Background.Scrim *Scrim{Color pptx.ColorRole; Opacity int;
+   Gradient bool; GradientAngle int}`. `renderBackground` is refactored into
+   `drawBackgroundFill` (the existing switch, now returning whether a fill was
+   drawn — the fill emission is unchanged, so all existing backgrounds stay
+   byte-identical); when a fill was drawn and `Scrim != nil`, `renderScrim`
+   overlays a full-slide rect — `SolidFill(TokenColorAlpha(Color, Opacity))` or,
+   for `Gradient`, a `LinearGradient` running transparent → `Color` at `Opacity`
+   along `GradientAngle` (zero → 90°, top transparent → bottom dense). The scrim
+   is a **general** overlay (it darkens any drawn background kind), not a new
+   `BackgroundKind` — avoiding a kind explosion.
+2. **Duotone** — `Background.Duotone *Duotone{Shadow, Highlight pptx.ColorRole}`,
+   applied only in the `BackgroundAsset` case, realized by a new builder method
+   `(*pptx.Image).SetDuotone(shadow, highlight Color)` (+ a `Duotone() (shadow,
+   highlight RGB, ok bool)` read accessor). It sets `XBlip.Duotone = <a:duotone>
+   <a:srgbClr/><a:srgbClr/>` — a real OOXML blip recolor effect (P1 justifies the
+   new builder capability). The two colors are resolved against the active theme
+   at call time (P2) and emitted as literal `srgbClr`. `"duotone"` is registered
+   in `restorenamespaces` (else it would emit bare = invalid OOXML; D-061 gotcha).
+   A nil tone is a no-op (byte-identical).
+
+Both scrim and duotone colors are **theme tokens** (P2); the engine draws the
+mechanism and the soul picks color/opacity to meet its contrast target (D-026 —
+mechanism, not taste).
+
+**G6** is structural for the duotone (`<a:duotone>` + both colors survive write →
+`pptx.Open` → re-write) plus the `Duotone()` read accessor; the scrim is plain
+shape output already covered by the fill round-trip.
+
+**Split (§4.3):** R14.1's spec also names **image-as-card/cell/column fill** —
+deferred to **Phase 82** (R14.1 part 2): it needs a `blipFill`-on-shape builder
+`Fill` plus asset resolution wired into the card chrome path, cleanly separable
+from the slide-background class. **Uniform aspect-aware cover-fit** (no distortion
+at any aspect) needs the image's pixel dimensions, which §7 forbids parsing and
+the `Fit` type already defers to V1.x; a matching-aspect full-bleed photo is exact
+under the existing stretch.
+
+**Consequences:** The photographic background class is reachable — a deck can lead
+with a full-bleed photo, tint it on-brand (duotone), and guarantee overlay-text
+legibility (scrim), all in theme tokens. No deck without these fields changes a
+byte. Tested: builder duotone round-trip / token-resolve / nil byte-identical;
+scene solid + gradient scrim, scrim+duotone photo (warning-free), nil
+byte-identical, worker-count determinism; an adversarial scrim slide.
+
+---
+
 *Append new entries below this line.*

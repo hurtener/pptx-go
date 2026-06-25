@@ -1717,6 +1717,44 @@ by archetype and keeps them subtle lives in Deckard, not this engine.
 
 ---
 
+### Wave 14 — Coverage classes
+
+R14 generalizes the engine beyond the one sample deck: classes of professional
+decks (photographic, charts, comparison matrices, timelines, quotes, agendas,
+native dataviz, matrices, hierarchies, i18n, locale formatting, multi-master)
+the prior waves still wouldn't handle. Each requirement is tagged engine /
+product / both (D-059); pptx-go ships the engine mechanisms and the engine side
+of `both`. Several reqs are genuinely new scene IR nodes (the catalog grows past
+28); others extend existing structs.
+
+#### Phase 81 — photographic-imagery background class: scrim + duotone (R14.1, HIGH · both — engine half, part 1)
+
+**Subsystem:** scene (Background) + pptx (builder Image)
+**RFC sections:** §10.1, §10.2, §11, §7.1
+**Deps:** Wave-13 background work; brief 64.
+**What lands (R14.1, part 1):**
+- A slide-background legibility **scrim** — `scene.Background.Scrim *Scrim{Color
+  ColorRole; Opacity int; Gradient bool; GradientAngle int}` — drawn as a solid
+  or transparent→color linear-gradient overlay over any drawn background fill
+  (`renderScrim`, after `drawBackgroundFill` reports a fill was drawn).
+- A **duotone** two-tone recolor of a photographic background —
+  `Background.Duotone *Duotone{Shadow, Highlight ColorRole}` — realized by a new
+  builder `(*pptx.Image).SetDuotone(shadow, highlight Color)` (+ `Duotone()`
+  accessor) emitting an `<a:duotone>` blip effect (registered in
+  `restorenamespaces`). Colors are theme tokens (P2).
+- Additive: a nil Scrim / nil Duotone renders byte-identically. The soul chooses
+  the scrim color/opacity to meet its contrast target (D-026).
+**Acceptance criteria:**
+- A solid/gradient scrim overlays a full-slide rect with the scrim alpha; a photo
+  background + duotone emits `<a:duotone>` with both resolved colors and survives
+  write → reopen → re-write (G6); a scrim+duotone photo is warning-free and
+  worker-count deterministic; a nil Scrim+Duotone is byte-identical.
+- **Split (§4.3, D-116):** image-as-card/cell/column fill → Phase 82 (R14.1
+  part 2, a `blipFill`-on-shape builder fill); uniform aspect-aware cover-fit →
+  V1.x (needs pixel dims, §7).
+
+---
+
 ## 4. Post-V1 backlog
 
 See `RFC-001-pptx-go.md §24` for the full backlog. Headline items: native
