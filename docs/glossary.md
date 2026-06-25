@@ -693,6 +693,19 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## DataMark (native micro-chart)
+
+The scene `DataMark` node (D-122): a crisp, brand-colored vector micro-chart drawn
+entirely from preset shapes — no raster, no `AssetResolver`. `DataMarkKind` selects
+`DataMarkBar` (a progress/capacity bar: a `ColorSurfaceAlt` track + an accent fill
+to `Value`, with an optional inline `Label`; horizontal or vertical), `DataMarkBars`
+(a small bar group, one bar per `Values` entry), or `DataMarkSparkline` (a trend
+polyline through `Values` with an accent end dot — upward segments use the builder's
+`WithFlipV`). Values are `0..1`; the mark color is `Color` (`*ColorRole`, nil =
+accent). Pure integer-EMU geometry (worker-count deterministic); embeds in a
+Card/Bento cell. Arc-based marks (donut, gauge) are a follow-up. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.8.
+
 ## NumberFormat
 
 A deterministic, stdlib-only number/currency/percent/locale format (`scene.

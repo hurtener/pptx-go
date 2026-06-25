@@ -4194,4 +4194,50 @@ renders the formatted value; an adversarial typed-number Stat stays one line.
 
 ---
 
+## D-122 — Native vector micro-charts (`DataMark`: bar / bars / sparkline) (Wave 14 / Phase 87, R14.8)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.8 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) — pro decks
+are full of simple in-card data marks (a progress bar, a tiny bar set, a sparkline,
+a donut, a gauge) that should be crisp native vector shapes, not rasters. The only
+data viz was the raster `Chart` node.
+
+**Decision:** Add a new `DataMark` scene IR node (catalog 29 → 30):
+`DataMark{Kind DataMarkKind; Value float64; Values []float64; Orientation
+FlowOrientation; Color *ColorRole; Label string}`. This phase ships the **bar
+family** — `DataMarkBar` (a track rounded-rect + an accent fill to `Value`, with an
+optional inline label; horizontal or vertical), `DataMarkBars` (N rects, one per
+`Values` entry), and `DataMarkSparkline` (N-1 connected `ShapeLine` segments + an
+accent end dot) — drawn entirely from preset rects/lines in theme colors. Values are
+`0..1`; the mark color is `Color *ColorRole` (nil = `ColorAccent`, the D-054 pointer
+pattern) over a `ColorSurfaceAlt` track. Pure integer-EMU geometry →
+worker-count deterministic; **no `AssetResolver`** (`nodeUsesAssets:false`, policy
+`HasAsset:false`).
+
+**A diagonal line needs flipV.** A `ShapeLine` draws top-left → bottom-right of its
+positive-extent box; an *upward* sparkline segment can't use a negative extent. The
+transform already had a `flipV` field but no builder API — so a small
+`pptx.WithFlipV(bool)` shape option was added (P1: a genuinely new need). An upward
+segment draws as a top-anchored positive box + `WithFlipV` (BL → TR). Go marshals
+the bool as `flipV="true"` (valid `xsd:boolean`; it round-trips).
+
+**Arc-based marks (donut, gauge) are deferred (§4.3) to Phase 88.** A 92% donut is a
+`blockArc`/`pie` `prstGeom` with start/end-angle (+ inner-radius) adjust guides; the
+builder only plumbs the `roundRect` adjust today, and the icon translator forbids
+elliptical arcs (D-040). Phase 88 adds an adjust-guide builder seam and appends
+`Donut`/`Gauge` to `DataMarkKind`. The bar family is the high-frequency case and
+ships now.
+
+**Consequences:** Crisp native KPI/capacity marks are reachable without a
+rasterizer; a deck with no DataMark is byte-identical (a new node, absent until
+used). Full new-node wiring landed (KindDataMark appended last, policy/validate/
+dispatch/preferredHeight/nodeUsesAssets, catalog 29 → 30, integration kind-loop
+`..KindDataMark`). Tested: a bar fills to its value (native rounded rects,
+conformant); a bar group + sparkline (line segments + `flipV`, conformant); a
+DataMark embeds in a card without overflow; an out-of-range value fails Stage-1
+validation; worker-count determinism; an adversarial dataviz card stays on-canvas.
+
+---
+
 *Append new entries below this line.*

@@ -363,9 +363,9 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Quote:
 		// A plain quote is native text; a testimonial avatar/logo registers media.
 		return v.AvatarAssetID != "" || v.LogoAssetID != ""
-	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline:
-		// Button / Checklist / ChipRow / IconRows / Timeline are native (pills /
-		// glyphs / axis + marker dots + custGeom icons) — no media.
+	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark:
+		// Button / Checklist / ChipRow / IconRows / Timeline / DataMark are native
+		// (pills / glyphs / axis + marker dots / rects + lines) — no media.
 		return false
 	default:
 		return true
@@ -555,6 +555,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderLockup(ps, box, v, slideID, hAlign)
 	case Timeline:
 		r.renderTimeline(ps, box, v, slideID)
+	case DataMark:
+		r.renderDataMark(ps, box, v)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -687,6 +689,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return lockupPreferredHeight(v)
 	case Timeline:
 		return timelinePreferredHeight(v)
+	case DataMark:
+		return dataMarkPreferredHeight(v)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:

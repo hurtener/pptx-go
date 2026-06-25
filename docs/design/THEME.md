@@ -301,6 +301,12 @@ tokens (name in `TextPrimary`, role · company in `TextMuted`). All token-resolv
 (P2); a theme swap re-skins the testimonial. A mechanism over the existing color
 tokens, not a new token.
 
+**DataMark colors** (D-122): the scene `DataMark` micro-charts (progress bar, bar
+group, sparkline) draw the mark in `Color` (a `*ColorRole`, nil = `ColorAccent`)
+over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skins
+the mark; the soul drives the values + color (D-026). A mechanism over the existing
+color tokens, not a new token.
+
 **Timeline colors** (D-119): the scene `Timeline` node colors its phase `Bands`
 from a surface role (low-alpha) and its milestone markers from a pinned cycle of
 token roles (`Milestone.AccentIndex` → `[ColorAccent, ColorAccentAlt, ColorInfo,
