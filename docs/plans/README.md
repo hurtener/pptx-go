@@ -1753,6 +1753,36 @@ of `both`. Several reqs are genuinely new scene IR nodes (the catalog grows past
   part 2, a `blipFill`-on-shape builder fill); uniform aspect-aware cover-fit →
   V1.x (needs pixel dims, §7).
 
+#### Phase 82 — image-as-card-fill: cover-fit photo surface (R14.1, HIGH · both — engine half, part 2)
+
+**Subsystem:** pptx (builder shape fill) + scene (Card) + internal/ooxml
+**RFC sections:** §8.2/§8.3, §10.1, §10.2, §11, §7
+**Deps:** Phase 81; briefs 64, 65.
+**What lands (R14.1, part 2):**
+- A general builder `pptx.WithImageFill(src ImageSource)` `ShapeOption` that emits
+  an `<a:blipFill>` on a shape's `spPr` (new `XShapeProperties.BlipFill` + a
+  `prefixFor` context rule so `blipFill` under `spPr` is `a:`, distinct from the
+  pic's `p:`). The image is **cover-fit**: center-cropped on the overflowing axis
+  via `<a:srcRect>` computed from the format-header dims (`image.DecodeConfig` —
+  §7/D-046, not pixels), so no distortion at any aspect.
+- Scene `Card.ImageFill AssetID` fills a card surface with a resolved photo
+  instead of its solid/gradient `Fill`; the `RadiusLG` geometry still clips it.
+  An unresolvable ID warns and falls back. `nodeUsesAssets(Card)` includes
+  `ImageFill != ""` for deterministic serial part numbering; the policy stays
+  `HasAsset:false` (native chrome, not a pic).
+- Additive: `ImageFill == ""` / nil `WithImageFill` renders byte-identically.
+**Acceptance criteria:**
+- A shape `WithImageFill` emits `<a:blipFill>` (a:, not p:) replacing the solid
+  fill and round-trips (G6); cover-fit crops wide → l/r, tall → t/b, match → none;
+  a Card with `ImageFill` is warning-free + worker-count deterministic; an empty
+  `ImageFill` is byte-identical.
+- **Deferred (§4.3):** Bento cell / column image fill (the mechanism is general).
+
+**R14.1 complete after Phase 82** — full-bleed photo background + scrim + duotone
+(Phase 81) and image-as-card-fill (Phase 82). The product half (a soul archetype
+that *declares* a cover uses a photo background, and the MCP field supplying a
+per-slide photo AssetID) lives in Deckard (D-059).
+
 ---
 
 ## 4. Post-V1 backlog

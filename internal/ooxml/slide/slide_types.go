@@ -264,15 +264,16 @@ type XOv2DrExtent struct {
 // CT_ShapeProperties schema: xfrm, geometry, fill, line. At most one of
 // SolidFill / NoFill is set.
 type XShapeProperties struct {
-	XMLName      struct{}         `xml:"spPr"`
-	Transform2D  *XTransform2D    `xml:"xfrm,omitempty"`
-	PresetGeom   *XPresetGeometry `xml:"prstGeom,omitempty"`
-	CustomGeom   *XCustomGeometry `xml:"custGeom,omitempty"`
-	SolidFill    *XSolidFill      `xml:"solidFill,omitempty"`
-	GradientFill *XGradientFill   `xml:"gradFill,omitempty"`
-	NoFill       *XNoFill         `xml:"noFill,omitempty"`
-	Line         *XLineProperties `xml:"ln,omitempty"`
-	EffectList   *XEffectList     `xml:"effectLst,omitempty"`
+	XMLName      struct{}             `xml:"spPr"`
+	Transform2D  *XTransform2D        `xml:"xfrm,omitempty"`
+	PresetGeom   *XPresetGeometry     `xml:"prstGeom,omitempty"`
+	CustomGeom   *XCustomGeometry     `xml:"custGeom,omitempty"`
+	SolidFill    *XSolidFill          `xml:"solidFill,omitempty"`
+	GradientFill *XGradientFill       `xml:"gradFill,omitempty"`
+	BlipFill     *XBlipFillProperties `xml:"blipFill,omitempty"`
+	NoFill       *XNoFill             `xml:"noFill,omitempty"`
+	Line         *XLineProperties     `xml:"ln,omitempty"`
+	EffectList   *XEffectList         `xml:"effectLst,omitempty"`
 }
 
 // XNoFill is the empty <a:noFill/> element (an explicit "no fill").

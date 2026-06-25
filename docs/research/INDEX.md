@@ -393,6 +393,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   an `<a:duotone>` blip effect (registered in `restorenamespaces`). nil = byte-
   identical; structural G6 round-trip + read accessor. (R14.1, engine half;
   image-as-card-fill → Phase 82, uniform cover-fit → V1.x.)
+- `65-image-card-fill.md` — image-as-card-fill: a builder `WithImageFill(src)`
+  `ShapeOption` emits an `<a:blipFill>` on a shape's `spPr` (cover-fit center-crop
+  via `<a:srcRect>` from the format-header dims — §7/D-046) + scene `Card.ImageFill`
+  (an `AssetID`) fills a card surface with a photo. Namespace context rule:
+  `blipFill` under `spPr` → `a:` (vs the pic's `p:`). "" / nil byte-identical;
+  policy stays `HasAsset:false` (native chrome, not a pic). (R14.1, engine half,
+  part 2; D-117.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

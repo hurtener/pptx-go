@@ -171,9 +171,12 @@ func WithRadius(role RadiusRole) ShapeOption
 func WithRotation(deg float64) ShapeOption
 func WithElevation(role ElevationRole) ShapeOption
 func WithShadow(e Elevation) ShapeOption
+func WithImageFill(src ImageSource) ShapeOption  // cover-fit photo surface fill (a:blipFill, D-117)
 ```
 Configure a shape at creation: fill, outline, corner radius token,
-rotation, elevation token, or an explicit shadow.
+rotation, elevation token, an explicit shadow, or a cover-fit image
+surface fill (the photo is center-cropped to cover the shape; it wins
+over `WithFill` and the geometry still clips it).
 
 ```go
 type ShapeGeometry string
