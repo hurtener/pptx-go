@@ -150,6 +150,19 @@ func adversarialScene() scene.Scene {
 					}},
 				}},
 			}},
+			// A dense roadmap (R14.4): 2 lanes × many milestones + phase bands, with
+			// long labels. The axis, markers, and staggered labels must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("roadmap-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Timeline{
+					Bands: []scene.TimelineBand{{From: 0, To: 0.5, Label: "NOW · the present horizon", Fill: scene.ColorAccent}, {From: 0.5, To: 1, Label: "NEXT", Fill: scene.ColorInfo}},
+					Lanes: []scene.TimelineLane{
+						{Label: "Platform engineering", Milestones: []scene.Milestone{
+							{Position: 0, Label: longText, Icon: "star"}, {Position: 0.45, Label: "GA", Detail: longText, AccentIndex: 1}, {Position: 1, Label: "Scale", AccentIndex: 2},
+						}},
+						{Label: "Go-to-market", Milestones: []scene.Milestone{{Position: 0.3, Label: longText}, {Position: 0.95, Label: "Expand"}}},
+					},
+				},
+			}},
 			// A fully-styled comparison matrix (R14.3): header band + grouped header
 			// row + zebra + highlighted column + row labels, with long wrapping cells.
 			// The table graphic frame must stay on-canvas; header text must contrast.

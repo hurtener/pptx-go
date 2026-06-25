@@ -243,7 +243,7 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 	}
 }
 
-// everyNodeScene is a scene exercising all 28 shipped scene IR node kinds (the
+// everyNodeScene is a scene exercising all 29 shipped scene IR node kinds (the
 // scene/policy.go policyTable set): the 23 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
@@ -367,6 +367,13 @@ func everyNodeScene() scene.Scene {
 						{Icon: "check", Label: rt("Specialized agents")},
 					}},
 					scene.Lockup{Caption: "POWERED BY CLEAR TECH", Icon: "star", AssetSide: scene.TrailCaption},
+					scene.Timeline{
+						Bands: []scene.TimelineBand{{From: 0, To: 0.5, Label: "Now", Fill: scene.ColorAccent}, {From: 0.5, To: 1, Label: "Next", Fill: scene.ColorInfo}},
+						Lanes: []scene.TimelineLane{
+							{Label: "Platform", Milestones: []scene.Milestone{{Position: 0.1, Label: "Beta", Icon: "star"}, {Position: 0.8, Label: "GA", Detail: "Q4"}}},
+							{Label: "Go-to-market", Milestones: []scene.Milestone{{Position: 0.4, Label: "Pilot", AccentIndex: 1}}},
+						},
+					},
 				},
 			},
 		},
@@ -383,12 +390,12 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 
 	// Mechanically assert the fixture covers every shipped node kind, so adding a
 	// node without extending this walk fails loudly (the kinds are contiguous,
-	// KindHero..KindLockup).
+	// KindHero..KindTimeline).
 	kinds := map[scene.NodeKind]bool{}
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindLockup; k++ {
+	for k := scene.KindHero; k <= scene.KindTimeline; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}

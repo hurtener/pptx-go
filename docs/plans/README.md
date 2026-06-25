@@ -1806,6 +1806,27 @@ per-slide photo AssetID) lives in Deckard (D-059).
   (conformant, warning-free); a grouped header merges its spans (`gridSpan`); a nil
   `Style` is byte-identical; the styled table is worker-count deterministic.
 
+#### Phase 84 — timeline / roadmap node (R14.4, HIGH · engine)
+
+**Subsystem:** scene (new IR node + renderer)
+**RFC sections:** §11, §12, §10.1, §7.1
+**Deps:** brief 67.
+**What lands (R14.4):**
+- A new `scene.Timeline` IR node (catalog 28 → 29): a horizontal axis with
+  `Milestones` at caller-specified proportional `0..1` positions, optional phase
+  `Bands` behind the axis, and optional swimlanes (`Lanes`). Markers (accent dots
+  or curated icons), the axis line, and staggered labels (above/below, clamped)
+  compose from native preset shapes — no media (`nodeUsesAssets:false`,
+  `HasAsset:false`). `Milestone.AccentIndex` cycles a pinned token set. Layout is
+  integer-EMU and worker-count deterministic.
+- The caller maps dates → `0..1` fractions (a date type + tick labels are deferred
+  to R14.13 territory); vertical orientation deferred (§4.3).
+**Acceptance criteria:**
+- A 6-milestone / 3-band / 2-lane roadmap renders within the safe area
+  (conformant, warning-free); the implicit single-lane path renders; an
+  out-of-range position fails Stage-1 validation; the timeline is worker-count
+  deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

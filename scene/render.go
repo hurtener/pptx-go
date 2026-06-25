@@ -360,8 +360,9 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table:
-		// Button / Checklist / ChipRow / IconRows are native (pills / glyphs + custGeom icons) — no media.
+	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline:
+		// Button / Checklist / ChipRow / IconRows / Timeline are native (pills /
+		// glyphs / axis + marker dots + custGeom icons) — no media.
 		return false
 	default:
 		return true
@@ -549,6 +550,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderIconRows(ps, box, v)
 	case Lockup:
 		r.renderLockup(ps, box, v, slideID, hAlign)
+	case Timeline:
+		r.renderTimeline(ps, box, v, slideID)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -671,6 +674,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return iconRowsPreferredHeight(v, avail, theme)
 	case Lockup:
 		return lockupPreferredHeight(v)
+	case Timeline:
+		return timelinePreferredHeight(v)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:
