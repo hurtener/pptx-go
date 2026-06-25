@@ -360,7 +360,10 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
-	case Hero, Prose, Heading, List, Divider, Quote, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline:
+	case Quote:
+		// A plain quote is native text; a testimonial avatar/logo registers media.
+		return v.AvatarAssetID != "" || v.LogoAssetID != ""
+	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline:
 		// Button / Checklist / ChipRow / IconRows / Timeline are native (pills /
 		// glyphs / axis + marker dots + custGeom icons) — no media.
 		return false
@@ -505,7 +508,7 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 	case Divider:
 		r.renderDivider(ps, box, v)
 	case Quote:
-		r.renderQuote(ps, box, v, hAlign)
+		r.renderQuote(ps, box, v, slideID, hAlign)
 	case Callout:
 		r.renderCallout(ps, box, v)
 	case Chip:
@@ -649,7 +652,15 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		// Fixed chrome (attribution + padding) is one In(1.1) slot; each extra
 		// wrapped line of the quote text adds one quote line-height.
 		lines := wrappedLines(v.Text, pptx.TypeH3, avail, theme)
-		return pptx.In(1.1) + quoteLineEst*pptx.EMU(lines-1)
+		h := pptx.In(1.1) + quoteLineEst*pptx.EMU(lines-1)
+		if v.enriched() {
+			// The enriched testimonial reserves the attribution strip + the mark.
+			h += quoteAttrH + quoteGap
+			if v.Mark {
+				h += quoteMarkH / 2
+			}
+		}
+		return h
 	case Callout:
 		// The body wraps within the box minus the accent bar + text inset
 		// (mirrors renderCallout's In(0.2) inset).

@@ -165,7 +165,7 @@ renders as native PPTX shapes**.
 | `Heading` | `Text RichText; Level int (1..6); AutoFit bool` | native; `AutoFit` shrinks the heading to fit one line when it would overflow |
 | `List` | `Kind ListKind; Items []ListItem; Indent ListIndent` | native; `Indent` = `IndentNormal` (default) / `IndentTight` — tight halves the bullet marker-to-text gap (to `In(0.25)`) for dense lists; default byte-identical |
 | `Divider` | `Spacing SpaceRole` | native |
-| `Quote` | `Text RichText; Attribution string` | native |
+| `Quote` | `Text RichText; Attribution string; Mark bool; AvatarAssetID AssetID; AttributionName, AttributionRole, AttributionCompany string; LogoAssetID AssetID` | native — a plain pull-quote, or (when any enrichment field is set) a **testimonial**: `Mark` draws an oversized low-emphasis quotation glyph behind the text; `AvatarAssetID` is a rounded author avatar (via the AssetResolver); `AttributionName`/`Role`/`Company` is structured attribution (name bold, role · company muted); `LogoAssetID` is a customer logo. Laid out as one unit (mark + quote + a bottom `[avatar | name/role·company | logo]` strip). A Quote with only `Text`+`Attribution` is byte-identical to the plain quote; a missing avatar/logo warns and is omitted |
 | `Callout` | `Kind CalloutKind; Title string; Body RichText` | native |
 | `Chip` | `Label string; Tone ChipTone; Color ColorRole` | native |
 | `Arrow` | `Direction ArrowDirection; Label string` | native |

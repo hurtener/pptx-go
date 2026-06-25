@@ -1827,6 +1827,26 @@ per-slide photo AssetID) lives in Deckard (D-059).
   out-of-range position fails Stage-1 validation; the timeline is worker-count
   deterministic.
 
+#### Phase 85 — quote / testimonial enrichment (R14.5, HIGH · engine)
+
+**Subsystem:** scene (Quote node + renderer)
+**RFC sections:** §11.1, §11, §10.1, §10.2, §7.1
+**Deps:** D-114; brief 68.
+**What lands (R14.5):**
+- The `scene.Quote` node gains additive testimonial fields — `Mark bool` (an
+  oversized low-emphasis quotation glyph behind the text), `AvatarAssetID` (a
+  rounded author avatar, `SetCornerRadius(RadiusFull)`), structured
+  `AttributionName`/`Role`/`Company`, and `LogoAssetID` (a customer logo). Any
+  enrichment field switches to the testimonial layout (mark + quote text + a
+  bottom `[avatar | name/role·company | logo]` strip); a Quote with only
+  Text+Attribution is byte-identical. An avatar/logo makes the Quote asset-bearing
+  (serial determinism); the policy stays `HasAsset:false` (native text + pics,
+  not a single pic node) and the catalog stays 29.
+**Acceptance criteria:**
+- A testimonial with avatar + name/role/company + logo + mark renders as one unit
+  (conformant, warning-free); a plain quote is byte-identical (no pic); a missing
+  avatar warns and is omitted; the testimonial is worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

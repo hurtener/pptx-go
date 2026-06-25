@@ -163,6 +163,11 @@ func adversarialScene() scene.Scene {
 					},
 				},
 			}},
+			// An enriched testimonial (R14.5): oversized quote mark + a long multi-line
+			// quote + structured attribution. The mark, text, and strip must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("testimonial-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Quote{Text: rt(longText), Mark: true, AttributionName: "A very long attributed name here", AttributionRole: "Chief Revenue Officer", AttributionCompany: "Globex International Holdings"},
+			}},
 			// A fully-styled comparison matrix (R14.3): header band + grouped header
 			// row + zebra + highlighted column + row labels, with long wrapping cells.
 			// The table graphic frame must stay on-canvas; header text must contrast.

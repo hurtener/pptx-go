@@ -229,9 +229,33 @@ type Quote struct {
 	Text        RichText
 	Attribution string
 	Align       HAlign // per-node horizontal alignment override; 0 = inherit slide
+	// Testimonial enrichments (R14.5, D-120). Each zero value omits its element, so
+	// a Quote with only Text+Attribution renders byte-for-byte as before. When any
+	// of these is set the enriched testimonial layout runs: an optional oversized
+	// quotation Mark behind the text, an optional rounded Avatar, a structured
+	// attribution (Name / Role / Company), and an optional customer Logo.
+	Mark bool // draw a large, low-emphasis quotation glyph behind the quote text
+	// AvatarAssetID is the author's avatar (resolved via the AssetResolver, drawn
+	// as a rounded picture); "" = no avatar.
+	AvatarAssetID AssetID
+	// AttributionName / Role / Company are the structured attribution; when Name
+	// is set they supersede the flat Attribution string in the enriched layout.
+	AttributionName    string
+	AttributionRole    string
+	AttributionCompany string
+	// LogoAssetID is the customer/brand logo (resolved via the AssetResolver); ""
+	// = no logo.
+	LogoAssetID AssetID
 }
 
 func (Quote) NodeKind() NodeKind { return KindQuote }
+
+// enriched reports whether a Quote uses any testimonial enrichment (R14.5) and so
+// renders via the enriched layout rather than the plain text path.
+func (q Quote) enriched() bool {
+	return q.Mark || q.AvatarAssetID != "" || q.LogoAssetID != "" ||
+		q.AttributionName != "" || q.AttributionRole != "" || q.AttributionCompany != ""
+}
 
 // CalloutKind selects a callout's tone.
 type CalloutKind int

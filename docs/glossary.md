@@ -693,6 +693,19 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## Testimonial (enriched quote)
+
+The `Quote` node's optional testimonial treatment (D-120): an oversized
+low-emphasis quotation glyph (`Mark`), a rounded author avatar (`AvatarAssetID`,
+resolved via the AssetResolver), structured attribution (`AttributionName` /
+`Role` / `Company`), and a customer logo (`LogoAssetID`) laid out as one balanced
+unit — the quote text over the mark, then a bottom `[avatar | name/role·company |
+logo]` strip. Any enrichment field switches to this layout; a Quote with only
+`Text` + `Attribution` is byte-identical to the plain pull-quote. An avatar/logo
+makes the Quote asset-bearing (it renders serially for deterministic media part
+numbering); a missing asset warns and is omitted. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.5.
+
 ## Timeline (roadmap)
 
 The scene `Timeline` node (D-119): a horizontal axis with `Milestones` placed at

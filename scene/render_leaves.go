@@ -83,13 +83,138 @@ func (r *renderer) renderDivider(ps *pptx.Slide, box pptx.Box, _ Divider) {
 	r.stats.Shapes++
 }
 
-func (r *renderer) renderQuote(ps *pptx.Slide, box pptx.Box, v Quote, hAlign HAlign) {
+func (r *renderer) renderQuote(ps *pptx.Slide, box pptx.Box, v Quote, slideID string, hAlign HAlign) {
+	if v.enriched() {
+		r.renderTestimonial(ps, box, v, slideID, hAlign)
+		return
+	}
 	pAlign := hAlignToParagraph(hAlign)
 	tf := ps.AddTextFrame(box)
 	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign, LineHeight: r.lineH(pptx.TypeH3)})
 	r.addRichText(ps, p, v.Text, pptx.TypeH3)
 	if v.Attribution != "" {
 		r.plainPara(tf, "— "+v.Attribution, pptx.TypeCaption, pptx.ParagraphOpts{Align: pAlign})
+	}
+	r.stats.Shapes++
+}
+
+// Testimonial (enriched Quote) geometry — pinned layout metrics (not tokens).
+const (
+	quoteMarkH     = pptx.EMU(914400) // In(1.0); the oversized quotation-mark glyph box
+	quoteMarkAlpha = 18000            // the mark's OOXML opacity (low emphasis)
+	quoteAttrH     = pptx.EMU(822960) // In(0.90); the bottom attribution strip
+	quoteAvatarSz  = pptx.EMU(640080) // In(0.70); the rounded avatar box
+	quoteLogoH     = pptx.EMU(457200) // In(0.50); the customer-logo height bound
+	quoteGap       = pptx.EMU(137160) // In(0.15); inter-element gap in the strip
+)
+
+// renderTestimonial draws the enriched pull-quote (R14.5, D-120): an optional
+// oversized quotation mark behind the text, the quote text, then a bottom
+// attribution strip with an optional rounded avatar, a structured name/role/
+// company block, and an optional customer logo. Assets resolve via the
+// AssetResolver; a miss warns and is omitted (RFC §10.2).
+func (r *renderer) renderTestimonial(ps *pptx.Slide, box pptx.Box, v Quote, slideID string, hAlign HAlign) {
+	pAlign := hAlignToParagraph(hAlign)
+
+	// Oversized quotation mark behind the text (low emphasis), drawn first.
+	if v.Mark {
+		mf := ps.AddTextFrame(pptx.Box{X: box.X, Y: box.Y, W: box.W, H: quoteMarkH}).Anchor(pptx.AnchorTop)
+		mp := mf.AddParagraph(pptx.ParagraphOpts{Align: pAlign})
+		mp.AddRun("“", pptx.RunStyle{TypeRole: pptx.TypeDisplay, Bold: true,
+			Color: pptx.TokenColorAlpha(pptx.ColorAccent, quoteMarkAlpha)})
+		r.stats.Shapes++
+	}
+
+	// Reserve the bottom attribution strip; the quote text fills the rest.
+	hasStrip := v.AvatarAssetID != "" || v.LogoAssetID != "" || v.AttributionName != "" ||
+		v.AttributionRole != "" || v.AttributionCompany != "" || v.Attribution != ""
+	textH := box.H
+	if hasStrip {
+		textH = box.H - quoteAttrH - quoteGap
+		if textH < 0 {
+			textH = 0
+		}
+	}
+	markPad := pptx.EMU(0)
+	if v.Mark {
+		markPad = quoteMarkH / 2 // let the text sit over the lower half of the mark
+	}
+	tf := ps.AddTextFrame(pptx.Box{X: box.X, Y: box.Y + markPad, W: box.W, H: textH - markPad}).Anchor(pptx.AnchorMiddle)
+	p := tf.AddParagraph(pptx.ParagraphOpts{Align: pAlign, LineHeight: r.lineH(pptx.TypeH3)})
+	r.addRichText(ps, p, v.Text, pptx.TypeH3)
+	r.stats.Shapes++
+
+	if !hasStrip {
+		return
+	}
+	r.renderTestimonialStrip(ps, pptx.Box{X: box.X, Y: box.Bottom() - quoteAttrH, W: box.W, H: quoteAttrH}, v, slideID)
+}
+
+// renderTestimonialStrip lays out [avatar | name/role/company | logo] in strip.
+func (r *renderer) renderTestimonialStrip(ps *pptx.Slide, strip pptx.Box, v Quote, slideID string) {
+	x := strip.X
+
+	// Avatar: a rounded (circular) picture at the left.
+	if v.AvatarAssetID != "" {
+		if data, ct, err := r.resolve(v.AvatarAssetID); err == nil {
+			ab := pptx.Box{X: x, Y: strip.Y + (strip.H-quoteAvatarSz)/2, W: quoteAvatarSz, H: quoteAvatarSz}
+			if img, aerr := ps.AddImage(pptx.ImageBytes(data, ct), ab); aerr == nil {
+				img.SetCornerRadius(pptx.RadiusFull)
+				r.stats.Shapes++
+				r.stats.Assets++
+				x += quoteAvatarSz + quoteGap
+			} else {
+				r.warn(slideID, "quote avatar "+string(v.AvatarAssetID)+": "+aerr.Error())
+			}
+		} else {
+			r.warn(slideID, "quote avatar "+string(v.AvatarAssetID)+" unresolved: "+err.Error())
+		}
+	}
+
+	// Logo: height-bounded picture at the right (reserve its width).
+	logoW := pptx.EMU(0)
+	if v.LogoAssetID != "" {
+		if data, ct, err := r.resolve(v.LogoAssetID); err == nil {
+			logoW = quoteLogoH * 5 / 2 // a 2.5:1 reserve; cover-fit handles the actual aspect
+			lb := pptx.Box{X: strip.Right() - logoW, Y: strip.Y + (strip.H-quoteLogoH)/2, W: logoW, H: quoteLogoH}
+			if _, aerr := ps.AddImage(pptx.ImageBytes(data, ct), lb); aerr == nil {
+				r.stats.Shapes++
+				r.stats.Assets++
+			} else {
+				r.warn(slideID, "quote logo "+string(v.LogoAssetID)+": "+aerr.Error())
+				logoW = 0
+			}
+		} else {
+			r.warn(slideID, "quote logo "+string(v.LogoAssetID)+" unresolved: "+err.Error())
+		}
+	}
+
+	// Attribution block between the avatar and the logo.
+	attrW := strip.Right() - x
+	if logoW > 0 {
+		attrW -= logoW + quoteGap
+	}
+	if attrW <= 0 {
+		return
+	}
+	tf := ps.AddTextFrame(pptx.Box{X: x, Y: strip.Y, W: attrW, H: strip.H}).Anchor(pptx.AnchorMiddle)
+	if v.AttributionName != "" {
+		np := tf.AddParagraph(pptx.ParagraphOpts{})
+		np.AddRun(v.AttributionName, pptx.RunStyle{TypeRole: pptx.TypeBody, Bold: true})
+		sub := v.AttributionRole
+		if v.AttributionCompany != "" {
+			if sub != "" {
+				sub += " · "
+			}
+			sub += v.AttributionCompany
+		}
+		if sub != "" {
+			sp := tf.AddParagraph(pptx.ParagraphOpts{})
+			sp.AddRun(sub, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextMuted)})
+		}
+	} else if v.Attribution != "" {
+		ap := tf.AddParagraph(pptx.ParagraphOpts{})
+		ap.AddRun("— "+v.Attribution, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextMuted)})
 	}
 	r.stats.Shapes++
 }

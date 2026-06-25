@@ -414,6 +414,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   integer-EMU layout is deterministic. `AccentIndex` cycles a pinned token set.
   Catalog 28 → 29; vertical orientation + a date milestone type deferred. (R14.4,
   engine; D-119.)
+- `68-quote-testimonial.md` — enrich the `Quote` node additively into a designed
+  testimonial: `Mark bool` (oversized low-emphasis quotation glyph behind the
+  text), `AvatarAssetID` (a rounded author avatar), structured `AttributionName/
+  Role/Company`, and `LogoAssetID` (a customer logo). Any enrichment field
+  switches to the testimonial layout; a plain Text+Attribution quote is
+  byte-identical. Avatar/logo make the Quote asset-bearing (serial determinism);
+  policy stays `HasAsset:false` (native text + pics). (R14.5, engine; D-120.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

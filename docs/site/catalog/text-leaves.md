@@ -118,11 +118,35 @@ A pull quote with optional attribution. Render policy: **native**.
 | --- | --- | --- |
 | `Text` | `RichText` | The quoted text |
 | `Attribution` | `string` | Optional attribution line |
+| `Mark` | `bool` | Draw a large low-emphasis quotation glyph behind the text |
+| `AvatarAssetID` | `AssetID` | Author avatar (resolved via the AssetResolver; drawn rounded) |
+| `AttributionName` | `string` | Structured attribution: name (bold) |
+| `AttributionRole` | `string` | Structured attribution: role |
+| `AttributionCompany` | `string` | Structured attribution: company |
+| `LogoAssetID` | `AssetID` | Customer/brand logo (resolved via the AssetResolver) |
 
 ```go
 quote := scene.Quote{
 	Text:        scene.RichText{{Text: "Simplicity is the ultimate sophistication.", Style: scene.RunStyle{TypeRole: scene.TypeH3, Italic: true}}},
 	Attribution: "Leonardo da Vinci",
+}
+```
+
+Any of `Mark` / `AvatarAssetID` / structured attribution / `LogoAssetID` switches
+the Quote to the **testimonial** layout: the oversized mark behind the quote text,
+then a bottom `[avatar | name / role · company | logo]` strip. A Quote with only
+`Text` + `Attribution` renders byte-for-byte as the plain pull-quote. An
+avatar/logo makes the Quote asset-bearing; a missing asset warns and is omitted.
+
+```go
+testimonial := scene.Quote{
+	Text:               scene.RichText{{Text: "It cut our deck-building time by 90%.", Style: scene.RunStyle{TypeRole: scene.TypeH3}}},
+	Mark:               true,
+	AvatarAssetID:      "asset://avatar",
+	AttributionName:    "Jordan Lee",
+	AttributionRole:    "VP Product",
+	AttributionCompany: "Acme",
+	LogoAssetID:        "asset://acme-logo",
 }
 ```
 

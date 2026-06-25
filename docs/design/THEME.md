@@ -294,6 +294,13 @@ matrix. A mechanism over the existing color tokens, not a new token; nil `Style`
 keeps the plain banded table (byte-identical). Cell-value glyphs are composed with
 `Bento`+`Checklist`, not a `Table` field (a native table cell holds only text).
 
+**Testimonial quote mark** (D-120): the enriched `Quote` node's oversized
+quotation glyph (`Quote.Mark`) is drawn behind the text in a low-alpha accent
+(`TokenColorAlpha(ColorAccent, …)`), and the structured attribution uses the text
+tokens (name in `TextPrimary`, role · company in `TextMuted`). All token-resolved
+(P2); a theme swap re-skins the testimonial. A mechanism over the existing color
+tokens, not a new token.
+
 **Timeline colors** (D-119): the scene `Timeline` node colors its phase `Bands`
 from a surface role (low-alpha) and its milestone markers from a pinned cycle of
 token roles (`Milestone.AccentIndex` → `[ColorAccent, ColorAccentAlt, ColorInfo,

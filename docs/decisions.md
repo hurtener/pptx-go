@@ -4097,4 +4097,51 @@ roadmap with long labels stays on-canvas.
 
 ---
 
+## D-120 — Quote / testimonial enrichment (Wave 14 / Phase 85, R14.5)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.5 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · engine) — the `Quote`
+node is minimal (Text + Attribution + Align), so every testimonial reads as plain
+centered text. Sales/investor decks need a designed pull-quote: an oversized
+quotation glyph, an author avatar, structured name/role/company attribution, and a
+customer logo.
+
+**Decision:** Extend `Quote` additively with `Mark bool`, `AvatarAssetID AssetID`,
+`AttributionName`/`AttributionRole`/`AttributionCompany string`, and `LogoAssetID
+AssetID`, plus an unexported `enriched()` predicate. `renderQuote` keeps the
+existing plain path verbatim when `!enriched()` (**byte-identical**) and branches
+to `renderTestimonial` otherwise: an optional oversized `“` (TypeDisplay, low-alpha
+accent via `TokenColorAlpha`, drawn first so it sits behind the text), the quote
+text (TypeH3, anchored over the lower half of the mark), then a bottom attribution
+strip `[rounded avatar | Name(bold) / Role · Company(muted) | logo]`. The avatar
+and logo resolve through the `AssetResolver` (`r.resolve`); a miss warns and the
+element is omitted (RFC §10.2). The avatar is `SetCornerRadius(RadiusFull)` (D-114)
+for a circular crop.
+
+**Asset-bearing, but `HasAsset:false`.** `nodeUsesAssets(Quote)` returns true when
+an avatar/logo is set, so the slide composes serially and media part numbering
+stays deterministic; a plain quote stays parallel-safe. The new fields are named
+`AvatarAssetID`/`LogoAssetID` (not `AssetID`), and the Quote still renders as
+native text + embedded pics (not a single pic node), so the per-node policy
+(`TestPolicy_MatchesStructs`, which keys on a field literally named `AssetID`) is
+unaffected — `KindQuote` is unchanged and the catalog stays at 29 (no new node).
+
+**The quote mark is a font glyph, not a checkbox.** `“` (U+201C) renders in every
+standard face — the D-095 empty-box concern was specific to checkbox characters.
+It is low-alpha and behind the text, so it never harms legibility.
+
+**Deferred (§4.3):** logo cover-crop via `WithImageFill` (logos are usually
+pre-trimmed; the height-bounded stretch is adequate) and a side avatar-left layout
+(the bottom strip satisfies the acceptance for 1-line and multi-line quotes).
+
+**Consequences:** A designed testimonial is reachable; a Text+Attribution quote is
+byte-identical. Tested: a full testimonial (avatar + name/role/company + logo +
+mark) renders as one unit (2 pics, rounded avatar, role · company, conformant,
+warning-free); a plain quote emits no pic; a missing avatar warns and is omitted;
+the testimonial is worker-count deterministic; an adversarial enriched quote (mark
++ structured attribution + long text) stays on-canvas.
+
+---
+
 *Append new entries below this line.*
