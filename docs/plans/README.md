@@ -1847,6 +1847,27 @@ per-slide photo AssetID) lives in Deckard (D-059).
   (conformant, warning-free); a plain quote is byte-identical (no pic); a missing
   avatar warns and is omitted; the testimonial is worker-count deterministic.
 
+#### Phase 86 — number / currency / percent / locale format (R14.13, HIGH · both — engine half)
+
+**Subsystem:** scene (NumberFormat + Stat)
+**RFC sections:** §11.1, §10.1, §7 (stdlib-only)
+**Deps:** D-074; brief 69.
+**What lands (R14.13):**
+- A deterministic, stdlib-only `scene.NumberFormat{Decimals; GroupSep, DecimalSep,
+  CurrencySymbol; SymbolAfter, Percent, Compact; CompactThreshold; Prefix, Suffix}`
+  + `FormatNumber(v, f)` (grouping, decimal separator, currency symbol/placement,
+  percent, compact K/M/B/T, affixes), and a typed `Stat.Number *float64` +
+  `Stat.Format *NumberFormat` path: a non-nil `Number` formats deterministically
+  and then flows through the existing AutoFit shrink-to-fit so a value like
+  "$4,000+" stays on one line (fixing the wrap regression). A raw-string
+  `Stat.Value` is unchanged (byte-identical). A mechanism (D-026), not a visual
+  token — no THEME.md entry.
+- Closes R14.2's number-format engine atom; the rest of R14.2 (the ChartStyle
+  bundle + the rasterizer) is product (D-004 — V1 charts are caller-rasterized).
+**Acceptance criteria:**
+- 4000 + USD → "$4,000+" one line; 0.92 + percent → "92%"; 4000 + de-DE →
+  "4.000"; deterministic; a raw-string Stat is unchanged.
+
 ---
 
 ## 4. Post-V1 backlog

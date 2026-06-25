@@ -4144,4 +4144,54 @@ the testimonial is worker-count deterministic; an adversarial enriched quote (ma
 
 ---
 
+## D-121 — Number / currency / percent / locale format (`NumberFormat`) (Wave 14 / Phase 86, R14.13)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.13 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both — engine half)
+— pricing / metrics / KPI decks need locale-correct figures (thousands
+separators, currency symbol + placement, percent, compact 1.2M). The engine had
+no number-format concept, so big numbers were raw strings that wrap or mis-shrink
+(the reference's "$4,000+" wrapped to a stray "+" on its own line).
+
+**Decision:** Add a deterministic, stdlib-only `scene.NumberFormat{Decimals int;
+GroupSep, DecimalSep, CurrencySymbol string; SymbolAfter, Percent, Compact bool;
+CompactThreshold float64; Prefix, Suffix string}` and `FormatNumber(v float64, f
+NumberFormat) string`. The formatter uses `strconv.FormatFloat` (round-half-to-even
+→ byte-stable) plus manual integer-part grouping and currency/percent/compact
+affixes — no locale library (P4). Layout: Prefix · sign · [symbol-before] · body ·
+[%] · [symbol-after] · Suffix; body is a grouped fixed-decimal value or a compact
+K/M/B/T value. The zero `NumberFormat` is identity-ish (`4000 → "4000"`); en-US
+sets `GroupSep:","`+`CurrencySymbol:"$"`, de-DE sets `GroupSep:"."`+`DecimalSep:","`.
+
+`Stat` gains a typed numeric path: `Number *float64` + `Format *NumberFormat`, with
+a `displayValue()` helper that formats `Number` via `Format` (or the zero format)
+when non-nil, else returns the raw `Value` string. `renderStat` and `statValueFit`
+use `displayValue()`, so a formatted value flows through the existing AutoFit
+shrink-to-fit (D-074) and stays on one line — fixing the wrap regression generally.
+`validate` accepts a `Number` when `Value` is empty. A `Stat` with a raw `Value`
+(no `Number`) is **byte-identical**.
+
+**Not a visual token.** `NumberFormat` is a caller-supplied formatting mechanism
+(the soul's number token, D-026), not a color/spacing/typography property — so it
+needs no `docs/design/THEME.md` token entry (the P2 token rule governs visual
+properties). It lives in `scene` (consumed by `Stat`; the future native data-marks
+of R14.8 will reuse it). No new IR node (catalog stays 29).
+
+**Closes R14.2's engine atom.** R14.2 (`cov-brand-styled-charts`, HIGH · both)
+named a `numberFormat` as part of a soul `ChartStyle` bundle. With `NumberFormat`
+shipped and the theme palette already exposed to callers, R14.2's **engine** side
+is complete; the rest of R14.2 — the `ChartStyle` bundle and the chart rasterizer
+that consumes it — is **product** (Deckard), because V1 charts are caller-rasterized
+(D-004) and there is no in-repo Go chart rasterizer for the engine to feed a style
+into. R14.2 is therefore not a separate engine phase.
+
+**Consequences:** Any pricing/metrics deck renders locale-correct figures that stay
+on one line; raw-string Stats are byte-identical. Tested: a table-driven
+`FormatNumber` (usd+suffix → "$4,000+", plain, percent → "92%", de-DE → "4.000",
+compact M/B, euro-after, decimals, negative, zero-identity); a Stat numeric path
+renders the formatted value; an adversarial typed-number Stat stays one line.
+
+---
+
 *Append new entries below this line.*

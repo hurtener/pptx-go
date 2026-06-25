@@ -215,16 +215,30 @@ arrow := scene.Arrow{
 ## Stat
 
 A hero big-number metric: a display-scale value with a label and an optional
-directional delta. A `Grid` of `Stat`s forms a metric/pricing strip. The engine
-renders the value and delta verbatim — it formats no numbers.
+directional delta. A `Grid` of `Stat`s forms a metric/pricing strip. The value is
+either a raw `Value` string (rendered verbatim) or a typed `Number` formatted by a
+`Format`.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `Value` | `string` | The big number, rendered at display scale (e.g. `"$2,200"`) |
+| `Value` | `string` | The big number as a raw string (e.g. `"$2,200"`); used when `Number` is nil |
+| `Number` | `*float64` | Optional typed numeric value, formatted by `Format` (supersedes `Value`) |
+| `Format` | `*NumberFormat` | The format applied to `Number` (or the zero format) |
 | `Label` | `string` | Caption below the value |
 | `Delta` | `string` | Optional delta (e.g. `"+12%"`); `""` = no delta line |
 | `DeltaTone` | `DeltaTone` | Delta color direction: `DeltaUp` (success), `DeltaDown` (error), `DeltaNeutral` (muted, default) |
 | `AutoFit` | `bool` | Shrink the value to fit its column when a long number/price would overflow |
+
+`NumberFormat` (`scene.NumberFormat`) is a deterministic, locale-aware format:
+`{Decimals int; GroupSep, DecimalSep, CurrencySymbol string; SymbolAfter, Percent,
+Compact bool; CompactThreshold float64; Prefix, Suffix string}`. `scene.
+FormatNumber(v, f)` applies it directly. Setting `Number`+`Format` keeps a price on
+one line with correct separators (the fix for the wrapped "$4,000+"):
+
+```go
+price := scene.Stat{Number: ptr(4000), Format: &scene.NumberFormat{GroupSep: ",", CurrencySymbol: "$", Suffix: "+"}, Label: "per month", AutoFit: true}
+// renders "$4,000+" on one line; 0.92 with {Percent:true} → "92%"; de-DE {GroupSep:"."} → "4.000"
+```
 
 In a narrow pricing column a long value like `"$4,000+"` can wrap to two lines.
 Set `AutoFit` and the engine downscales the value font (to no less than 60% of the

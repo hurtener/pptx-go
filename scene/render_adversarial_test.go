@@ -20,6 +20,9 @@ import (
 
 const longText = "A deliberately long stretch of content that wraps across several lines under any reasonable column width"
 
+// ptrF returns a pointer to v (for the optional typed Stat.Number path, R14.13).
+func ptrF(v float64) *float64 { return &v }
+
 // adversarialScene builds a deck exercising every component with hostile content,
 // in both the light and dark variants.
 func adversarialScene() scene.Scene {
@@ -88,7 +91,10 @@ func adversarialScene() scene.Scene {
 				Nodes: []scene.SlideNode{
 					scene.Hero{Title: longText, AutoFit: true},
 					scene.Grid{Columns: 4, Cells: []scene.SlideNode{
-						scene.Stat{Value: "$4,000,000+", Label: "a", AutoFit: true}, scene.Stat{Value: "99.999%", Label: "b", AutoFit: true},
+						// A typed-number Stat (R14.13): formats to "$4,000,000+" via NumberFormat,
+						// staying on one line under AutoFit (the slide-09 wrap regression fix).
+						scene.Stat{Number: ptrF(4000000), Format: &scene.NumberFormat{GroupSep: ",", CurrencySymbol: "$", Suffix: "+"}, Label: "a", AutoFit: true},
+						scene.Stat{Value: "99.999%", Label: "b", AutoFit: true},
 						scene.Stat{Value: "1,234,567", Label: "c", AutoFit: true}, scene.Stat{Value: "$12.5M", Label: "d", AutoFit: true},
 					}},
 				}},
