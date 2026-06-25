@@ -693,6 +693,20 @@ blip effect; both colors are surface tokens resolved against the active theme (P
 so a theme swap re-tints the photo. nil = the photo's natural colors
 (byte-identical). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.1.
 
+## NumberFormat
+
+A deterministic, stdlib-only number/currency/percent/locale format (`scene.
+NumberFormat`, D-121): `{Decimals; GroupSep, DecimalSep, CurrencySymbol;
+SymbolAfter, Percent, Compact; CompactThreshold; Prefix, Suffix}`. `scene.
+FormatNumber(v, f)` applies it — thousands grouping, a chosen decimal separator,
+a currency symbol before/after, percent (×100 + "%"), compact K/M/B/T notation,
+and arbitrary affixes — without any locale library (round-half-to-even, so
+byte-stable). A `Stat` carries an optional `Number *float64` + `Format
+*NumberFormat`: a non-nil `Number` formats then shrinks-to-fit (so "$4,000+" stays
+on one line); a raw `Stat.Value` is unaffected. It is a caller-supplied mechanism
+(the soul's number token), not a visual theme token. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.13.
+
 ## Testimonial (enriched quote)
 
 The `Quote` node's optional testimonial treatment (D-120): an oversized

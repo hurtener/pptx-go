@@ -421,6 +421,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   switches to the testimonial layout; a plain Text+Attribution quote is
   byte-identical. Avatar/logo make the Quote asset-bearing (serial determinism);
   policy stays `HasAsset:false` (native text + pics). (R14.5, engine; D-120.)
+- `69-number-locale-format.md` — a deterministic, stdlib-only `scene.NumberFormat`
+  + `FormatNumber(v, f)` (grouping, decimal sep, currency symbol/placement,
+  percent, compact K/M/B/T, prefix/suffix) and a typed `Stat.Number`/`Format`
+  path that formats then shrinks-to-fit (fixes the "$4,000+" wrap). Raw `Value`
+  unaffected (byte-identical); a mechanism (D-026), not a visual token. Closes
+  R14.2's number-format engine atom (the rest of R14.2 is product, D-004).
+  (R14.13, engine half; D-121.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -34,19 +34,20 @@ func (r *renderer) statValueFit(autofit bool, value string, boxW pptx.EMU) (pptx
 func (r *renderer) renderStat(ps *pptx.Slide, box pptx.Box, v Stat) {
 	tf := ps.AddTextFrame(box).Anchor(pptx.AnchorMiddle)
 
+	value := v.displayValue()
 	vp := tf.AddParagraph(pptx.ParagraphOpts{})
 	// Value overflow guard (R11.8): keep the value on one line via the pinned role
 	// ladder (TypeDisplay → H1 → H2) plus a FontScale floor, so a wide value like
 	// "$4,000+" never wraps and pushes the trailing caption down. Gated on AutoFit
 	// (the D-074 opt-in); off → full TypeDisplay, byte-identical.
-	valueRole, scale := r.statValueFit(v.AutoFit, v.Value, box.W)
+	valueRole, scale := r.statValueFit(v.AutoFit, value, box.W)
 	// Auto-contrast the (otherwise uncolored, near-black) value against the slide
 	// variant surface (R11.2, D-082): nil on a light slide → byte-identical; a light
 	// token on a dark-variant slide so the value is never black-on-dark. A Stat
 	// placed on a strongly-colored card resolves against the slide surface, not the
 	// card fill (leaf nodes do not receive their container surface — a documented
 	// follow-up); callers needing that drive it via the surrounding card.
-	vp.AddRun(v.Value, pptx.RunStyle{TypeRole: valueRole, Bold: true, FontScale: scale, Color: r.onCardSurface(pptx.ColorCanvas)})
+	vp.AddRun(value, pptx.RunStyle{TypeRole: valueRole, Bold: true, FontScale: scale, Color: r.onCardSurface(pptx.ColorCanvas)})
 
 	if v.Label != "" {
 		lp := tf.AddParagraph(pptx.ParagraphOpts{})

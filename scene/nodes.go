@@ -593,6 +593,27 @@ type Stat struct {
 	// long number/price fits one line, within a pinned minimum ratio. Zero = off,
 	// byte-identical. (D-074.)
 	AutoFit bool
+	// Number + Format are the optional typed numeric path (R14.13, D-121): when
+	// Number is non-nil it is formatted via Format (or the zero NumberFormat) and
+	// supersedes the raw Value string, so a price/metric renders with correct
+	// separators, currency, percent, or compact notation deterministically — then
+	// the AutoFit shrink-to-fit keeps it on one line. nil Number = the raw Value
+	// (byte-identical).
+	Number *float64
+	Format *NumberFormat
+}
+
+// displayValue returns the Stat's rendered value string: the formatted Number
+// when set (via Format, or the zero NumberFormat), else the raw Value (R14.13).
+func (s Stat) displayValue() string {
+	if s.Number != nil {
+		var f NumberFormat
+		if s.Format != nil {
+			f = *s.Format
+		}
+		return FormatNumber(*s.Number, f)
+	}
+	return s.Value
 }
 
 func (Stat) NodeKind() NodeKind { return KindStat }

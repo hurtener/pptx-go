@@ -52,8 +52,8 @@ func validateNode(n SlideNode) error {
 			return fmt.Errorf("invalid callout kind %d", v.Kind)
 		}
 	case Stat:
-		if v.Value == "" {
-			return errors.New("stat requires a value")
+		if v.Value == "" && v.Number == nil {
+			return errors.New("stat requires a value or a number")
 		}
 	case Button:
 		if v.Label == "" {
