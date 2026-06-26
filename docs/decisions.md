@@ -4283,6 +4283,38 @@ round-trip (the adjust guides survive reopen); an adversarial dataviz card with 
 five mark kinds stays on-canvas. Deferred to V1.x: a gauge needle/ticks and a
 multi-segment (stacked) donut.
 
+
+---
+
+## D-124 — 2x2 quadrant / positioning map (`Quadrant`) (Wave 14 / Phase 89, R14.9)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.9 (MED · engine) — investor/strategy decks use a 2x2 positioning
+map (competitive landscape, effort/impact, BCG). `Bento`/`Grid` give equal cells
+but nothing draws labeled axes and positions items by (x,y).
+
+**Decision:** Add a new `Quadrant` scene IR node (catalog 30 → 31):
+`Quadrant{AxisX, AxisY QuadrantAxis{LowLabel, HighLabel}; Quadrants
+[4]QuadrantCell{Title; Fill *ColorRole}; Items []QuadrantItem{X, Y float64;
+Label; AccentIndex}}`. `renderQuadrant` reserves a left gutter (Y end labels) + a
+bottom strip (X end labels); the field gets up to four low-alpha per-quadrant
+tints + titles, a center cross (SurfaceAlt dividers), and an item dot at
+`(field.X + X*W, field.Bottom − Y*H)` (origin bottom-left, Y inverted to screen
+space) with a label that edge-flips to the dot's left near the right edge and
+clamps into the field (the timeline stagger/clamp pattern). Item dot colors reuse
+the pinned `timelineAccent` cycle (P2). Pure integer-EMU → byte-identical /
+worker-count deterministic; `nodeUsesAssets:false`, `HasAsset:false`. `validate`
+rejects out-of-`[0,1]` coordinates.
+
+**Consequences:** The positioning/landscape class is reachable; a deck with no
+Quadrant is byte-identical. Full new-node wiring landed (KindQuadrant, policy/
+validate/dispatch/preferredHeight/nodeUsesAssets, catalog 31, integration kind-loop
+`..KindQuadrant`). Tested: a 2x2 with 6 items renders axes + 4 tints + ≥6 dots +
+labels (conformant); an out-of-range coordinate fails Stage-1 validation;
+worker-count determinism; an adversarial corner-item quadrant stays on-canvas.
+Deferred to V1.x: an NxM grid variant and item anti-collision beyond edge-flip.
+
 ---
 
 *Append new entries below this line.*

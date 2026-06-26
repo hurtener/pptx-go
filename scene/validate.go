@@ -153,6 +153,12 @@ func validateNode(n SlideNode) error {
 				}
 			}
 		}
+	case Quadrant:
+		for i, it := range v.Items {
+			if it.X < 0 || it.X > 1 || it.Y < 0 || it.Y > 1 {
+				return fmt.Errorf("quadrant item %d coordinate (%g,%g) out of [0,1]", i, it.X, it.Y)
+			}
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

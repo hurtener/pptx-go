@@ -1911,6 +1911,20 @@ per-slide photo AssetID) lives in Deckard (D-059).
 
 **R14.8 complete after Phase 88** (bar/bars/sparkline + donut/gauge).
 
+#### Phase 89 — 2x2 quadrant / positioning map (R14.9, MED · engine)
+
+**Subsystem:** scene (new IR node)
+**Deps:** brief 72.
+**What lands (R14.9):** a new `scene.Quadrant` node (catalog 30 → 31) — a 2x2
+positioning map with labeled X/Y axes (low/high captions), optional per-quadrant
+tint + title, and `Items` plotted at (x,y) in `[0,1]` (origin bottom-left). Axes,
+dividers, dots, and labels are native shapes; item labels edge-flip + clamp
+on-canvas; dot colors cycle a pinned token set; integer-EMU deterministic;
+`nodeUsesAssets:false`.
+**Acceptance criteria:** a 2x2 with 6 items renders axes + 4 tints + dots inside
+the safe area (conformant); an out-of-range coordinate fails Stage-1 validation;
+worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -363,9 +363,9 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Quote:
 		// A plain quote is native text; a testimonial avatar/logo registers media.
 		return v.AvatarAssetID != "" || v.LogoAssetID != ""
-	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark:
-		// Button / Checklist / ChipRow / IconRows / Timeline / DataMark are native
-		// (pills / glyphs / axis + marker dots / rects + lines) — no media.
+	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark, Quadrant:
+		// Button / Checklist / ChipRow / IconRows / Timeline / DataMark / Quadrant are
+		// native (pills / glyphs / axes + dots / rects + lines) — no media.
 		return false
 	default:
 		return true
@@ -557,6 +557,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderTimeline(ps, box, v, slideID)
 	case DataMark:
 		r.renderDataMark(ps, box, v)
+	case Quadrant:
+		r.renderQuadrant(ps, box, v)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -691,6 +693,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return timelinePreferredHeight(v)
 	case DataMark:
 		return dataMarkPreferredHeight(v)
+	case Quadrant:
+		return pptx.In(4.0) // a large positioning field
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:

@@ -220,3 +220,25 @@ bar := scene.DataMark{Kind: scene.DataMarkBar, Value: 0.92, Label: "92%"}
 bars := scene.DataMark{Kind: scene.DataMarkBars, Values: []float64{0.3, 0.6, 0.9, 0.5}}
 spark := scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.8, 0.4, 1.0}}
 ```
+
+
+## Quadrant (2x2 positioning map)
+
+A 2x2 positioning map — **native**, no raster. Labeled X/Y axes with low/high end
+captions, optional per-quadrant tint + title, and items plotted at `(x,y)` in
+`[0,1]` (origin bottom-left). Axes, a center cross, dots, and labels are native
+shapes; labels edge-flip to stay on-canvas.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `AxisX` / `AxisY` | `QuadrantAxis` | `{LowLabel, HighLabel string}` end captions |
+| `Quadrants` | `[4]QuadrantCell` | `{Title string; Fill *ColorRole}`; index 0=TL, 1=TR, 2=BL, 3=BR (nil Fill = no tint) |
+| `Items` | `[]QuadrantItem` | `{X, Y float64 (0..1); Label string; AccentIndex int}` plotted points |
+
+```go
+q := scene.Quadrant{
+	AxisX: scene.QuadrantAxis{LowLabel: "Low effort", HighLabel: "High effort"},
+	AxisY: scene.QuadrantAxis{LowLabel: "Low impact", HighLabel: "High impact"},
+	Items: []scene.QuadrantItem{{X: 0.2, Y: 0.8, Label: "Quick win"}},
+}
+```
