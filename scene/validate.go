@@ -166,6 +166,10 @@ func validateNode(n SlideNode) error {
 		if v.Tone < LogoToneNone || v.Tone > LogoToneBrand {
 			return fmt.Errorf("logo_wall tone %d out of range", v.Tone)
 		}
+	case Tree:
+		if v.Root.Label == "" && len(v.Root.Children) == 0 {
+			return errors.New("tree requires a non-empty root")
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

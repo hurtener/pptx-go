@@ -34,6 +34,7 @@ func allNodes() []scene.SlideNode {
 		scene.DataMark{Kind: scene.DataMarkBar, Value: 0.5},
 		scene.Quadrant{Items: []scene.QuadrantItem{{X: 0.5, Y: 0.5, Label: "x"}}},
 		scene.LogoWall{Logos: []scene.LogoEntry{{AssetID: "a"}}},
+		scene.Tree{Root: scene.TreeNode{Label: "root", Children: []scene.TreeNode{{Label: "a"}, {Label: "b"}}}},
 	}
 }
 
@@ -51,8 +52,8 @@ func TestCatalog_KindsDistinct(t *testing.T) {
 			t.Errorf("node %T has no String()", n)
 		}
 	}
-	if len(seen) != 32 {
-		t.Errorf("catalog has %d distinct kinds, want 32", len(seen))
+	if len(seen) != 33 {
+		t.Errorf("catalog has %d distinct kinds, want 33", len(seen))
 	}
 }
 

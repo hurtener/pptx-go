@@ -258,3 +258,24 @@ optionally recolored to a uniform tone so a mixed-style set reads as one wall.
 | `Caption` | `string` | optional heading ("Trusted by", "Integrates with") |
 
 A missing logo warns and is skipped (it does not fail the render).
+
+
+## Tree (hierarchy / org chart)
+
+A node-link hierarchy — **native**, no media. A `Root` with `Children` laid out as
+a balanced top-down (or left-right) tidy tree, with parent→child elbow edges.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Root` | `TreeNode` | `{Label, Detail, Icon string; Children []TreeNode; AccentIndex int}` |
+| `Orientation` | `FlowOrientation` | `FlowVertical` (top-down, default) or `FlowHorizontal` (left-right) |
+
+Node cards are rounded rects with an accent border + label/detail/icon; edges are
+elbow connectors. Depth/breadth past the region clamps + warns.
+
+```go
+t := scene.Tree{Root: scene.TreeNode{Label: "CEO", Children: []scene.TreeNode{
+	{Label: "Engineering", Children: []scene.TreeNode{{Label: "Platform"}, {Label: "Apps"}}},
+	{Label: "Go-to-market", AccentIndex: 1},
+}}}
+```

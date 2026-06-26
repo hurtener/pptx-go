@@ -4388,6 +4388,40 @@ on a content slide stays clear of the body. The product half (the slide field
 carrying source text per archetype) lives in Deckard (D-059). Deferred: auto-numbered
 marker↔footnote linking (the caller numbers them).
 
+
+---
+
+## D-127 — Hierarchy / org-chart / tree (`Tree`) (Wave 14 / Phase 92, R14.10)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.10 (MED · engine) — team/org slides, taxonomy trees, and layered
+architecture decompositions are a standard class with no support (`Flow` is
+sequential; `Bento`/`Grid` are flat).
+
+**Decision:** Add a new `Tree` scene IR node (catalog 32 → 33): `Tree{Root
+TreeNode; Orientation FlowOrientation}`, `TreeNode{Label, Detail, Icon string;
+Children []TreeNode; AccentIndex int}`. `renderTree` runs a deterministic tidy
+layout — leaves are spread evenly across the cross-axis (`leafSlot`), depth maps to
+the main axis (`levelSlot`), and each internal node is centered over its first/last
+leaf descendant, so parent→child edges never cross. `FlowVertical` (top-down,
+default) and `FlowHorizontal` (left-right) swap the two axes. Edges are **elbow**
+connectors (an out segment, a mid bus, an in segment — all horizontal/vertical), so
+no diagonal-line `flipV` is needed. Node cards are rounded rects (`ColorSurface`
+fill + an accent border from the pinned `timelineAccent` cycle) with a centered
+label + optional detail + optional curated icon. Node width derives from the
+slot, clamped to a max and floored (a too-wide tree warns + clamps rather than
+overflowing). Native (no media): `nodeUsesAssets:false`, `HasAsset:false`.
+`walkTreeIcons` recurses node icons for Stage-1 validation.
+
+**Consequences:** The hierarchy/org-chart class is reachable; a deck with no Tree
+is byte-identical. Full new-node wiring landed (KindTree, policy/validate/dispatch/
+preferredHeight/nodeUsesAssets/walkIconRefs, catalog 33, integration kind-loop
+`..KindTree`). Tested: a 3-level tree renders balanced node cards + non-crossing
+elbow edges (conformant); left-right transposes; worker-count determinism; an
+adversarial deep/long-label tree stays on-canvas. Deferred to V1.x: a full
+Reingold-Tilford contour-packing layout + avatars in nodes.
+
 ---
 
 *Append new entries below this line.*

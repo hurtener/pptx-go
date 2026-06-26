@@ -455,6 +455,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   to reserve it so footnotes never overlap the body/footer. A scene
   `RunStyle.Superscript` marks references (maps to the builder's `BaselineRel`).
   Cap → drop + warn; empty = byte-identical. (R14.12, engine half; D-126.)
+- `75-hierarchy-tree.md` — a NEW `Tree` node: a root with children as a balanced
+  top-down (or left-right) tidy tree — leaves spread evenly, internal nodes
+  centered over their leaf descendants, parent→child elbow connector edges (all
+  H/V, no flip), soul-styled node cards. Native, deterministic; depth/breadth past
+  the region clamp + warn. Catalog 32 → 33. (R14.10, engine; D-127.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -47,6 +47,7 @@ const (
 	KindDataMark
 	KindQuadrant
 	KindLogoWall
+	KindTree
 )
 
 // String returns the node kind's IR name.
@@ -116,6 +117,8 @@ func (k NodeKind) String() string {
 		return "quadrant"
 	case KindLogoWall:
 		return "logo_wall"
+	case KindTree:
+		return "tree"
 	default:
 		return "unknown"
 	}
@@ -974,6 +977,29 @@ type LogoWall struct {
 }
 
 func (LogoWall) NodeKind() NodeKind { return KindLogoWall }
+
+// Tree is a hierarchy / org-chart / taxonomy node (R14.10, D-127): a root with
+// children laid out as a balanced top-down (or left-right) tidy tree, with elbow
+// connector edges between parent and children and soul-styled nodes. Pure
+// integer-EMU layout → byte-identical; depth/breadth past the safe area clamp +
+// warn. A deck with no Tree is byte-identical (a new node, absent until used).
+type Tree struct {
+	node
+	Root        TreeNode
+	Orientation FlowOrientation // FlowVertical = top-down (default); FlowHorizontal = left-right
+}
+
+func (Tree) NodeKind() NodeKind { return KindTree }
+
+// TreeNode is one node in a Tree (D-127): a label + optional detail/icon, child
+// nodes, and an AccentIndex selecting its border color from a pinned token cycle.
+type TreeNode struct {
+	Label       string
+	Detail      string
+	Icon        string
+	Children    []TreeNode
+	AccentIndex int
+}
 
 // LogoEntry is one logo in a LogoWall (D-125): an asset reference + alt text.
 type LogoEntry struct {
