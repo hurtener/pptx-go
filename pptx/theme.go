@@ -235,6 +235,13 @@ type Theme struct {
 	DisplayFont string
 	BodyFont    string
 	Colors      ColorPalette
+	// Accents, when non-empty, is an ordered brand-accent palette (R8.4): the
+	// scene renderer's per-element accent cycle (timeline / funnel / cycle /
+	// quadrant / tree / image-pin markers) rotates through these literal hues by
+	// index instead of the engine's pinned five-role cycle. Empty (the zero
+	// value) keeps the pinned cycle, byte-identical. Like DarkColors it has no
+	// theme1.xml slot — the resolved accent RGB round-trips, the field does not.
+	Accents []RGB
 	// DarkColors, when non-nil, supplies soul-driven VariantDark overrides that
 	// the scene renderer overlays over its pinned neutral-gray dark default
 	// (R8.3). nil (the zero value) keeps the pinned gray, byte-identical. The
@@ -262,6 +269,20 @@ func WithAccent(c RGB) ThemeOption {
 // give content slides a designed paper tone; the default is white (= ColorCanvas).
 func WithPaper(c RGB) ThemeOption {
 	return func(t *Theme) { t.Colors.Surfaces[ColorPaper] = c }
+}
+
+// WithAccents sets the theme's ordered brand-accent palette (R8.4): the scene
+// renderer's per-element accent cycle rotates through these literal hues by
+// index instead of the pinned five-role cycle, so a brand can render 4+
+// coordinated accent hues across timeline phases, quadrant points, tree nodes,
+// etc. Passing none (or an empty slice) keeps the pinned cycle (byte-identical).
+func WithAccents(palette ...RGB) ThemeOption {
+	return func(t *Theme) {
+		if len(palette) == 0 {
+			return
+		}
+		t.Accents = append([]RGB(nil), palette...)
+	}
 }
 
 // WithDarkSurface sets a soul-driven VariantDark override for a surface role
@@ -427,6 +448,12 @@ func (t *Theme) Clone() *Theme {
 	c.Colors.Text = make(map[TextColorRole]RGB, len(t.Colors.Text))
 	for k, v := range t.Colors.Text {
 		c.Colors.Text[k] = v
+	}
+	// Accents is an ordered slice (R8.4) — copy it so a clone's palette can be
+	// mutated without aliasing the original (themes are reusable, §5). A nil/empty
+	// slice stays nil (byte-identical fallback preserved).
+	if len(t.Accents) > 0 {
+		c.Accents = append([]RGB(nil), t.Accents...)
 	}
 	// DarkColors is an optional pointer (R8.3) — deep-copy both maps when present
 	// so a clone's dark palette can be mutated without aliasing the original

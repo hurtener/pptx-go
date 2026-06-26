@@ -344,6 +344,14 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   pinned grays (byte-identical); a role *without* a theme1.xml slot (the
   resolved dark RGB round-trips via `stats.Colors`, the field does not). The
   seam R8.7 dark accent/extension overrides extend. (R8.3, engine half.)
+- `81-multi-accent-palette.md` — a `Theme.Accents []RGB` ordered brand-accent
+  palette + `WithAccents`, read by the scene accent cycle (`timelineAccent` →
+  renderer `accentColorAt`/`accentRGBAt`) so 4+ coordinated hues rotate across
+  timeline/funnel/cycle/quadrant/tree/image-pin markers. Empty = the pinned
+  five-role cycle (byte-identical); the contrast path (`onCardSurface`/
+  `cellTextOn`) is refactored to a resolved-RGB core so a literal-hue accent stays
+  legible. No new node/slot; unblocks deferred R14.2/R14.14 accent work. (R8.4,
+  engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side

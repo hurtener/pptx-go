@@ -83,13 +83,13 @@ func (r *renderer) renderImageAnnotations(ps *pptx.Slide, box pptx.Box, a *Image
 			H: pptx.EMU(clampUnit01(h.H) * float64(box.H)),
 		}
 		ps.AddShape(pptx.ShapeRect, hb, pptx.WithFill(pptx.NoFill()),
-			pptx.WithLine(pptx.Line{Width: pptx.Pt(2), Color: pptx.TokenColor(timelineAccent(h.AccentIndex))}))
+			pptx.WithLine(pptx.Line{Width: pptx.Pt(2), Color: r.accentColorAt(h.AccentIndex)}))
 		r.stats.Shapes++
 	}
 	for _, p := range a.Pins {
 		px := box.X + pptx.EMU(clampUnit01(p.X)*float64(box.W))
 		py := box.Y + pptx.EMU(clampUnit01(p.Y)*float64(box.H))
-		accent := timelineAccent(p.AccentIndex)
+		accent := r.accentColorAt(p.AccentIndex)
 		// Optional leader + caption to the right of the pin (clamped into the box).
 		if p.Caption != "" {
 			cx := px + annPinR + annGap
@@ -107,12 +107,12 @@ func (r *renderer) renderImageAnnotations(ps *pptx.Slide, box pptx.Box, a *Image
 		}
 		// Pin disc + number.
 		ps.AddShape(pptx.ShapeEllipse, pptx.Box{X: px - annPinR, Y: py - annPinR, W: 2 * annPinR, H: 2 * annPinR},
-			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent))))
+			pptx.WithFill(pptx.SolidFill(accent)))
 		r.stats.Shapes++
 		if p.Label != "" {
 			lf := ps.AddTextFrame(pptx.Box{X: px - annPinR, Y: py - annPinR, W: 2 * annPinR, H: 2 * annPinR}).Anchor(pptx.AnchorMiddle)
 			lp := lf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
-			lp.AddRun(p.Label, pptx.RunStyle{TypeRole: pptx.TypeCaption, Bold: true, Color: r.cellTextOn(accent)})
+			lp.AddRun(p.Label, pptx.RunStyle{TypeRole: pptx.TypeCaption, Bold: true, Color: r.cellTextOnColor(r.accentRGBAt(p.AccentIndex))})
 			r.stats.Shapes++
 		}
 	}
