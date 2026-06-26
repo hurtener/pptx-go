@@ -718,6 +718,18 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Logo wall
+
+The scene `LogoWall` node (D-125): an N-up grid of logo assets
+(`Logos []LogoEntry{AssetID, Alt}`, `Columns`), each **contained** (not cropped) +
+centered in its cell at a common optical size (`containBox` fits the logo's aspect
+from the format-header dimensions), optionally recolored to a uniform `Tone`
+(`LogoToneNone` / `LogoToneMono` = `TextPrimary`→`Canvas` duotone / `LogoToneBrand`
+= `Accent`→`Canvas`) so a mixed-style set reads as one cohesive wall; an optional
+`Caption`. Asset-bearing (renders a pic per logo, serial for deterministic part
+numbering); a missing logo warns and is skipped. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.7.
+
 ## NumberFormat
 
 A deterministic, stdlib-only number/currency/percent/locale format (`scene.

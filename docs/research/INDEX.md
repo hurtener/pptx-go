@@ -445,6 +445,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   and items plotted at (x,y) in [0,1] (origin bottom-left). Axes, dividers, dots,
   and labels are native shapes; labels edge-flip + clamp on-canvas; integer-EMU
   deterministic. Catalog 30 → 31. (R14.9, engine; D-124.)
+- `73-logo-wall.md` — a NEW `LogoWall` node: an N-up grid of logo assets, each
+  contained (not cropped) + centered via `containBox` (format-header dims,
+  §7/D-046), optionally recolored to a uniform tone (mono/brand via the duotone
+  seam, D-116) so a mixed set coheres; optional caption. Asset-bearing; missing
+  logos warn + skip. Catalog 31 → 32. (R14.7, engine; D-125.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

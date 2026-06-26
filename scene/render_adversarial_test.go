@@ -180,6 +180,15 @@ func adversarialScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.66, Label: "66"},
 				}},
 			}},
+			// A logo wall (R14.7): a mono-tone grid of logos with a caption; the grid
+			// cells + contained logos must stay on-canvas. (No resolver → logos warn +
+			// skip; the caption + layout still exercise the composer.)
+			scene.SceneSlide{ID: fmt.Sprintf("logowall-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.LogoWall{Caption: longText, Columns: 4, Tone: scene.LogoToneMono, Logos: []scene.LogoEntry{
+					{AssetID: "asset://x1"}, {AssetID: "asset://x2"}, {AssetID: "asset://x3"},
+					{AssetID: "asset://x4"}, {AssetID: "asset://x5"}, {AssetID: "asset://x6"},
+				}},
+			}},
 			// A 2x2 quadrant map (R14.9): axes + tints + plotted dots with long labels
 			// at the corners (0,0)/(1,1) must stay on-canvas.
 			scene.SceneSlide{ID: fmt.Sprintf("quadrant-%v", variant), Variant: variant, Nodes: []scene.SlideNode{

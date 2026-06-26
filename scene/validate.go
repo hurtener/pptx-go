@@ -159,6 +159,13 @@ func validateNode(n SlideNode) error {
 				return fmt.Errorf("quadrant item %d coordinate (%g,%g) out of [0,1]", i, it.X, it.Y)
 			}
 		}
+	case LogoWall:
+		if len(v.Logos) == 0 {
+			return errors.New("logo_wall requires at least one logo")
+		}
+		if v.Tone < LogoToneNone || v.Tone > LogoToneBrand {
+			return fmt.Errorf("logo_wall tone %d out of range", v.Tone)
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

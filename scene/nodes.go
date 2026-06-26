@@ -46,6 +46,7 @@ const (
 	KindTimeline
 	KindDataMark
 	KindQuadrant
+	KindLogoWall
 )
 
 // String returns the node kind's IR name.
@@ -113,6 +114,8 @@ func (k NodeKind) String() string {
 		return "data_mark"
 	case KindQuadrant:
 		return "quadrant"
+	case KindLogoWall:
+		return "logo_wall"
 	default:
 		return "unknown"
 	}
@@ -943,6 +946,40 @@ type Quadrant struct {
 }
 
 func (Quadrant) NodeKind() NodeKind { return KindQuadrant }
+
+// LogoToneKind selects a logo wall's uniform recolor treatment (R14.7, D-125).
+type LogoToneKind int
+
+const (
+	// LogoToneNone keeps each logo's natural colors.
+	LogoToneNone LogoToneKind = iota
+	// LogoToneMono recolors every logo to a brand-neutral two-tone (TextPrimary →
+	// Canvas) so a mixed set reads as one cohesive, monochrome wall.
+	LogoToneMono
+	// LogoToneBrand recolors every logo to the accent two-tone (Accent → Canvas).
+	LogoToneBrand
+)
+
+// LogoWall is an N-up grid of logo assets normalized to a common cell, optionally
+// recolored to a uniform tone so a mixed-style set reads as one cohesive wall
+// (R14.7, D-125). Each logo is contained (not cropped) and centered in its cell.
+// Asset-bearing (resolved via the AssetResolver); a missing logo warns and is
+// skipped (RFC §10.2). A deck with no LogoWall is byte-identical.
+type LogoWall struct {
+	node
+	Logos   []LogoEntry
+	Columns int          // logos per row (>=1; 0 defaults to a pinned column count)
+	Tone    LogoToneKind // uniform recolor (none / mono / brand)
+	Caption string       // optional heading ("Trusted by", "Integrates with")
+}
+
+func (LogoWall) NodeKind() NodeKind { return KindLogoWall }
+
+// LogoEntry is one logo in a LogoWall (D-125): an asset reference + alt text.
+type LogoEntry struct {
+	AssetID AssetID
+	Alt     string
+}
 
 // QuadrantAxis is one axis's end captions (D-124).
 type QuadrantAxis struct {

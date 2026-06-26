@@ -242,3 +242,19 @@ q := scene.Quadrant{
 	Items: []scene.QuadrantItem{{X: 0.2, Y: 0.8, Label: "Quick win"}},
 }
 ```
+
+
+## LogoWall (customer / partner grid)
+
+An N-up grid of logo assets — **native pics**, asset-bearing. Each logo is
+contained (not cropped) + centered in its cell at a common optical size,
+optionally recolored to a uniform tone so a mixed-style set reads as one wall.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Logos` | `[]LogoEntry` | `{AssetID AssetID; Alt string}` — resolved via the AssetResolver |
+| `Columns` | `int` | logos per row (0 = a default of 4) |
+| `Tone` | `LogoToneKind` | `LogoToneNone` / `LogoToneMono` (brand-neutral) / `LogoToneBrand` (accent) uniform recolor |
+| `Caption` | `string` | optional heading ("Trusted by", "Integrates with") |
+
+A missing logo warns and is skipped (it does not fail the render).

@@ -1925,6 +1925,21 @@ on-canvas; dot colors cycle a pinned token set; integer-EMU deterministic;
 the safe area (conformant); an out-of-range coordinate fails Stage-1 validation;
 worker-count deterministic.
 
+#### Phase 90 — logo wall / customer grid (R14.7, MED · engine)
+
+**Subsystem:** scene (new IR node)
+**Deps:** brief 73.
+**What lands (R14.7):** a new `scene.LogoWall` node (catalog 31 → 32) — an N-up
+grid of logo assets (`Logos []LogoEntry{AssetID, Alt}`, `Columns`), each contained
+(not cropped) + centered in its cell at a common optical size (`containBox` reads
+the format-header dims), optionally recolored to a uniform `Tone`
+(`LogoToneMono`/`LogoToneBrand` via the duotone seam) so a mixed set reads as one
+wall; optional `Caption`. Asset-bearing (serial determinism); a missing logo warns
++ is skipped.
+**Acceptance criteria:** a 12-logo mono wall renders 12 contained pics with the
+duotone recolor (conformant); `LogoToneNone` emits no recolor; a missing logo
+warns + is skipped; worker-count deterministic; an empty wall fails Stage-1.
+
 ---
 
 ## 4. Post-V1 backlog

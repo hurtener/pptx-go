@@ -357,6 +357,9 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Lockup:
 		// The asset variant registers a pic; the icon variant is media-free (R12.9).
 		return v.AssetID != ""
+	case LogoWall:
+		// Renders a pic per logo entry — asset-bearing (serial determinism).
+		return len(v.Logos) > 0
 	case Flow:
 		// Native pills + connectors + custGeom step icons register no media.
 		return false
@@ -559,6 +562,8 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderDataMark(ps, box, v)
 	case Quadrant:
 		r.renderQuadrant(ps, box, v)
+	case LogoWall:
+		r.renderLogoWall(ps, box, v, slideID)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -695,6 +700,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return dataMarkPreferredHeight(v)
 	case Quadrant:
 		return pptx.In(4.0) // a large positioning field
+	case LogoWall:
+		return logoWallPreferredHeight(v)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:
