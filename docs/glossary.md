@@ -718,6 +718,17 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Image annotations
+
+`Image.Annotations` (a `*ImageAnnotations`, D-130): an overlay of numbered callout
+`Pins` (`{X, Y float64 (0..1); Label, Caption string; AccentIndex int}`) at
+fractional coordinates of the image box — accent discs with a number + an optional
+leader line to a clamped caption — and `Highlights` (`{X, Y, W, H float64;
+AccentIndex int}`) outlined rectangles around a region. Coordinates are
+node-relative (fractions of the image), so they track the picture across any
+placement. Native shapes drawn over the pic; nil = byte-identical. See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.17.
+
 ## Funnel / Cycle (non-linear process)
 
 Two non-linear process nodes (D-128). **`Funnel`** (`Stages []FunnelStage{Label,

@@ -307,6 +307,11 @@ over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skin
 the mark; the soul drives the values + color (D-026). A mechanism over the existing
 color tokens, not a new token.
 
+**Image annotation colors** (D-130): `Image.Annotations` draws pins/highlights
+from a pinned accent token cycle (`AccentIndex`), the pin number in `cellTextOn`
+contrast, leaders in `ColorSurfaceAlt`. Token-resolved (P2). A mechanism over the
+existing tokens, not a new token.
+
 **Funnel / cycle colors** (D-128): the `Funnel` bands fill from the pinned accent
 cycle (`FunnelStage.AccentIndex`) with `cellTextOn` auto-contrast labels; the
 `Cycle` stage cards use `ColorSurface` + an accent border, connectors +

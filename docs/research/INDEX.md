@@ -465,6 +465,10 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   evenly on a ring with directional connector arrows — straight lines flip-aware +
   chevron heads rotated to the chord). Branch (1→M) is covered by the `Tree` node.
   Native, deterministic; catalog 33 → 35. (R14.11, engine; D-128.)
+- `77-image-annotations.md` — an additive `Image.Annotations` overlay: numbered
+  pins at fractional (0..1) coords with optional leader-line captions + highlight
+  boxes, drawn as native shapes over the picture. nil = byte-identical; a field,
+  not a node. (R14.17, engine; D-130.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

@@ -185,6 +185,18 @@ func validateNode(n SlideNode) error {
 		if err := validateCrop(v.Crop); err != nil {
 			return err
 		}
+		if v.Annotations != nil {
+			for i, p := range v.Annotations.Pins {
+				if p.X < 0 || p.X > 1 || p.Y < 0 || p.Y > 1 {
+					return fmt.Errorf("image pin %d coordinate (%g,%g) out of [0,1]", i, p.X, p.Y)
+				}
+			}
+			for i, h := range v.Annotations.Highlights {
+				if h.X < 0 || h.X > 1 || h.Y < 0 || h.Y > 1 || h.W < 0 || h.W > 1 || h.H < 0 || h.H > 1 {
+					return fmt.Errorf("image highlight %d rect out of [0,1]: %+v", i, h)
+				}
+			}
+		}
 	case Chart:
 		if v.AssetID == "" {
 			return errors.New("chart requires an asset id")

@@ -105,3 +105,20 @@ decoration := scene.Decoration{
 	Opacity: 0.15,
 }
 ```
+
+
+### Image annotations (R14.17)
+
+An `Image` may carry `Annotations *ImageAnnotations` to overlay numbered pins and
+highlight boxes at fractional (0..1) coordinates of the image box:
+
+```go
+img := scene.Image{AssetID: "asset://screenshot", Annotations: &scene.ImageAnnotations{
+	Pins: []scene.ImagePin{{X: 0.2, Y: 0.3, Label: "1", Caption: "The nav bar"}},
+	Highlights: []scene.ImageHighlight{{X: 0.1, Y: 0.2, W: 0.3, H: 0.2}},
+}}
+```
+
+Pins are accent discs with a number + an optional leader line to a caption;
+highlights are outlined rectangles. Coordinates are node-relative; nil = no
+overlay (byte-identical).
