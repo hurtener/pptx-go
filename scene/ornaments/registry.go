@@ -34,7 +34,11 @@ const (
 	NameCornerBracket = "corner_bracket"
 	NameChevronArrow  = "chevron_arrow"
 	NameNoiseOverlay  = "noise_overlay"
-	NameStarfield     = "starfield" // organic scatter of size/alpha-varied dots (R13.6, D-110)
+	NameStarfield     = "starfield"   // organic scatter of size/alpha-varied dots (R13.6, D-110)
+	NameScatterDot    = "scatter_dot" // scatter family (R14.20, D-131)
+	NameScatterStar   = "scatter_star"
+	NameScatterPlus   = "scatter_plus"
+	NameScatterRing   = "scatter_ring"
 )
 
 // PatternMaxDots re-exports the pattern-recipe dot cap (R13.7, D-111) so scene
@@ -58,6 +62,10 @@ func Curated() *Registry {
 		NameChevronArrow:  assetornaments.ChevronArrow,
 		NameNoiseOverlay:  assetornaments.NoiseOverlay,
 		NameStarfield:     assetornaments.Starfield,
+		NameScatterDot:    assetornaments.ScatterDot,
+		NameScatterStar:   assetornaments.ScatterStar,
+		NameScatterPlus:   assetornaments.ScatterPlus,
+		NameScatterRing:   assetornaments.ScatterRing,
 	}}
 }
 

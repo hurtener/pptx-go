@@ -104,7 +104,8 @@ const ornamentPatternCap = ornaments.PatternMaxDots
 // count derives from Decoration.Pitch (so a cap projection warning applies).
 func isPatternPreset(name string) bool {
 	switch name {
-	case ornaments.NameGridDots, ornaments.NameNoiseOverlay, ornaments.NameStarfield:
+	case ornaments.NameGridDots, ornaments.NameNoiseOverlay, ornaments.NameStarfield,
+		ornaments.NameScatterDot, ornaments.NameScatterStar, ornaments.NameScatterPlus, ornaments.NameScatterRing:
 		return true
 	default:
 		return false

@@ -1996,6 +1996,22 @@ picture; coordinates are node-relative; nil = byte-identical. A field, not a nod
 coordinate (conformant); an out-of-range coord fails Stage-1; nil byte-identical;
 worker-count deterministic.
 
+#### Phase 95 — scatter ornament family (R14.20, MED · both — engine half)
+
+**Subsystem:** assets/ornaments + scene/ornaments
+**Deps:** D-110; brief 78.
+**What lands (R14.20, engine half):** the sample-specific `starfield` ornament is
+restated as a scatter FAMILY — one shared deterministic placement engine
+(`scatter`, extracted from the starfield) parameterized by mark shape:
+`scatter_dot` (ellipse), `scatter_star` (`star5`), `scatter_plus` (`mathPlus`),
+`scatter_ring` (outline). `Starfield` now calls `scatter(scatterDot)` and is
+**byte-identical** to its prior output. The curated set grows 7 → 11; density is
+the existing `Decoration.Pitch`, color the existing role. The pricing-card recipe
+family (the other half of R14.20) is product (Deckard).
+**Acceptance criteria:** the family renders a starfield AND a dust/plus/ring field
+from one engine with different shapes, each byte-identical across renders;
+`starfield` == `scatter_dot`.
+
 ---
 
 ## 4. Post-V1 backlog

@@ -112,6 +112,56 @@ const starfieldPitch = pptx.EMU(457200) // In(0.5)
 // are byte-identical (no RNG/clock — D-035). Rotation is ignored (a scatter is
 // symmetric). The total is capped at patternMaxDots to protect the part size.
 func Starfield(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, pitch pptx.EMU) int {
+	return scatter(sl, box, alpha, role, pitch, scatterDot)
+}
+
+// scatterShape draws one scatter mark of side d at (x,y) in role at alpha a.
+type scatterShape func(sl *pptx.Slide, x, y, d pptx.EMU, role pptx.ColorRole, a int)
+
+func scatterDot(sl *pptx.Slide, x, y, d pptx.EMU, role pptx.ColorRole, a int) {
+	sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: d, H: d}, roleFill(role, a))
+}
+
+func scatterStar(sl *pptx.Slide, x, y, d pptx.EMU, role pptx.ColorRole, a int) {
+	sl.AddShape(pptx.ShapeGeometry("star5"), pptx.Box{X: x, Y: y, W: d, H: d}, roleFill(role, a))
+}
+
+func scatterPlus(sl *pptx.Slide, x, y, d pptx.EMU, role pptx.ColorRole, a int) {
+	sl.AddShape(pptx.ShapeGeometry("mathPlus"), pptx.Box{X: x, Y: y, W: d, H: d}, roleFill(role, a))
+}
+
+func scatterRing(sl *pptx.Slide, x, y, d pptx.EMU, role pptx.ColorRole, a int) {
+	sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: d, H: d},
+		pptx.WithFill(pptx.NoFill()), pptx.WithLine(pptx.Line{Width: pptx.Pt(1.25), Color: pptx.TokenColorAlpha(role, a)}))
+}
+
+// ScatterDot / ScatterStar / ScatterPlus / ScatterRing are the scatter ornament
+// FAMILY (R14.20, D-131): one deterministic hash-of-index placement engine
+// (shared with Starfield) parameterized by mark shape, so a starfield, a dust
+// field, a confetti of plusses, or a bokeh of rings all draw from one recipe.
+func ScatterDot(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, pitch pptx.EMU) int {
+	return scatter(sl, box, alpha, role, pitch, scatterDot)
+}
+
+func ScatterStar(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, pitch pptx.EMU) int {
+	return scatter(sl, box, alpha, role, pitch, scatterStar)
+}
+
+func ScatterPlus(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, pitch pptx.EMU) int {
+	return scatter(sl, box, alpha, role, pitch, scatterPlus)
+}
+
+func ScatterRing(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.ColorRole, pitch pptx.EMU) int {
+	return scatter(sl, box, alpha, role, pitch, scatterRing)
+}
+
+// scatter is the shared scatter-family placement engine (R14.20, generalizing
+// D-110's starfield): a lattice (caller pitch, or starfieldPitch when 0)
+// perturbed by a fixed integer hash of the cell index, with per-mark size + alpha
+// variance, ~20% of cells sieved empty for irregularity. No RNG/clock → two
+// renders are byte-identical (D-035). Capped at patternMaxDots. The shape draws
+// the mark; `scatterDot` reproduces the original starfield exactly.
+func scatter(sl *pptx.Slide, box pptx.Box, alpha int, role pptx.ColorRole, pitch pptx.EMU, shape scatterShape) int {
 	p := pitch
 	if p <= 0 {
 		p = starfieldPitch
@@ -141,12 +191,11 @@ func Starfield(sl *pptx.Slide, box pptx.Box, alpha int, _ float64, role pptx.Col
 			if a < 1 {
 				a = 1
 			}
-			// Fixed per-cell offset (no RNG) so output is byte-identical.
 			ox := cellW * pptx.EMU((h/3)%5) / 6
 			oy := cellH * pptx.EMU((h/11)%5) / 6
 			x := box.X + cellW*pptx.EMU(c) + ox
 			y := box.Y + cellH*pptx.EMU(r) + oy
-			sl.AddShape(pptx.ShapeEllipse, pptx.Box{X: x, Y: y, W: dot, H: dot}, roleFill(role, a))
+			shape(sl, x, y, dot, role, a)
 			n++
 		}
 	}
