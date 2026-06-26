@@ -4315,6 +4315,47 @@ labels (conformant); an out-of-range coordinate fails Stage-1 validation;
 worker-count determinism; an adversarial corner-item quadrant stays on-canvas.
 Deferred to V1.x: an NxM grid variant and item anti-collision beyond edge-flip.
 
+
+---
+
+## D-125 — Logo wall / customer grid (`LogoWall`) (Wave 14 / Phase 90, R14.7)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.7 (MED · engine) — social-proof logo walls (customers, investors,
+integrations) appear in nearly every B2B deck. The attribution lockup (R12.9)
+covers one logo+caption; a grid of many evenly-sized, optionally desaturated logos
+was uncovered.
+
+**Decision:** Add a new `LogoWall` scene IR node (catalog 31 → 32):
+`LogoWall{Logos []LogoEntry{AssetID, Alt}; Columns int; Tone LogoToneKind;
+Caption string}`. `renderLogoWall` lays out a `Columns`×rows grid (default 4
+columns); each logo is **contained** (not cropped) and centered in its padded cell
+via `containBox`, which reads the format-header dimensions (`imageDims`,
+`image.DecodeConfig` — not pixel data, §7/D-046) and fits the largest box of the
+logo's aspect, so mixed-aspect logos read at a common optical size without
+distortion. `Tone` recolors every logo uniformly through the duotone seam (D-116):
+`LogoToneMono` = `TextPrimary` → `ColorCanvas` (brand-neutral), `LogoToneBrand` =
+`ColorAccent` → `ColorCanvas`, `LogoToneNone` = natural colors. An optional
+`Caption` heads the wall.
+
+Asset-bearing (`nodeUsesAssets:true` so the slide renders serially for
+deterministic media part numbering); a missing logo warns and is skipped (RFC
+§10.2). The node has no single `AssetID` field (it renders a pic per `LogoEntry`),
+so policy stays `HasAsset:false` (consistent with `TestPolicy_MatchesStructs`). A
+deck with no LogoWall is byte-identical.
+
+**Deferred (§4.3):** a true `<a:grayscl>` grayscale tone and baseline-grid optical
+normalization beyond contain — the mono duotone + contain satisfy the "uniform
+tone so a mixed set coheres" acceptance.
+
+**Consequences:** The logo-wall / customer-grid class is reachable. Full new-node
+wiring landed (KindLogoWall, policy/validate/dispatch/preferredHeight/
+nodeUsesAssets, catalog 32, integration kind-loop `..KindLogoWall`). Tested: a
+12-logo mono wall (12 contained pics + duotone, conformant); `LogoToneNone` emits
+no recolor; a missing logo warns + is skipped; worker-count determinism; an empty
+wall fails Stage-1; an adversarial mono wall.
+
 ---
 
 *Append new entries below this line.*

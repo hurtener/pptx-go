@@ -48,6 +48,7 @@ var policyTable = map[NodeKind]Policy{
 	KindTimeline:       {},               // native axis + marker dots + custGeom icons (no asset)
 	KindDataMark:       {},               // native vector micro-chart (rects / lines; no asset)
 	KindQuadrant:       {},               // native axes + tints + plotted dots (no asset)
+	KindLogoWall:       {},               // logo grid renders pics; node carries no single AssetID
 }
 
 // PolicyFor returns the rendering policy for a node kind.

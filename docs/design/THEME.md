@@ -307,6 +307,12 @@ over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skin
 the mark; the soul drives the values + color (D-026). A mechanism over the existing
 color tokens, not a new token.
 
+**Logo-wall tone** (D-125): the scene `LogoWall.Tone` recolors every logo to a
+uniform two-tone via the duotone seam (D-116) — `LogoToneMono` = `TextPrimary` →
+`ColorCanvas`, `LogoToneBrand` = `ColorAccent` → `ColorCanvas` — so a mixed-style
+logo set reads as one cohesive wall; `LogoToneNone` keeps natural colors. Token-
+resolved (P2). A mechanism over the existing tokens, not a new token.
+
 **Quadrant colors** (D-124): the scene `Quadrant` node draws per-quadrant tints
 from a surface role (low-alpha, `QuadrantCell.Fill *ColorRole`), the center
 dividers in `ColorSurfaceAlt`, and item dots from a pinned token cycle
