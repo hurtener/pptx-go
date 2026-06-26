@@ -166,3 +166,72 @@ func TestCorpus_Deterministic(t *testing.T) {
 		t.Fatalf("corpus not deterministic across worker counts (%d vs %d bytes)", len(seq), len(par))
 	}
 }
+
+// soulDarkTheme is a non-default brand theme carrying a soul-driven dark palette
+// (R8.3): a deep-navy dark side instead of the pinned Tailwind grays.
+func soulDarkTheme() *pptx.Theme {
+	return pptx.NewTheme(
+		pptx.WithDarkSurface(pptx.ColorCanvas, "0A0E1A"),
+		pptx.WithDarkSurface(pptx.ColorSurface, "14182B"),
+		pptx.WithDarkSurface(pptx.ColorSurfaceAlt, "1C2238"),
+		pptx.WithDarkText(pptx.TextPrimary, "F4F6FF"),
+		pptx.WithDarkText(pptx.TextSecondary, "C8D0E8"),
+	)
+}
+
+// TestCorpus_SoulDarkPalette renders the dark archetypes through a soul-driven
+// dark palette and asserts the standing invariants still hold (on-canvas,
+// conformant, deterministic) AND that the brand navy reaches the rendered bytes
+// while the pinned gray does not — i.e. a soul dark palette neither perturbs the
+// safe-area/conformance invariants nor leaks the pinned default (R8.3 × R14.19).
+func TestCorpus_SoulDarkPalette(t *testing.T) {
+	sc := scene.Scene{Slides: corpusArchetypes(scene.VariantDark)}
+	opts := []scene.RenderOption{scene.WithAssetResolver(corpusResolver()), scene.WithTheme(soulDarkTheme())}
+
+	data, stats := render(t, sc, opts...)
+
+	// Conformant under the soul dark palette.
+	rep, err := conformance.ValidateBytes(data, conformance.Options{RequiredParts: []string{"/ppt/presentation.xml", "/ppt/slides/slide1.xml"}})
+	if err != nil {
+		t.Fatalf("ValidateBytes: %v", err)
+	}
+	if !rep.OK() {
+		t.Fatalf("soul-dark corpus failed conformance:\n%s", rep)
+	}
+
+	// Every box still on-canvas.
+	slideW, slideH := pptx.New().SlideSize()
+	for i := range sc.Slides {
+		xml := zipPart(t, data, fmt.Sprintf("ppt/slides/slide%d.xml", i+1))
+		offs := offRe.FindAllStringSubmatch(xml, -1)
+		exts := extRe.FindAllStringSubmatch(xml, -1)
+		n := len(offs)
+		if len(exts) < n {
+			n = len(exts)
+		}
+		for k := 0; k < n; k++ {
+			x, _ := strconv.Atoi(offs[k][1])
+			y, _ := strconv.Atoi(offs[k][2])
+			cx, _ := strconv.Atoi(exts[k][1])
+			cy, _ := strconv.Atoi(exts[k][2])
+			if x < 0 || y < 0 || x+cx > slideW || y+cy > slideH {
+				t.Errorf("soul-dark %q: box [x=%d y=%d cx=%d cy=%d] exceeds the %dx%d canvas",
+					sc.Slides[i].ID, x, y, cx, cy, slideW, slideH)
+			}
+		}
+	}
+
+	// The brand navy canvas reaches every dark slide's resolved colors.
+	for _, c := range stats.Colors {
+		if string(c.Canvas) != "0A0E1A" {
+			t.Errorf("slide %q resolved canvas = %q, want brand navy 0A0E1A", c.SlideID, c.Canvas)
+		}
+	}
+
+	// Deterministic across worker counts.
+	seq := renderBytes(t, sc, scene.WithAssetResolver(corpusResolver()), scene.WithTheme(soulDarkTheme()), scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithAssetResolver(corpusResolver()), scene.WithTheme(soulDarkTheme()), scene.WithWorkers(8))
+	if string(seq) != string(par) {
+		t.Fatalf("soul-dark corpus not deterministic across worker counts (%d vs %d bytes)", len(seq), len(par))
+	}
+}

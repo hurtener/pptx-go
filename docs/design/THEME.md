@@ -36,6 +36,24 @@ re-paints every paper background. `ColorPaper` has **no theme1.xml slot** — li
 theme ↔ theme1.xml mapping below); the resolved background RGB still round-trips
 losslessly as the slide rect's `solidFill` (G6).
 
+**Dark palette** (`Theme.DarkColors *DarkPalette`, R8.3, D-135): an optional
+`VariantDark` override set so a brand's dark slides render in its own deep hues
+(e.g. navy) rather than the engine's pinned neutral gray. The scene renderer's
+dark-variant derivation writes its pinned Tailwind-gray default
+(`#111827`/`#1F2937`/`#374151` surfaces, `#F9FAFB`/`#E5E7EB`/`#9CA3AF` text),
+then overlays `DarkColors.Surfaces` / `DarkColors.Text` role-by-role when set.
+`DarkPalette` mirrors the `Surfaces`/`Text` map shape of the light palette, so
+**any** surface or text role can take a dark-variant value (including accent and
+semantic roles — the seam R8.7 extends). Set the overrides with
+`WithDarkSurface(role, c)` / `WithDarkText(role, c)` (composable,
+order-independent, lazily allocating `DarkColors`). A theme with no `DarkColors`
+(the zero value) keeps the pinned gray, **byte-identical**. Like `ColorPaper`,
+`DarkColors` has **no theme1.xml slot** — it is consumed only to derive the dark
+variant and is never serialized; the resolved dark RGB still round-trips as the
+emitted `solidFill`/run color and is reported via `Stats.Colors` (D-058). The
+soul *derives* a brand dark palette from the light one; the engine only exposes
+the override mechanism (D-026 / D-059).
+
 ### Text colors (`TextColorRole`)
 
 `TextPrimary`, `TextSecondary`, `TextTertiary`, `TextInverse`, `TextMuted`,
@@ -157,7 +175,9 @@ pair. The semantic palette maps onto it by convention — each OOXML slot has
 one canonical semantic owner for writing; each semantic role reads back from
 its slot. Roles without a slot (e.g. `TextMuted`, `ColorPaper`) keep their
 default after a load — the soul/caller owns those tints at author time (D-026);
-their resolved RGB still round-trips wherever it was emitted.
+their resolved RGB still round-trips wherever it was emitted. The `DarkColors`
+dark palette (R8.3) is likewise slot-less: it is consumed only to derive the
+`VariantDark` theme at render time, never written to theme1.xml.
 
 | OOXML slot | written from | read back into |
 |---|---|---|

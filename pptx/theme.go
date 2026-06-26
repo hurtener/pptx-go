@@ -193,6 +193,24 @@ type ColorPalette struct {
 	Text     map[TextColorRole]RGB
 }
 
+// DarkPalette is a theme's optional VariantDark color override set (R8.3). The
+// scene renderer's dark-variant derivation writes its pinned neutral-gray
+// default first, then overlays these surface/text roles when DarkColors is
+// non-nil — so a brand renders its own deep dark side (e.g. navy) instead of
+// the pinned gray. A nil DarkColors (the zero value) keeps the pinned gray
+// default, byte-identical. It mirrors ColorPalette so any role can be
+// overridden; the same maps carry the dark accent/extension overrides (R8.7).
+//
+// DarkPalette has no theme1.xml slot — it is consumed only by the scene
+// renderer to derive the VariantDark theme and is never serialized. The
+// resolved dark RGB a slide renders with round-trips (and is reported via the
+// render Stats.Colors hook, D-058); the field itself does not (like ColorPaper,
+// D-104).
+type DarkPalette struct {
+	Surfaces map[ColorRole]RGB     // VariantDark surface overrides
+	Text     map[TextColorRole]RGB // VariantDark text overrides
+}
+
 // Typography maps each type role to a resolved FontSpec.
 type Typography map[TypeRole]FontSpec
 
@@ -217,10 +235,15 @@ type Theme struct {
 	DisplayFont string
 	BodyFont    string
 	Colors      ColorPalette
-	Typography  Typography
-	Spacing     Spacing
-	Radii       Radii
-	Elevations  Elevations
+	// DarkColors, when non-nil, supplies soul-driven VariantDark overrides that
+	// the scene renderer overlays over its pinned neutral-gray dark default
+	// (R8.3). nil (the zero value) keeps the pinned gray, byte-identical. The
+	// field has no theme1.xml slot — see DarkPalette.
+	DarkColors *DarkPalette
+	Typography Typography
+	Spacing    Spacing
+	Radii      Radii
+	Elevations Elevations
 }
 
 // ThemeOption customizes a Theme built with NewTheme.
@@ -239,6 +262,38 @@ func WithAccent(c RGB) ThemeOption {
 // give content slides a designed paper tone; the default is white (= ColorCanvas).
 func WithPaper(c RGB) ThemeOption {
 	return func(t *Theme) { t.Colors.Surfaces[ColorPaper] = c }
+}
+
+// WithDarkSurface sets a soul-driven VariantDark override for a surface role
+// (R8.3). It lazily allocates Theme.DarkColors; the scene renderer overlays the
+// override over its pinned neutral-gray dark default, so a brand renders its own
+// dark canvas/surface (e.g. deep navy). Setting none leaves the pinned gray
+// default (byte-identical). Composable with WithDarkText and order-independent.
+func WithDarkSurface(role ColorRole, c RGB) ThemeOption {
+	return func(t *Theme) {
+		ensureDarkColors(t).Surfaces[role] = c
+	}
+}
+
+// WithDarkText sets a soul-driven VariantDark override for a text role (R8.3).
+// It lazily allocates Theme.DarkColors; the scene renderer overlays the override
+// over its pinned dark-text default. Setting none leaves the pinned default
+// (byte-identical). Composable with WithDarkSurface and order-independent.
+func WithDarkText(role TextColorRole, c RGB) ThemeOption {
+	return func(t *Theme) {
+		ensureDarkColors(t).Text[role] = c
+	}
+}
+
+// ensureDarkColors lazily allocates t.DarkColors (and its maps) and returns it.
+func ensureDarkColors(t *Theme) *DarkPalette {
+	if t.DarkColors == nil {
+		t.DarkColors = &DarkPalette{
+			Surfaces: map[ColorRole]RGB{},
+			Text:     map[TextColorRole]RGB{},
+		}
+	}
+	return t.DarkColors
 }
 
 // WithFonts overrides the heading and body font families (and updates the
@@ -372,6 +427,23 @@ func (t *Theme) Clone() *Theme {
 	c.Colors.Text = make(map[TextColorRole]RGB, len(t.Colors.Text))
 	for k, v := range t.Colors.Text {
 		c.Colors.Text[k] = v
+	}
+	// DarkColors is an optional pointer (R8.3) — deep-copy both maps when present
+	// so a clone's dark palette can be mutated without aliasing the original
+	// (themes are reusable artifacts — CLAUDE.md §5). nil stays nil (the shallow
+	// c := *t already copied the nil pointer).
+	if t.DarkColors != nil {
+		dc := &DarkPalette{
+			Surfaces: make(map[ColorRole]RGB, len(t.DarkColors.Surfaces)),
+			Text:     make(map[TextColorRole]RGB, len(t.DarkColors.Text)),
+		}
+		for k, v := range t.DarkColors.Surfaces {
+			dc.Surfaces[k] = v
+		}
+		for k, v := range t.DarkColors.Text {
+			dc.Text[k] = v
+		}
+		c.DarkColors = dc
 	}
 	c.Typography = make(Typography, len(t.Typography))
 	for k, v := range t.Typography {

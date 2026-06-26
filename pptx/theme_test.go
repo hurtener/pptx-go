@@ -2,6 +2,7 @@ package pptx_test
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/hurtener/pptx-go/pptx"
@@ -136,6 +137,77 @@ func TestCloneIndependence(t *testing.T) {
 	if a.ResolveColor(pptx.ColorAccent) == "00FF00" {
 		t.Fatal("Clone shares the surfaces map with the original")
 	}
+}
+
+// TestWithDarkColors verifies WithDarkSurface/WithDarkText populate DarkColors,
+// the default theme carries no dark palette, and Clone deep-copies it (R8.3).
+func TestWithDarkColors(t *testing.T) {
+	// The default theme has no dark palette → byte-identical pinned-gray fallback.
+	if pptx.DefaultTheme().DarkColors != nil {
+		t.Fatal("DefaultTheme should have a nil DarkColors (pinned-gray fallback)")
+	}
+
+	th := pptx.NewTheme(
+		pptx.WithDarkSurface(pptx.ColorCanvas, "0A0E1A"),
+		pptx.WithDarkSurface(pptx.ColorSurface, "14182B"),
+		pptx.WithDarkText(pptx.TextPrimary, "F4F6FF"),
+	)
+	if th.DarkColors == nil {
+		t.Fatal("WithDarkSurface/WithDarkText did not allocate DarkColors")
+	}
+	if got := th.DarkColors.Surfaces[pptx.ColorCanvas]; got != "0A0E1A" {
+		t.Errorf("dark canvas = %q, want 0A0E1A", got)
+	}
+	if got := th.DarkColors.Surfaces[pptx.ColorSurface]; got != "14182B" {
+		t.Errorf("dark surface = %q, want 14182B", got)
+	}
+	if got := th.DarkColors.Text[pptx.TextPrimary]; got != "F4F6FF" {
+		t.Errorf("dark primary text = %q, want F4F6FF", got)
+	}
+	// NewTheme must not have mutated the package default theme.
+	if pptx.DefaultTheme().DarkColors != nil {
+		t.Error("WithDarkSurface leaked a DarkColors into the default theme")
+	}
+}
+
+// TestCloneDarkColorsIndependence proves Clone deep-copies DarkColors so a clone
+// can be mutated without aliasing the original (themes are reusable, §5; R8.3).
+func TestCloneDarkColorsIndependence(t *testing.T) {
+	a := pptx.NewTheme(pptx.WithDarkSurface(pptx.ColorCanvas, "0A0E1A"))
+	c := a.Clone()
+	if c.DarkColors == nil || c.DarkColors == a.DarkColors {
+		t.Fatal("Clone shares (or dropped) the DarkColors pointer")
+	}
+	c.DarkColors.Surfaces[pptx.ColorCanvas] = "FFFFFF"
+	if a.DarkColors.Surfaces[pptx.ColorCanvas] != "0A0E1A" {
+		t.Fatal("Clone shares the DarkColors.Surfaces map with the original")
+	}
+	// A nil DarkColors clones to nil (byte-identical fallback preserved).
+	if pptx.DefaultTheme().Clone().DarkColors != nil {
+		t.Error("Clone of a nil-DarkColors theme should stay nil")
+	}
+}
+
+// TestDarkColorsConcurrentReuse proves a theme carrying a dark palette is safe
+// for concurrent Clone+read under -race (a Theme is a reusable artifact, §5).
+func TestDarkColorsConcurrentReuse(t *testing.T) {
+	base := pptx.NewTheme(
+		pptx.WithDarkSurface(pptx.ColorCanvas, "0A0E1A"),
+		pptx.WithDarkText(pptx.TextPrimary, "F4F6FF"),
+	)
+	var wg sync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c := base.Clone()
+			c.DarkColors.Surfaces[pptx.ColorCanvas] = "112233" // mutate the clone only
+			if base.DarkColors.Surfaces[pptx.ColorCanvas] != "0A0E1A" {
+				t.Error("concurrent Clone aliased the base dark palette")
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func TestWithFonts(t *testing.T) {

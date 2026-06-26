@@ -2038,6 +2038,36 @@ i18n RTL/CJK (V2 — a cross-cutting layout-direction wave), R14.16 soul icon se
 V2 translator change), R14.18 recipe registry (product — the public node API is
 already the open composition seam).
 
+### Wave 15 — Theme/soul engine bits
+
+The final wave of the R1–R14 engine campaign: make the palette/theme layer
+soul-drivable beyond the 3-accent default — a soul-driven dark palette,
+multi-accent palettes, brand gradients, per-variant dark extensions, and a
+soul→engine fidelity gate (R8, `DECKARD-PRODUCT-REQUIREMENTS.md`). These are
+almost all additive theme tokens / fields whose zero value reproduces current
+output byte-for-byte (no new IR nodes — the catalog stays at 35). D-059 puts
+the engine mechanisms here; the soul *derivation* (R8.1/.8/.9 bootstrap +
+brand-source acquisition) is Deckard's product half.
+
+#### Phase 97 — soul-driven dark palette (R8.3, CRITICAL · both — engine half)
+
+**Subsystem:** pptx (Theme) + scene (dark variant derivation)
+**Deps:** D-058, D-104; brief 80.
+**What lands (R8.3):** an optional `Theme.DarkColors *DarkPalette`
+(`Surfaces`/`Text` maps mirroring `ColorPalette`) + `WithDarkSurface` /
+`WithDarkText` options. `scene`'s `darkThemeFrom` writes the pinned
+Tailwind-gray default, then overlays the theme's dark palette role-by-role when
+present — so a brand renders its own deep-navy (etc.) dark side, and a theme
+that sets no dark palette is byte-identical to today. The dark palette is a
+field without a theme1.xml slot (consumed only by the scene renderer to derive
+the VariantDark theme; the resolved dark RGB round-trips via `stats.Colors`, the
+field does not). The seam Phase 100 (R8.7) extends with dark accent/extension
+overrides.
+**Acceptance criteria:** a soul dark palette resolves every VariantDark slide's
+canvas/surface/text to the supplied hexes (`stats.Colors`); no dark palette =
+byte-identical pinned-gray output; `Clone()` deep-copies `DarkColors`
+(race-safe); the dark-palette slide is byte-identical across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog

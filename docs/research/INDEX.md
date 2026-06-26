@@ -337,6 +337,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   tinted off-white "paper" canvas; a role *without* a theme1.xml slot (keeps
   its default on read-back, like `TextMuted`), but its resolved background RGB
   round-trips. (R13.1, engine half.)
+- `80-soul-driven-dark-palette.md` — a `Theme.DarkColors *DarkPalette`
+  (`Surfaces`/`Text` maps mirroring `ColorPalette`) + `WithDarkSurface` /
+  `WithDarkText` options, consumed by `scene` `darkThemeFrom` to overlay
+  soul-driven VariantDark overrides over the pinned Tailwind-gray default. nil =
+  pinned grays (byte-identical); a role *without* a theme1.xml slot (the
+  resolved dark RGB round-trips via `stats.Colors`, the field does not). The
+  seam R8.7 dark accent/extension overrides extend. (R8.3, engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side
