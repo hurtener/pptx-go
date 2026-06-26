@@ -4467,6 +4467,15 @@ V1.x: a true trapezoid funnel (custGeom) + curved ring arrows.
 
 ---
 
+## D-129 — reserved, unused
+
+Decision numbers are allocated sequentially; D-129 was skipped between D-128
+(Phase 93) and D-130 (Phase 94) and was never assigned. No decision is missing —
+all Wave 14 acceptance is recorded in D-116..D-134. This placeholder exists so a
+reader does not hunt for an absent entry.
+
+---
+
 ## D-130 — Image / diagram annotations (`Image.Annotations`) (Wave 14 / Phase 94, R14.17)
 
 **Status:** Accepted. **Date:** 2026-06-25.
@@ -4610,6 +4619,56 @@ records their disposition so the wave closes without ambiguity.
 **Consequences:** Wave 14's **engine** scope is complete (Phases 81–96, D-116..
 D-133). The deferred items are tracked here and in `RFC §24` (the post-V1 backlog);
 no engine code is owed for them in V1.
+
+---
+
+## D-134 — Wave 14 §17 adversarial checkpoint: published-doc-drift backfill
+
+**Status:** Accepted. **Date:** 2026-06-26.
+
+The Wave 14 §17 adversarial checkpoint (R14 coverage classes, Phases 81–96 /
+D-116..D-133) ran a 62-agent workflow (8 dimension finders → 2 skeptics/finding →
+completeness critic → synthesis): **26 candidate findings, 15 confirmed, 6 critic
+gaps**. Verdict: **healthy** — the engine implementation is invariant-clean across
+all 7 new IR nodes (Timeline, DataMark, Quadrant, LogoWall, Tree, Funnel, Cycle)
+and 4 new builder APIs (WithImageFill, SetDuotone, WithFlipV, AddBlockArc) +
+NumberFormat: new-node wiring is complete (NodeKind appended-last, policy/validate/
+dispatch/preferredHeight/nodeUsesAssets/walkIconRefs, catalog = 35, integration
+kind-loop `..KindCycle`); additive/byte-identical-when-unused holds (every new
+field is pointer/empty-zero); P2 is clean (zero literal colors in the new
+renderers, every visual property has a THEME.md entry); G6 round-trips
+(SetDuotone, WithImageFill); the `a:blipFill`-under-`spPr` namespace context rule
+is correct; and D-059 product/V2 items (R14.2/.6/.14/.15/.16/.18) are correctly
+deferred in D-133, not half-built. No P1–P4 / D-026 / G6 / determinism violation.
+
+**Fixed in this PR (all §19 published-doc drift — the binding same-PR doc-sync
+rule):**
+- **`docs/site/reference/pptx.md`** — `pptx.WithFlipV` (shipped Phase 87) was
+  absent from the `ShapeOption` reference; added.
+- **`docs/site/reference/scene.md`** — the `NodeKind` enum was stale by 16 kinds
+  (stopped at `KindCardSection`, i.e. pre-Wave-12); appended `KindBento`..
+  `KindCycle`, updated the node-struct list, and stated the count (35).
+- **`docs/site/reference/scene.md`** — the scatter ornament family (D-131) was
+  missing from the curated-name list; added `scatter_dot`/`_star`/`_plus`/`_ring`.
+- **`scene/render.go`** — the `nodeUsesAssets` native-case comment enumerated only
+  through Quadrant though the case includes Tree/Funnel/Cycle; reworded to a
+  general statement (a maintainer trap, not a behavior bug).
+
+**Documented as intentional (no code change):**
+- **D-129 reserved/unused** — decision numbers are allocated sequentially; D-129
+  was skipped and never assigned. A placeholder entry now marks the gap; no
+  decision is missing (all Wave 14 acceptance is in D-116..D-134).
+- **Corpus fixture breadth** — `render_corpus_test.go` omits `Image.Annotations`,
+  the full testimonial `Quote`, and `Card.ImageFill` from the authoritative
+  archetype slides, but each is covered by a dedicated test
+  (`render_annotations_test.go`, `render_testimonial_test.go`,
+  `render_card_imagefill_test.go`); the invariants are tested. Broadening the
+  corpus is a nice-to-have, not a gap.
+
+**Consequences:** Wave 14 closes as **healthy**. The only defects were published
+reference-doc omissions (now backfilled); no production behavior changed (the one
+code edit is a comment). The §19 surface (skills, glossary, docs/site, THEME) now
+matches the shipped engine. Wave 14 (R14) is complete.
 
 ---
 

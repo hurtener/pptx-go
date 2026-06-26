@@ -441,8 +441,8 @@ func nodeUsesAssets(n SlideNode) bool {
 		// A plain quote is native text; a testimonial avatar/logo registers media.
 		return v.AvatarAssetID != "" || v.LogoAssetID != ""
 	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark, Quadrant, Tree, Funnel, Cycle:
-		// Button / Checklist / ChipRow / IconRows / Timeline / DataMark / Quadrant are
-		// native (pills / glyphs / axes + dots / rects + lines) — no media.
+		// All of these render as native shapes/text (pills / glyphs / axes + dots /
+		// rects + lines / node-link diagrams) — no caller media.
 		return false
 	default:
 		return true
