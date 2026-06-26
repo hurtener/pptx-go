@@ -279,3 +279,16 @@ t := scene.Tree{Root: scene.TreeNode{Label: "CEO", Children: []scene.TreeNode{
 	{Label: "Go-to-market", AccentIndex: 1},
 }}}
 ```
+
+
+## Funnel / Cycle (non-linear process)
+
+Two native non-linear process diagrams. **`Funnel`** is a tapering stack of bands
+(`Stages []FunnelStage{Label, Value string; AccentIndex int}`); **`Cycle`** is a
+ring of stage cards with directional arrows (`Stages []CycleStage{Label, Icon
+string; AccentIndex int}`). A branch (1→M) is composed with the `Tree` node.
+
+```go
+f := scene.Funnel{Stages: []scene.FunnelStage{{Label: "Visitors", Value: "100k"}, {Label: "Trials", Value: "3k"}, {Label: "Paid", Value: "800"}}}
+c := scene.Cycle{Stages: []scene.CycleStage{{Label: "Plan"}, {Label: "Build"}, {Label: "Measure"}, {Label: "Learn"}}}
+```

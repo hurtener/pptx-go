@@ -182,6 +182,14 @@ func adversarialScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.66, Label: "66"},
 				}},
 			}},
+			// A funnel + cycle (R14.11): tapering bands + a ring of stage cards with long
+			// labels must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("funnel-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.TwoColumn{
+					Left:  []scene.SlideNode{scene.Funnel{Stages: []scene.FunnelStage{{Label: longText, Value: "100k"}, {Label: "Mid", Value: "10k"}, {Label: longText, Value: "1k"}}}},
+					Right: []scene.SlideNode{scene.Cycle{Stages: []scene.CycleStage{{Label: longText, Icon: "star"}, {Label: "B"}, {Label: longText}, {Label: "D"}}}},
+				},
+			}},
 			// A hierarchy/org tree (R14.10): a 3-level tree with long labels; node cards
 			// + elbow edges must stay on-canvas.
 			scene.SceneSlide{ID: fmt.Sprintf("tree-%v", variant), Variant: variant, Nodes: []scene.SlideNode{

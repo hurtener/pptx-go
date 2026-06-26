@@ -440,7 +440,7 @@ func nodeUsesAssets(n SlideNode) bool {
 	case Quote:
 		// A plain quote is native text; a testimonial avatar/logo registers media.
 		return v.AvatarAssetID != "" || v.LogoAssetID != ""
-	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark, Quadrant, Tree:
+	case Hero, Prose, Heading, List, Divider, Callout, Chip, Arrow, Stat, Button, Checklist, ChipRow, IconRows, SectionDivider, Table, Timeline, DataMark, Quadrant, Tree, Funnel, Cycle:
 		// Button / Checklist / ChipRow / IconRows / Timeline / DataMark / Quadrant are
 		// native (pills / glyphs / axes + dots / rects + lines) — no media.
 		return false
@@ -643,6 +643,10 @@ func (r *renderer) renderNode(ps *pptx.Slide, box pptx.Box, n SlideNode, slideID
 		r.renderLogoWall(ps, box, v, slideID)
 	case Tree:
 		r.renderTree(ps, box, v, slideID)
+	case Funnel:
+		r.renderFunnel(ps, box, v)
+	case Cycle:
+		r.renderCycle(ps, box, v, slideID)
 	default:
 		r.warn(slideID, fmt.Sprintf("%s rendering is not yet implemented; node skipped", n.NodeKind()))
 	}
@@ -786,6 +790,10 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		return logoWallPreferredHeight(v)
 	case Tree:
 		return pptx.In(3.5) // a layered node-link diagram
+	case Funnel:
+		return pptx.In(3.0)
+	case Cycle:
+		return pptx.In(3.5)
 	case Arrow:
 		return pptx.In(0.6)
 	case Button:

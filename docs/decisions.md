@@ -4422,6 +4422,48 @@ elbow edges (conformant); left-right transposes; worker-count determinism; an
 adversarial deep/long-label tree stays on-canvas. Deferred to V1.x: a full
 Reingold-Tilford contour-packing layout + avatars in nodes.
 
+
+---
+
+## D-128 — Funnel + cycle non-linear process diagrams (`Funnel`, `Cycle`) (Wave 14 / Phase 93, R14.11)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.11 (MED · engine) — `Flow` is a linear pipeline; it can't express
+a funnel (tapering stages), a closed cycle (ring of stages with arrows), or a
+branch (one step → M paths).
+
+**Decision:** Add two new scene IR nodes (catalog 33 → 35). **`Funnel`**
+(`Stages []FunnelStage{Label, Value string; AccentIndex int}`) renders a *stepped*
+funnel — a vertical stack of centered rounded-rect bands whose width tapers
+linearly from 100% (top) to `funnelMinFrac` (bottom), each in an accent fill with a
+`cellTextOn` auto-contrast centered label + optional value. No custom geometry —
+robust + deterministic. **`Cycle`** (`Stages []CycleStage{Label, Icon string;
+AccentIndex int}`) places stage cards evenly on a ring (clockwise from the top;
+`cos/sin` × radius rounded to integer EMU) and connects consecutive stages (incl.
+last → first) with a straight line — flip-aware for upward runs (`WithFlipV`) — plus
+a chevron arrowhead at the midpoint rotated to the chord (`math.Atan2`). Both are
+native (`nodeUsesAssets:false`, `HasAsset:false`); cycle stage icons recurse in
+`walkIconRefs`.
+
+**Branch is covered by `Tree` (D-127).** A "step splitting into M paths" is a
+2-level tree; rather than add a `Flow.Branch` option, the engine composes the
+branch archetype with the `Tree` node. This keeps the primitive set small (D-026 —
+recipes/archetypes compose primitives).
+
+**Determinism note.** The cycle's trig (`cos`/`sin`/`atan2`) feeds `math.Round` to
+integer EMU and `WithRotation`'s 60000ths normalization, so output is byte-stable;
+the determinism test pins 1-vs-8-worker identity. (Go's stdlib `math` is pure-Go
+and deterministic.)
+
+**Consequences:** The funnel/cycle/branch class is reachable; a deck with neither
+node is byte-identical. Full new-node wiring landed (KindFunnel/KindCycle, policy/
+validate/dispatch/preferredHeight/nodeUsesAssets/walkIconRefs, catalog 35,
+integration kind-loop `..KindCycle`). Tested: a 4-stage funnel (bands + values,
+conformant); a 5-stage cycle (cards + chevron arrows, conformant); empty stages
+fail Stage-1; worker-count determinism; an adversarial funnel+cycle. Deferred to
+V1.x: a true trapezoid funnel (custGeom) + curved ring arrows.
+
 ---
 
 *Append new entries below this line.*

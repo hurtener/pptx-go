@@ -50,6 +50,8 @@ var policyTable = map[NodeKind]Policy{
 	KindQuadrant:       {},               // native axes + tints + plotted dots (no asset)
 	KindLogoWall:       {},               // logo grid renders pics; node carries no single AssetID
 	KindTree:           {},               // native node-link tree (rounded rects + elbow lines; no asset)
+	KindFunnel:         {},               // native tapering rect bands (no asset)
+	KindCycle:          {},               // native ring of stage cards + connectors (no asset)
 }
 
 // PolicyFor returns the rendering policy for a node kind.

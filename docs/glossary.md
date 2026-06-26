@@ -718,6 +718,19 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Funnel / Cycle (non-linear process)
+
+Two non-linear process nodes (D-128). **`Funnel`** (`Stages []FunnelStage{Label,
+Value, AccentIndex}`): a vertical stack of centered bands tapering in width
+(widest at top), each in an accent fill with a centered contrast label + optional
+value — a marketing/conversion funnel. **`Cycle`** (`Stages []CycleStage{Label,
+Icon, AccentIndex}`): stage cards placed evenly on a ring (clockwise from the top)
+with directional connector arrows between consecutive stages (last → first) — a
+lifecycle/loop. Both are native preset shapes, integer-EMU deterministic. A
+**branch** (one step → M paths) is composed with the `Tree` node, not a separate
+Flow option. Distinct from `Flow` (a linear pipeline). See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.11.
+
 ## Tree (hierarchy / org chart)
 
 The scene `Tree` node (D-127): a `Root TreeNode` (`{Label, Detail, Icon, Children,
