@@ -1891,6 +1891,26 @@ per-slide photo AssetID) lives in Deckard (D-059).
 - **Deferred (§4.3):** donut + gauge (arc-based) → Phase 88 (a `blockArc`
   adjust-guide builder seam; the icon translator forbids elliptical arcs, D-040).
 
+#### Phase 88 — native dataviz arcs: donut + gauge (R14.8, HIGH · engine — part 2)
+
+**Subsystem:** pptx (an `AddBlockArc` arc seam) + scene (DataMark donut/gauge)
+**RFC sections:** §8.2/§8.3, §11, §12, §10.1, §7.1
+**Deps:** D-122; brief 71.
+**What lands (R14.8, part 2 — completes R14.8):**
+- A builder `pptx.AddBlockArc(box, startDeg, sweepDeg, innerRatio, opts)` — a
+  native annular sector (`<a:prstGeom prst="blockArc">` via adj1=start / adj2=end /
+  adj3=inner-radius). Two new `DataMarkKind` values: `DataMarkDonut` (a single-value
+  ring + centered label — a 331° accent arc at 0.92) and `DataMarkGauge` (a 270°
+  speedometer). Both compose a value arc + a remainder arc (no center hole, no
+  surface-color dependency, no asset); deterministic. Catalog stays 30 (Kind
+  values, not nodes).
+**Acceptance criteria:**
+- A donut at 0.92 renders native `blockArc`s with the value arc at 270°
+  (`adj1=16200000`) and "92%" centered (conformant); a gauge renders; `AddBlockArc`
+  round-trips; the arc marks are worker-count deterministic.
+
+**R14.8 complete after Phase 88** (bar/bars/sparkline + donut/gauge).
+
 ---
 
 ## 4. Post-V1 backlog

@@ -135,14 +135,15 @@ func validateNode(n SlideNode) error {
 			}
 		}
 	case DataMark:
-		if v.Kind < DataMarkBar || v.Kind > DataMarkSparkline {
+		if v.Kind < DataMarkBar || v.Kind > DataMarkGauge {
 			return fmt.Errorf("data_mark kind %d out of range", v.Kind)
 		}
-		if v.Kind == DataMarkBar {
+		switch v.Kind {
+		case DataMarkBar, DataMarkDonut, DataMarkGauge:
 			if v.Value < 0 || v.Value > 1 {
-				return fmt.Errorf("data_mark bar value %g out of [0,1]", v.Value)
+				return fmt.Errorf("data_mark value %g out of [0,1]", v.Value)
 			}
-		} else {
+		default: // Bars / Sparkline
 			if len(v.Values) == 0 {
 				return errors.New("data_mark bars/sparkline requires at least one value")
 			}

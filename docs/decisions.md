@@ -4240,4 +4240,49 @@ validation; worker-count determinism; an adversarial dataviz card stays on-canva
 
 ---
 
+## D-123 — Native dataviz arcs: donut + gauge (`AddBlockArc`, DataMark) (Wave 14 / Phase 88, R14.8)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.8's acceptance names a donut at 0.92 (a 331° arc with "92%"
+centered) and a gauge. The bar family (D-122, Phase 87) is rect/line-based; the
+arc marks needed a native arc the builder did not expose. The icon translator
+forbids elliptical arcs (D-040), and the builder only plumbed the `roundRect`
+adjust.
+
+**Decision:** Add a builder `(*Slide).AddBlockArc(box, startDeg, sweepDeg,
+innerRatio, opts)` — a native annular (ring) sector (`<a:prstGeom prst="blockArc">`)
+with `adj1` = start angle, `adj2` = end angle (60000ths of a degree, 0° at 3
+o'clock, clockwise, via an `angle60k` helper), `adj3` = inner radius (×100000). It
+is a genuinely new OOXML capability, so a new builder method is justified (P1); the
+scene composes it (no raw OOXML in `scene`, P3). `blockArc` is in the vendored
+transitional XSD and round-trips (the `XAvLst`/`XShapeGuide` structs the
+`roundRect` adjust already uses).
+
+Two new `DataMarkKind` values: `DataMarkDonut` (a value `blockArc` in accent
+starting at 270° / 12 o'clock, sweep `Value*360`, + a remainder `blockArc` in the
+SurfaceAlt track closing the ring, with the `Label` centered in the hole) and
+`DataMarkGauge` (the same over a 270° range opening at 135°). The **value +
+remainder arcs** close the ring with no center-hole ellipse, so the mark does not
+depend on the surface color behind it (the leaf-surface limitation). Both square
+their box (largest centered square) so the ring is circular at any slot aspect.
+`validate` treats Donut/Gauge as single-value (`Value` in `[0,1]`). No new node —
+they are Kind values, so the catalog stays at 30.
+
+**Verification posture.** The exact filled direction of `blockArc` follows the
+vendored OOXML semantics; the test pins the emitted adjust values (the value arc's
+`adj1 = 16200000` = 270°) and XSD conformance, not a PowerPoint screenshot
+(consistent with the project's structural-only in-suite posture, D-031). A wrong
+direction would be a one-line angle fix.
+
+**Consequences:** R14.8 is complete (bar/bars/sparkline + donut/gauge), all native
+vector, no rasterizer. A deck with no arc mark is unaffected. Tested: a donut at
+0.92 emits ≥2 `blockArc`s with the value arc at 270° + "92%" centered (conformant);
+a gauge; value=0/1 edge cases; worker-count determinism; an `AddBlockArc` builder
+round-trip (the adjust guides survive reopen); an adversarial dataviz card with all
+five mark kinds stays on-canvas. Deferred to V1.x: a gauge needle/ticks and a
+multi-segment (stacked) donut.
+
+---
+
 *Append new entries below this line.*

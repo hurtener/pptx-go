@@ -434,6 +434,12 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   a card/cell. A new `pptx.WithFlipV` shape option lets sparkline upward segments
   draw without a negative extent. Catalog 29 → 30. Arc-based marks (donut, gauge)
   → Phase 88 (a `blockArc` adjust-guide builder seam). (R14.8, engine; D-122.)
+- `71-dataviz-arcs.md` — completes R14.8: a builder `pptx.AddBlockArc(box, start,
+  sweep, innerRatio)` (native `<a:prstGeom prst="blockArc">` ring sector via
+  adj1/adj2/adj3) + two new `DataMarkKind` values `DataMarkDonut` (a single-value
+  ring + centered label, e.g. a 331° arc at 92%) and `DataMarkGauge` (a 270°
+  speedometer). Value + remainder arcs (no hole, no asset); deterministic; catalog
+  stays 30. (R14.8, engine; D-123.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

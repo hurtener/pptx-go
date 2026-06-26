@@ -377,6 +377,8 @@ func everyNodeScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkBar, Value: 0.92, Label: "92%"},
 					scene.DataMark{Kind: scene.DataMarkBars, Values: []float64{0.3, 0.6, 0.9, 0.5}},
 					scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.5, 0.4, 0.8, 0.6, 1.0}},
+					scene.DataMark{Kind: scene.DataMarkDonut, Value: 0.92, Label: "92%"},
+					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.5, Label: "50"},
 				},
 			},
 		},
