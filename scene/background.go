@@ -226,6 +226,12 @@ const (
 // preserved from the base theme so brand identity survives the swap. TextInverse
 // is also preserved — it remains white for text placed on accent-colored shapes
 // (e.g. SectionDivider, Arrow), where it is still correct.
+//
+// When the base theme carries a soul-driven dark palette (base.DarkColors,
+// R8.3), its surface/text overrides are overlaid role-by-role *after* the pinned
+// defaults — so a brand renders its own deep dark side (e.g. navy) instead of
+// the pinned gray. A nil DarkColors leaves the pinned defaults untouched,
+// byte-identical to the pre-R8.3 output.
 func darkThemeFrom(base *pptx.Theme) *pptx.Theme {
 	dark := base.Clone()
 	dark.Colors.Surfaces[pptx.ColorCanvas] = darkCanvas
@@ -234,5 +240,16 @@ func darkThemeFrom(base *pptx.Theme) *pptx.Theme {
 	dark.Colors.Text[pptx.TextPrimary] = darkTextPrimary
 	dark.Colors.Text[pptx.TextSecondary] = darkTextSecondary
 	dark.Colors.Text[pptx.TextTertiary] = darkTextTertiary
+	// Soul-driven dark overrides win over the pinned defaults (R8.3). Each role
+	// is written exactly once, so the overlay is order-independent and
+	// deterministic. nil/empty maps write nothing (byte-identical).
+	if dp := base.DarkColors; dp != nil {
+		for role, rgb := range dp.Surfaces {
+			dark.Colors.Surfaces[role] = rgb
+		}
+		for role, rgb := range dp.Text {
+			dark.Colors.Text[role] = rgb
+		}
+	}
 	return dark
 }

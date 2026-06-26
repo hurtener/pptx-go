@@ -493,12 +493,25 @@ const ( FitFill Fit = iota; FitNone )
 type Theme struct {
 	Name        string
 	HeadingFont string
+	DisplayFont string       // optional distinct TypeDisplay face (D-063)
 	BodyFont    string
 	Colors      ColorPalette
+	DarkColors  *DarkPalette // optional VariantDark overrides; nil = pinned-gray fallback (D-135)
 	Typography  Typography
 	Spacing     Spacing
 	Radii       Radii
 	Elevations  Elevations
+}
+
+// DarkPalette is a theme's optional VariantDark color override set (D-135). The
+// scene renderer's dark-variant derivation writes its pinned neutral-gray default,
+// then overlays these roles when DarkColors is non-nil — so a brand renders its
+// own deep dark side (e.g. navy). nil keeps the pinned gray (byte-identical). It
+// has no theme1.xml slot; the resolved dark RGB still round-trips (reported via
+// Stats.Colors).
+type DarkPalette struct {
+	Surfaces map[ColorRole]RGB
+	Text     map[TextColorRole]RGB
 }
 
 func DefaultTheme() *Theme
@@ -522,7 +535,9 @@ type ThemeOption func(*Theme)
 
 func WithName(name string) ThemeOption
 func WithAccent(c RGB) ThemeOption
-func WithPaper(c RGB) ThemeOption    // off-white "paper" canvas tint (ColorPaper, D-104)
+func WithPaper(c RGB) ThemeOption                       // off-white "paper" canvas tint (ColorPaper, D-104)
+func WithDarkSurface(role ColorRole, c RGB) ThemeOption // VariantDark surface override (D-135)
+func WithDarkText(role TextColorRole, c RGB) ThemeOption // VariantDark text override (D-135)
 func WithFonts(heading, body string) ThemeOption
 ```
 

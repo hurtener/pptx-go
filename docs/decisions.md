@@ -4672,4 +4672,56 @@ matches the shipped engine. Wave 14 (R14) is complete.
 
 ---
 
+## D-135 — Soul-driven dark palette (`Theme.DarkColors`) (Wave 15 / Phase 97, R8.3 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-26.
+
+**Context:** R8.3 (`DECKARD-PRODUCT-REQUIREMENTS.md`, CRITICAL · both) wants a
+brand's `VariantDark` slides to render in its own deep hues (the reference's deep
+navy, not neutral gray). The scene renderer's `darkThemeFrom` (`scene/
+background.go`) hard-codes the dark variant to a pinned Tailwind gray scale
+(`darkCanvas=#111827`/`darkSurface=#1F2937`/`darkSurfaceAlt=#374151`, text
+`F9FAFB`/`E5E7EB`/`9CA3AF`) and ignores the active theme entirely — the only
+escape hatch was aiming a `Background` gradient at the accent role, yielding a
+flat wash with no brand depth. The gap: a theme carries no dark-variant overrides
+for `darkThemeFrom` to consume. D-059 puts the override *mechanism* here; the
+soul *deriving* a brand dark palette from the light one is Deckard's product half.
+
+**Decision:** Add an optional `Theme.DarkColors *DarkPalette` field
+(`DarkPalette{Surfaces map[ColorRole]RGB; Text map[TextColorRole]RGB}`, mirroring
+`ColorPalette`) plus composable `WithDarkSurface(role, c)` / `WithDarkText(role,
+c)` options that lazily allocate it. `darkThemeFrom` writes the pinned-gray
+defaults verbatim, then overlays `base.DarkColors.Surfaces` / `.Text`
+role-by-role when non-nil. A nil `DarkColors` (the zero value) leaves the pinned
+grays untouched — **byte-identical** to the pre-R8.3 output. Each role is written
+once (pinned default → single overlay), so the overlay is order-independent and
+deterministic. `Clone()` deep-copies both dark maps when present (a `Theme` is a
+reusable artifact, §5; proven under `-race`).
+
+**No theme1.xml slot.** `DarkColors` is consumed only by the scene renderer to
+derive the per-slide `VariantDark` theme; it is never serialized (like
+`ColorPaper`/`TextMuted`, D-104). G6 is about emitted output and holds: a dark
+slide's resolved canvas/surface/text emit as literal `srgbClr` fills/runs that
+round-trip through `pptx.Open`, and are reported via `Stats.Colors` (D-058,
+`composeOne` reads the resolved dark theme). The field itself is not recovered
+from a reopened deck — the soul owns the dark palette at author time (D-026).
+
+**Scope / generality.** The `Surfaces`/`Text` maps let a theme override **any**
+role in the dark variant, not just the six the pinned default touches — so the
+same seam carries the dark accent/extension overrides R8.7 (Phase 100) needs;
+that phase adds a derived dark-hairline default, no new field.
+
+**Consequences:** First phase of Wave 15 (the final R1–R14 engine wave) and
+foundational for R8.7. Additive: no new IR node (catalog stays 35), no codec
+change, no `restorenamespaces` change. Tested: `WithDarkSurface`/`WithDarkText`
+populate `DarkColors`; `Clone` deep-copies it (race-safe); `darkThemeFrom`
+overlays overridden roles and keeps the pinned default for unset ones; a soul
+dark palette resolves + emits the brand navy via `Stats.Colors` and the slide
+XML while a no-dark-palette slide is byte-identical to the pinned-gray output;
+the dark-palette deck is deterministic across worker counts; the conformance
+corpus gains a soul-dark variant asserting on-canvas + conformant + deterministic
+under the brand palette.
+
+---
+
 *Append new entries below this line.*

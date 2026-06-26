@@ -412,6 +412,19 @@ coordinate space (scaled to the shape extent). The wire form an `Icon`
 renders to, emitted by `Slide.AddIcon` and produced by the `SVG translator`.
 Distinct from preset geometry (`a:prstGeom`, a named `ShapeGeometry`).
 
+## Dark palette
+
+A theme's optional `VariantDark` color override set (`Theme.DarkColors
+*DarkPalette`, set via `WithDarkSurface` / `WithDarkText`; R8.3, D-135). The
+scene renderer's `darkThemeFrom` writes its pinned Tailwind-gray dark default
+first, then overlays these surface/text roles when present — so a brand renders
+its own deep dark side (e.g. navy) instead of the pinned gray. nil (the zero
+value) keeps the pinned gray, byte-identical. Like `ColorPaper` it has **no
+theme1.xml slot** — it is consumed only to derive the dark variant theme and is
+never serialized; the resolved dark RGB a slide renders with round-trips (and is
+reported via `Stats.Colors`, D-058), the field does not. See
+`docs/design/THEME.md`, `D-135`.
+
 ## Decoration
 
 A scene IR leaf that places a curated `Ornament` (native) or an asset image

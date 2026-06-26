@@ -191,6 +191,13 @@ applies functional options. Unset roles keep their defaults. The options:
   `heading`. Order-independent with `WithFonts`; omitting it leaves `TypeDisplay`
   on `HeadingFont` (byte-identical). Lets a brand pair a serif display with a
   separate sans heading.
+- `pptx.WithDarkSurface(role pptx.ColorRole, c pptx.RGB)` /
+  `pptx.WithDarkText(role pptx.TextColorRole, c pptx.RGB)` — set a brand's
+  **dark palette** (`Theme.DarkColors`): the colors a `scene.VariantDark` slide
+  resolves to, instead of the engine's pinned neutral gray. Each call overrides
+  one surface/text role for the dark variant only; unset roles keep the pinned
+  dark default. Setting none leaves the pinned gray (byte-identical). Composable
+  and order-independent. See **Dark palette** below.
 
 ```go
 theme := pptx.NewTheme(
@@ -226,6 +233,38 @@ pres := pptx.New(pptx.WithTheme(theme)) // at construction
 // or
 pres.SetTheme(theme)                    // later; a nil theme is ignored
 ```
+
+## Dark palette (`scene.VariantDark`)
+
+When a scene slide sets `Variant: scene.VariantDark`, the renderer derives a
+dark theme for that slide. By default it uses a pinned neutral-gray palette
+(`#111827`/`#1F2937`/`#374151` surfaces, `#F9FAFB`/`#E5E7EB`/`#9CA3AF` text). To
+render a brand's *own* dark side (e.g. deep navy) instead, give the theme a
+**dark palette** — `Theme.DarkColors`, set with `WithDarkSurface` /
+`WithDarkText`:
+
+```go
+theme := pptx.NewTheme(
+    pptx.WithName("Acme"),
+    pptx.WithDarkSurface(pptx.ColorCanvas, pptx.RGB("0A0E1A")),  // brand navy canvas
+    pptx.WithDarkSurface(pptx.ColorSurface, pptx.RGB("14182B")), // brand dark card
+    pptx.WithDarkText(pptx.TextPrimary, pptx.RGB("F4F6FF")),     // brand light text
+)
+```
+
+Each call overrides one role **for the dark variant only**; roles you don't set
+keep the pinned dark default. The renderer writes the pinned grays first, then
+overlays your dark palette role-by-role — so you can override as much or as
+little as you want. Any surface or text role is overridable (including accent and
+semantic roles). A theme that sets **no** dark palette renders the pinned gray —
+byte-identical to the engine default.
+
+The dark palette has **no theme1.xml slot**: it is consumed only to derive the
+dark variant and is never serialized. The resolved dark colors a slide renders
+with still round-trip (and are reported per-slide via `scene.Render`'s
+`Stats.Colors`, so you can verify exactly what each dark slide resolved to). You
+can also build the whole palette at once via the struct:
+`theme.DarkColors = &pptx.DarkPalette{Surfaces: …, Text: …}`.
 
 ## Token resolution model
 
