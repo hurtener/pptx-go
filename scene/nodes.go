@@ -888,6 +888,11 @@ const (
 	DataMarkBars
 	// DataMarkSparkline is a polyline through Values (a trend line).
 	DataMarkSparkline
+	// DataMarkDonut is a single-value ring (Value 0..1) with a centered label —
+	// e.g. "92%" inside a 331° accent arc (R14.8 part 2, D-123).
+	DataMarkDonut
+	// DataMarkGauge is a single-value speedometer arc (Value 0..1) with a label.
+	DataMarkGauge
 )
 
 // DataMark is a native (no-raster) micro-chart (R14.8, D-122): a crisp,

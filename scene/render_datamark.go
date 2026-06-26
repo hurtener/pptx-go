@@ -19,10 +19,14 @@ const (
 // dataMarkPreferredHeight returns the mark's slot height: a thin slot for a single
 // bar, a taller slot for a bar group / sparkline.
 func dataMarkPreferredHeight(v DataMark) pptx.EMU {
-	if v.Kind == DataMarkBar && v.Orientation != FlowVertical {
+	switch {
+	case v.Kind == DataMarkBar && v.Orientation != FlowVertical:
 		return pptx.In(0.4)
+	case v.Kind == DataMarkDonut || v.Kind == DataMarkGauge:
+		return pptx.In(1.6)
+	default:
+		return pptx.In(1.2)
 	}
-	return pptx.In(1.2)
 }
 
 func (r *renderer) renderDataMark(ps *pptx.Slide, box pptx.Box, v DataMark) {
@@ -33,6 +37,77 @@ func (r *renderer) renderDataMark(ps *pptx.Slide, box pptx.Box, v DataMark) {
 		r.renderDataMarkBars(ps, box, v)
 	case DataMarkSparkline:
 		r.renderDataMarkSparkline(ps, box, v)
+	case DataMarkDonut:
+		r.renderDataMarkDonut(ps, box, v)
+	case DataMarkGauge:
+		r.renderDataMarkGauge(ps, box, v)
+	}
+}
+
+// Pinned arc-mark geometry (R14.8 part 2).
+const (
+	dmInnerRatio = 0.62  // ring inner radius as a fraction of the outer
+	dmDonutStart = 270.0 // 12 o'clock (OOXML 0° = 3 o'clock, clockwise)
+	dmGaugeStart = 135.0 // lower-left opening of a 270° speedometer
+	dmGaugeRange = 270.0 // total gauge sweep
+)
+
+// squareCentered returns the largest centered square box that fits box (so an arc
+// mark is circular regardless of the slot aspect).
+func squareCentered(box pptx.Box) pptx.Box {
+	d := box.W
+	if box.H < d {
+		d = box.H
+	}
+	return pptx.Box{X: box.X + (box.W-d)/2, Y: box.Y + (box.H-d)/2, W: d, H: d}
+}
+
+// renderDataMarkDonut draws a single-value ring: an accent value arc + a track
+// arc that together close the ring, with the Label centered in the hole.
+func (r *renderer) renderDataMarkDonut(ps *pptx.Slide, box pptx.Box, v DataMark) {
+	val := clampUnit01(v.Value)
+	sq := squareCentered(box)
+	accent := pptx.TokenColor(v.markColor())
+	track := pptx.TokenColor(pptx.ColorSurfaceAlt)
+	valSweep := val * 360
+	// Value arc (accent), then the remainder arc (track) completing the ring.
+	if valSweep > 0 {
+		ps.AddBlockArc(sq, dmDonutStart, valSweep, dmInnerRatio, pptx.WithFill(pptx.SolidFill(accent)))
+		r.stats.Shapes++
+	}
+	if val < 1 {
+		ps.AddBlockArc(sq, dmDonutStart+valSweep, 360-valSweep, dmInnerRatio, pptx.WithFill(pptx.SolidFill(track)))
+		r.stats.Shapes++
+	}
+	if v.Label != "" {
+		lf := ps.AddTextFrame(sq).Anchor(pptx.AnchorMiddle)
+		lp := lf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+		lp.AddRun(v.Label, pptx.RunStyle{TypeRole: pptx.TypeH2, Bold: true, Color: pptx.TokenTextColor(pptx.TextPrimary)})
+		r.stats.Shapes++
+	}
+}
+
+// renderDataMarkGauge draws a 270° speedometer: an accent value arc + a track arc
+// over the gauge range, with the Label centered.
+func (r *renderer) renderDataMarkGauge(ps *pptx.Slide, box pptx.Box, v DataMark) {
+	val := clampUnit01(v.Value)
+	sq := squareCentered(box)
+	accent := pptx.TokenColor(v.markColor())
+	track := pptx.TokenColor(pptx.ColorSurfaceAlt)
+	valSweep := val * dmGaugeRange
+	if valSweep > 0 {
+		ps.AddBlockArc(sq, dmGaugeStart, valSweep, dmInnerRatio, pptx.WithFill(pptx.SolidFill(accent)))
+		r.stats.Shapes++
+	}
+	if val < 1 {
+		ps.AddBlockArc(sq, dmGaugeStart+valSweep, dmGaugeRange-valSweep, dmInnerRatio, pptx.WithFill(pptx.SolidFill(track)))
+		r.stats.Shapes++
+	}
+	if v.Label != "" {
+		lf := ps.AddTextFrame(sq).Anchor(pptx.AnchorMiddle)
+		lp := lf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+		lp.AddRun(v.Label, pptx.RunStyle{TypeRole: pptx.TypeH3, Bold: true, Color: pptx.TokenTextColor(pptx.TextPrimary)})
+		r.stats.Shapes++
 	}
 }
 

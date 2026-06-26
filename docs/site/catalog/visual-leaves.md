@@ -201,7 +201,10 @@ A crisp, brand-colored vector micro-chart drawn entirely from preset shapes —
 `DataMarkKind` values: `DataMarkBar` (a progress/capacity bar — a track + a fill to
 `Value`, with an optional inline `Label`; `Orientation` `FlowHorizontal` (default)
 or `FlowVertical`), `DataMarkBars` (a small bar group, one bar per `Values` entry),
-`DataMarkSparkline` (a trend polyline through `Values` with an accent end dot).
+`DataMarkSparkline` (a trend polyline through `Values` with an accent end dot),
+`DataMarkDonut` (a single-value ring + centered `Label` — a 331° accent arc at
+0.92), `DataMarkGauge` (a 270° speedometer). The donut/gauge are native `blockArc`
+ring sectors (a value arc + a remainder arc, no hole).
 
 | Field | Type | Meaning |
 | --- | --- | --- |

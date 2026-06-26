@@ -117,6 +117,7 @@ slide.
 
 ```go
 func (s *Slide) AddShape(geom ShapeGeometry, box Box, opts ...ShapeOption) *Shape
+func (s *Slide) AddBlockArc(box Box, startDeg, sweepDeg, innerRatio float64, opts ...ShapeOption) *Shape // native ring sector (D-123)
 func (s *Slide) AddTextFrame(box Box) *TextFrame
 func (s *Slide) AddTable(box Box, rows, cols int) *Table
 func (s *Slide) AddImage(src ImageSource, box Box) (*Image, error)

@@ -176,6 +176,8 @@ func adversarialScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkBar, Value: 0.92, Label: "92%"},
 					scene.DataMark{Kind: scene.DataMarkBars, Values: []float64{0.3, 0.6, 0.9, 0.5, 0.7}},
 					scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.8, 0.4, 1.0, 0.6, 0.9}},
+					scene.DataMark{Kind: scene.DataMarkDonut, Value: 0.92, Label: "92%"},
+					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.66, Label: "66"},
 				}},
 			}},
 			// An enriched testimonial (R14.5): oversized quote mark + a long multi-line

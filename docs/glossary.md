@@ -699,12 +699,14 @@ The scene `DataMark` node (D-122): a crisp, brand-colored vector micro-chart dra
 entirely from preset shapes — no raster, no `AssetResolver`. `DataMarkKind` selects
 `DataMarkBar` (a progress/capacity bar: a `ColorSurfaceAlt` track + an accent fill
 to `Value`, with an optional inline `Label`; horizontal or vertical), `DataMarkBars`
-(a small bar group, one bar per `Values` entry), or `DataMarkSparkline` (a trend
+(a small bar group, one bar per `Values` entry), `DataMarkSparkline` (a trend
 polyline through `Values` with an accent end dot — upward segments use the builder's
-`WithFlipV`). Values are `0..1`; the mark color is `Color` (`*ColorRole`, nil =
-accent). Pure integer-EMU geometry (worker-count deterministic); embeds in a
-Card/Bento cell. Arc-based marks (donut, gauge) are a follow-up. See
-`DECKARD-PRODUCT-REQUIREMENTS.md` R14.8.
+`WithFlipV`), `DataMarkDonut` (a single-value ring + centered label, e.g. a 331°
+accent arc at 0.92), or `DataMarkGauge` (a 270° speedometer). The donut/gauge are
+native `blockArc` ring sectors (a value arc + a remainder arc, no hole) via the
+builder's `AddBlockArc`. Values are `0..1`; the mark color is `Color` (`*ColorRole`,
+nil = accent). Pure integer-EMU geometry (worker-count deterministic); embeds in a
+Card/Bento cell. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.8.
 
 ## NumberFormat
 
