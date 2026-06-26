@@ -57,9 +57,9 @@ func (r *renderer) renderQuadrant(ps *pptx.Slide, box pptx.Box, v Quadrant) {
 	for i, it := range v.Items {
 		x := field.X + pptx.EMU(clampUnit01(it.X)*float64(field.W))
 		y := field.Bottom() - pptx.EMU(clampUnit01(it.Y)*float64(field.H))
-		accent := timelineAccent(it.AccentIndex)
+		accent := r.accentColorAt(it.AccentIndex)
 		ps.AddShape(pptx.ShapeEllipse, pptx.Box{X: x - qDotR, Y: y - qDotR, W: 2 * qDotR, H: 2 * qDotR},
-			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent))))
+			pptx.WithFill(pptx.SolidFill(accent)))
 		r.stats.Shapes++
 		if it.Label == "" {
 			continue

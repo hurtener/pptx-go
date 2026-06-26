@@ -156,18 +156,18 @@ func absE(a pptx.EMU) pptx.EMU {
 
 // drawTreeNode draws one node as a rounded rect (accent border) with its label.
 func (r *renderer) drawTreeNode(ps *pptx.Slide, box pptx.Box, n TreeNode, slideID string) {
-	accent := timelineAccent(n.AccentIndex)
+	accent := r.accentColorAt(n.AccentIndex)
 	ps.AddShape(pptx.ShapeRoundRect, box,
 		pptx.WithRadius(pptx.RadiusMD),
 		pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorSurface))),
-		pptx.WithLine(pptx.Line{Width: pptx.Pt(1.25), Color: pptx.TokenColor(accent)}))
+		pptx.WithLine(pptx.Line{Width: pptx.Pt(1.25), Color: accent}))
 	r.stats.Shapes++
 
 	textX, textW := box.X, box.W
 	if n.Icon != "" {
 		ib := pptx.Box{X: box.X + treeGap, Y: box.Y + (box.H-treeIconSz)/2, W: treeIconSz, H: treeIconSz}
 		if svg, ok := r.cfg.icons.Lookup(n.Icon); ok {
-			if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent)))); err == nil {
+			if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(accent))); err == nil {
 				r.stats.Shapes++
 			}
 		} else {

@@ -114,7 +114,16 @@ func contrastRatioT10(lumA, lumB int) int {
 // nil, reproducing the pre-R11.2 output byte-for-byte. Resolves bg against the
 // active (possibly dark-variant) theme, so it is correct on every variant.
 func (r *renderer) onCardSurface(bg pptx.ColorRole) pptx.Color {
-	if relLuminance(r.theme.ResolveColor(bg)) < darkSurfaceLumaMax {
+	return r.onSurfaceRGB(r.theme.ResolveColor(bg))
+}
+
+// onSurfaceRGB is the resolved-RGB core of onCardSurface (R8.4): it returns the
+// light TextInverse token only when bg is dark enough that the inherited dark
+// default would be illegible, else nil. Keyed on a literal RGB so it also serves
+// a brand-accent fill that has no ColorRole (multi-accent palette). onCardSurface
+// is the role-keyed wrapper; behavior is byte-identical for a role argument.
+func (r *renderer) onSurfaceRGB(bg pptx.RGB) pptx.Color {
+	if relLuminance(bg) < darkSurfaceLumaMax {
 		return pptx.TokenTextColor(pptx.TextInverse)
 	}
 	return nil

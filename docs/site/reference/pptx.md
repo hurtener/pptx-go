@@ -496,6 +496,7 @@ type Theme struct {
 	DisplayFont string       // optional distinct TypeDisplay face (D-063)
 	BodyFont    string
 	Colors      ColorPalette
+	Accents     []RGB        // optional ordered brand-accent palette; empty = pinned five-role cycle (D-136)
 	DarkColors  *DarkPalette // optional VariantDark overrides; nil = pinned-gray fallback (D-135)
 	Typography  Typography
 	Spacing     Spacing
@@ -536,6 +537,7 @@ type ThemeOption func(*Theme)
 func WithName(name string) ThemeOption
 func WithAccent(c RGB) ThemeOption
 func WithPaper(c RGB) ThemeOption                       // off-white "paper" canvas tint (ColorPaper, D-104)
+func WithAccents(palette ...RGB) ThemeOption            // ordered brand-accent palette the accent cycle reads (D-136)
 func WithDarkSurface(role ColorRole, c RGB) ThemeOption // VariantDark surface override (D-135)
 func WithDarkText(role TextColorRole, c RGB) ThemeOption // VariantDark text override (D-135)
 func WithFonts(heading, body string) ThemeOption

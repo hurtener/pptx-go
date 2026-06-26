@@ -54,6 +54,22 @@ emitted `solidFill`/run color and is reported via `Stats.Colors` (D-058). The
 soul *derives* a brand dark palette from the light one; the engine only exposes
 the override mechanism (D-026 / D-059).
 
+**Brand-accent palette** (`Theme.Accents []RGB`, R8.4, D-136): an optional
+ordered list of accent hues so a deck can rotate **4+ coordinated brand accents**
+(e.g. jade / orange / violet / lime) across per-element markers — beyond the
+three accent roles. The scene renderer's accent cycle reads it by index: each
+accent-bearing node carries an `AccentIndex`, and `accentColorAt(idx)` returns
+`Accents[idx % len]` when the palette is set, else the pinned five-role cycle
+`[ColorAccent, ColorAccentAlt, ColorInfo, ColorSuccess, ColorWarning]`. It feeds
+timeline phases, funnel/cycle stages, quadrant points, tree nodes, and image
+pins. Set it with `WithAccents(...RGB)`. An empty `Accents` (the zero value)
+keeps the pinned cycle, **byte-identical**. The auto-contrast label path resolves
+an accent's RGB (`onSurfaceRGB`/`cellTextOnColor`) so a literal brand hue still
+gets legible text (D-082). Like `DarkColors` it has **no theme1.xml slot** — the
+resolved accent RGB round-trips, the field does not. Modeled as literal hues
+(not roles) because a brand's 4th–6th accent exceeds the available roles/slots;
+the soul populates the palette from a brand source (D-026 / D-059).
+
 ### Text colors (`TextColorRole`)
 
 `TextPrimary`, `TextSecondary`, `TextTertiary`, `TextInverse`, `TextMuted`,

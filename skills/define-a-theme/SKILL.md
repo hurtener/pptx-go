@@ -198,6 +198,13 @@ applies functional options. Unset roles keep their defaults. The options:
   one surface/text role for the dark variant only; unset roles keep the pinned
   dark default. Setting none leaves the pinned gray (byte-identical). Composable
   and order-independent. See **Dark palette** below.
+- `pptx.WithAccents(palette ...pptx.RGB)` — sets a **brand-accent palette**
+  (`Theme.Accents`): an ordered list of accent hues the renderer rotates across
+  per-element markers (timeline phases, funnel/cycle stages, quadrant points,
+  tree nodes, image pins) by each node's `AccentIndex`. Lets a deck use 4+
+  coordinated brand accents, beyond the three accent roles. Passing none keeps
+  the engine's pinned five-role cycle (byte-identical). See **Multi-accent
+  palette** below.
 
 ```go
 theme := pptx.NewTheme(
@@ -265,6 +272,37 @@ with still round-trip (and are reported per-slide via `scene.Render`'s
 `Stats.Colors`, so you can verify exactly what each dark slide resolved to). You
 can also build the whole palette at once via the struct:
 `theme.DarkColors = &pptx.DarkPalette{Surfaces: …, Text: …}`.
+
+## Multi-accent palette (`Theme.Accents`)
+
+The engine cycles a fixed set of accent colors across the per-element markers of
+the diagram nodes — `Timeline` phases, `Funnel` / `Cycle` stages, `Quadrant`
+points, `Tree` nodes, and `Image` pins/highlights — selected by each element's
+`AccentIndex`. By default that cycle is five theme roles
+(`ColorAccent`, `ColorAccentAlt`, `ColorInfo`, `ColorSuccess`, `ColorWarning`).
+To rotate a brand's **own** coordinated accents (often four or more hues) instead,
+give the theme a brand-accent palette with `WithAccents`:
+
+```go
+theme := pptx.NewTheme(
+    pptx.WithAccents(
+        pptx.RGB("5EEAD4"), // jade   → AccentIndex 0
+        pptx.RGB("F97316"), // orange → AccentIndex 1
+        pptx.RGB("8B5CF6"), // violet → AccentIndex 2
+        pptx.RGB("A3E635"), // lime   → AccentIndex 3
+    ),
+)
+```
+
+An element with `AccentIndex: 2` then renders in violet; the cycle wraps modulo
+the palette length. The palette accepts any number of hues (a brand's 4th–6th
+accent has no theme role of its own, which is why this is a literal-color list,
+not a role list). Label text drawn on an accent fill stays legible — the renderer
+auto-picks light or dark text from the accent's luminance, for a literal brand
+hue just as for a role. A theme that sets **no** `Accents` uses the pinned
+five-role cycle — byte-identical to the engine default. Like the dark palette,
+`Accents` has no theme1.xml slot (the resolved accent colors round-trip; the
+field does not).
 
 ## Token resolution model
 

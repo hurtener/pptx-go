@@ -2068,6 +2068,25 @@ canvas/surface/text to the supplied hexes (`stats.Colors`); no dark palette =
 byte-identical pinned-gray output; `Clone()` deep-copies `DarkColors`
 (race-safe); the dark-palette slide is byte-identical across worker counts.
 
+#### Phase 98 — multi-accent brand palette (R8.4, HIGH · both — engine half)
+
+**Subsystem:** pptx (Theme) + scene (accent cycle + contrast cores)
+**Deps:** D-135; brief 81.
+**What lands (R8.4):** an optional `Theme.Accents []RGB` ordered brand-accent
+palette + `WithAccents(...RGB)`. The scene renderer's per-element accent cycle
+(`timelineAccent` → renderer `accentColorAt` / `accentRGBAt`) rotates through the
+brand palette by index when set, so a deck renders 4+ coordinated accent hues
+across timeline phases, funnel/cycle stages, quadrant points, tree nodes, and
+image pins — beyond the three accent roles. Empty `Accents` keeps the pinned
+five-role cycle (byte-identical). The auto-contrast text path (`onCardSurface` /
+`cellTextOn`) is refactored to a resolved-RGB core so a literal brand hue still
+gets legible text. No theme1.xml slot, no new IR node (catalog stays 35).
+Unblocks the deferred R14.2 ChartStyle palette + R14.14 per-section accent.
+**Acceptance criteria:** a four-hue palette renders all four brand hues into a
+four-phase timeline; no palette = byte-identical pinned-cycle output; a dark
+brand hue gets inverse contrast text; `Clone()` deep-copies `Accents` (race-safe)
+and the deck is byte-identical across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog

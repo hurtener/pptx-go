@@ -39,12 +39,12 @@ func (r *renderer) renderFunnel(ps *pptx.Slide, box pptx.Box, v Funnel) {
 		w := box.W * pptx.EMU(frac) / 100
 		x := box.X + (box.W-w)/2
 		y := box.Y + (bandH+funnelGap)*pptx.EMU(i)
-		accent := timelineAccent(st.AccentIndex)
+		accent := r.accentColorAt(st.AccentIndex)
 		bandBox := pptx.Box{X: x, Y: y, W: w, H: bandH}
-		ps.AddShape(pptx.ShapeRoundRect, bandBox, pptx.WithRadius(pptx.RadiusSM), pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent))))
+		ps.AddShape(pptx.ShapeRoundRect, bandBox, pptx.WithRadius(pptx.RadiusSM), pptx.WithFill(pptx.SolidFill(accent)))
 		r.stats.Shapes++
 		// Centered label (+ value) in contrast text.
-		tc := r.cellTextOn(accent)
+		tc := r.cellTextOnColor(r.accentRGBAt(st.AccentIndex))
 		tf := ps.AddTextFrame(bandBox).Anchor(pptx.AnchorMiddle)
 		lp := tf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
 		lp.AddRun(st.Label, pptx.RunStyle{TypeRole: pptx.TypeBodySmall, Bold: true, Color: tc})
@@ -98,17 +98,17 @@ func (r *renderer) renderCycle(ps *pptx.Slide, box pptx.Box, v Cycle, slideID st
 	for i, st := range v.Stages {
 		c := centers[i]
 		nb := pptx.Box{X: c.X - cycleNodeW/2, Y: c.Y - cycleNodeH/2, W: cycleNodeW, H: cycleNodeH}
-		accent := timelineAccent(st.AccentIndex)
+		accent := r.accentColorAt(st.AccentIndex)
 		ps.AddShape(pptx.ShapeRoundRect, nb,
 			pptx.WithRadius(pptx.RadiusMD),
 			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(pptx.ColorSurface))),
-			pptx.WithLine(pptx.Line{Width: pptx.Pt(1.25), Color: pptx.TokenColor(accent)}))
+			pptx.WithLine(pptx.Line{Width: pptx.Pt(1.25), Color: accent}))
 		r.stats.Shapes++
 		tx, tw := nb.X, nb.W
 		if st.Icon != "" {
 			ib := pptx.Box{X: nb.X + funnelGap, Y: nb.Y + (nb.H-cycleIconSz)/2, W: cycleIconSz, H: cycleIconSz}
 			if svg, ok := r.cfg.icons.Lookup(st.Icon); ok {
-				if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent)))); err == nil {
+				if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(accent))); err == nil {
 					r.stats.Shapes++
 				}
 			} else {

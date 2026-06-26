@@ -170,6 +170,59 @@ func TestWithDarkColors(t *testing.T) {
 	}
 }
 
+// TestWithAccents verifies WithAccents populates Theme.Accents, the default theme
+// has none, Clone deep-copies the slice, and an empty call is a no-op (R8.4).
+func TestWithAccents(t *testing.T) {
+	if len(pptx.DefaultTheme().Accents) != 0 {
+		t.Fatal("DefaultTheme should have no brand-accent palette")
+	}
+	// An empty WithAccents is a no-op (byte-identical fallback preserved).
+	if len(pptx.NewTheme(pptx.WithAccents()).Accents) != 0 {
+		t.Error("WithAccents() with no colors should leave Accents empty")
+	}
+
+	th := pptx.NewTheme(pptx.WithAccents("5EEAD4", "F97316", "8B5CF6", "A3E635"))
+	if got := len(th.Accents); got != 4 {
+		t.Fatalf("Accents len = %d, want 4", got)
+	}
+	if th.Accents[1] != "F97316" {
+		t.Errorf("Accents[1] = %q, want F97316", th.Accents[1])
+	}
+	// NewTheme must not have mutated the package default theme.
+	if len(pptx.DefaultTheme().Accents) != 0 {
+		t.Error("WithAccents leaked into the default theme")
+	}
+
+	// Clone deep-copies the slice: mutating the clone must not affect the source.
+	c := th.Clone()
+	if len(c.Accents) != 4 {
+		t.Fatalf("Clone dropped Accents: len = %d", len(c.Accents))
+	}
+	c.Accents[0] = "000000"
+	if th.Accents[0] == "000000" {
+		t.Fatal("Clone shares the Accents slice with the original")
+	}
+}
+
+// TestAccentsConcurrentReuse proves a theme carrying a brand-accent palette is
+// safe for concurrent Clone+read under -race (a Theme is a reusable artifact, §5).
+func TestAccentsConcurrentReuse(t *testing.T) {
+	base := pptx.NewTheme(pptx.WithAccents("5EEAD4", "F97316", "8B5CF6"))
+	var wg sync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c := base.Clone()
+			c.Accents[0] = "112233" // mutate the clone only
+			if base.Accents[0] != "5EEAD4" {
+				t.Error("concurrent Clone aliased the base accent palette")
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 // TestCloneDarkColorsIndependence proves Clone deep-copies DarkColors so a clone
 // can be mutated without aliasing the original (themes are reusable, §5; R8.3).
 func TestCloneDarkColorsIndependence(t *testing.T) {

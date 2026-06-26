@@ -176,7 +176,15 @@ const tableHighlightAlpha = 16000
 // cellTextOn returns the auto-contrast text color for a cell filled with role
 // (D-082): the inverse text token on a dark fill, else the primary text token.
 func (r *renderer) cellTextOn(role pptx.ColorRole) pptx.Color {
-	if c := r.onCardSurface(role); c != nil {
+	return r.cellTextOnColor(r.theme.ResolveColor(role))
+}
+
+// cellTextOnColor is the resolved-RGB core of cellTextOn (R8.4): the inverse text
+// token on a dark fill, else the primary text token. Keyed on a literal RGB so a
+// brand-accent fill (multi-accent palette, no ColorRole) gets auto-contrast text
+// too. cellTextOn is the role-keyed wrapper; byte-identical for a role argument.
+func (r *renderer) cellTextOnColor(bg pptx.RGB) pptx.Color {
+	if c := r.onSurfaceRGB(bg); c != nil {
 		return c
 	}
 	return pptx.TokenTextColor(pptx.TextPrimary)

@@ -4724,4 +4724,61 @@ under the brand palette.
 
 ---
 
+## D-136 — Multi-accent brand palette (`Theme.Accents`) (Wave 15 / Phase 98, R8.4 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-26.
+
+**Context:** R8.4 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both) wants a deck to
+rotate 4+ coordinated brand accents (jade / orange / violet / lime) by meaning
+across cards, columns, timeline phases, quadrant points, tree nodes. The engine
+exposes only three accent surface roles (`ColorAccent`/`AccentAlt`/`AccentWarm`),
+and the scene per-element accent cycle (`timelineAccent`) is a fixed five-role
+list `[Accent, AccentAlt, Info, Success, Warning]` — so a multi-hue brand
+collapses to two accents plus three semantic colors. The gap: no theme-level
+accent palette for the cycle to read. D-059 puts the ordered-palette mechanism +
+index cycle here; the soul populating the palette from a brand source (accent1..6
+of a brand .pptx, or an NL brief) is Deckard's product half.
+
+**Decision:** Add an optional `Theme.Accents []RGB` (ordered brand-accent
+palette) + a `WithAccents(...RGB)` option. The scene renderer gains two resolvers
+— `accentColorAt(idx) pptx.Color` (fill/stroke) and `accentRGBAt(idx) pptx.RGB`
+(contrast) — that cycle `Theme.Accents` by index when it is non-empty, else fall
+back to `TokenColor`/`ResolveColor(timelineAccent(idx))` (the pinned five-role
+cycle, kept as the fallback). The five `timelineAccent` call sites (timeline,
+funnel, cycle, quadrant, tree, image pin/highlight) route through the resolvers.
+An empty `Accents` (the zero value) is **byte-identical** to the pre-R8.4 output.
+`Clone()` deep-copies the slice (a `Theme` is a reusable artifact, §5).
+
+**Modeled as literal RGB, not roles.** A brand's 4th–6th hue has no spare
+`ColorRole` or OOXML accent slot (accent1..6 are claimed). So the palette is an
+ordered list of literal hues resolved by position (`index → hex`, a pure lookup
+— the requirement's spec). `pptx.RGB` already satisfies `pptx.Color` and is
+consumed by `relLuminance`, so one entry serves both the fill path (as a `Color`)
+and the contrast path (as an `RGB`).
+
+**Contrast refactor (extends D-082).** The accent index also feeds auto-contrast
+label text. `onCardSurface(role)` / `cellTextOn(role)` resolved the role
+internally, so a literal-hue accent had no contrast path. Factored RGB-keyed
+cores (`onSurfaceRGB(bg RGB)`, `cellTextOnColor(bg RGB)`) out of them; the
+role-keyed wrappers route through the cores with `ResolveColor(role)` — exactly
+the value they used before, so byte-identical for a role argument, and a literal
+brand hue now gets legible text too.
+
+**No theme1.xml slot.** Like `DarkColors` (D-135) / `ColorPaper` (D-104), an
+arbitrary-length palette has no fixed slots; it is consumed only by the scene
+accent cycle and is never serialized. The resolved accent RGB round-trips, the
+field does not.
+
+**Consequences:** Additive; no new IR node (catalog stays 35), no codec change.
+Unblocks the deferred R14.2 ChartStyle palette and R14.14 per-section accent
+(both want an ordered accent palette to index into). Extending `AccentIndex` to
+`Card`/`Stat`/`Column` headerFill (they already accept an explicit `*ColorRole`)
+is deferred follow-up. Tested: `WithAccents` populates + `Clone` deep-copies the
+slice (race-safe); the resolvers cycle the palette and fall back to the pinned
+five-role cycle; a four-hue palette renders all four hues into a timeline; a
+no-palette deck is byte-identical to the default; a dark brand hue gets inverse
+contrast text; the deck is deterministic across worker counts.
+
+---
+
 *Append new entries below this line.*

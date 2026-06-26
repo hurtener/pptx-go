@@ -145,6 +145,21 @@ builder's universal placement primitive. Distinct from `LayoutSlot`,
 which is the higher-level abstract region assigned by the scene's layout
 engine.
 
+## Brand-accent palette
+
+A theme's optional ordered list of accent hues (`Theme.Accents []RGB`, set via
+`WithAccents`; R8.4, D-136). The scene renderer's per-element accent cycle
+(`accentColorAt` / `accentRGBAt`, fed by each node's `AccentIndex`) rotates
+through these literal hues by index when the palette is non-empty — so a deck
+renders 4+ coordinated brand accents across timeline phases, funnel/cycle stages,
+quadrant points, tree nodes, and image pins, beyond the three accent roles. Empty
+(the zero value) keeps the pinned five-role cycle (`timelineAccent`:
+`[ColorAccent, ColorAccentAlt, ColorInfo, ColorSuccess, ColorWarning]`),
+byte-identical. Like the dark palette it has **no theme1.xml slot** — the
+resolved accent RGB round-trips, the field does not. The auto-contrast text path
+resolves an accent's RGB so a literal brand hue still gets legible label text
+(D-082). See `docs/design/THEME.md`, `D-136`, `Dark palette`.
+
 ## Brand kit
 
 A `.pptx` template carrying a populated theme + ≥1 master with layouts, used

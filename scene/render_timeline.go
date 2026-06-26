@@ -47,13 +47,44 @@ func timelineHasBandLabel(v Timeline) bool {
 
 // timelineAccent maps a milestone's AccentIndex to a token color role, cycling a
 // pinned set so per-phase markers read distinctly; the soul drives which index
-// each milestone uses (D-026). All entries are existing theme roles (P2).
+// each milestone uses (D-026). All entries are existing theme roles (P2). It is
+// the fallback cycle the accent resolvers use when the theme defines no brand
+// accent palette (R8.4).
 func timelineAccent(idx int) pptx.ColorRole {
 	roles := []pptx.ColorRole{pptx.ColorAccent, pptx.ColorAccentAlt, pptx.ColorInfo, pptx.ColorSuccess, pptx.ColorWarning}
 	if idx < 0 {
 		idx = 0
 	}
 	return roles[idx%len(roles)]
+}
+
+// accentColorAt returns the fill/stroke Color for an element's accent index
+// (R8.4). When the active theme defines a brand-accent palette (Theme.Accents),
+// the index cycles those literal hues; otherwise it falls back to the pinned
+// five-role cycle resolved as a token — byte-identical to the pre-R8.4 output.
+// The soul drives which index each element uses (D-026).
+func (r *renderer) accentColorAt(idx int) pptx.Color {
+	if n := len(r.theme.Accents); n > 0 {
+		if idx < 0 {
+			idx = 0
+		}
+		return r.theme.Accents[idx%n]
+	}
+	return pptx.TokenColor(timelineAccent(idx))
+}
+
+// accentRGBAt returns the resolved RGB for an element's accent index (R8.4), for
+// computing auto-contrast text on an accent fill. It mirrors accentColorAt: the
+// brand palette when defined, else the pinned role cycle resolved against the
+// active (possibly dark-variant) theme — byte-identical when no palette is set.
+func (r *renderer) accentRGBAt(idx int) pptx.RGB {
+	if n := len(r.theme.Accents); n > 0 {
+		if idx < 0 {
+			idx = 0
+		}
+		return r.theme.Accents[idx%n]
+	}
+	return r.theme.ResolveColor(timelineAccent(idx))
 }
 
 func (r *renderer) renderTimeline(ps *pptx.Slide, box pptx.Box, v Timeline, slideID string) {
@@ -135,19 +166,19 @@ func (r *renderer) renderTimelineLane(ps *pptx.Slide, lane pptx.Box, ms []Milest
 			pos = 1
 		}
 		cx := lane.X + pptx.EMU(pos*float64(lane.W))
-		accent := timelineAccent(m.AccentIndex)
+		accent := r.accentColorAt(m.AccentIndex)
 
 		// Marker: a curated icon when set, else an accent dot.
 		if m.Icon != "" {
 			ib := pptx.Box{X: cx - tlIconSz/2, Y: axisY - tlIconSz/2, W: tlIconSz, H: tlIconSz}
 			if svg, ok := r.cfg.icons.Lookup(m.Icon); !ok {
 				r.warn(slideID, "timeline milestone icon "+m.Icon+" not found at compose (should have failed Stage-1)")
-			} else if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent)))); err == nil {
+			} else if _, err := ps.AddIcon(svg, ib, pptx.WithFill(pptx.SolidFill(accent))); err == nil {
 				r.stats.Shapes++
 			}
 		} else {
 			ps.AddShape(pptx.ShapeEllipse, pptx.Box{X: cx - tlMarkerR, Y: axisY - tlMarkerR, W: 2 * tlMarkerR, H: 2 * tlMarkerR},
-				pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent))))
+				pptx.WithFill(pptx.SolidFill(accent)))
 			r.stats.Shapes++
 		}
 
