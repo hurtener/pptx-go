@@ -1969,6 +1969,20 @@ integer-EMU deterministic; depth/breadth past the region clamp + warn;
 parent-child edges inside the safe area (conformant); left-right works;
 worker-count deterministic.
 
+#### Phase 93 — funnel + cycle non-linear process diagrams (R14.11, MED · engine)
+
+**Subsystem:** scene (two new IR nodes)
+**Deps:** D-127; brief 76.
+**What lands (R14.11):** two new nodes (catalog 33 → 35) — `Funnel` (a stepped
+stack of centered bands tapering in width, with optional per-stage values) and
+`Cycle` (stage cards placed evenly on a ring with directional connector arrows —
+straight lines flip-aware + chevron heads rotated to the chord). Branch (1→M) is
+covered by the `Tree` node (R14.10), so no separate Flow.Branch. Native,
+integer-EMU deterministic; `nodeUsesAssets:false`.
+**Acceptance criteria:** a 4-stage funnel tapers monotonically with values labeled
+(conformant); a 5-stage cycle places cards on a ring with forward arrows
+(conformant); empty stages fail Stage-1; worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

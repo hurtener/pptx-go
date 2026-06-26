@@ -170,6 +170,14 @@ func validateNode(n SlideNode) error {
 		if v.Root.Label == "" && len(v.Root.Children) == 0 {
 			return errors.New("tree requires a non-empty root")
 		}
+	case Funnel:
+		if len(v.Stages) == 0 {
+			return errors.New("funnel requires at least one stage")
+		}
+	case Cycle:
+		if len(v.Stages) == 0 {
+			return errors.New("cycle requires at least one stage")
+		}
 	case Image:
 		if v.AssetID == "" {
 			return errors.New("image requires an asset id")

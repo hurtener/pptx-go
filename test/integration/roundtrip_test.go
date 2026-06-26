@@ -243,7 +243,7 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 	}
 }
 
-// everyNodeScene is a scene exercising all 33 shipped scene IR node kinds (the
+// everyNodeScene is a scene exercising all 35 shipped scene IR node kinds (the
 // scene/policy.go policyTable set): the 23 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
@@ -391,6 +391,8 @@ func everyNodeScene() scene.Scene {
 						{Label: "Eng", Icon: "star", Children: []scene.TreeNode{{Label: "Platform"}, {Label: "Apps"}}},
 						{Label: "GTM", AccentIndex: 1, Children: []scene.TreeNode{{Label: "Sales"}}},
 					}}},
+					scene.Funnel{Stages: []scene.FunnelStage{{Label: "Leads", Value: "10k"}, {Label: "Qualified", Value: "3k"}, {Label: "Won", Value: "400"}}},
+					scene.Cycle{Stages: []scene.CycleStage{{Label: "Plan", Icon: "star"}, {Label: "Build"}, {Label: "Ship"}, {Label: "Learn"}}},
 				},
 			},
 		},
@@ -412,7 +414,7 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindTree; k++ {
+	for k := scene.KindHero; k <= scene.KindCycle; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}

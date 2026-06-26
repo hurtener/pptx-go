@@ -74,6 +74,10 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 			fn(v.Icon, "lockup")
 		case Tree:
 			walkTreeIcons(v.Root, fn)
+		case Cycle:
+			for _, st := range v.Stages {
+				fn(st.Icon, "cycle stage")
+			}
 		case Card:
 			fn(v.Icon, "card")
 			walkIconRefs(v.Body, fn)

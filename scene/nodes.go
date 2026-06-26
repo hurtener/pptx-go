@@ -48,6 +48,8 @@ const (
 	KindQuadrant
 	KindLogoWall
 	KindTree
+	KindFunnel
+	KindCycle
 )
 
 // String returns the node kind's IR name.
@@ -119,6 +121,10 @@ func (k NodeKind) String() string {
 		return "logo_wall"
 	case KindTree:
 		return "tree"
+	case KindFunnel:
+		return "funnel"
+	case KindCycle:
+		return "cycle"
 	default:
 		return "unknown"
 	}
@@ -998,6 +1004,40 @@ type TreeNode struct {
 	Detail      string
 	Icon        string
 	Children    []TreeNode
+	AccentIndex int
+}
+
+// Funnel is a tapering N-stage process diagram (R14.11, D-128): stacked bands of
+// decreasing width with an optional per-stage value label. Native rects; pure
+// integer-EMU → byte-identical. A deck with no Funnel is byte-identical.
+type Funnel struct {
+	node
+	Stages []FunnelStage
+}
+
+func (Funnel) NodeKind() NodeKind { return KindFunnel }
+
+// FunnelStage is one band of a Funnel (D-128): a label + optional value caption.
+type FunnelStage struct {
+	Label       string
+	Value       string
+	AccentIndex int
+}
+
+// Cycle is a closed-loop process diagram (R14.11, D-128): N stages placed evenly
+// on a ring with directional connectors showing the loop. Native shapes; pure
+// integer-EMU → byte-identical. A deck with no Cycle is byte-identical.
+type Cycle struct {
+	node
+	Stages []CycleStage
+}
+
+func (Cycle) NodeKind() NodeKind { return KindCycle }
+
+// CycleStage is one node on a Cycle ring (D-128).
+type CycleStage struct {
+	Label       string
+	Icon        string
 	AccentIndex int
 }
 
