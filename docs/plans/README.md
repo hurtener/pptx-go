@@ -2012,6 +2012,32 @@ family (the other half of R14.20) is product (Deckard).
 from one engine with different shapes, each byte-identical across renders;
 `starfield` == `scatter_dot`.
 
+#### Phase 96 — multi-archetype conformance corpus (R14.19, CRITICAL · both)
+
+**Subsystem:** scene (test corpus)
+**Deps:** D-092; brief 79.
+**What lands (R14.19):** a deterministic corpus of professional deck archetypes
+(`corpusArchetypes` — one fixture slide per class: cover / section / agenda /
+comparison-matrix / pricing / timeline / org-chart / quote / photo-cover /
+logo-wall / chart / dashboard / process / quadrant / closing), rendered across the
+light AND dark variants and asserted against the standing invariants: every box
+on-canvas, OOXML-conformant, and byte-identical re-render. Test-only; a regression
+in any class fails CI; adding an archetype is a one-fixture addition. (RTL/CJK
+variants deferred with R14.15.)
+**Acceptance criteria:** all corpus archetypes render on-canvas across light/dark,
+conformant, byte-identical.
+
+**Wave 14 (R14) engine work complete after Phase 96.** Engine reqs landed:
+R14.1/.3/.4/.5/.7/.8/.9/.10/.11/.12/.13/.17/.19/.20 (Phases 81–96). The remaining
+reqs are **product** or **V2** (D-059 / D-133): R14.2 brand-charts (product — the
+ChartStyle bundle + rasterizer; the number-format engine atom landed in R14.13),
+R14.6 agenda (product recipe composing existing nodes), R14.14 section-scoped
+multi-master (product resolution chain + a V2 per-slide-theme engine atom), R14.15
+i18n RTL/CJK (V2 — a cross-cutting layout-direction wave), R14.16 soul icon set
+(the set binds via the existing `WithIconExtension`; duotone two-path icons are a
+V2 translator change), R14.18 recipe registry (product — the public node API is
+already the open composition seam).
+
 ---
 
 ## 4. Post-V1 backlog

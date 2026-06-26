@@ -718,6 +718,18 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Conformance corpus
+
+The multi-archetype conformance corpus (D-132): a deterministic set of fixture
+slides — one per professional deck class (cover, section, agenda, comparison
+matrix, pricing, timeline, org chart, quote, photo cover, logo wall, chart,
+dashboard, process, quadrant, closing) — rendered across the light and dark
+variants and asserted against the standing structural invariants (every box
+on-canvas, OOXML-conformant, byte-identical re-render). It is the generalizable
+proof that engine coverage holds beyond the one sample deck; a regression in any
+class fails CI, and adding an archetype is a one-fixture addition. RTL/CJK variants
+land with R14.15. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.19.
+
 ## Scatter ornament family
 
 A family of curated scatter/particle ornaments (D-131) sharing one deterministic
