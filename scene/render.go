@@ -28,6 +28,10 @@ type renderer struct {
 	chrome      Chrome
 	chromeTotal int
 	slideIndex  int
+
+	// footnoteH is this slide's reserved footnote band height (R14.12); 0 = none.
+	// Set in composeSlide before layout so bodyRegion reserves the band.
+	footnoteH pptx.EMU
 }
 
 // placement is a node assigned to a slot.
@@ -106,6 +110,10 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 		r.warn(sl.ID, fmt.Sprintf("theme variant %q requested but variant selection is not yet implemented; rendered with the active theme", sl.Variant))
 	}
 
+	// Footnote band reservation (R14.12): compute the band height before layout so
+	// bodyRegion shrinks and the body never overlaps the footnotes or chrome footer.
+	r.footnoteH = footnoteBandHeight(sl.Footnotes)
+
 	// Background fill — drawn first so it sits behind all decorations and body
 	// content (the z-order requirement from RFC §10.2 and the Phase-13 spec).
 	r.renderBackground(ps, sl)
@@ -125,6 +133,72 @@ func (r *renderer) composeSlide(ps *pptx.Slide, sl *SceneSlide) {
 	// margin the body region vacated (see bodyRegion), so it never overlaps the
 	// body content. Inert when chrome is disabled.
 	r.renderChrome(ps, sl)
+
+	// Footnotes (R14.12): rendered into the reserved band, after the body, so they
+	// pin to the bottom in the muted role without overlapping the body or footer.
+	r.renderFootnotes(ps, sl)
+}
+
+// Footnote band geometry (R14.12, D-126). Pinned metrics; the color is a token.
+const (
+	footnoteLineH  = pptx.EMU(192024) // In(0.21); one footnote line height
+	footnoteMaxLns = 3                // region cap; lines past this are dropped + warned
+)
+
+// footnoteBandHeight returns the reserved band height for the given footnotes,
+// capped at footnoteMaxLns lines (0 when there are none).
+func footnoteBandHeight(fns []RichText) pptx.EMU {
+	n := len(fns)
+	if n == 0 {
+		return 0
+	}
+	if n > footnoteMaxLns {
+		n = footnoteMaxLns
+	}
+	return footnoteLineH * pptx.EMU(n)
+}
+
+// renderFootnotes draws the slide's footnotes in the reserved bottom band (above
+// the chrome footer), one muted line each, capped at footnoteMaxLns (R14.12).
+func (r *renderer) renderFootnotes(ps *pptx.Slide, sl *SceneSlide) {
+	if len(sl.Footnotes) == 0 {
+		return
+	}
+	cx, cy := r.pres.SlideSize()
+	chromeReserve := pptx.EMU(0)
+	if r.chrome.Enabled {
+		chromeReserve = chromeFooterH + chromeBandGap
+	}
+	bandH := footnoteBandHeight(sl.Footnotes)
+	bandY := pptx.EMU(cy) - bodyMargin - chromeReserve - bandH
+	tf := ps.AddTextFrame(pptx.Box{X: bodyMargin, Y: bandY, W: pptx.EMU(cx) - 2*bodyMargin, H: bandH})
+	shown := sl.Footnotes
+	if len(shown) > footnoteMaxLns {
+		shown = shown[:footnoteMaxLns]
+		r.warn(sl.ID, fmt.Sprintf("footnotes: %d lines exceed the region cap of %d; extra lines dropped", len(sl.Footnotes), footnoteMaxLns))
+	}
+	for _, fn := range shown {
+		p := tf.AddParagraph(pptx.ParagraphOpts{})
+		r.addRichTextMuted(ps, p, fn)
+	}
+	r.stats.Shapes++
+}
+
+// addRichTextMuted maps a footnote line in the muted caption role, forcing the
+// muted text color unless a run sets its own color.
+func (r *renderer) addRichTextMuted(ps *pptx.Slide, p *pptx.Paragraph, rt RichText) {
+	for _, run := range rt {
+		style := pptx.RunStyle{TypeRole: pptx.TypeCaption, Bold: run.Style.Bold, Italic: run.Style.Italic}
+		if run.Style.Superscript {
+			style.BaselineRel = pptx.Superscript
+		}
+		if run.Color.IsLiteral() || run.Color.Role() != TextPrimary {
+			style.Color = colorFor(run.Color)
+		} else {
+			style.Color = pptx.TokenTextColor(pptx.TextMuted)
+		}
+		p.AddRun(run.Text, style)
+	}
 }
 
 // renderBackground draws a full-slide fill as the lowest layer of the slide
@@ -387,6 +461,9 @@ func (r *renderer) bodyRegion() pptx.Box {
 		top += chromeEyebrowH + chromeBandGap
 		bottom += chromeFooterH + chromeBandGap
 	}
+	if r.footnoteH > 0 {
+		bottom += r.footnoteH + chromeBandGap // reserve the footnote band (R14.12)
+	}
 	return pptx.Box{
 		X: bodyMargin,
 		Y: top,
@@ -594,6 +671,9 @@ func (r *renderer) addRichTextScaled(_ *pptx.Slide, p *pptx.Paragraph, rt RichTe
 		}
 		if run.Style.Strike {
 			style.Strike = pptx.StrikeSingle
+		}
+		if run.Style.Superscript {
+			style.BaselineRel = pptx.Superscript
 		}
 		style.Color = colorFor(run.Color)
 

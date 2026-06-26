@@ -48,6 +48,8 @@ type Metadata struct {
 
 ### Slide background
 
+Each `SceneSlide` may also carry `Footnotes []RichText` — source/citation/disclaimer lines pinned to a reserved muted band at the bottom (above the chrome footer; the body shrinks to reserve it, so no overlap); mark a reference on a figure with `RunStyle{Superscript: true}`. Lines past a 3-line cap are dropped + warned.
+
 `SceneSlide.Background` paints a full-bleed fill behind all content (the lowest
 z-layer). A zero `Background` (`BackgroundNone`) draws nothing. The kinds:
 

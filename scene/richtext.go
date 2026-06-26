@@ -29,6 +29,9 @@ type RunStyle struct {
 	Code      bool
 	Link      bool
 	Href      string
+	// Superscript raises the run above the baseline at a reduced size — a footnote
+	// marker on a figure/stat (R14.12, D-126). Zero = on the baseline.
+	Superscript bool
 }
 
 // TextColor is a run color: a TextColorRole token (theme-bound, the default
