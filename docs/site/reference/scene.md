@@ -195,14 +195,31 @@ const (
 	KindGrid
 	KindCard
 	KindCardSection
+	KindBento
+	KindStat
+	KindButton
+	KindChecklist
+	KindChipRow
+	KindBanner
+	KindIconRows
+	KindLockup
+	KindTimeline
+	KindDataMark
+	KindQuadrant
+	KindLogoWall
+	KindTree
+	KindFunnel
+	KindCycle
 )
 func (k NodeKind) String() string
 ```
 `SlideNode` is the sealed scene IR union; the concrete node types are
-closed. The shipped node structs (`Hero`, `Prose`, `Heading`, `List`,
+closed. The 35 shipped node structs (`Hero`, `Prose`, `Heading`, `List`,
 `Divider`, `Quote`, `Callout`, `Image`, `Chip`, `Arrow`, `CodeBlock`,
 `Chart`, `Table`, `Flow`, `Decoration`, `SectionDivider`, `TwoColumn`,
-`Grid`, `Card`, `CardSection`) each map to a `NodeKind`. See the catalog
+`Grid`, `Card`, `CardSection`, `Bento`, `Stat`, `Button`, `Checklist`,
+`ChipRow`, `Banner`, `IconRows`, `Lockup`, `Timeline`, `DataMark`,
+`Quadrant`, `LogoWall`, `Tree`, `Funnel`, `Cycle`) each map to a `NodeKind`. See the catalog
 for per-node fields:
 [text leaves](/catalog/text-leaves),
 [visual leaves](/catalog/visual-leaves),
@@ -327,6 +344,11 @@ const (
 	NameChevronArrow  = "chevron_arrow"
 	NameNoiseOverlay  = "noise_overlay"
 	NameStarfield     = "starfield" // organic scatter, size/alpha-varied dots
+	// scatter family (D-131): one engine, varied mark shapes
+	NameScatterDot  = "scatter_dot"
+	NameScatterStar = "scatter_star"
+	NameScatterPlus = "scatter_plus"
+	NameScatterRing = "scatter_ring"
 )
 
 // scene/frames — curated device-frame names:

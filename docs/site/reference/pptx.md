@@ -173,6 +173,7 @@ func WithRotation(deg float64) ShapeOption
 func WithElevation(role ElevationRole) ShapeOption
 func WithShadow(e Elevation) ShapeOption
 func WithImageFill(src ImageSource) ShapeOption  // cover-fit photo surface fill (a:blipFill, D-117)
+func WithFlipV(flip bool) ShapeOption  // mirror vertically (a:xfrm flipV) — diagonal/upward lines (D-122)
 ```
 Configure a shape at creation: fill, outline, corner radius token,
 rotation, elevation token, an explicit shadow, or a cover-fit image
