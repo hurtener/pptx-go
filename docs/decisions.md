@@ -4464,6 +4464,35 @@ conformant); a 5-stage cycle (cards + chevron arrows, conformant); empty stages
 fail Stage-1; worker-count determinism; an adversarial funnel+cycle. Deferred to
 V1.x: a true trapezoid funnel (custGeom) + curved ring arrows.
 
+
+---
+
+## D-130 — Image / diagram annotations (`Image.Annotations`) (Wave 14 / Phase 94, R14.17)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.17 (LOW · engine) — product/demo decks annotate a screenshot with
+numbered callout pins, leader lines, and highlight boxes; the `Image` node placed
+an asset but couldn't pin a marker to a coordinate.
+
+**Decision:** Add an additive `Image.Annotations *ImageAnnotations{Pins
+[]ImagePin{X,Y float64; Label, Caption string; AccentIndex int}; Highlights
+[]ImageHighlight{X,Y,W,H float64; AccentIndex int}}`. After the picture,
+`renderImageAnnotations` draws highlight rectangle outlines, then accent pin discs
+(`ShapeEllipse`) with a centered number (`cellTextOn` contrast) and, when a pin has
+a caption, a leader line to a caption box clamped into the image. All coordinates
+are fractions of the image *interior* box (node-relative, so they track the pic
+across any placement/frame). Native shapes (reusing `hvLine`/`timelineAccent`/
+`cellTextOn`/`clampUnit01`); no media beyond the image itself. `validate` rejects
+out-of-`[0,1]` pin/highlight coordinates. nil `Annotations` is **byte-identical**.
+A field on `Image`, not a new node (catalog unchanged at 35).
+
+**Consequences:** Annotated screenshots/diagrams are reachable; an un-annotated
+image is byte-identical. Tested: 3 pins + leader captions + a highlight render each
+at its coordinate (conformant); an out-of-range coord fails Stage-1; nil
+byte-identical; worker-count determinism. Deferred to V1.x: dense-pin
+anti-collision + curved leaders.
+
 ---
 
 *Append new entries below this line.*

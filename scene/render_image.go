@@ -56,6 +56,66 @@ func (r *renderer) renderImage(ps *pptx.Slide, box pptx.Box, v Image, slideID st
 	img.SetElevation(v.Elevation)
 	r.stats.Shapes++
 	r.stats.Assets++
+
+	// Annotations (R14.17): numbered pins + highlight boxes overlaid on the image
+	// interior at fractional coordinates. Drawn after the pic so they sit on top.
+	if v.Annotations != nil {
+		r.renderImageAnnotations(ps, interior, v.Annotations)
+	}
+}
+
+// Annotation geometry (R14.17, D-130). Pinned metrics; colors are tokens.
+const (
+	annPinR = pptx.EMU(146304)  // In(0.16); a numbered pin's radius
+	annCapW = pptx.EMU(1280160) // In(1.40); a leader caption box width
+	annCapH = pptx.EMU(192024)  // In(0.21); a leader caption line height
+	annGap  = pptx.EMU(45720)   // In(0.05)
+)
+
+// renderImageAnnotations draws highlight rects (behind pins) then numbered pins
+// with optional leader-line captions, at fractional coordinates of box.
+func (r *renderer) renderImageAnnotations(ps *pptx.Slide, box pptx.Box, a *ImageAnnotations) {
+	for _, h := range a.Highlights {
+		hb := pptx.Box{
+			X: box.X + pptx.EMU(clampUnit01(h.X)*float64(box.W)),
+			Y: box.Y + pptx.EMU(clampUnit01(h.Y)*float64(box.H)),
+			W: pptx.EMU(clampUnit01(h.W) * float64(box.W)),
+			H: pptx.EMU(clampUnit01(h.H) * float64(box.H)),
+		}
+		ps.AddShape(pptx.ShapeRect, hb, pptx.WithFill(pptx.NoFill()),
+			pptx.WithLine(pptx.Line{Width: pptx.Pt(2), Color: pptx.TokenColor(timelineAccent(h.AccentIndex))}))
+		r.stats.Shapes++
+	}
+	for _, p := range a.Pins {
+		px := box.X + pptx.EMU(clampUnit01(p.X)*float64(box.W))
+		py := box.Y + pptx.EMU(clampUnit01(p.Y)*float64(box.H))
+		accent := timelineAccent(p.AccentIndex)
+		// Optional leader + caption to the right of the pin (clamped into the box).
+		if p.Caption != "" {
+			cx := px + annPinR + annGap
+			if cx+annCapW > box.Right() {
+				cx = px - annPinR - annGap - annCapW
+			}
+			if cx < box.X {
+				cx = box.X
+			}
+			r.hvLine(ps, px, py, (cx+annCapW/2)-px, 0, pptx.Line{Width: pptx.Pt(1), Color: pptx.TokenColor(pptx.ColorSurfaceAlt)})
+			cf := ps.AddTextFrame(pptx.Box{X: cx, Y: py - annCapH/2, W: annCapW, H: annCapH}).Anchor(pptx.AnchorMiddle)
+			cp := cf.AddParagraph(pptx.ParagraphOpts{})
+			cp.AddRun(p.Caption, pptx.RunStyle{TypeRole: pptx.TypeCaption, Color: pptx.TokenTextColor(pptx.TextPrimary)})
+			r.stats.Shapes++
+		}
+		// Pin disc + number.
+		ps.AddShape(pptx.ShapeEllipse, pptx.Box{X: px - annPinR, Y: py - annPinR, W: 2 * annPinR, H: 2 * annPinR},
+			pptx.WithFill(pptx.SolidFill(pptx.TokenColor(accent))))
+		r.stats.Shapes++
+		if p.Label != "" {
+			lf := ps.AddTextFrame(pptx.Box{X: px - annPinR, Y: py - annPinR, W: 2 * annPinR, H: 2 * annPinR}).Anchor(pptx.AnchorMiddle)
+			lp := lf.AddParagraph(pptx.ParagraphOpts{Align: pptx.AlignCenter})
+			lp.AddRun(p.Label, pptx.RunStyle{TypeRole: pptx.TypeCaption, Bold: true, Color: r.cellTextOn(accent)})
+			r.stats.Shapes++
+		}
+	}
 }
 
 // resolveFrameName resolves an Image's frame to a registry name (D-038):

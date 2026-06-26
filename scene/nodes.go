@@ -348,9 +348,37 @@ type Image struct {
 	// token (D-114). ElevationFlat (the zero value) emits no shadow —
 	// byte-identical. Matches the card/surface finish.
 	Elevation ElevationRole
+	// Annotations overlay numbered pins, highlight boxes, and leader-line captions
+	// on the image at fractional (0..1) coordinates of the image box (R14.17,
+	// D-130). Native shapes; empty = no overlay (byte-identical).
+	Annotations *ImageAnnotations
 }
 
 func (Image) NodeKind() NodeKind { return KindImage }
+
+// ImageAnnotations is an optional overlay on an Image (R14.17, D-130): numbered
+// pins at fractional coordinates, highlight rectangles around regions, each
+// soul-styled and drawn as native shapes over the picture.
+type ImageAnnotations struct {
+	Pins       []ImagePin
+	Highlights []ImageHighlight
+}
+
+// ImagePin is a numbered callout marker at (X,Y) in [0,1] of the image box, with
+// an optional caption drawn beside it and a leader line from the pin to it.
+type ImagePin struct {
+	X, Y        float64
+	Label       string // the pin's number/letter (e.g. "1")
+	Caption     string // optional off-pin caption; "" = no caption/leader
+	AccentIndex int
+}
+
+// ImageHighlight is a rectangle (fractions of the image box) outlined to draw
+// attention to a region.
+type ImageHighlight struct {
+	X, Y, W, H  float64
+	AccentIndex int
+}
 
 // ChipTone selects a chip's fill treatment.
 type ChipTone int

@@ -1983,6 +1983,19 @@ integer-EMU deterministic; `nodeUsesAssets:false`.
 (conformant); a 5-stage cycle places cards on a ring with forward arrows
 (conformant); empty stages fail Stage-1; worker-count deterministic.
 
+#### Phase 94 — image / diagram annotations (R14.17, LOW · engine)
+
+**Subsystem:** scene (Image field-ext)
+**Deps:** brief 77.
+**What lands (R14.17):** an additive `Image.Annotations *ImageAnnotations` overlay
+— numbered pins (`ImagePin{X,Y,Label,Caption,AccentIndex}`) at fractional (0..1)
+coordinates of the image box, with optional leader-line captions, plus highlight
+boxes (`ImageHighlight{X,Y,W,H,AccentIndex}`). Native shapes drawn over the
+picture; coordinates are node-relative; nil = byte-identical. A field, not a node.
+**Acceptance criteria:** 3 pins + leader captions + a highlight render each at its
+coordinate (conformant); an out-of-range coord fails Stage-1; nil byte-identical;
+worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog
