@@ -718,6 +718,18 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Tree (hierarchy / org chart)
+
+The scene `Tree` node (D-127): a `Root TreeNode` (`{Label, Detail, Icon, Children,
+AccentIndex}`) laid out as a balanced tidy tree — leaves spread evenly across the
+cross-axis, internal nodes centered over their leaf descendants, and parent→child
+**elbow** connector edges (all horizontal/vertical, so no diagonal-line flip).
+`Orientation` is `FlowVertical` (top-down, default) or `FlowHorizontal`
+(left-right). Node cards are rounded rects with an accent border (by
+`AccentIndex`) + label/detail/icon. Native + integer-EMU deterministic; depth or
+breadth past the region clamps + warns. Distinct from `Flow` (sequential) and
+`Bento`/`Grid` (flat). See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.10.
+
 ## Footnotes (sources / disclaimers)
 
 `SceneSlide.Footnotes` (a `[]RichText`, D-126): source/citation/disclaimer lines

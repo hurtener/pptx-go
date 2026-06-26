@@ -72,6 +72,8 @@ func walkIconRefs(nodes []SlideNode, fn func(name, kind string)) {
 			}
 		case Lockup:
 			fn(v.Icon, "lockup")
+		case Tree:
+			walkTreeIcons(v.Root, fn)
 		case Card:
 			fn(v.Icon, "card")
 			walkIconRefs(v.Body, fn)
@@ -713,5 +715,13 @@ func (r *renderer) renderCard(ps *pptx.Slide, box pptx.Box, v Card, slideID stri
 	// those where the old stackIn ignored them — a deliberate improvement, D-073).
 	for _, pl := range r.alignedStackIn(body, v.Body, slideID, Alignment{Vertical: v.BodyVAlign}) {
 		r.renderNode(ps, pl.box, pl.node, slideID, pl.hAlign)
+	}
+}
+
+// walkTreeIcons visits every TreeNode's icon name (R14.10), recursing children.
+func walkTreeIcons(n TreeNode, fn func(name, kind string)) {
+	fn(n.Icon, "tree node")
+	for _, c := range n.Children {
+		walkTreeIcons(c, fn)
 	}
 }

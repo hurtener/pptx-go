@@ -307,6 +307,11 @@ over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skin
 the mark; the soul drives the values + color (D-026). A mechanism over the existing
 color tokens, not a new token.
 
+**Tree node colors** (D-127): the scene `Tree` node draws node cards in
+`ColorSurface` with an accent border from a pinned token cycle
+(`TreeNode.AccentIndex`); edges are `ColorSurfaceAlt`. Token-resolved (P2). A
+mechanism over the existing tokens, not a new token.
+
 **Footnote band** (D-126): `SceneSlide.Footnotes` renders in the muted text role
 (`TextMuted`) in a reserved bottom band; a `RunStyle.Superscript` marker uses the
 builder's baseline shift. Token-resolved (P2); a mechanism over the existing text

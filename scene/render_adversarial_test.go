@@ -182,6 +182,14 @@ func adversarialScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.66, Label: "66"},
 				}},
 			}},
+			// A hierarchy/org tree (R14.10): a 3-level tree with long labels; node cards
+			// + elbow edges must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("tree-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Tree{Root: scene.TreeNode{Label: longText, Children: []scene.TreeNode{
+					{Label: longText, Icon: "star", Children: []scene.TreeNode{{Label: longText}, {Label: "Apps"}}},
+					{Label: "GTM", AccentIndex: 2, Children: []scene.TreeNode{{Label: longText}}},
+				}}},
+			}},
 			// A logo wall (R14.7): a mono-tone grid of logos with a caption; the grid
 			// cells + contained logos must stay on-canvas. (No resolver → logos warn +
 			// skip; the caption + layout still exercise the composer.)

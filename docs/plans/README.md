@@ -1954,6 +1954,21 @@ references on figures/stats (maps to the builder's `BaselineRel`). Lines past a
 marker emits a baseline shift, no overlap; an empty Footnotes is byte-identical;
 > cap warns; worker-count deterministic.
 
+#### Phase 92 — hierarchy / org-chart / tree (R14.10, MED · engine)
+
+**Subsystem:** scene (new IR node)
+**Deps:** brief 75.
+**What lands (R14.10):** a new `scene.Tree` node (catalog 32 → 33) — a `Root
+TreeNode` with `Children` laid out as a balanced top-down (or left-right) tidy
+tree: leaves spread evenly, internal nodes centered over their leaf descendants,
+parent→child elbow connector edges (all horizontal/vertical, no flip), and
+soul-styled node cards (rounded rect + accent border + label/detail/icon). Native,
+integer-EMU deterministic; depth/breadth past the region clamp + warn;
+`nodeUsesAssets:false`.
+**Acceptance criteria:** a 3-level tree renders balanced cards + non-crossing
+parent-child edges inside the safe area (conformant); left-right works;
+worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog
