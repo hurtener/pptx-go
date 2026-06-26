@@ -718,6 +718,16 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Scatter ornament family
+
+A family of curated scatter/particle ornaments (D-131) sharing one deterministic
+hash-of-index placement engine (generalized from the D-110 `starfield`):
+`scatter_dot` (ellipses), `scatter_star` (`star5`), `scatter_plus` (`mathPlus`),
+`scatter_ring` (outlines). Each is a closed-name `Decoration.Preset`; density is
+`Decoration.Pitch`, color the decoration's role, with per-mark size/alpha variance.
+`starfield` is byte-identical to `scatter_dot`. Use for starfields, dust, confetti,
+or bokeh from one engine. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.20.
+
 ## Image annotations
 
 `Image.Annotations` (a `*ImageAnnotations`, D-130): an overlay of numbered callout

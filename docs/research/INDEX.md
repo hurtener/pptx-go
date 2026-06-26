@@ -469,6 +469,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   pins at fractional (0..1) coords with optional leader-line captions + highlight
   boxes, drawn as native shapes over the picture. nil = byte-identical; a field,
   not a node. (R14.17, engine; D-130.)
+- `78-scatter-family.md` — restates the `starfield` ornament as a scatter FAMILY:
+  one shared deterministic placement engine parameterized by mark shape —
+  `scatter_dot` / `scatter_star` (`star5`) / `scatter_plus` (`mathPlus`) /
+  `scatter_ring` (outline). `Starfield` = `scatter_dot` (byte-identical). Curated
+  set 7 → 11. (R14.20, engine half; D-131.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

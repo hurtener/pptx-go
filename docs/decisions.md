@@ -4493,6 +4493,42 @@ at its coordinate (conformant); an out-of-range coord fails Stage-1; nil
 byte-identical; worker-count determinism. Deferred to V1.x: dense-pin
 anti-collision + curved leaders.
 
+
+---
+
+## D-131 — Scatter ornament family (Wave 14 / Phase 95, R14.20)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.20 (MED · both) flags two sample-specific requirements to restate
+as general families. The engine half here: the `starfield` ornament (D-110) was
+written around the reference's dark starfield; R14.20 wants it generalized to a
+*scatter/particle* family (starfield, dust, confetti, bokeh) sharing one
+deterministic placement engine.
+
+**Decision:** Extract the starfield's placement (a lattice at `Decoration.Pitch`,
+perturbed by a fixed integer hash of the cell index, with per-mark size + alpha
+variance, ~20% of cells sieved empty, capped at `patternMaxDots`) into a shared
+`scatter(sl, box, alpha, role, pitch, shape scatterShape)` in `assets/ornaments`.
+`Starfield` now calls `scatter(scatterDot)` — **byte-identical** to its prior
+output. New recipes `ScatterDot`/`ScatterStar`/`ScatterPlus`/`ScatterRing` pass a
+different `scatterShape` (ellipse / `star5` prst / `mathPlus` prst / ring outline).
+The `ornaments.Recipe` signature is unchanged — the shape is fixed per named recipe
+— so the closed-name registry pattern holds and there is no third signature break.
+The four `scatter_*` names join `Curated()` (7 → 11 ornaments) and `isPatternPreset`
+(so the `Decoration.Pitch` projection cap warning applies). Density is the existing
+`Pitch`; color the existing role; both honor additive/byte-identical-when-unused.
+
+**Consequences:** The scatter/particle class is one parameterized family, not a
+sample-shaped one-off; `starfield` is unchanged (a test pins `starfield ==
+scatter_dot`). Tested: the family renders distinct mark shapes (`star5`,
+`mathPlus`); starfield byte-identity; determinism; the curated count is 11. The
+pricing-card recipe family (the other half of R14.20) is **product** (a Deckard
+recipe composing the offer-card slots over existing primitives — D-026/D-059); the
+engine has all the atoms (Card, Ribbon, Checklist, Stat+NumberFormat, Button).
+Deferred to V1.x: a `Decoration.Scatter` param struct (shape/density/sizeVar/
+alphaVar) for caller-tuned scatter without a named recipe.
+
 ---
 
 *Append new entries below this line.*
