@@ -718,6 +718,16 @@ stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
 (worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
 `DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
 
+## Footnotes (sources / disclaimers)
+
+`SceneSlide.Footnotes` (a `[]RichText`, D-126): source/citation/disclaimer lines
+pinned to a reserved band at the bottom of the slide (above the chrome footer) in
+the muted caption role. The body region shrinks to reserve the band, so footnotes
+never overlap the body or the page-number footer. A `RunStyle.Superscript` marks a
+footnote reference on a figure/stat (raised + reduced, via the builder's
+`BaselineRel`). Lines past a 3-line region cap are dropped and a warning is
+recorded. Empty = byte-identical. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.12.
+
 ## Logo wall
 
 The scene `LogoWall` node (D-125): an N-up grid of logo assets

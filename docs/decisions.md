@@ -4356,6 +4356,38 @@ nodeUsesAssets, catalog 32, integration kind-loop `..KindLogoWall`). Tested: a
 no recolor; a missing logo warns + is skipped; worker-count determinism; an empty
 wall fails Stage-1; an adversarial mono wall.
 
+
+---
+
+## D-126 — Footnotes / sources / disclaimers (`SceneSlide.Footnotes`) (Wave 14 / Phase 91, R14.12)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.12 (MED · both — engine half) — investor/financial/research decks
+carry source lines, footnote markers, and legal disclaimers. There was no
+footnote/source primitive and no superscript-marker mechanism.
+
+**Decision:** Add a slide-level `SceneSlide.Footnotes []RichText` (not a node).
+`composeSlide` sets a per-slide renderer field `footnoteH = footnoteBandHeight(
+Footnotes)` before layout; `bodyRegion` subtracts the band (+ a gap), so the body
+shrinks and can never overlap the footnotes; `renderFootnotes` draws the lines in
+the muted caption role in a band pinned to the bottom, above the chrome footer
+(reserving `chromeFooterH + chromeBandGap` when chrome is on). Lines past a 3-line
+region cap (`footnoteMaxLns`) are dropped and a `LayoutWarning` is recorded
+(ellipsized, not overflowed). A new `scene.RunStyle.Superscript bool` maps to the
+builder's existing `RunStyle.BaselineRel = pptx.Superscript`, so a marker run on a
+figure/stat renders raised + reduced. The per-slide renderer (`composeOne` makes a
+fresh one) makes the `footnoteH` field race-free. Empty `Footnotes` is
+**byte-identical**.
+
+**Consequences:** Citations/sources/disclaimers are first-class without colliding
+with chrome or body. Tested: 2 sources render muted in the band + a superscript
+marker emits a baseline shift (no warnings, no overlap); an empty Footnotes is
+byte-identical; > cap warns; worker-count determinism; an adversarial footnote band
+on a content slide stays clear of the body. The product half (the slide field
+carrying source text per archetype) lives in Deckard (D-059). Deferred: auto-numbered
+marker↔footnote linking (the caller numbers them).
+
 ---
 
 *Append new entries below this line.*

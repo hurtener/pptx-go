@@ -88,6 +88,8 @@ func adversarialScene() scene.Scene {
 			scene.SceneSlide{ID: fmt.Sprintf("strip-%v", variant), Variant: variant,
 				Background: scene.Background{Kind: scene.BackgroundColor, Color: scene.ColorAccent,
 					Scrim: &scene.Scrim{Color: scene.ColorSurface, Opacity: 40000, Gradient: true}},
+				// Footnotes (R14.12) reserve a bottom band; the body must shrink + stay clear.
+				Footnotes: []scene.RichText{rt(longText), rt("Source: " + longText)},
 				Nodes: []scene.SlideNode{
 					scene.Hero{Title: longText, AutoFit: true},
 					scene.Grid{Columns: 4, Cells: []scene.SlideNode{

@@ -450,6 +450,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   §7/D-046), optionally recolored to a uniform tone (mono/brand via the duotone
   seam, D-116) so a mixed set coheres; optional caption. Asset-bearing; missing
   logos warn + skip. Catalog 31 → 32. (R14.7, engine; D-125.)
+- `74-footnotes.md` — `SceneSlide.Footnotes []RichText` rendered in a reserved
+  bottom band (above the chrome footer) in the muted role; the body region shrinks
+  to reserve it so footnotes never overlap the body/footer. A scene
+  `RunStyle.Superscript` marks references (maps to the builder's `BaselineRel`).
+  Cap → drop + warn; empty = byte-identical. (R14.12, engine half; D-126.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

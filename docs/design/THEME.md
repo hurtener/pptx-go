@@ -307,6 +307,11 @@ over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skin
 the mark; the soul drives the values + color (D-026). A mechanism over the existing
 color tokens, not a new token.
 
+**Footnote band** (D-126): `SceneSlide.Footnotes` renders in the muted text role
+(`TextMuted`) in a reserved bottom band; a `RunStyle.Superscript` marker uses the
+builder's baseline shift. Token-resolved (P2); a mechanism over the existing text
+tokens, not a new token.
+
 **Logo-wall tone** (D-125): the scene `LogoWall.Tone` recolors every logo to a
 uniform two-tone via the duotone seam (D-116) — `LogoToneMono` = `TextPrimary` →
 `ColorCanvas`, `LogoToneBrand` = `ColorAccent` → `ColorCanvas` — so a mixed-style

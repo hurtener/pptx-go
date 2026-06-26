@@ -1940,6 +1940,20 @@ wall; optional `Caption`. Asset-bearing (serial determinism); a missing logo war
 duotone recolor (conformant); `LogoToneNone` emits no recolor; a missing logo
 warns + is skipped; worker-count deterministic; an empty wall fails Stage-1.
 
+#### Phase 91 — footnotes / sources / disclaimers (R14.12, MED · both — engine half)
+
+**Subsystem:** scene (SceneSlide field + footer band + superscript)
+**Deps:** D-053; brief 74.
+**What lands (R14.12):** `SceneSlide.Footnotes []RichText` renders in a reserved
+bottom band (above the chrome footer) in the muted caption role; the body region
+shrinks to reserve the band (a per-slide `footnoteH`) so footnotes never overlap
+the body or the page-number footer. A new `scene.RunStyle.Superscript` marks
+references on figures/stats (maps to the builder's `BaselineRel`). Lines past a
+3-line region cap are dropped + warned. Empty = byte-identical.
+**Acceptance criteria:** 2 source lines render muted in the band + a superscript
+marker emits a baseline shift, no overlap; an empty Footnotes is byte-identical;
+> cap warns; worker-count deterministic.
+
 ---
 
 ## 4. Post-V1 backlog

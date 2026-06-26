@@ -104,6 +104,12 @@ type SceneSlide struct {
 	Background Background // full-bleed slide background; zero value = no background (BackgroundNone)
 	Section    string     // chrome: top eyebrow label; empty = no eyebrow on this slide
 	PageNumber int        // chrome: the N in "N / total"; 0 = scene position (1-based)
+	// Footnotes are source/citation/disclaimer lines pinned to a reserved band at
+	// the bottom of the slide (above the chrome footer), in the muted text role
+	// (R14.12, D-126). The body region shrinks to reserve the band, so footnotes
+	// never overlap the body or the page-number footer. Empty = no band
+	// (byte-identical). Lines past a region cap are dropped with a warning.
+	Footnotes []RichText
 }
 
 // LayoutWarning is a non-fatal layout issue surfaced in Stats.Warnings (e.g.
