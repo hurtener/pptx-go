@@ -47,6 +47,7 @@ var policyTable = map[NodeKind]Policy{
 	KindLockup:         {HasAsset: true}, // asset logo → pic; icon variant is native (cf. Decoration)
 	KindTimeline:       {},               // native axis + marker dots + custGeom icons (no asset)
 	KindDataMark:       {},               // native vector micro-chart (rects / lines; no asset)
+	KindQuadrant:       {},               // native axes + tints + plotted dots (no asset)
 }
 
 // PolicyFor returns the rendering policy for a node kind.

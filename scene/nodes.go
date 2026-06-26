@@ -45,6 +45,7 @@ const (
 	KindLockup
 	KindTimeline
 	KindDataMark
+	KindQuadrant
 )
 
 // String returns the node kind's IR name.
@@ -110,6 +111,8 @@ func (k NodeKind) String() string {
 		return "timeline"
 	case KindDataMark:
 		return "data_mark"
+	case KindQuadrant:
+		return "quadrant"
 	default:
 		return "unknown"
 	}
@@ -920,6 +923,47 @@ type DataMark struct {
 }
 
 func (DataMark) NodeKind() NodeKind { return KindDataMark }
+
+// Quadrant is a 2x2 positioning map (R14.9, D-124): labeled X/Y axes with low/high
+// end captions, optional per-quadrant tint + title, and items plotted at caller
+// (x,y) coordinates in [0,1] (origin bottom-left). Axes, dividers, item dots, and
+// labels draw as native shapes; labels clamp/stagger to stay on-canvas. Pure
+// integer-EMU layout → byte-identical; a deck with no Quadrant is byte-identical
+// (a new node, absent until used).
+type Quadrant struct {
+	node
+	// AxisX / AxisY carry the low/high end captions for each axis.
+	AxisX QuadrantAxis
+	AxisY QuadrantAxis
+	// Quadrants are optional per-cell tint + title, indexed 0=top-left, 1=top-right,
+	// 2=bottom-left, 3=bottom-right. A nil Fill draws no tint.
+	Quadrants [4]QuadrantCell
+	// Items are plotted points; X/Y in [0,1] with the origin at the bottom-left.
+	Items []QuadrantItem
+}
+
+func (Quadrant) NodeKind() NodeKind { return KindQuadrant }
+
+// QuadrantAxis is one axis's end captions (D-124).
+type QuadrantAxis struct {
+	LowLabel  string
+	HighLabel string
+}
+
+// QuadrantCell is an optional per-quadrant tint + title (D-124).
+type QuadrantCell struct {
+	Title string
+	Fill  *ColorRole // nil = no tint
+}
+
+// QuadrantItem is a plotted point (D-124): X/Y in [0,1] (origin bottom-left), a
+// Label, and an AccentIndex selecting the dot color from a pinned token cycle.
+type QuadrantItem struct {
+	X           float64
+	Y           float64
+	Label       string
+	AccentIndex int
+}
 
 // markColor resolves a DataMark's mark color role (nil = ColorAccent).
 func (d DataMark) markColor() ColorRole {

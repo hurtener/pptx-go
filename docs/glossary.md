@@ -708,6 +708,16 @@ builder's `AddBlockArc`. Values are `0..1`; the mark color is `Color` (`*ColorRo
 nil = accent). Pure integer-EMU geometry (worker-count deterministic); embeds in a
 Card/Bento cell. See `DECKARD-PRODUCT-REQUIREMENTS.md` R14.8.
 
+## Quadrant (2x2 positioning map)
+
+The scene `Quadrant` node (D-124): a 2x2 map with labeled X/Y axes (`QuadrantAxis`
+low/high captions), optional per-quadrant tint + title (`Quadrants [4]`), and
+`Items` plotted at `(X,Y)` in `[0,1]` (origin bottom-left). Axes, a center cross,
+per-quadrant tints, item dots, and labels are native shapes; labels edge-flip to
+stay on-canvas; dot colors cycle a pinned token set. Pure integer-EMU
+(worker-count deterministic). Distinct from `Bento`/`Grid` (equal cells). See
+`DECKARD-PRODUCT-REQUIREMENTS.md` R14.9.
+
 ## NumberFormat
 
 A deterministic, stdlib-only number/currency/percent/locale format (`scene.

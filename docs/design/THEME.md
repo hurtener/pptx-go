@@ -307,6 +307,12 @@ over a `ColorSurfaceAlt` track. All token-resolved (P2), so a theme swap re-skin
 the mark; the soul drives the values + color (D-026). A mechanism over the existing
 color tokens, not a new token.
 
+**Quadrant colors** (D-124): the scene `Quadrant` node draws per-quadrant tints
+from a surface role (low-alpha, `QuadrantCell.Fill *ColorRole`), the center
+dividers in `ColorSurfaceAlt`, and item dots from a pinned token cycle
+(`QuadrantItem.AccentIndex`). All token-resolved (P2). A mechanism over the
+existing color tokens, not a new token.
+
 **Timeline colors** (D-119): the scene `Timeline` node colors its phase `Bands`
 from a surface role (low-alpha) and its milestone markers from a pinned cycle of
 token roles (`Milestone.AccentIndex` → `[ColorAccent, ColorAccentAlt, ColorInfo,

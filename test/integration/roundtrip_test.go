@@ -243,7 +243,7 @@ func collectKinds(nodes []scene.SlideNode, set map[scene.NodeKind]bool) {
 	}
 }
 
-// everyNodeScene is a scene exercising all 30 shipped scene IR node kinds (the
+// everyNodeScene is a scene exercising all 31 shipped scene IR node kinds (the
 // scene/policy.go policyTable set): the 23 leaf kinds and the 5 container kinds.
 // Asset-bearing kinds (Image, CodeBlock, Chart, Decoration-asset) resolve through
 // the stub resolver.
@@ -379,6 +379,11 @@ func everyNodeScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkSparkline, Values: []float64{0.2, 0.5, 0.4, 0.8, 0.6, 1.0}},
 					scene.DataMark{Kind: scene.DataMarkDonut, Value: 0.92, Label: "92%"},
 					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.5, Label: "50"},
+					scene.Quadrant{
+						AxisX: scene.QuadrantAxis{LowLabel: "Low effort", HighLabel: "High effort"},
+						AxisY: scene.QuadrantAxis{LowLabel: "Low impact", HighLabel: "High impact"},
+						Items: []scene.QuadrantItem{{X: 0.2, Y: 0.8, Label: "Quick win"}, {X: 0.7, Y: 0.6, Label: "Big bet", AccentIndex: 1}},
+					},
 				},
 			},
 		},
@@ -400,7 +405,7 @@ func TestRoundTrip_SceneNodes(t *testing.T) {
 	for _, sl := range sc.Slides {
 		collectKinds(sl.Nodes, kinds)
 	}
-	for k := scene.KindHero; k <= scene.KindDataMark; k++ {
+	for k := scene.KindHero; k <= scene.KindQuadrant; k++ {
 		if !kinds[k] {
 			t.Errorf("scene fixture does not exercise node kind %v", k)
 		}

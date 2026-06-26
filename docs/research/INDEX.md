@@ -440,6 +440,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   ring + centered label, e.g. a 331° arc at 92%) and `DataMarkGauge` (a 270°
   speedometer). Value + remainder arcs (no hole, no asset); deterministic; catalog
   stays 30. (R14.8, engine; D-123.)
+- `72-quadrant-matrix.md` — a NEW `Quadrant` node: a 2x2 positioning map with
+  labeled X/Y axes (low/high end captions), optional per-quadrant tint + title,
+  and items plotted at (x,y) in [0,1] (origin bottom-left). Axes, dividers, dots,
+  and labels are native shapes; labels edge-flip + clamp on-canvas; integer-EMU
+  deterministic. Catalog 30 → 31. (R14.9, engine; D-124.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*

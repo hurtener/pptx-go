@@ -180,6 +180,16 @@ func adversarialScene() scene.Scene {
 					scene.DataMark{Kind: scene.DataMarkGauge, Value: 0.66, Label: "66"},
 				}},
 			}},
+			// A 2x2 quadrant map (R14.9): axes + tints + plotted dots with long labels
+			// at the corners (0,0)/(1,1) must stay on-canvas.
+			scene.SceneSlide{ID: fmt.Sprintf("quadrant-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Quadrant{
+					AxisX:     scene.QuadrantAxis{LowLabel: longText, HighLabel: "High effort"},
+					AxisY:     scene.QuadrantAxis{LowLabel: "Low", HighLabel: longText},
+					Quadrants: [4]scene.QuadrantCell{{Title: longText, Fill: &accent}, {Title: "TR"}, {Title: "BL"}, {Title: "BR"}},
+					Items:     []scene.QuadrantItem{{X: 0, Y: 0, Label: longText}, {X: 1, Y: 1, Label: longText, AccentIndex: 2}, {X: 0.5, Y: 0.5, Label: "mid"}},
+				},
+			}},
 			// An enriched testimonial (R14.5): oversized quote mark + a long multi-line
 			// quote + structured attribution. The mark, text, and strip must stay on-canvas.
 			scene.SceneSlide{ID: fmt.Sprintf("testimonial-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
