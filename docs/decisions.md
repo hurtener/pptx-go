@@ -4529,6 +4529,88 @@ engine has all the atoms (Card, Ribbon, Checklist, Stat+NumberFormat, Button).
 Deferred to V1.x: a `Decoration.Scatter` param struct (shape/density/sizeVar/
 alphaVar) for caller-tuned scatter without a named recipe.
 
+
+---
+
+## D-132 — Multi-archetype conformance corpus (Wave 14 / Phase 96, R14.19)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** R14.19 (CRITICAL · both) — generalization was asserted against one
+reference deck; nothing measured the other professional classes, so each Wave-14
+gap could regress silently.
+
+**Decision:** Add a deterministic, test-only conformance corpus
+(`scene/render_corpus_test.go`): `corpusArchetypes(variant)` builds one fixture
+slide per professional archetype class — cover, section, agenda, comparison-matrix
+(styled Table), pricing (Card+Ribbon+Checklist+typed Stat), timeline/roadmap
+(Timeline), org-chart (Tree), quote/testimonial (enriched Quote), photo-cover
+(BackgroundAsset+Scrim+Hero), logo-wall (LogoWall), chart (raster Chart),
+dashboard (DataMark donut/bars/gauge), process (Funnel+Cycle), quadrant (Quadrant),
+and closing (Hero + Footnotes) — composing the Wave-14 + earlier nodes.
+`corpusScene()` renders the full set across the **light AND dark** variants. Three
+tests assert the standing invariants: every emitted box lies within the slide
+canvas (the R11.12 on-canvas regex check, reused), the deck is OOXML-conformant
+(`conformance.ValidateBytes`), and re-render is byte-identical across worker
+counts. It runs in the ordinary `go test`/preflight gate, so a regression in any
+class fails CI; adding an archetype is a one-fixture addition.
+
+**Scope.** The corpus asserts the LTR archetypes; RTL/CJK variants are deferred
+with R14.15 (D-133). A benign chart aspect-fit advisory is expected (the engine
+correctly warns the caller) and is not asserted as a failure — the corpus asserts
+structure/conformance/determinism, the generalizable invariants.
+
+**Consequences:** "Handles any pro deck" is now *measured*, not assumed. No
+production code changed. R14.19 is satisfied for the implemented classes.
+
+---
+
+## D-133 — Wave 14 close: deferred / product requirements (R14.2/.6/.14/.15/.16/.18)
+
+**Status:** Accepted. **Date:** 2026-06-25.
+
+**Context:** Wave 14 (R14 coverage classes) landed the engine mechanisms for the
+photographic, table, timeline, quote, logo-wall, dataviz, quadrant, hierarchy,
+funnel/cycle, footnote, locale-format, annotation, and scatter-family classes
+(Phases 81–95) plus the conformance corpus (Phase 96, D-132). The remaining R14
+requirements are **product** or **V2** under the D-059 scope filter; this entry
+records their disposition so the wave closes without ambiguity.
+
+- **R14.2 `cov-brand-styled-charts` (both)** — the engine atom (a deterministic
+  number/locale format) landed in R14.13 (`NumberFormat`, D-121); the theme palette
+  is already exposed to callers. The `ChartStyle` bundle and the chart rasterizer
+  that consumes it are **product** — V1 charts are caller-rasterized (D-004) and
+  there is no in-repo Go chart rasterizer for the engine to feed a style into.
+- **R14.6 `cov-agenda-toc-section-index` (both)** — the spec frames it as a product
+  recipe composing existing nodes (numbered rows + active-index emphasis); the
+  engine has all atoms (Grid/Stat/Heading/Card), so there is no engine gap. The
+  agenda is a **Deckard recipe**.
+- **R14.14 `cov-section-scoped-theme-multimaster` (both)** — the resolution chain
+  (soul + section override + per-slide override) is **product**; the one engine
+  atom it would need — a per-slide theme/accent override beyond the existing
+  `Variant` — is a **V2** candidate (a focused follow-up; the engine consumes a
+  resolved theme per slide today, with VariantDark the only per-slide swap).
+- **R14.15 `cov-i18n-rtl-cjk-direction` (engine)** — RTL layout mirroring +
+  CJK/script-aware wrapping is a large, cross-cutting change touching every
+  alignment path and the width estimator; deferred to **V2** as its own wave. The
+  font-fallback stack (D-066) already handles glyph substitution; this is direction
+  + break-mode, which deserves dedicated design. (The conformance corpus, D-132,
+  will gain RTL/CJK fixtures when it lands.)
+- **R14.16 `cov-soul-icon-set-and-duotone` (both)** — a soul-level icon SET binds
+  via the existing per-render `WithIconExtension` registry (the caller passes the
+  brand glyphs), so the set-binding is **product**. Duotone (two-path) icons need a
+  translator change (the D-040 single-path constraint) and icon size/stroke tokens
+  — a **V2** engine follow-up.
+- **R14.18 `cov-extensibility-recipe-registry` (both)** — the public `pptx`/`scene`
+  node API is already the open composition seam: a recipe is a pure
+  caller-side function `inputs → []SlideNode` that the caller renders directly. A
+  named registry is a **Deckard** convenience (mirroring `WithIconExtension`), not
+  an engine primitive; the engine's job (the irreducible primitives) is done.
+
+**Consequences:** Wave 14's **engine** scope is complete (Phases 81–96, D-116..
+D-133). The deferred items are tracked here and in `RFC §24` (the post-V1 backlog);
+no engine code is owed for them in V1.
+
 ---
 
 *Append new entries below this line.*

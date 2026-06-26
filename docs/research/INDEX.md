@@ -474,6 +474,11 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `scatter_dot` / `scatter_star` (`star5`) / `scatter_plus` (`mathPlus`) /
   `scatter_ring` (outline). `Starfield` = `scatter_dot` (byte-identical). Curated
   set 7 → 11. (R14.20, engine half; D-131.)
+- `79-conformance-corpus.md` — a multi-archetype conformance corpus (one fixture
+  per professional class, light + dark variants) asserting the standing invariants
+  — every box on-canvas, OOXML-conformant, byte-identical re-render — so any class
+  that regresses fails CI. Test-only; RTL/CJK deferred with R14.15. (R14.19,
+  CRITICAL; D-132. Wave-14 deferrals recorded in D-133.)
 
 *(candidates: token taxonomy comparison with design systems (Tailwind, Radix,
 Material))*
