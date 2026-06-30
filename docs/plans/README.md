@@ -2148,6 +2148,40 @@ differ; an already-legible accent and a malformed input are unchanged; the
 function is pure and the darken path preserves hue; the full existing scene suite
 passes unchanged (no auto-apply → byte-identical).
 
+#### Phase 102 — soul→engine roundtrip verification (R8.10, MED · both — engine half)
+
+**Subsystem:** scene (`Stats.Colors` hook + fidelity test) — the Wave-15 capstone
+**Deps:** D-058, D-135/136/137; brief 85.
+**What lands (R8.10):** extends the per-slide `Stats.Colors` hook (D-058) with
+resolved `SurfaceAlt` / `Accent` / `AccentAlt` / `TextAccent` (scalar `pptx.RGB`,
+so `SlideColors` stays comparable), captured in `composeOne` from the variant
+theme so they dark-resolve. Ships the Wave-15 fidelity capstone: a non-default
+brand soul (custom light accents + paper, a `DarkColors` dark palette, a named
+gradient) rendered across light + dark slides, asserting every resolved color
+equals the soul's token for that variant (active theme for light,
+`darkThemeFrom` for dark), a deliberate mismatch fails, and the colors are
+identical across worker counts. `SlideColors` is pure metadata, so all rendered
+bytes are unchanged. The soul-fidelity *gate* (intended-vs-resolved) is Deckard's
+(D-059).
+**Acceptance criteria:** every slide's resolved surfaces/accents/text equal the
+soul's per-variant tokens; the dark variant re-resolves the soul (dark accent =
+the soul dark accent, ≠ light); a deliberate mismatch is caught; the extended
+`SlideColors` is byte-stable across worker counts.
+
+**Wave 15 (R8 theme/soul) engine work complete after Phase 102.** Engine reqs
+landed: R8.3 (dark palette), R8.4 (multi-accent), R8.5 (brand gradients), R8.7
+(dark accents/extensions, verify-and-close), R8.6 (contrast-aware accent text),
+R8.10 (roundtrip verification) — Phases 97–102. The remaining R8 reqs are
+**product** (D-059 / D-140): R8.1 bootstrap-complete-palette (the engine `Theme`
+already holds every surface/text token via `Surfaces`/`Text` + `DarkColors` /
+`Accents` / `Gradients`; the bootstrap params are Deckard's), R8.2
+soul-from-brand-source (the engine's `pptx.FromTemplate` already extracts a
+template's theme colors/fonts; the matching/brief logic is Deckard's), R8.8
+establish-before-build (Deckard's authoring flow), R8.9 warm-neutral-surface
+fidelity (the engine half is the soul-settable `Surfaces` map + `WithPaper`,
+D-104; the product half is Deckard's). **The R1–R14 engine campaign is complete
+(modulo the documented product / V2 deferrals in D-133 and D-140).**
+
 ---
 
 ## 4. Post-V1 backlog

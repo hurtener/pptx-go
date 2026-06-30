@@ -129,16 +129,23 @@ type SlideTiming struct {
 	Duration time.Duration
 }
 
-// SlideColors are the colors the engine actually resolved for one slide (D-058):
-// the canvas (base background), surface, and primary-text RGBs it rendered with —
-// including a VariantDark slide's derived dark palette. A caller uses them to
-// compute its own text/surface contrast against the real background; the engine
-// performs no contrast logic (D-026), it only reports what it resolved.
+// SlideColors are the colors the engine actually resolved for one slide (D-058,
+// extended R8.10): the canvas (base background), surface, alternate surface,
+// accent + accent-alt, primary-text, and accent-text RGBs it rendered with —
+// including a VariantDark slide's derived dark palette (so a soul's per-variant
+// overrides are reflected). A caller uses them to verify soul→engine fidelity
+// (resolved == the soul's intended token per role/variant) or to compute its own
+// contrast; the engine performs no contrast logic (D-026), it only reports what
+// it resolved. All fields are scalar RGB, so SlideColors stays comparable (==).
 type SlideColors struct {
 	SlideID     string
 	Canvas      pptx.RGB // resolved ColorCanvas (the slide's base background)
 	Surface     pptx.RGB // resolved ColorSurface
+	SurfaceAlt  pptx.RGB // resolved ColorSurfaceAlt (R8.10)
+	Accent      pptx.RGB // resolved ColorAccent (R8.10)
+	AccentAlt   pptx.RGB // resolved ColorAccentAlt (R8.10)
 	PrimaryText pptx.RGB // resolved TextPrimary
+	TextAccent  pptx.RGB // resolved TextAccent (R8.10)
 }
 
 // Stats is the result of Render: per-render counts, per-slide timings, per-slide

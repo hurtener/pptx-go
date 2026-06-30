@@ -369,7 +369,7 @@ type Stats struct {
     Assets   int
     Warnings []LayoutWarning
     Timings  []SlideTiming  // per-slide wall-clock, scene order
-    Colors   []SlideColors  // per-slide resolved Canvas/Surface/PrimaryText (RGB), scene order
+    Colors   []SlideColors  // per-slide resolved Canvas/Surface/SurfaceAlt/Accent/AccentAlt/PrimaryText/TextAccent (RGB), scene order
 }
 
 type LayoutWarning struct { SlideID, Node, Message string }
@@ -380,10 +380,13 @@ falling back to blank, an unresolved asset) surface as `Warnings` — pptx-go
 **warns, it does not fail** on layout problems, and has no strict mode. A caller
 that wants warnings to be fatal inspects `Stats.Warnings` itself.
 
-`Stats.Colors` reports, per slide (scene order), the resolved `Canvas`/`Surface`/
-`PrimaryText` RGBs the engine rendered with — the **derived dark palette** for a
-`VariantDark` slide — so a caller can compute its own text/surface contrast
-against the real background.
+`Stats.Colors` reports, per slide (scene order), the resolved
+`Canvas`/`Surface`/`SurfaceAlt`/`Accent`/`AccentAlt`/`PrimaryText`/`TextAccent`
+RGBs the engine rendered with — the **derived dark palette** for a `VariantDark`
+slide, including any per-variant theme overrides — so a caller can compute its
+own contrast or **verify soul→engine fidelity** (the resolved colors equal the
+theme's intended token for each role/variant). All fields are scalar RGB, so
+`SlideColors` is comparable.
 
 Card and container **chrome text auto-contrasts** against the surface behind it:
 a card header, eyebrow, header pill, the TwoColumn join-badge label, and a `Stat`
