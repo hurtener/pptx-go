@@ -252,6 +252,12 @@ func (r *renderer) renderScrim(ps *pptx.Slide, full pptx.Box, s Scrim) {
 // the body of renderBackground; splitting it lets the scrim overlay run after a
 // successful fill regardless of kind.
 func (r *renderer) drawBackgroundFill(ps *pptx.Slide, sl *SceneSlide, full pptx.Box, bg Background) bool {
+	// A named brand gradient (R8.5) is honored only by BackgroundGradient. Setting
+	// GradientName on any other kind silently took the kind's own path, the one
+	// gradient miss that did not warn — surface it (RFC §10.2 degrade-and-warn).
+	if bg.GradientName != "" && bg.Kind != BackgroundGradient {
+		r.warn(sl.ID, fmt.Sprintf("background gradient name %q ignored: Kind is %s, not BackgroundGradient", bg.GradientName, bg.Kind))
+	}
 	switch bg.Kind {
 	case BackgroundNone:
 		if sl.Variant != VariantDark {
@@ -398,7 +404,7 @@ func (r *renderer) drawNamedGradient(ps *pptx.Slide, sl *SceneSlide, full pptx.B
 		return false
 	}
 	if !validGradientStopPositions(spec.Stops) {
-		r.warn(sl.ID, fmt.Sprintf("background gradient %q has invalid stops (need 2..8 ascending in [0,1])", name))
+		r.warn(sl.ID, fmt.Sprintf("background gradient %q has invalid stops (need 2..8 stops, each with a non-nil Color, ascending in [0,1])", name))
 		return false
 	}
 	var fill pptx.Fill
@@ -413,16 +419,20 @@ func (r *renderer) drawNamedGradient(ps *pptx.Slide, sl *SceneSlide, full pptx.B
 }
 
 // validGradientStopPositions reports whether a builder-level gradient stop slice
-// has 2..8 stops with strictly ascending positions in [0,1] (the same invariant
-// backgroundGradientStops enforces, but on already-built pptx.GradientStop whose
-// Color is opaque). Pure — output is worker-count independent.
+// has 2..8 stops, each with a non-nil Color and a strictly ascending position in
+// [0,1] (the same invariant backgroundGradientStops enforces, plus the nil-Color
+// check the scene Stops path gets for free by wrapping every stop in TokenColor).
+// A nil Color would emit an <a:gs> with no color child (XGradientStop.SrgbClr is
+// omitempty) — schema-invalid and not round-trippable — so the named-gradient
+// gate rejects it here and degrades to a LayoutWarning (RFC §10.2). Pure — output
+// is worker-count independent.
 func validGradientStopPositions(stops []pptx.GradientStop) bool {
 	if len(stops) < 2 || len(stops) > 8 {
 		return false
 	}
 	prev := -1.0
 	for _, s := range stops {
-		if s.Pos < 0 || s.Pos > 1 || s.Pos <= prev {
+		if s.Color == nil || s.Pos < 0 || s.Pos > 1 || s.Pos <= prev {
 			return false
 		}
 		prev = s.Pos

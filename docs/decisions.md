@@ -5007,4 +5007,66 @@ unchanged. Wave 15 (R8 theme/soul) engine work complete.
 
 ---
 
+## D-141 — Wave 15 §17 adversarial checkpoint: nil-Color gradient-stop guard + campaign close
+
+**Status:** Accepted. **Date:** 2026-06-30.
+
+The Wave 15 §17 adversarial checkpoint (R8 theme/soul, Phases 97–102 / D-135..D-140)
+ran an 8-dimension workflow (8 dimension finders → 2 skeptics/finding →
+completeness critic → synthesis): **48 candidate findings, 1 confirmed defect + 3
+fix-now items after dedup**. Verdict: **healthy** — no byte-identity, determinism,
+`Clone` deep-copy, P1–P4, or D-026/D-059 violation across the new theme surface
+(`DarkColors`, `Accents`, `Gradients`, `LegibleTextOn`, the extended
+`Stats.Colors`).
+
+**Fixed in this PR:**
+- **Nil-Color named-gradient stop (MEDIUM, real defect).** `pptx.GradientStop.Color`
+  is the nilable `pptx.Color` interface, and `gradientFill.applyFill` sets the
+  stop's `SrgbClr` only when `Color != nil` (`XGradientStop.SrgbClr` is
+  `omitempty`) — so a stop with a nil `Color` emits `<a:gs pos="N"></a:gs>` with no
+  color child, which is schema-invalid (CT_GradientStop requires one) and does not
+  round-trip (G6). `validGradientStopPositions` — the **sole** gate
+  `drawNamedGradient` uses — checked only count/range/order, so a `Theme.Gradients`
+  spec with a Color-less stop shipped an invalid deck **with no LayoutWarning**
+  (the one gradient failure mode that did not warn). Reachable only via the named
+  route (R8.5, D-137); the legacy `Background.Stops` path wraps every stop in
+  `TokenColor` (never nil) and is immune. **Fix:** add a `s.Color == nil` guard to
+  `validGradientStopPositions` so the miss degrades to a `LayoutWarning` + skip,
+  matching the existing 2..8-ascending contract (RFC §10.2). Closes the
+  round-trip hole D-137 implied.
+- **`GradientName` on a non-`BackgroundGradient` kind (LOW).** `Background.GradientName`
+  is honored only by the `BackgroundGradient` case, so setting it with
+  `BackgroundRadial` / `BackgroundNone` silently took the kind's own path — a
+  footgun in an otherwise warn-on-everything flow. **Fix:** one check at the top of
+  `drawBackgroundFill` warns that the name is ignored. Not a byte-identity break
+  (additive field, zero value unchanged).
+- **Test gaps (LOW).** Added `TestNamedGradient_NilColorStopWarns` (asserts the
+  warning + no `gradFill` emitted) and `TestNamedGradient_WrongKindWarns`.
+
+**Documented-intentional (no code change), all confirmed sound:**
+- `Clone` "aliases" the `GradientStop.Color` interface inside copied stops — by
+  design: the map + each spec's `Stops` slice are deep-copied, and the `Color`
+  values (RGB / `TokenColor`) are immutable, so no aliasing mutation is possible
+  (`-race` clean).
+- `TokenColor` gradient stops resolve against the dark theme on dark slides —
+  intended (D-137): `darkThemeFrom = base.Clone()` carries `Gradients`; RGB stops
+  stay pinned.
+- `Accents` + the contrast cores use literal brand hues unchanged on dark variants
+  — intended (D-138 default-preserve-light-accent; the soul overrides via
+  `DarkColors`).
+- `LegibleTextOn` wired into no render path; no auto-derived dark accent /
+  auto-contrast / auto-tint — correct (D-026/D-059/D-140): the engine ships
+  mechanisms, taste lives in the product.
+- `DarkColors` / `Accents` / `Gradients` have no theme1.xml slot — correct
+  THEME-SLOT discipline (the resolved RGB round-trips, the field does not).
+
+**R1–R14 engine campaign — COMPLETE.** The scene catalog is exactly **35**
+`NodeKind`s (no IR node added in Wave 15; `scene_test.go` asserts `len == 35`,
+the integration kind-loop iterates `KindHero..KindCycle`). Every engine
+requirement has a shipped, confirmed mechanism; only product / V2 items are
+deferred and documented, not half-built: Wave-15 R8.1/.2/.8/.9 (D-140) and
+Wave-14 R14.2/.6/.14/.15/.16/.18 (D-133). No engine requirement remains un-built.
+
+---
+
 *Append new entries below this line.*

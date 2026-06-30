@@ -109,6 +109,59 @@ func TestNamedGradient_InvalidStopsWarn(t *testing.T) {
 	}
 }
 
+// TestNamedGradient_NilColorStopWarns verifies a named spec with a nil-Color stop
+// (a caller forgot to set Color) warns and skips rather than emitting a
+// schema-invalid <a:gs> with no color child (Wave-15 checkpoint fix; D-141).
+func TestNamedGradient_NilColorStopWarns(t *testing.T) {
+	th := pptx.NewTheme(pptx.WithGradient("noColor", pptx.GradientSpec{
+		Stops: []pptx.GradientStop{{Pos: 0}, {Pos: 1}}, // Colors left nil
+	}))
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID:         "noColor",
+		Background: scene.Background{Kind: scene.BackgroundGradient, GradientName: "noColor"},
+		Nodes:      []scene.SlideNode{scene.Heading{Text: rt("x"), Level: 1}},
+	}}}
+	data, stats := render(t, sc, scene.WithTheme(th))
+	var found bool
+	for _, w := range stats.Warnings {
+		if strings.Contains(w.Message, "noColor") && strings.Contains(w.Message, "invalid stops") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("nil-Color named gradient did not warn: %+v", stats.Warnings)
+	}
+	// No gradient fill should have been emitted (the fill was skipped).
+	if slideXML := zipPart(t, data, "ppt/slides/slide1.xml"); strings.Contains(slideXML, "<a:gradFill") {
+		t.Errorf("nil-Color named gradient still emitted a gradFill:\n%s", slideXML)
+	}
+}
+
+// TestNamedGradient_WrongKindWarns verifies that setting GradientName on a
+// non-BackgroundGradient kind warns that the name is ignored (Wave-15 checkpoint
+// fix; D-141) instead of silently taking the kind's own path.
+func TestNamedGradient_WrongKindWarns(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "radial",
+		Background: scene.Background{
+			Kind:         scene.BackgroundRadial,
+			GradientName: "heroDark",
+			Gradient:     [2]pptx.ColorRole{pptx.ColorAccent, pptx.ColorCanvas},
+		},
+		Nodes: []scene.SlideNode{scene.Heading{Text: rt("x"), Level: 1}},
+	}}}
+	_, stats := render(t, sc, scene.WithTheme(heroDarkTheme()))
+	var found bool
+	for _, w := range stats.Warnings {
+		if strings.Contains(w.Message, "heroDark") && strings.Contains(w.Message, "not BackgroundGradient") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("GradientName on a BackgroundRadial kind did not warn: %+v", stats.Warnings)
+	}
+}
+
 // TestNamedGradient_EmptyByteIdentical is the byte-identity guard: a gradient
 // background with no GradientName (using the legacy 2-role pair) is byte-for-byte
 // identical whether or not the theme registers unrelated named gradients (R8.5).
