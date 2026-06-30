@@ -367,6 +367,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   cream-border bug — the cream `border`/`accentSoft` extension tokens + the
   derived-dark-hairline default are Deckard's product half). Ships acceptance
   goldens + D-138; no production change. (R8.7, engine half.)
+- `84-contrast-aware-accent-text.md` — a pure exported `scene.LegibleTextOn(fg, bg
+  pptx.RGB, minRatioX10 int) pptx.RGB` that nudges an accent hue-preserving (toward
+  white on a dark bg / black on a light bg, by the `darkSurfaceLumaMax` crossover)
+  until it clears a target WCAG ratio, reusing the existing `relLuminance` /
+  `contrastRatioT10` math. A caller mechanism (D-026): no auto-apply, no render
+  change → byte-identical; the soul derives per-variant `TextAccent` with it and
+  stores via `WithDarkText`. (R8.6, engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side

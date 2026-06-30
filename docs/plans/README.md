@@ -2128,6 +2128,26 @@ roles). No production change.
 border (light accent preserved by default); dark accent text is overridable; a
 no-`DarkColors` dark slide is byte-identical to the default theme.
 
+#### Phase 101 — contrast-aware accent-text mechanism (R8.6, MED · both — engine half)
+
+**Subsystem:** scene (contrast utilities)
+**Deps:** D-082, D-135; brief 84.
+**What lands (R8.6):** a pure exported `scene.LegibleTextOn(fg, bg pptx.RGB,
+minRatioX10 int) pptx.RGB` that nudges an accent — preserving hue (lighten toward
+white on a dark background, darken toward black on a light one) — until it clears
+a target WCAG contrast ratio, reusing the engine's existing luminance math
+(`relLuminance` / `contrastRatioT10` / `darkSurfaceLumaMax`). An already-legible
+accent is returned unchanged; a malformed input fails safe. It is a deterministic
+**mechanism** (D-026): the engine wires it into no render path (so all output is
+byte-identical), and a soul calls it to derive a legible `TextAccent` per variant
+and stores the result via `WithDarkText` (consumed by the renderer since Phase
+100). The graded color analog of `onCardSurface` (D-082).
+**Acceptance criteria:** an accent failing on a dark surface lightens until it
+clears the ratio, one failing on a light surface darkens; the two derivations
+differ; an already-legible accent and a malformed input are unchanged; the
+function is pure and the darken path preserves hue; the full existing scene suite
+passes unchanged (no auto-apply → byte-identical).
+
 ---
 
 ## 4. Post-V1 backlog

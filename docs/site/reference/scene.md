@@ -169,6 +169,17 @@ func DefaultLayoutMap() LayoutMap
 Maps each `LayoutKind` to a master layout name; the default covers the
 shipped layouts.
 
+```go
+func LegibleTextOn(fg, bg pptx.RGB, minRatioX10 int) pptx.RGB
+```
+A pure contrast helper (D-139): nudges `fg`, preserving hue, until it clears
+a target WCAG contrast ratio (`minRatioX10` ×10; `45` = 4.5:1, `30` = 3:1)
+against `bg` — lighter on a dark background, darker on a light one — returning
+it unchanged when already legible or on malformed input. It is a caller
+mechanism (D-026): not auto-applied (engine output is byte-identical), used to
+derive a legible accent text color per variant and apply it via
+`pptx.WithDarkText`.
+
 ## Slide nodes
 
 ```go
