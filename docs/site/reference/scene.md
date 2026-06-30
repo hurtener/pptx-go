@@ -128,6 +128,7 @@ type Stats struct {
 	Assets   int
 	Warnings []LayoutWarning
 	Timings  []SlideTiming
+	Colors   []SlideColors // per-slide resolved colors, in scene order (D-058)
 }
 
 type LayoutWarning struct {
@@ -139,6 +140,22 @@ type LayoutWarning struct {
 type SlideTiming struct {
 	SlideID  string
 	Duration time.Duration
+}
+
+// SlideColors are the colors the engine actually resolved for one slide — the
+// derived dark palette for a VariantDark slide, including a soul's per-variant
+// overrides. Use them to verify soul→engine fidelity (resolved == the intended
+// token per role/variant) or to compute contrast. Pure metadata, never
+// serialized; all fields are scalar RGB (comparable). (D-058, extended D-140.)
+type SlideColors struct {
+	SlideID     string
+	Canvas      pptx.RGB // resolved ColorCanvas (the slide's base background)
+	Surface     pptx.RGB // resolved ColorSurface
+	SurfaceAlt  pptx.RGB // resolved ColorSurfaceAlt
+	Accent      pptx.RGB // resolved ColorAccent
+	AccentAlt   pptx.RGB // resolved ColorAccentAlt
+	PrimaryText pptx.RGB // resolved TextPrimary
+	TextAccent  pptx.RGB // resolved TextAccent
 }
 ```
 `Stats` is the library's observability surface — counts, per-slide

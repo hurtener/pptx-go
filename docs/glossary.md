@@ -1364,11 +1364,13 @@ not to a single pptx-go type.
 ## SlideColors
 
 An entry in `Stats.Colors`: the `SlideID` plus the resolved `Canvas`, `Surface`,
-and `PrimaryText` RGBs the engine rendered that slide with — the derived dark
-palette for a `VariantDark` slide. Lets a caller compute its own text/surface
-contrast against the real background; the engine performs no contrast logic
-(D-058, D-026). Never serialized into the PPTX. See `Stats`,
-`RFC-001-pptx-go.md §10.1`.
+`SurfaceAlt`, `Accent`, `AccentAlt`, `PrimaryText`, and `TextAccent` RGBs the
+engine rendered that slide with — the derived dark palette for a `VariantDark`
+slide, including a soul's per-variant overrides (D-058, extended R8.10/D-140).
+Lets a caller verify soul→engine fidelity (resolved == the soul's intended token
+per role/variant) or compute its own contrast; the engine performs no contrast
+logic (D-026). All fields are scalar RGB, so `SlideColors` stays comparable
+(`==`). Never serialized into the PPTX. See `Stats`, `RFC-001-pptx-go.md §10.1`.
 
 ## SlideTiming
 

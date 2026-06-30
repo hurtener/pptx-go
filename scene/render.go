@@ -76,7 +76,11 @@ func (base *renderer) composeOne(ps *pptx.Slide, sl *SceneSlide, idx int) slideR
 			SlideID:     sl.ID,
 			Canvas:      sr.theme.ResolveColor(pptx.ColorCanvas),
 			Surface:     sr.theme.ResolveColor(pptx.ColorSurface),
+			SurfaceAlt:  sr.theme.ResolveColor(pptx.ColorSurfaceAlt),
+			Accent:      sr.theme.ResolveColor(pptx.ColorAccent),
+			AccentAlt:   sr.theme.ResolveColor(pptx.ColorAccentAlt),
 			PrimaryText: sr.theme.ResolveTextColor(pptx.TextPrimary),
+			TextAccent:  sr.theme.ResolveTextColor(pptx.TextAccent),
 		},
 	}
 }

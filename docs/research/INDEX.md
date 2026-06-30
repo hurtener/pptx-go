@@ -374,6 +374,12 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `contrastRatioT10` math. A caller mechanism (D-026): no auto-apply, no render
   change → byte-identical; the soul derives per-variant `TextAccent` with it and
   stores via `WithDarkText`. (R8.6, engine half.)
+- `85-soul-roundtrip-verification.md` — extend the `Stats.Colors` per-slide hook
+  (D-058) with resolved `SurfaceAlt` / `Accent` / `AccentAlt` / `TextAccent`
+  (scalar `pptx.RGB`, kept comparable), captured from the variant theme so they
+  dark-resolve; + a Wave-15 fidelity capstone test (full brand soul light+dark
+  round-trips to resolved colors) + the Wave-15 close (R8.1/.2/.8/.9 product). The
+  fidelity *gate* is Deckard's (intended-vs-resolved). (R8.10, engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side

@@ -4944,4 +4944,67 @@ half (D-059).
 
 ---
 
+## D-140 — Soul→engine roundtrip verification + Wave-15 close (Wave 15 / Phase 102, R8.10 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-30.
+
+**Context:** R8.10 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · both) wants a
+generalizable check that what a soul declares is what the engine renders, across
+light/dark variants, surfaces, text, and accents — the theme analogue of the
+R14.19 conformance corpus. The engine already reports a per-slide resolved
+canvas/surface/primary-text (`Stats.Colors`, D-058), but not the alternate
+surface or the accent set, so the full soul could not be verified per variant.
+
+**Decision:** Extend `SlideColors` with resolved `SurfaceAlt`, `Accent`,
+`AccentAlt`, and `TextAccent` (`pptx.RGB`), captured in `composeOne` from
+`sr.theme` — which is already the derived dark theme for a VariantDark slide, so
+the new fields reflect a soul's per-variant `DarkColors` overrides with no new
+plumbing. All fields are **scalar RGB**, so `SlideColors` stays comparable (`==`)
+and the existing determinism test is intact (a slice — e.g. the multi-accent
+palette — would break it; the palette is theme-level and compared directly, not
+per-slide). `SlideColors` is pure metadata returned in `Stats`, never emitted, so
+all rendered bytes are unchanged (additive).
+
+Ship the **Wave-15 fidelity capstone** (`render_fidelity_test.go`): a non-default
+brand soul (custom light accents via `WithAccents`, a paper tint, a `DarkColors`
+dark palette overriding accent/accent-alt/text, a named gradient) rendered across
+a light and a dark slide, asserting every `SlideColors` field equals the
+**variant** theme's token (the active theme for light, `darkThemeFrom` for dark);
+a deliberate token mismatch is caught; the colors are identical across worker
+counts. The fidelity *comparison* (resolved == the soul's intended token) needs
+the soul's declared values, which live in Deckard, so the soul-fidelity gate is
+Deckard's product half (D-059); the engine ships the resolved-color hook and the
+round-trip proof.
+
+**Wave-15 close (R8 product / V2 deferrals).** With Phases 97–102 the engine half
+of Wave 15 is complete (R8.3/.4/.5/.6/.7/.10). The remaining R8 requirements are
+**product** (D-059), and the engine atom each relies on is already present:
+
+- **R8.1 `soul-bootstrap-complete-palette`** (CRITICAL · product) — the engine
+  `Theme` already holds every surface/text token (the `Surfaces`/`Text` maps +
+  `DarkColors` / `Accents` / `Gradients` + `WithPaper`); a complete-palette
+  bootstrap params object is Deckard's.
+- **R8.2 `soul-from-brand-source`** (CRITICAL · both) — the engine's
+  `pptx.FromTemplate` / theme reader already extracts a brand `.pptx`'s theme
+  colors + fonts (load-a-brand-template); mapping those onto a soul and the
+  NL-brief path are Deckard's.
+- **R8.8 `soul-establish-before-build`** (CRITICAL · product) — Deckard's
+  authoring/contract flow (the engine's default-theme use is already observable
+  via `Stats.Colors`).
+- **R8.9 `soul-warm-neutral-surface-fidelity`** (HIGH · product) — the engine
+  half is satisfied (canvas/surface/surfaceAlt are soul-settable via the
+  `Surfaces` map + `WithPaper`, D-104, and reach every rendered surface — proven
+  by the R8.10 fidelity capstone); the product half is Deckard's.
+
+**The R1–R14 engine campaign is complete**, modulo the documented product / V2
+deferrals consolidated in D-133 (Wave-14: R14.2/.6/.14/.15/.16/.18) and here
+(Wave-15: R8.1/.2/.8/.9). No engine requirement remains un-built.
+
+**Consequences:** Additive; `SlideColors` stays comparable, no rendered byte
+changes. Tested: full brand soul light+dark fidelity, deliberate-mismatch
+negative, cross-worker determinism, and the existing per-slide-colors tests
+unchanged. Wave 15 (R8 theme/soul) engine work complete.
+
+---
+
 *Append new entries below this line.*
