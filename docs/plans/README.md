@@ -2108,6 +2108,26 @@ no-name gradient is byte-identical even when an unused named gradient is
 registered; `Clone()` deep-copies `Gradients` (race-safe) and the deck is
 byte-identical across worker counts.
 
+#### Phase 100 — dark-variant accents & extensions (R8.7, MED · both — engine verify-and-close)
+
+**Subsystem:** scene (VariantDark derivation) — acceptance only
+**Deps:** D-135; brief 83.
+**What lands (R8.7):** a **verify-and-close** of the engine half. The Phase-97
+`DarkColors` overlay (D-135) is already general — it re-resolves accent / semantic
+/ text roles per dark variant — and the engine's neutral card borders use
+`ColorSurfaceAlt`, which `darkThemeFrom` already dark-resolves, so a dark slide
+carries dark borders and overridable dark accents, not light-theme values. This
+phase ships the R8.7 acceptance goldens (dark border → dark SurfaceAlt distinct
+from light; `DarkColors.Surfaces[ColorAccent]` / `.Text[TextAccent]` re-tint a
+dark accent border / text; byte-identity with no `DarkColors`) and records, in
+D-138, that the `border` / `borderStrong` / `accentSoft` extension tokens + the
+derived-dark-hairline default are Deckard's product half (the engine has no such
+roles). No production change.
+**Acceptance criteria:** a dark card border resolves to the dark SurfaceAlt
+(#374151), never the light (#F1F3F5); a soul dark accent re-tints the dark accent
+border (light accent preserved by default); dark accent text is overridable; a
+no-`DarkColors` dark slide is byte-identical to the default theme.
+
 ---
 
 ## 4. Post-V1 backlog

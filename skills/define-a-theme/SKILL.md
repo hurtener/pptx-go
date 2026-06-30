@@ -267,8 +267,12 @@ Each call overrides one role **for the dark variant only**; roles you don't set
 keep the pinned dark default. The renderer writes the pinned grays first, then
 overlays your dark palette role-by-role — so you can override as much or as
 little as you want. Any surface or text role is overridable (including accent and
-semantic roles). A theme that sets **no** dark palette renders the pinned gray —
-byte-identical to the engine default.
+semantic roles). The engine's neutral card borders/dividers track
+`ColorSurfaceAlt`, so they already darken on a dark slide; override `ColorAccent`
+(or `TextAccent`) in the dark palette to re-tint accent borders, washes, and
+emphasis words for the dark variant rather than inheriting the light brand accent.
+A theme that sets **no** dark palette renders the pinned gray — byte-identical to
+the engine default.
 
 The dark palette has **no theme1.xml slot**: it is consumed only to derive the
 dark variant and is never serialized. The resolved dark colors a slide renders

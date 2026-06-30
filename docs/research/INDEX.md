@@ -360,6 +360,13 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   variant handling is automatic. Empty name = the legacy 2-role / multi-stop path
   (byte-identical); name-not-found / invalid stops → `LayoutWarning` + skip. No
   theme1.xml slot. (R8.5, engine half.)
+- `83-dark-extensions-and-accents.md` — **verify-and-close** of the R8.7 engine
+  half: the Phase-97 `DarkColors` overlay is already general (re-resolves
+  accent/semantic/text per dark variant), and the engine's default card borders
+  use `ColorSurfaceAlt` which `darkThemeFrom` already dark-resolves (no
+  cream-border bug — the cream `border`/`accentSoft` extension tokens + the
+  derived-dark-hairline default are Deckard's product half). Ships acceptance
+  goldens + D-138; no production change. (R8.7, engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side
