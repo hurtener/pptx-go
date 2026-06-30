@@ -267,6 +267,10 @@ func (r *renderer) drawBackgroundFill(ps *pptx.Slide, sl *SceneSlide, full pptx.
 		return true
 
 	case BackgroundGradient:
+		// A named brand gradient (R8.5) supersedes Stops / the legacy 2-role pair.
+		if bg.GradientName != "" {
+			return r.drawNamedGradient(ps, sl, full, bg.GradientName)
+		}
 		stops, ok := backgroundGradientStopsFor(bg)
 		if !ok {
 			r.warn(sl.ID, fmt.Sprintf("background gradient stops invalid (need 2..8 ascending in [0,1]): %v", bg.Stops))
@@ -374,6 +378,52 @@ func backgroundGradientStops(in []GradientStop) ([]pptx.GradientStop, bool) {
 		out[i] = pptx.GradientStop{Pos: s.Pos, Color: pptx.TokenColor(s.Color)}
 	}
 	return out, true
+}
+
+// drawNamedGradient draws a named brand gradient (R8.5) requested by name from
+// the active theme. The named spec's Radial flag picks a radial (center-out) or
+// linear (at the spec's Angle) fill; its stops already carry pptx.Color values
+// (RGB pins an exact hue across variants, TokenColor follows the active theme).
+// A name not registered on the theme, or a spec whose stop positions are invalid
+// (not 2..8 ascending in [0,1]), records a LayoutWarning and skips the fill
+// (RFC §10.2 — degrade, no panic). Returns whether a fill was drawn.
+func (r *renderer) drawNamedGradient(ps *pptx.Slide, sl *SceneSlide, full pptx.Box, name string) bool {
+	spec, ok := r.theme.Gradient(name)
+	if !ok {
+		r.warn(sl.ID, fmt.Sprintf("background gradient %q not registered on the theme", name))
+		return false
+	}
+	if !validGradientStopPositions(spec.Stops) {
+		r.warn(sl.ID, fmt.Sprintf("background gradient %q has invalid stops (need 2..8 ascending in [0,1])", name))
+		return false
+	}
+	var fill pptx.Fill
+	if spec.Radial {
+		fill = pptx.RadialGradient(spec.Stops...)
+	} else {
+		fill = pptx.LinearGradient(float64(spec.Angle), spec.Stops...)
+	}
+	ps.AddShape(pptx.ShapeRect, full, pptx.WithFill(fill))
+	r.stats.Shapes++
+	return true
+}
+
+// validGradientStopPositions reports whether a builder-level gradient stop slice
+// has 2..8 stops with strictly ascending positions in [0,1] (the same invariant
+// backgroundGradientStops enforces, but on already-built pptx.GradientStop whose
+// Color is opaque). Pure — output is worker-count independent.
+func validGradientStopPositions(stops []pptx.GradientStop) bool {
+	if len(stops) < 2 || len(stops) > 8 {
+		return false
+	}
+	prev := -1.0
+	for _, s := range stops {
+		if s.Pos < 0 || s.Pos > 1 || s.Pos <= prev {
+			return false
+		}
+		prev = s.Pos
+	}
+	return true
 }
 
 // slideUsesAssets reports whether composing sl may register global media (images,

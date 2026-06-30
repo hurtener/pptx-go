@@ -78,6 +78,20 @@ type GradientStop struct {
 	Color Color
 }
 
+// GradientSpec is a named brand gradient (R8.5): an ordered stop list plus a
+// linear angle and a linear/radial flag, stored on a Theme under a name and
+// requested by a scene Background's GradientName. Each stop's Color is a
+// pptx.Color, so a soul can pin an exact brand hue with an RGB literal
+// (variant-independent) or follow the active theme with a TokenColor. Angle is
+// the linear gradient angle in degrees clockwise from the positive x-axis and is
+// ignored when Radial is true. It has no theme1.xml slot — the resolved gradient
+// fill round-trips, the named spec does not (like DarkColors / Accents).
+type GradientSpec struct {
+	Stops  []GradientStop
+	Angle  int
+	Radial bool
+}
+
 // gradientFill is a multi-stop linear or radial fill.
 type gradientFill struct {
 	stops  []GradientStop
@@ -122,8 +136,8 @@ func (f gradientFill) applyFill(sp *slide.XShapeProperties, t *Theme) {
 	sp.GradientFill = g
 }
 
-func (gradientFill) Kind() FillKind              { return FillGradient }
-func (gradientFill) SolidColor() (Color, bool)   { return nil, false }
+func (gradientFill) Kind() FillKind            { return FillGradient }
+func (gradientFill) SolidColor() (Color, bool) { return nil, false }
 func (f gradientFill) Gradient() (GradientRead, bool) {
 	return GradientRead{Stops: f.stops, Angle: f.angle, Radial: f.radial}, true
 }

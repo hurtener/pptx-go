@@ -247,6 +247,11 @@ type Theme struct {
 	// (R8.3). nil (the zero value) keeps the pinned gray, byte-identical. The
 	// field has no theme1.xml slot — see DarkPalette.
 	DarkColors *DarkPalette
+	// Gradients holds named brand gradients (R8.5), each requested by a scene
+	// Background's GradientName. nil/empty means no named gradients (the legacy
+	// role-based gradient path is byte-identical). Like DarkColors it has no
+	// theme1.xml slot — the resolved gradient fill round-trips, the map does not.
+	Gradients  map[string]GradientSpec
 	Typography Typography
 	Spacing    Spacing
 	Radii      Radii
@@ -283,6 +288,26 @@ func WithAccents(palette ...RGB) ThemeOption {
 		}
 		t.Accents = append([]RGB(nil), palette...)
 	}
+}
+
+// WithGradient registers a named brand gradient on the theme (R8.5). A scene
+// Background requests it by name (Background.GradientName) and the renderer feeds
+// it to pptx.LinearGradient / RadialGradient per the spec's Radial flag. Calling
+// it with the same name twice replaces the earlier spec. Themes that register no
+// gradients are byte-identical to the legacy role-based gradient path.
+func WithGradient(name string, spec GradientSpec) ThemeOption {
+	return func(t *Theme) {
+		if t.Gradients == nil {
+			t.Gradients = map[string]GradientSpec{}
+		}
+		t.Gradients[name] = spec
+	}
+}
+
+// Gradient returns the named brand gradient (R8.5) and whether it is registered.
+func (t *Theme) Gradient(name string) (GradientSpec, bool) {
+	spec, ok := t.Gradients[name]
+	return spec, ok
 }
 
 // WithDarkSurface sets a soul-driven VariantDark override for a surface role
@@ -471,6 +496,17 @@ func (t *Theme) Clone() *Theme {
 			dc.Text[k] = v
 		}
 		c.DarkColors = dc
+	}
+	// Gradients is an optional map of named brand gradients (R8.5) — deep-copy the
+	// map and each spec's stop slice so a clone's gradients can be mutated without
+	// aliasing the original. A nil/empty map stays nil (byte-identical fallback).
+	if len(t.Gradients) > 0 {
+		g := make(map[string]GradientSpec, len(t.Gradients))
+		for name, spec := range t.Gradients {
+			spec.Stops = append([]GradientStop(nil), spec.Stops...)
+			g[name] = spec
+		}
+		c.Gradients = g
 	}
 	c.Typography = make(Typography, len(t.Typography))
 	for k, v := range t.Typography {

@@ -70,6 +70,21 @@ resolved accent RGB round-trips, the field does not. Modeled as literal hues
 (not roles) because a brand's 4th–6th accent exceeds the available roles/slots;
 the soul populates the palette from a brand source (D-026 / D-059).
 
+**Brand gradients** (`Theme.Gradients map[string]GradientSpec`, R8.5, D-137):
+named gradient tokens so a brand's signature wash (e.g. a deep-navy radial
+`heroDark`) is reusable, not an ad-hoc role pair. `GradientSpec{Stops, Angle,
+Radial}` carries an ordered stop list, a linear angle, and a linear/radial flag;
+each stop's color is a `pptx.Color`, so an `RGB` literal pins an exact brand hue
+across light/dark variants while a `TokenColor` follows the active theme. Register
+one with `WithGradient(name, spec)`; a scene `Background` requests it by
+`GradientName`, and the renderer feeds it to `pptx.LinearGradient` /
+`RadialGradient` per the `Radial` flag. An empty `GradientName` runs the legacy
+two-role / multi-stop gradient path (byte-identical); a name not registered, or a
+spec with invalid stops (not 2..8 ascending in [0,1]), records a `LayoutWarning`
+and skips the fill (RFC §10.2). Like the dark/accent palettes it has **no
+theme1.xml slot** — the resolved `gradFill` round-trips, the named map does not.
+The soul defines the brand gradients from a brand source (D-026 / D-059).
+
 ### Text colors (`TextColorRole`)
 
 `TextPrimary`, `TextSecondary`, `TextTertiary`, `TextInverse`, `TextMuted`,

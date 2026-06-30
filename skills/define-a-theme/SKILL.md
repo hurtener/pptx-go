@@ -205,6 +205,10 @@ applies functional options. Unset roles keep their defaults. The options:
   coordinated brand accents, beyond the three accent roles. Passing none keeps
   the engine's pinned five-role cycle (byte-identical). See **Multi-accent
   palette** below.
+- `pptx.WithGradient(name string, spec pptx.GradientSpec)` — registers a **named
+  brand gradient** (`Theme.Gradients`) a scene `Background` requests by name
+  (`Background.GradientName`). Lets a brand's signature wash (e.g. a deep-navy
+  radial `heroDark`) be stored once and reused. See **Brand gradients** below.
 
 ```go
 theme := pptx.NewTheme(
@@ -303,6 +307,42 @@ hue just as for a role. A theme that sets **no** `Accents` uses the pinned
 five-role cycle — byte-identical to the engine default. Like the dark palette,
 `Accents` has no theme1.xml slot (the resolved accent colors round-trip; the
 field does not).
+
+## Brand gradients (`Theme.Gradients`)
+
+A brand's signature background wash — say a deep-navy radial hero gradient — can
+be stored on the theme as a **named gradient** and reused across slides, instead
+of repeating an ad-hoc stop pair. Register one with `WithGradient`:
+
+```go
+theme := pptx.NewTheme(
+    pptx.WithGradient("heroDark", pptx.GradientSpec{
+        Stops: []pptx.GradientStop{
+            {Pos: 0, Color: pptx.RGB("1E293B")}, // exact brand hue, any variant
+            {Pos: 1, Color: pptx.RGB("0A0E1A")},
+        },
+        Radial: true, // center-out wash; false → linear at Angle
+    }),
+)
+```
+
+A scene slide requests it by name:
+
+```go
+scene.Background{Kind: scene.BackgroundGradient, GradientName: "heroDark"}
+```
+
+Each stop's color is a `pptx.Color`: a `pptx.RGB` literal pins an **exact** brand
+hue independent of the light/dark variant (use this for a fixed brand wash), while
+a `pptx.TokenColor(role)` stop **follows** the active theme (so it re-resolves on
+a `VariantDark` slide). The spec's `Radial` flag picks a radial (center-out) or
+linear (at `Angle`, degrees clockwise from the x-axis) fill. A `Background` with
+an empty `GradientName` uses its own `Stops` / two-role `Gradient` pair as before
+(byte-identical). If the named gradient is not registered, or its stops are
+invalid (need 2–8 stops with ascending positions in `[0,1]`), the renderer records
+a `LayoutWarning` and skips the fill rather than failing. Like the other palettes,
+`Gradients` has no theme1.xml slot — the resolved gradient round-trips, the named
+map does not.
 
 ## Token resolution model
 

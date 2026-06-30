@@ -352,6 +352,14 @@ scene IR JSON wire form compatibility with pengui-slides v4)*
   `cellTextOn`) is refactored to a resolved-RGB core so a literal-hue accent stays
   legible. No new node/slot; unblocks deferred R14.2/R14.14 accent work. (R8.4,
   engine half.)
+- `82-brand-gradients.md` — a `pptx.GradientSpec{Stops; Angle; Radial}` +
+  `Theme.Gradients map[string]GradientSpec` + `WithGradient`, named by a new scene
+  `Background.GradientName`, resolved in `drawBackgroundFill` to
+  `pptx.LinearGradient`/`RadialGradient`. Stops are `pptx.GradientStop` (RGB pins
+  an exact brand hue independent of variant; `TokenColor` follows the variant), so
+  variant handling is automatic. Empty name = the legacy 2-role / multi-stop path
+  (byte-identical); name-not-found / invalid stops → `LayoutWarning` + skip. No
+  theme1.xml slot. (R8.5, engine half.)
 - `54-multistop-background-gradient.md` — extend the scene `Background` from a
   fixed `Gradient [2]ColorRole` to `Stops []GradientStop` (2..8 ascending in
   `[0,1]`); `pptx.LinearGradient` is already variadic, so it's a scene-side

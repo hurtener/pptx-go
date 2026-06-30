@@ -296,6 +296,15 @@ type GradientStop struct {
 	Pos   float64 // 0..1 along the gradient
 	Color Color
 }
+
+// GradientSpec is a named brand gradient, registered on a Theme with WithGradient
+// and requested by a scene Background's GradientName (D-137). An RGB stop pins an
+// exact brand hue across variants; a TokenColor stop follows the active theme.
+type GradientSpec struct {
+	Stops  []GradientStop
+	Angle  int  // linear angle, degrees CW from +x; ignored when Radial
+	Radial bool // true → radial (center-out); false → linear
+}
 ```
 `Fill` is a shape's interior. Construct with the four constructors; the
 read accessors inspect a fill recovered from a reopened deck (D-041).
@@ -498,6 +507,7 @@ type Theme struct {
 	Colors      ColorPalette
 	Accents     []RGB        // optional ordered brand-accent palette; empty = pinned five-role cycle (D-136)
 	DarkColors  *DarkPalette // optional VariantDark overrides; nil = pinned-gray fallback (D-135)
+	Gradients   map[string]GradientSpec // optional named brand gradients, requested by Background.GradientName (D-137)
 	Typography  Typography
 	Spacing     Spacing
 	Radii       Radii
@@ -538,6 +548,7 @@ func WithName(name string) ThemeOption
 func WithAccent(c RGB) ThemeOption
 func WithPaper(c RGB) ThemeOption                       // off-white "paper" canvas tint (ColorPaper, D-104)
 func WithAccents(palette ...RGB) ThemeOption            // ordered brand-accent palette the accent cycle reads (D-136)
+func WithGradient(name string, spec GradientSpec) ThemeOption // register a named brand gradient (D-137)
 func WithDarkSurface(role ColorRole, c RGB) ThemeOption // VariantDark surface override (D-135)
 func WithDarkText(role TextColorRole, c RGB) ThemeOption // VariantDark text override (D-135)
 func WithFonts(heading, body string) ThemeOption

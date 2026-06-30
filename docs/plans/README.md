@@ -2087,6 +2087,27 @@ four-phase timeline; no palette = byte-identical pinned-cycle output; a dark
 brand hue gets inverse contrast text; `Clone()` deep-copies `Accents` (race-safe)
 and the deck is byte-identical across worker counts.
 
+#### Phase 99 — named brand gradients (R8.5, HIGH · both — engine half)
+
+**Subsystem:** pptx (Theme + gradient spec) + scene (Background resolution)
+**Deps:** D-135; brief 82.
+**What lands (R8.5):** a `pptx.GradientSpec{Stops; Angle; Radial}` +
+`Theme.Gradients map[string]GradientSpec` + `WithGradient(name, spec)` /
+`Gradient(name)`, requested by a new scene `Background.GradientName`. In the
+`BackgroundGradient` case, a non-empty `GradientName` resolves the named spec
+from the active theme and feeds `pptx.LinearGradient` / `RadialGradient` per the
+spec's `Radial` flag; its stops carry a `pptx.Color`, so an RGB stop pins an
+exact brand hue across variants while a `TokenColor` stop follows the theme. A
+name not registered, or a spec with invalid stops, records a `LayoutWarning` and
+skips the fill (RFC §10.2). Empty `GradientName` runs the legacy 2-role /
+multi-stop path (byte-identical). No theme1.xml slot, no new IR node (catalog
+stays 35).
+**Acceptance criteria:** a named radial gradient renders its exact RGB hues as a
+circular `gradFill`; a linear one as `<a:lin>`; miss/invalid → warn + skip; a
+no-name gradient is byte-identical even when an unused named gradient is
+registered; `Clone()` deep-copies `Gradients` (race-safe) and the deck is
+byte-identical across worker counts.
+
 ---
 
 ## 4. Post-V1 backlog
