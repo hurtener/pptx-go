@@ -223,6 +223,72 @@ func TestAccentsConcurrentReuse(t *testing.T) {
 	wg.Wait()
 }
 
+// TestWithGradient verifies WithGradient registers a named brand gradient, the
+// Gradient accessor reads it, the default theme has none, and Clone deep-copies
+// the map + each spec's stop slice (R8.5).
+func TestWithGradient(t *testing.T) {
+	if len(pptx.DefaultTheme().Gradients) != 0 {
+		t.Fatal("DefaultTheme should register no brand gradients")
+	}
+	if _, ok := pptx.DefaultTheme().Gradient("hero"); ok {
+		t.Error("DefaultTheme.Gradient(\"hero\") should be absent")
+	}
+
+	spec := pptx.GradientSpec{
+		Stops: []pptx.GradientStop{
+			{Pos: 0, Color: pptx.RGB("0A0E1A")},
+			{Pos: 1, Color: pptx.RGB("1E293B")},
+		},
+		Radial: true,
+	}
+	th := pptx.NewTheme(pptx.WithGradient("heroDark", spec))
+	got, ok := th.Gradient("heroDark")
+	if !ok {
+		t.Fatal("WithGradient did not register heroDark")
+	}
+	if !got.Radial || len(got.Stops) != 2 {
+		t.Errorf("heroDark spec = %+v, want radial with 2 stops", got)
+	}
+	// NewTheme must not have mutated the package default theme.
+	if len(pptx.DefaultTheme().Gradients) != 0 {
+		t.Error("WithGradient leaked into the default theme")
+	}
+
+	// Clone deep-copies the map and each spec's stop slice.
+	c := th.Clone()
+	cg, _ := c.Gradient("heroDark")
+	cg.Stops[0] = pptx.GradientStop{Pos: 0, Color: pptx.RGB("FFFFFF")}
+	c.Gradients["heroDark"] = cg
+	orig, _ := th.Gradient("heroDark")
+	if sc, _ := orig.Stops[0].Color.(pptx.RGB); sc != "0A0E1A" {
+		t.Fatalf("Clone shares the gradient spec/stops with the original (got %v)", orig.Stops[0].Color)
+	}
+}
+
+// TestGradientsConcurrentReuse proves a theme carrying named gradients is safe
+// for concurrent Clone+read under -race (a Theme is a reusable artifact, §5).
+func TestGradientsConcurrentReuse(t *testing.T) {
+	base := pptx.NewTheme(pptx.WithGradient("hero", pptx.GradientSpec{
+		Stops: []pptx.GradientStop{{Pos: 0, Color: pptx.RGB("112233")}, {Pos: 1, Color: pptx.RGB("445566")}},
+	}))
+	var wg sync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c := base.Clone()
+			cg, _ := c.Gradient("hero")
+			cg.Stops[0] = pptx.GradientStop{Pos: 0, Color: pptx.RGB("000000")}
+			c.Gradients["hero"] = cg
+			bg, _ := base.Gradient("hero")
+			if rgb, _ := bg.Stops[0].Color.(pptx.RGB); rgb != "112233" {
+				t.Error("concurrent Clone aliased the base gradient stops")
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 // TestCloneDarkColorsIndependence proves Clone deep-copies DarkColors so a clone
 // can be mutated without aliasing the original (themes are reusable, §5; R8.3).
 func TestCloneDarkColorsIndependence(t *testing.T) {

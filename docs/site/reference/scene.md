@@ -33,6 +33,7 @@ type Background struct {
 	Color    pptx.ColorRole   // solid fill (Kind == BackgroundColor)
 	Gradient [2]pptx.ColorRole // legacy 2-role linear gradient (used when Stops empty)
 	Stops    []GradientStop   // multi-stop gradient: 2..8 ascending stops in [0,1]; supersedes Gradient
+	GradientName string       // a named brand gradient on the theme (pptx.WithGradient); supersedes Stops/Gradient
 	Angle    int              // linear gradient angle, degrees clockwise from +x
 	AssetID  AssetID          // full-bleed picture (Kind == BackgroundAsset)
 	Mesh     []MeshGlow       // base canvas + pooled radial glows (Kind == BackgroundMesh)
@@ -84,7 +85,10 @@ pair or, for a richer multi-hue wash, a `Stops` list of 2–8 ascending
 invalid stops degrade to a warning and skip the fill — see the decisions
 reference, D-105). `BackgroundRadial` (D-106) draws the same stops as a
 center-out radial spotlight/vignette (centered focal). Point a `BackgroundColor`
-at `ColorPaper` (D-104) for a tinted off-white paper canvas.
+at `ColorPaper` (D-104) for a tinted off-white paper canvas. Set `GradientName`
+to reuse a named brand gradient registered on the theme (`pptx.WithGradient`,
+D-137); it supersedes `Stops`/`Gradient`, the named spec's `Radial` flag picks
+linear vs radial, and a missing name or invalid stops degrade to a warning.
 
 ```go
 type LayoutKind int

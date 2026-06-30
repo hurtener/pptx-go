@@ -4781,4 +4781,60 @@ contrast text; the deck is deterministic across worker counts.
 
 ---
 
+## D-137 — Named brand gradients (`Theme.Gradients` / `GradientSpec`) (Wave 15 / Phase 99, R8.5 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-26.
+
+**Context:** R8.5 (`DECKARD-PRODUCT-REQUIREMENTS.md`, HIGH · both) wants a brand's
+signature gradient (e.g. a deep-navy radial hero wash) stored as a named token
+and reused across slides on light or dark variants. Today the scene `Background`
+gradient takes raw `ColorRole` stops resolved through the active theme, so a
+brand gradient cannot be named, stored, or pinned to exact hues — and on a dark
+slide the role stops resolve through the dark theme rather than a fixed wash. D-059
+puts the named-gradient mechanism here; the soul defining the gradients from a
+brand source is Deckard's product half.
+
+**Decision:** Add `pptx.GradientSpec{Stops []GradientStop; Angle int; Radial bool}`
+(in `pptx/fill.go`, beside the gradient primitives) + `Theme.Gradients
+map[string]GradientSpec` + a `WithGradient(name, spec)` option + a
+`Theme.Gradient(name) (GradientSpec, bool)` accessor. Add a scene
+`Background.GradientName string`. In `drawBackgroundFill`'s `BackgroundGradient`
+case, a non-empty `GradientName` resolves the named spec from the active theme
+and supersedes `Stops` / the legacy 2-role pair; the spec's `Radial` flag picks
+`pptx.RadialGradient(stops…)` vs `pptx.LinearGradient(spec.Angle, stops…)`. Empty
+`GradientName` runs the existing path unchanged — **byte-identical**.
+
+**Stops already model "RGB|ColorRole".** `pptx.GradientStop.Color` is a
+`pptx.Color`, satisfied by both `RGB` literals (variant-independent — pin an
+exact brand hue) and `TokenColor(role)` (follow the active/dark theme). So a
+named gradient's stops are just `[]pptx.GradientStop`, and variant handling is
+automatic with no special-casing: a token stop re-resolves under a VariantDark
+theme, an RGB stop stays fixed. One `GradientName` field plus the spec's `Radial`
+flag covers both linear and radial, avoiding a second background kind.
+
+**Degrade, don't panic (RFC §10.2).** A `GradientName` not registered on the
+theme, or a spec whose stop positions are invalid (not 2..8 ascending in [0,1] —
+the same `D-105` invariant, checked on the already-built `pptx.GradientStop` via
+`validGradientStopPositions`), records a `LayoutWarning` and skips the fill.
+
+**No theme1.xml slot.** theme1.xml has no gradient slot; the named-gradient map
+is consumed only by the scene background renderer and is never serialized — like
+`DarkColors` (D-135) / `Accents` (D-136) / `ColorPaper` (D-104). The resolved
+`gradFill` round-trips through `pptx.Open`; the named map does not. `Clone()`
+deep-copies the map and each spec's stop slice (a `Theme` is a reusable artifact,
+§5).
+
+**Consequences:** Additive; no new IR node (catalog stays 35), no
+codec/`restorenamespaces` change (the gradient fill primitives already emit +
+round-trip). Tested: `WithGradient` registers + `Gradient` reads + `Clone`
+deep-copies the map/stops (race-safe); a named radial gradient renders its exact
+RGB hues as a circular `gradFill` and a linear one as `<a:lin>`; a missing name
+and invalid stops each warn + skip; a no-name gradient is byte-identical even
+when an unused named gradient is registered; the deck is deterministic across
+worker counts. `GradientName` is honored only under `BackgroundGradient` (the
+spec's `Radial` flag picks the shape); `BackgroundRadial` stays the role-based
+center-out path.
+
+---
+
 *Append new entries below this line.*

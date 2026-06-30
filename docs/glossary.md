@@ -160,6 +160,22 @@ resolved accent RGB round-trips, the field does not. The auto-contrast text path
 resolves an accent's RGB so a literal brand hue still gets legible label text
 (D-082). See `docs/design/THEME.md`, `D-136`, `Dark palette`.
 
+## Brand gradient
+
+A named gradient registered on a theme (`Theme.Gradients map[string]GradientSpec`,
+set via `WithGradient`; R8.5, D-137) and requested by a scene
+`Background.GradientName`. `pptx.GradientSpec{Stops, Angle, Radial}` carries an
+ordered stop list whose colors are `pptx.Color` values — an `RGB` literal pins an
+exact brand hue across light/dark variants, a `TokenColor` follows the active
+theme — plus a linear angle and a linear/radial flag. The renderer feeds it to
+`pptx.LinearGradient` / `RadialGradient` per the `Radial` flag, so a brand's
+signature wash (e.g. a deep-navy radial `heroDark`) is reusable and deterministic.
+An empty `GradientName` runs the legacy two-role / multi-stop gradient path
+(byte-identical); a name not registered, or invalid stops, records a
+`LayoutWarning` and skips the fill. Like the dark / accent palettes it has **no
+theme1.xml slot** — the resolved gradient fill round-trips, the named map does
+not. See `docs/design/THEME.md`, `D-137`, `Brand-accent palette`.
+
 ## Brand kit
 
 A `.pptx` template carrying a populated theme + ≥1 master with layouts, used

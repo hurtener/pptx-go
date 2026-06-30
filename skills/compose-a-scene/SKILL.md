@@ -59,6 +59,7 @@ type Background struct {
     Color    pptx.ColorRole    // BackgroundColor — solid fill (e.g. pptx.ColorPaper for a tinted paper canvas); BackgroundMesh — the base canvas under the glows
     Gradient [2]pptx.ColorRole // BackgroundGradient — legacy 2-role linear gradient (used when Stops is empty)
     Stops    []scene.GradientStop // BackgroundGradient — multi-stop wash: 2..8 ascending stops in [0,1]
+    GradientName string         // BackgroundGradient — a named brand gradient on the theme (pptx.WithGradient); supersedes Stops/Gradient
     Angle    int               // linear gradient angle (degrees clockwise from +x; 0 = left→right, 90 = top→bottom)
     AssetID  scene.AssetID     // BackgroundAsset — full-bleed picture (needs an AssetResolver)
     Mesh     []scene.MeshGlow  // BackgroundMesh — N pooled radial glows over the base canvas
@@ -109,6 +110,19 @@ Background: scene.Background{
 the renderer records one warning and skips the fill (it never panics). An empty
 `Stops` falls back to the two-role `Gradient` pair (byte-identical to the
 2-stop form).
+
+To reuse a **named brand gradient** defined on the theme (`pptx.WithGradient`),
+set `GradientName` instead — it supersedes `Stops`/`Gradient`, and the named
+spec's own `Radial` flag decides linear vs radial:
+
+```go
+Background: scene.Background{Kind: scene.BackgroundGradient, GradientName: "heroDark"},
+```
+
+The gradient's stops can pin exact brand hues (RGB, fixed across the light/dark
+variant) or follow the theme (`TokenColor`). A `GradientName` not registered on
+the theme, or one with invalid stops, warns and skips (no panic). See the
+define-a-theme skill's **Brand gradients** for registering one.
 
 For a center-out spotlight/vignette (good behind a dark hero or closing slide),
 use `BackgroundRadial` — it draws the same `Stops` (or the 2-role `Gradient`) as

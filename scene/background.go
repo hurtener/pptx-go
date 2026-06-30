@@ -178,6 +178,16 @@ type Background struct {
 	// 90° = top-to-bottom. Valid range [0, 360); values outside are normalized.
 	Angle int
 
+	// GradientName, when non-empty (Kind == BackgroundGradient), requests a named
+	// brand gradient registered on the active theme (pptx.WithGradient, R8.5). It
+	// supersedes Stops and the legacy Gradient pair; the named spec's Radial flag
+	// picks a linear or radial fill, and its stops may pin exact brand hues (RGB,
+	// variant-independent) or follow the theme (TokenColor). A name not found on
+	// the theme, or a spec with invalid stops, records a LayoutWarning and skips
+	// the fill (RFC §10.2). Empty (the zero value) runs the Stops / legacy path
+	// unchanged (byte-identical).
+	GradientName string
+
 	// AssetID is the asset reference for a full-bleed picture background
 	// (Kind == BackgroundAsset). Resolved via the render's AssetResolver.
 	AssetID AssetID
