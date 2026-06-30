@@ -4837,4 +4837,57 @@ center-out path.
 
 ---
 
+## D-138 — Dark-variant accents & extensions: engine verify-and-close (Wave 15 / Phase 100, R8.7 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-30.
+
+**Context:** R8.7 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · both) wants a
+VariantDark slide to re-resolve accent surfaces and the
+`border`/`borderStrong`/`accentSoft` extension tokens to dark-appropriate values
+rather than inheriting light-theme values (the reference's dark cards use
+dark-tuned hairlines, not the soul's warm-cream `#E0D5CA` border). D-059 puts the
+override mechanism on the engine; the extension tokens are Deckard's.
+
+**Decision:** This is a **verify-and-close** of the engine half — no production
+change (the R11.1 / Phase-49 precedent). Two findings close it:
+
+1. **The override mechanism already exists (D-135, Phase 97).** `darkThemeFrom`'s
+   `DarkColors` overlay is general — it overlays `base.DarkColors.Surfaces` /
+   `.Text` for **any** role key, so a soul re-resolves `ColorAccent`, the semantic
+   roles, `TextAccent`, etc. for the dark variant with `WithDarkSurface` /
+   `WithDarkText`. The Phase-97 white-box test already overrides `ColorAccent` for
+   dark. "Accent surfaces overridable per variant via the dark palette" — the
+   explicit R8.7 capability — shipped in Phase 97.
+
+2. **The engine's own borders already dark-resolve.** `render_card.go` draws the
+   neutral card border / divider with `pptx.TokenColor(pptx.ColorSurfaceAlt)`, and
+   `darkThemeFrom` overrides `ColorSurfaceAlt` to the dark surface — so a dark
+   card's hairline is the **dark** SurfaceAlt (`#374151`), never a light value.
+   There is no cream-border bug in the engine; Deckard's cream border was its
+   *soul* `border` extension token, which the engine does not have.
+
+**Default-preserve-light accent is correct (D-026).** Without a `DarkColors`
+override, `darkThemeFrom` preserves the brand light accent on dark so brand
+identity survives the swap; the engine cannot invent a "dark-appropriate accent"
+without taste. The soul opts into a dark accent via `DarkColors`. The *default*
+dark accent-**text** legibility per variant is the sibling requirement R8.6
+(Phase 101), handled there.
+
+**Product half (D-059):** the `border` / `borderStrong` / `accentSoft` extension
+*tokens* and the derived-dark-hairline *default* (a low-alpha lightening of the
+dark surface when no dark extension is set) live in Deckard's `internal/soul`
+Extensions map + `ResolveExtension(token, variant)`. The engine has no such
+roles; its `ColorSurfaceAlt`-based borders already provide a deterministic dark
+hairline.
+
+**Consequences:** No new public API, no renderer change. Shipped: four R8.7
+acceptance goldens (`render_dark_extensions_test.go`) proving a dark card border
+resolves to the dark SurfaceAlt (not the light value), `DarkColors.Surfaces[
+ColorAccent]` / `.Text[TextAccent]` re-tint the dark accent border / text (light
+accent preserved by default), and a no-`DarkColors` dark slide is byte-identical
+to the default theme. THEME.md + the define-a-theme skill clarify that
+accent/semantic roles (not just canvas/surface/text) are dark-overridable.
+
+---
+
 *Append new entries below this line.*

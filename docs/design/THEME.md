@@ -43,8 +43,13 @@ dark-variant derivation writes its pinned Tailwind-gray default
 (`#111827`/`#1F2937`/`#374151` surfaces, `#F9FAFB`/`#E5E7EB`/`#9CA3AF` text),
 then overlays `DarkColors.Surfaces` / `DarkColors.Text` role-by-role when set.
 `DarkPalette` mirrors the `Surfaces`/`Text` map shape of the light palette, so
-**any** surface or text role can take a dark-variant value (including accent and
-semantic roles — the seam R8.7 extends). Set the overrides with
+**any** surface or text role can take a dark-variant value — including the accent
+and semantic roles (`ColorAccent`, `TextAccent`, etc.), which `darkThemeFrom`
+otherwise preserves from the light theme so brand identity survives the swap
+(R8.7, D-138). The engine's neutral card borders/dividers use `ColorSurfaceAlt`,
+which the dark default already re-resolves, so a dark card carries a dark hairline
+out of the box; a soul re-tints the accent border/wash for dark by overriding
+`ColorAccent` in `DarkColors`. Set the overrides with
 `WithDarkSurface(role, c)` / `WithDarkText(role, c)` (composable,
 order-independent, lazily allocating `DarkColors`). A theme with no `DarkColors`
 (the zero value) keeps the pinned gray, **byte-identical**. Like `ColorPaper`,
