@@ -281,6 +281,23 @@ with still round-trip (and are reported per-slide via `scene.Render`'s
 can also build the whole palette at once via the struct:
 `theme.DarkColors = &pptx.DarkPalette{Surfaces: …, Text: …}`.
 
+**Keeping an accent legible per variant.** To make sure a brand accent stays
+readable as emphasis text on each variant's canvas, derive a contrast-checked
+value with `scene.LegibleTextOn` and store it as the dark `TextAccent`:
+
+```go
+brandAccent := pptx.RGB("0D9488") // brand teal
+darkText := scene.LegibleTextOn(brandAccent, pptx.RGB("0A0E1A"), 45) // legible on navy (4.5:1)
+theme := pptx.NewTheme(pptx.WithDarkText(pptx.TextAccent, darkText))
+```
+
+`LegibleTextOn(fg, bg, minRatioX10)` nudges `fg` (preserving hue — lighter on a
+dark background, darker on a light one) until it clears the target WCAG ratio
+(`45` = 4.5:1 for body text, `30` = 3:1 for large display), returning it
+unchanged when it is already legible. It is a pure helper you call at
+theme-build time; the engine never applies it automatically, so a theme that
+doesn't use it is byte-identical.
+
 ## Multi-accent palette (`Theme.Accents`)
 
 The engine cycles a fixed set of accent colors across the per-element markers of

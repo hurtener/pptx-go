@@ -95,6 +95,17 @@ The soul defines the brand gradients from a brand source (D-026 / D-059).
 `TextPrimary`, `TextSecondary`, `TextTertiary`, `TextInverse`, `TextMuted`,
 `TextAccent`, `TextAccentAlt`, `TextSuccess`, `TextWarning`, `TextError`.
 
+**Contrast-aware accent text** (`scene.LegibleTextOn`, R8.6, D-139): a pure
+mechanism for keeping a brand accent legible as emphasis text on any surface.
+`LegibleTextOn(fg, bg, minRatioX10)` nudges `fg` — preserving hue (lighter on a
+dark background, darker on a light one) — until it clears a target WCAG contrast
+ratio (`45` = 4.5:1 body, `30` = 3:1 large), returning it unchanged when already
+legible. It is **not** auto-applied (D-026): the engine's render path is
+byte-identical; a soul calls it to derive a legible `TextAccent` per variant and
+stores the result via `WithDarkText`, which `darkThemeFrom` then resolves. It is
+the graded analog of the `onCardSurface` auto-contrast picker (D-082), sharing the
+same luminance math so the engine and the soul agree.
+
 ### Typography (`TypeRole`)
 
 `TypeDisplay`, `TypeH1`–`TypeH5`, `TypeBody`, `TypeBodySmall`, `TypeCaption`,

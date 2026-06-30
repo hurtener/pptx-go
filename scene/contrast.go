@@ -138,3 +138,85 @@ func (r *renderer) accentLegible(bg pptx.ColorRole) bool {
 	ls := relLuminance(r.theme.ResolveColor(bg))
 	return contrastRatioT10(la, ls) >= accentMinContrastT10
 }
+
+// legibleNudgeStep is the per-step blend fraction (×1000) used by LegibleTextOn:
+// each step moves fg 10% of the remaining distance toward black or white. Ten
+// steps reach the endpoint; the loop stops as soon as the ratio is cleared.
+const legibleNudgeStep = 100 // 0.100 in [0,1000] basis
+
+// LegibleTextOn returns fg adjusted toward lighter or darker — preserving hue —
+// until its WCAG contrast against bg clears minRatioX10 (a contrast ratio ×10,
+// e.g. 45 = 4.5:1 for body text, 30 = 3:1 for large display), or the nearest
+// endpoint (white on a dark background, black on a light one) when the target is
+// unreachable. If fg already clears the ratio it is returned unchanged, so a
+// caller that funnels every accent through this helper gets byte-identical output
+// for the common legible case. A malformed fg or bg returns fg unchanged
+// (fail-safe).
+//
+// It is a deterministic MECHANISM, not a policy (D-026): the engine does not
+// apply it automatically anywhere in the render path (so all existing output is
+// byte-identical) — a soul calls it to derive a legible accent text color per
+// variant and stores the result on the theme via WithDarkText / WithDarkSurface.
+// It is the graded color analog of onCardSurface, reusing the same WCAG luminance
+// math, so the engine and the soul agree on contrast. All steps are integer, so
+// the result is identical regardless of worker count.
+func LegibleTextOn(fg, bg pptx.RGB, minRatioX10 int) pptx.RGB {
+	fr, fgc, fb, ok := parseHexRGB(fg)
+	if !ok {
+		return fg
+	}
+	br, bgc, bb, ok := parseHexRGB(bg)
+	if !ok {
+		return fg
+	}
+	bgLum := channelLuminance(br, bgc, bb)
+	if contrastRatioT10(channelLuminance(fr, fgc, fb), bgLum) >= minRatioX10 {
+		return fg // already legible — unchanged (byte-identical for the common case)
+	}
+	// Move fg away from the background's luminance: lighten toward white on a dark
+	// surface, darken toward black on a light one (the onCardSurface crossover).
+	lighten := bgLum < darkSurfaceLumaMax
+	r, g, b := fr, fgc, fb
+	for k := legibleNudgeStep; k <= 1000; k += legibleNudgeStep {
+		if lighten {
+			r = fr + (255-fr)*k/1000
+			g = fgc + (255-fgc)*k/1000
+			b = fb + (255-fb)*k/1000
+		} else {
+			r = fr * (1000 - k) / 1000
+			g = fgc * (1000 - k) / 1000
+			b = fb * (1000 - k) / 1000
+		}
+		if contrastRatioT10(channelLuminance(r, g, b), bgLum) >= minRatioX10 {
+			break
+		}
+	}
+	return rgbFromChannels(r, g, b)
+}
+
+// channelLuminance is relLuminance for already-parsed 0..255 channels (avoids a
+// re-parse in the LegibleTextOn nudge loop). Same WCAG coefficients + scale.
+func channelLuminance(r, g, b int) int {
+	return (2126*srgbLinear[r] + 7152*srgbLinear[g] + 722*srgbLinear[b]) / 10000
+}
+
+// rgbFromChannels formats 0..255 channels as a 6-hex uppercase pptx.RGB.
+func rgbFromChannels(r, g, b int) pptx.RGB {
+	const hexdigits = "0123456789ABCDEF"
+	clamp := func(v int) int {
+		if v < 0 {
+			return 0
+		}
+		if v > 255 {
+			return 255
+		}
+		return v
+	}
+	r, g, b = clamp(r), clamp(g), clamp(b)
+	out := []byte{
+		hexdigits[r>>4], hexdigits[r&0xF],
+		hexdigits[g>>4], hexdigits[g&0xF],
+		hexdigits[b>>4], hexdigits[b&0xF],
+	}
+	return pptx.RGB(out)
+}

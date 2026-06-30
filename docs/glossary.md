@@ -1032,6 +1032,20 @@ A V1.x `strict` mode upgrades warnings to errors.
 A scene IR node that doesn't contain children. Listed in
 `RFC-001-pptx-go.md §11.1`. Opposite of `Container`.
 
+## LegibleTextOn
+
+The exported scene mechanism `scene.LegibleTextOn(fg, bg pptx.RGB, minRatioX10
+int) pptx.RGB` (R8.6, D-139): nudges `fg` — preserving hue (lighten toward white
+on a dark background, darken toward black on a light one) — until it clears a
+target WCAG contrast ratio (`minRatioX10` ×10; 45 = 4.5:1, 30 = 3:1) against
+`bg`, or the nearest endpoint. An already-legible `fg` is returned unchanged; a
+malformed input fails safe. It reuses the same luminance math as the
+auto-contrast picker (`onCardSurface`, D-082) and is its **graded** color analog.
+A deterministic **mechanism** (D-026), not auto-applied anywhere in the render
+path (so all engine output stays byte-identical) — a soul calls it to derive a
+legible `TextAccent` per variant and stores the result via `WithDarkText`. See
+`docs/design/THEME.md`, `D-139`, `Auto-contrast`.
+
 ## Line
 
 A shape's outline (builder): width (EMU), `Color`, and optional preset dash.

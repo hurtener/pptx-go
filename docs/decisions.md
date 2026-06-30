@@ -4890,4 +4890,58 @@ accent/semantic roles (not just canvas/surface/text) are dark-overridable.
 
 ---
 
+## D-139 — Contrast-aware accent-text mechanism (`scene.LegibleTextOn`) (Wave 15 / Phase 101, R8.6 engine half)
+
+**Status:** Accepted. **Date:** 2026-06-30.
+
+**Context:** R8.6 (`DECKARD-PRODUCT-REQUIREMENTS.md`, MED · both) wants a brand
+accent used as emphasis text to stay legible on any surface, derived per variant
+(legible jade on navy, deeper jade on cream). Deckard's `derivedTextAccent`
+(refine.go) does a crude 0.78 channel scale — not perceptual, not
+contrast-checked, light-theme only. The engine already ships per-variant
+`TextAccent` override (`DarkColors.Text`, D-135, verified Phase 100) and the WCAG
+luminance math (D-082), but only a **binary** `accentLegible` check (the eyebrow
+falls back to white when an accent fails) — there is no graded primitive that
+moves an accent to a legible same-hue value. D-059 puts that primitive on the
+engine; the derivation policy (which accents, against which canvas) is Deckard's.
+
+**Decision:** Add a pure exported `scene.LegibleTextOn(fg, bg pptx.RGB,
+minRatioX10 int) pptx.RGB` in `scene/contrast.go`. It returns `fg` unchanged when
+it already clears `minRatioX10` (a contrast ratio ×10; 45 = 4.5:1 body, 30 = 3:1
+large), else nudges `fg` hue-preserving — lighten toward white on a dark
+background, darken toward black on a light one (direction from the
+`darkSurfaceLumaMax` crossover, moving the accent away from the background's
+luminance) — in fixed integer steps until the ratio is cleared or the nearest
+endpoint is reached. A malformed `fg`/`bg` returns `fg` unchanged (fail-safe,
+mirroring `relLuminance`'s convention). It reuses the existing
+`relLuminance`/`contrastRatioT10`/`srgbLinear` machinery, so the engine's own
+`onCardSurface` and the soul's derivation share one source of WCAG truth.
+
+**Mechanism, not policy — byte-identical (D-026).** The engine wires
+`LegibleTextOn` into **no** render path: the existing `accentLegible` +
+`onCardSurface` eyebrow fallback is unchanged, so all existing output is
+byte-identical (the full scene golden suite passes untouched). It is the graded
+color analog of `onCardSurface` / `deltaToneColor` — a deterministic picker the
+caller drives. A soul calls it to derive a legible `TextAccent` per variant and
+stores the result on the theme via `WithDarkText` (consumed by `darkThemeFrom`
+since Phase 100). The engine does not auto-apply contrast-aware accents on default
+decks (that would impose taste and break byte-identity).
+
+**Hue preservation.** Darkening blends toward black (`c·(1−k)`), which preserves
+hue exactly; lightening blends toward white (`c+(255−c)·k`), preserving the
+dominant hue while desaturating — the standard, acceptable "preserve hue" for
+legibility.
+
+**Consequences:** Additive; no render-path change, no new IR node, no theme1.xml
+touch. Tested: an accent failing on a dark surface lightens until it clears the
+ratio and one failing on a light surface darkens (the two derivations of the same
+accent differ); an already-legible accent and a malformed input are returned
+unchanged; the function is pure (same inputs → same hex); the darken path
+preserves hue; a looser large-text target nudges no further than the body target;
+and the full existing scene suite passes unchanged (the byte-identity proof). The
+per-variant *derivation* (which accents, which canvas) remains Deckard's product
+half (D-059).
+
+---
+
 *Append new entries below this line.*
