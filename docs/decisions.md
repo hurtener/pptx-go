@@ -5070,3 +5070,131 @@ Wave-14 R14.2/.6/.14/.15/.16/.18 (D-133). No engine requirement remains un-built
 ---
 
 *Append new entries below this line.*
+
+---
+
+## D-142 — Estimator inter-node gap derives from the theme SpaceMD token (Wave 16 / Phase 103, R15.2)
+
+**Date:** 2026-07-08
+**Status:** Settled
+**Context:** The deterministic `preferredHeight`/`nodesHeight` estimators inserted a
+**pinned** `estGap = 137160 EMU` (~0.15") between stacked nodes (`scene/render.go:966`)
+at 9 sites (TwoColumn `:876`, Grid `:892,:899`, Card/CardSection `:905,:908`,
+Bento `:925,:927,:938,:947`, `nodesHeight:1034`), while the renderer
+(`stackIn`/`alignedStackIn`/`renderBento`/`renderGrid`/`renderCard`/...) inserts the
+**theme-resolved** `theme.ResolveSpace(pptx.SpaceMD) = 101600 EMU` (~0.08") on the
+default theme. The two values diverge by `~0.07"` per inter-node gap, so the
+estimates disagree with the composed geometry — `VAlignFill`/`distributeFill` allocates
+growth based on `preferredHeight`, `VAlignFit` truncates based on it, weighted Bento uses
+it per row, and any ≥2-node container slot is mis-sized. The phase-48 plan + `D-079`
+explicitly pinned `estGap` as a literal on the grounds that `cardChromeEst`/`estGap`
+"stay pinned constants" for byte-identity, and the Wave-11 §17 checkpoint (`D-NNN` H3)
+labeled the divergence a "false positive" because "the flagged `estGap` is the
+inter-column gap, a conservative estimator constant ... that only ever over-estimates
+height (safe)." R15.2 (Deckard §R15 — Doc Reqs `r15`, Pengui dogfood 2026-07-07) reframes
+the question: the *overflow warning* is safe when the estimate over-counts, but **the
+allocation paths that USE the estimate to render geometry are biased** — a 2-node
+column overflows the box it was sized for because the installed growth ratio overweights
+the gap, and `VAlignFill` distributes slack across nodes whose preferred heights are
+wrong by `(SpaceMD − estGap)·(n−1)`. The `cardChromeEst` half of the pin remains correct
+(D-079); the `estGap` half does not. R15.2 spec literal: "the estimator must derive the
+inter-node gap from the same theme spacing token the renderer uses, not a pinned
+constant." Mirrors R15.1 / R1's "deliberate correctness change, goldens regenerate"
+model.
+**Decision:** (1) Add `estGapOf(theme *pptx.Theme) pptx.EMU` to `scene/render.go`. It
+returns `theme.ResolveSpace(pptx.SpaceMD)`; a nil-theme guard returns the existing
+`estGap` const as the documented fallback (preserves the rare theme=<nil> path;
+deliberate, not a hot path). (2) Replace every `estGap` site in the estimators
+(`nodesHeight` + the 8 `preferredHeight` sites) with `estGapOf(theme)`. The renderer
+paths (`stackIn`/container renderers) already use the theme token and are unchanged.
+(3) Rename the const `estGap` → `estGapFallback` and re-document it as the **nil-theme
+fallback only**, so its remaining readers know the primary path is the helper. (4)
+Update the two parity tests (`TestPreferredHeight_SingleLineCardUnchanged`,
+`TestPreferredHeight_BentoSpanOneByteIdentical`) to compute `want` via
+`theme.ResolveSpace(pptx.SpaceMD)` instead of the old const — the *byte-identical*
+property they assert (wrapped increment == 0, span-1 == unit width) is preserved by the
+new code; only the baseline arithmetic shifts to the theme value. (5) Update
+`docs/plans/phase-48-estimate-actual-parity.md` §9 "Public API surface" + "§16 Plan
+deviations" in the same PR to reflect the supersession (§4.3). (6) Add a fresh
+**per-phase render_parity_test.go** covering the new invariant: `nodesHeight` of an
+N-node stack equals the composed `stackIn` height within ±1 EMU (the R15.2 accept
+criterion "estimated == composed"), and a 2-node `TwoColumn` no longer overflows the
+box it was sized for. **Not byte-identical to today** by design: any container with
+≥2 stacked nodes or any `VAlignFill`/`VAlignFit`/`VAlignFillCapped`/weighted-Bento
+deck will render with shifted geometry because the share-of-region math is now
+accurate. Goldens regenerate + eyeball per R15.1's precedent; the one-line commit
+rationale records it. Single-line content, span-1 Bento cells, single-node stacks,
+equal-mode Bentos with no fill, and `VAlignTop` non-fill slides are **byte-identical**
+(their geometry did not flow through the estimator at all). Determinism preserved:
+integer EMU, `ResolveSpace` is a pure map lookup, `estGapOf` is a function of the
+theme alone; `-race` clean; worker-count byte-equality tests stay green.
+**Consequences:** The overflow warning becomes trustworthy (the estimate matches the
+composed height); fit-to-region and weighted-Bento allocation reflect actual rendered
+heights; the `D-079`/`phase-48` "estGap stays pinned" stance is retired. The Wave-11
+H3 "false positive" note is documented-as-intentional superseded by §(1)–(6) above:
+it was correct that the *overflow warning alone* was unaffected by the pin, but the
+*allocation* paths it ignored were biased. Surfaces touched: not user-facing — no new
+public `pptx`/`scene` field, no new IR node, no new theme token; only literals in
+internal estimators. Mirrors D-061/D-079's deterministic-internal pattern; pairs with
+D-140's roundtrip-observability so a drift between estimate and composed height becomes
+testable. Closes Deckard R15.2.
+
+---
+
+## D-143 — Per-Grid/Bento Fill opt-in region-fill under VAlignTop (Wave 16 / Phase 104, R15.4)
+
+**Date:** 2026-07-08
+**Status:** Settled
+**Context:** A dense pricing grid under `VAlignTop` (the zero/default) renders at the
+grid's natural `preferredHeight`, leaving ragged bottoms and an unbalanced slide — the
+"the region fills but only the slide VAlign knows it" gap (Deckard R15.4). The engine
+already ships two region-fill mechanisms: `layout/grid.go` divides `parent.H` evenly
+across rows (so cells fill whatever box they get), and `VAlignFill`/`VAlignFillCapped`
+under `alignedStackIn` grow every `isFlexible` node proportionally (Phase 13 + R10.6,
+D-077). Neither gives the caller a per-node opt-in: today, if the slide is `VAlignTop`
+(no fill mode), a single grid cannot claim the leftover vertical slack without
+turning on `VAlignFill` on the slide (and then every other container grows too).
+R15.4 spec "needs intra-grid equal-height cell stretch (engine)" — equal-height cell
+stretch already ships; the only genuinely-missing piece is a per-`Grid`/`Bento`
+flag that opts the node into region-fill independent of the slide VAlign. P2
+clarification: this is a node field, not a theme token — it is a mechanism, not a
+visual property (color/typography/spacing/radius/elevation). It composes with the
+existing theme tokens (the grown box is just a `pptx.Box` rendered by the standard
+pipeline, so the dark-variant contrast / safe-area clamp still apply).
+**Decision:** (1) Add additive `Fill bool` to `scene.Grid` and `scene.Bento` (zero
+value preserves today's render byte-for-byte; opt-in only). (2) Add an unexported
+helper `isFillWant(n SlideNode) bool` returning true iff the node is a `Grid` or
+`Bento` with `Fill=true`. (3) In `alignedStackIn` (the body-stack layout), after
+`totalH` and `heights[i]` are computed, when `align.Vertical == VAlignTop` AND
+`slack := box.H - totalH > 0` AND at least one node sets `Fill=true`, partition the
+flex-targets to those nodes only and route the slack via the existing
+`distributeFill` algorithm (proportional share of slack, remainder on the last Fill
+node), mutating `heights[idx]` in place. (4) Restrict the route to `VAlignTop` for
+V1: `VAlignCenter`/`VAlignBottom` already recompute `startY` from pre-fill `totalH`
+and a Fill-grown stack would overshoot the box; `VAlignJustify` / `VAlignBalanced`
+redistribute slack into gaps, conflicting with node-fill growth; `VAlignFit` and
+`VAlignFill`/`FillCapped` already own the slack exhaustively. Documenting the
+restriction in the field comment so a future caller / phase is aware. (5) The route
+is a no-op when `Fill=false` on every node, when `slack <= 0`, or when the node list
+is empty — `gofmt -l`, `-race ./...`, and the existing golden suite stay green
+without regeneration. (6) Layered tests: white-box `Fill=true` under `VAlignTop`
+on a 4-card pricing grid grows to fill the region (all card bottoms equal); white-
+box `Fill=false` is byte-identical to the pre-change render; worker-count
+determinism (`WithWorkers(1)` == `WithWorkers(8)`); adversarial R11.12 invariants
+(`render_adversarial_test.go::adversarialScene()`) keep passing. (7) Surface
+hygiene — new scene IR field ⇒ user-facing: glossary entry `Fill (Grid/Bento)`;
+`compose-a-scene` skill notes the field; the `scene` catalog page adds a row; no
+`pptx` API change. (8) `go test -race ./...` is the byte-equality gate; deterministic
+because `distributeFill` is pure integer EMU independent of worker scheduling
+(D-035) and `layout/grid.go` divides `parent.H/nRows` into a stable cell layout.
+**Consequences:** A 4-card pricing strip on a `VAlignTop` slide can now claim full
+height (`Grid{Fill:true}`); a sparse content slide is unaffected (`Fill=false` byte-
+identical); a `VAlignFill` slide is unaffected (the existing path already grows
+flexible nodes); `VAlignCenter`/`Bottom`/`Justify`/`Fit` skip the new route to avoid
+startY / gap conflicts — the V1 trade-off, documented per AGENTS.md §4.3 as a
+deliberate restraint. Equal-height cell layout + dark-variant contrast + R11.12
+safe-area clamp all apply identically to a Fill-grown grid (the box's `Bottom()` is
+just the slot's bottom). New ≠ per-archetype `VAlignFill` (Deckard R15.3, product-
+side): this flag is an indirection that lets a per-archetype defaulter (the product)
+turn on Fill per-deck without touching node-tree authoring. Closes Deckard R15.4
+engine half.

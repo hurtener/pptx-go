@@ -90,6 +90,30 @@ func TestRenderDeterministic_MultiLineWrap(t *testing.T) {
 	}
 }
 
+func TestRenderDeterministic_GridBentoFill(t *testing.T) {
+	sc := scene.Scene{Slides: []scene.SceneSlide{{
+		ID: "A",
+		Nodes: []scene.SlideNode{
+			scene.Heading{Text: rt("Pricing"), Level: 2},
+			scene.Grid{Columns: 2, Fill: true, Cells: []scene.SlideNode{
+				scene.Card{Header: "Starter", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("One")}}}},
+				scene.Card{Header: "Scale", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("Two")}}}},
+				scene.Card{Header: "Grow", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("Three")}}}},
+				scene.Card{Header: "Run", Body: []scene.SlideNode{scene.Prose{Paragraphs: []scene.RichText{rt("Four")}}}},
+			}},
+			scene.Bento{Columns: 2, Fill: true, Rows: []scene.BentoRow{
+				{Label: "Control plane", Cells: []scene.BentoCell{{Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("Five")}}}, {Span: 1, Node: scene.Prose{Paragraphs: []scene.RichText{rt("Six")}}}}},
+				{Label: "The core", Cells: []scene.BentoCell{{Span: 2, Node: scene.Prose{Paragraphs: []scene.RichText{rt("Seven")}}}}},
+			}},
+		},
+	}}}
+	seq := renderBytes(t, sc, scene.WithWorkers(1))
+	par := renderBytes(t, sc, scene.WithWorkers(8))
+	if !bytes.Equal(seq, par) {
+		t.Fatal("Grid/Bento Fill render differs across worker counts")
+	}
+}
+
 // TestRenderDeterministic_VAlignFill is the Phase-23 determinism guard: a deck
 // that grows flexible nodes to fill the frame (VAlignFill) must render
 // byte-identically across worker counts — the slack distribution is pure integer

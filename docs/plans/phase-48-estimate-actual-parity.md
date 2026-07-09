@@ -93,8 +93,9 @@ cards / a tighter slot for wide-span bento cells).
 
 ## 9. Public API surface
 
-None. (Internal `preferredHeight` accuracy; `cardChromeEst`/`estGap` stay pinned
-constants.)
+None. (Internal `preferredHeight` accuracy; `cardChromeEst` stays pinned, and the
+inter-node gap became theme-token-driven in Phase 103 — see decisions `D-142`
+and the supersession note in §16 below.)
 
 ## 10. Risks
 
@@ -154,6 +155,12 @@ constants.)
 
 - **Card body inset parity deferred** (per §5); chrome + span-width fixes deliver
   the within-one-line-height accuracy.
+- **Superseded by `D-142` / Phase 103 (Deckard R15.2)** — this plan originally said
+  "`cardChromeEst`/`estGap` stay pinned constants". That covered `cardChromeEst`
+  (still true) and the inter-node gap estimate (no longer true: Phase 103 replaces
+  the pinned `estGap` with `theme.ResolveSpace(SpaceMD)` so the estimator matches
+  the renderer). The Phase-103 entry + decisions log carry the rationale and
+  alignment criterion.
 
 ## 17. Sign-off
 

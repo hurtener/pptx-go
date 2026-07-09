@@ -262,6 +262,16 @@ keep their size (stretching text is meaningless), and a slide with no flexible
 node simply top-aligns. This is a mechanism, not a judgment — the engine never
 decides on its own that a slide looks thin; you opt a slide into fill.
 
+If only **one** container should claim the leftover height while the rest of the
+slide stays on the default `VAlignTop`, use the per-node `Fill` field on
+`Grid` / `Bento` instead of turning on slide-wide `VAlignFill`. `Grid{Fill:true}`
+or `Bento{Fill:true}` claims the positive slack under `VAlignTop` only; the
+taller slot is then subdivided by the existing grid/bento geometry into taller
+rows/cells. `Fill:false` (the zero value) is byte-identical. In V1 the field is
+intentionally inert under `VAlignCenter` / `VAlignBottom` / `VAlignJustify` /
+`VAlignBalanced` / `VAlignFit` and the slide-wide fill modes still own slack
+distribution (see [D-143](/reference/decisions)).
+
 `VAlignFit` is for the opposite problem. When a body stack's preferred height
 exceeds its region, the default modes place the overflow below the slide edge
 (and record a `content overflows its region` warning). Opt a slide into

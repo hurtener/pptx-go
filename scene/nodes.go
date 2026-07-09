@@ -1176,6 +1176,13 @@ type Grid struct {
 	Gap        SpaceRole
 	Cells      []SlideNode
 	Connectors []GridConnector // inter-column gutter glyphs; empty = none
+	// Fill opts the grid into claiming leftover body-stack height under
+	// VAlignTop without enabling slide-wide VAlignFill (D-143). The taller slot is
+	// then subdivided by layout.Grid into proportionally taller equal-height rows.
+	// Zero=false preserves today's natural-height slot exactly. Under any slide
+	// VAlign other than VAlignTop this field is inert in V1; slide-wide fill modes
+	// (`VAlignFill` / `VAlignFillCapped`) continue to own slack distribution.
+	Fill bool
 }
 
 func (Grid) NodeKind() NodeKind { return KindGrid }
@@ -1209,6 +1216,13 @@ type Bento struct {
 	// region. The zero value (false) keeps equal-height rows — byte-identical to
 	// the pre-R10.3 layout. (D-072.)
 	WeightedRows bool
+	// Fill opts the bento into claiming leftover body-stack height under
+	// VAlignTop without enabling slide-wide VAlignFill (D-143). The taller slot is
+	// then subdivided by bentoGeometry into taller rows/cells. Zero=false
+	// preserves today's natural-height slot exactly. Under any slide VAlign other
+	// than VAlignTop this field is inert in V1; slide-wide fill modes continue to
+	// own slack distribution.
+	Fill bool
 }
 
 func (Bento) NodeKind() NodeKind { return KindBento }
