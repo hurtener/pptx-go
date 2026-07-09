@@ -5138,3 +5138,63 @@ public `pptx`/`scene` field, no new IR node, no new theme token; only literals i
 internal estimators. Mirrors D-061/D-079's deterministic-internal pattern; pairs with
 D-140's roundtrip-observability so a drift between estimate and composed height becomes
 testable. Closes Deckard R15.2.
+
+---
+
+## D-143 — Per-Grid/Bento Fill opt-in region-fill under VAlignTop (Wave 16 / Phase 104, R15.4)
+
+**Date:** 2026-07-08
+**Status:** Settled
+**Context:** A dense pricing grid under `VAlignTop` (the zero/default) renders at the
+grid's natural `preferredHeight`, leaving ragged bottoms and an unbalanced slide — the
+"the region fills but only the slide VAlign knows it" gap (Deckard R15.4). The engine
+already ships two region-fill mechanisms: `layout/grid.go` divides `parent.H` evenly
+across rows (so cells fill whatever box they get), and `VAlignFill`/`VAlignFillCapped`
+under `alignedStackIn` grow every `isFlexible` node proportionally (Phase 13 + R10.6,
+D-077). Neither gives the caller a per-node opt-in: today, if the slide is `VAlignTop`
+(no fill mode), a single grid cannot claim the leftover vertical slack without
+turning on `VAlignFill` on the slide (and then every other container grows too).
+R15.4 spec "needs intra-grid equal-height cell stretch (engine)" — equal-height cell
+stretch already ships; the only genuinely-missing piece is a per-`Grid`/`Bento`
+flag that opts the node into region-fill independent of the slide VAlign. P2
+clarification: this is a node field, not a theme token — it is a mechanism, not a
+visual property (color/typography/spacing/radius/elevation). It composes with the
+existing theme tokens (the grown box is just a `pptx.Box` rendered by the standard
+pipeline, so the dark-variant contrast / safe-area clamp still apply).
+**Decision:** (1) Add additive `Fill bool` to `scene.Grid` and `scene.Bento` (zero
+value preserves today's render byte-for-byte; opt-in only). (2) Add an unexported
+helper `isFillWant(n SlideNode) bool` returning true iff the node is a `Grid` or
+`Bento` with `Fill=true`. (3) In `alignedStackIn` (the body-stack layout), after
+`totalH` and `heights[i]` are computed, when `align.Vertical == VAlignTop` AND
+`slack := box.H - totalH > 0` AND at least one node sets `Fill=true`, partition the
+flex-targets to those nodes only and route the slack via the existing
+`distributeFill` algorithm (proportional share of slack, remainder on the last Fill
+node), mutating `heights[idx]` in place. (4) Restrict the route to `VAlignTop` for
+V1: `VAlignCenter`/`VAlignBottom` already recompute `startY` from pre-fill `totalH`
+and a Fill-grown stack would overshoot the box; `VAlignJustify` / `VAlignBalanced`
+redistribute slack into gaps, conflicting with node-fill growth; `VAlignFit` and
+`VAlignFill`/`FillCapped` already own the slack exhaustively. Documenting the
+restriction in the field comment so a future caller / phase is aware. (5) The route
+is a no-op when `Fill=false` on every node, when `slack <= 0`, or when the node list
+is empty — `gofmt -l`, `-race ./...`, and the existing golden suite stay green
+without regeneration. (6) Layered tests: white-box `Fill=true` under `VAlignTop`
+on a 4-card pricing grid grows to fill the region (all card bottoms equal); white-
+box `Fill=false` is byte-identical to the pre-change render; worker-count
+determinism (`WithWorkers(1)` == `WithWorkers(8)`); adversarial R11.12 invariants
+(`render_adversarial_test.go::adversarialScene()`) keep passing. (7) Surface
+hygiene — new scene IR field ⇒ user-facing: glossary entry `Fill (Grid/Bento)`;
+`compose-a-scene` skill notes the field; the `scene` catalog page adds a row; no
+`pptx` API change. (8) `go test -race ./...` is the byte-equality gate; deterministic
+because `distributeFill` is pure integer EMU independent of worker scheduling
+(D-035) and `layout/grid.go` divides `parent.H/nRows` into a stable cell layout.
+**Consequences:** A 4-card pricing strip on a `VAlignTop` slide can now claim full
+height (`Grid{Fill:true}`); a sparse content slide is unaffected (`Fill=false` byte-
+identical); a `VAlignFill` slide is unaffected (the existing path already grows
+flexible nodes); `VAlignCenter`/`Bottom`/`Justify`/`Fit` skip the new route to avoid
+startY / gap conflicts — the V1 trade-off, documented per AGENTS.md §4.3 as a
+deliberate restraint. Equal-height cell layout + dark-variant contrast + R11.12
+safe-area clamp all apply identically to a Fill-grown grid (the box's `Bottom()` is
+just the slot's bottom). New ≠ per-archetype `VAlignFill` (Deckard R15.3, product-
+side): this flag is an indirection that lets a per-archetype defaulter (the product)
+turn on Fill per-deck without touching node-tree authoring. Closes Deckard R15.4
+engine half.

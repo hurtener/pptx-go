@@ -61,6 +61,12 @@ func adversarialScene() scene.Scene {
 						{Between: [2]int{1, 2}, Kind: scene.ConnectorBiArrow},
 					}},
 			}},
+			// A Fill grid under the default VAlignTop: the grid must claim the body's
+			// leftover height without pushing any card off-canvas (R15.4 / D-143).
+			scene.SceneSlide{ID: fmt.Sprintf("fill-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
+				scene.Heading{Text: rt(longText), Level: 2},
+				scene.Grid{Columns: 2, Fill: true, Cells: []scene.SlideNode{card(dark), card(dark), card(dark), card(dark)}},
+			}},
 			// A dense bento with long row labels + an over-wide stat.
 			scene.SceneSlide{ID: fmt.Sprintf("bento-%v", variant), Variant: variant, Nodes: []scene.SlideNode{
 				scene.Bento{Columns: 2, WeightedRows: true, Rows: []scene.BentoRow{

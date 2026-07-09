@@ -1147,6 +1147,34 @@ func (r *renderer) alignedStackIn(box pptx.Box, nodes []SlideNode, slideID strin
 		r.warn(slideID, "content overflows its region")
 	}
 
+	// Per-node Fill (R15.4 / D-143): under the default VAlignTop only, let a
+	// Grid/Bento claim the body stack's leftover height without enabling slide-wide
+	// VAlignFill. This routes the positive slack only to the Fill-marked nodes via
+	// the same deterministic distributeFill algorithm, leaving every other flexible
+	// node at preferred height. Other slide VAlign modes are intentionally inert:
+	// their startY/gap math is computed from the pre-fill totalH and a Fill-grown
+	// stack would overshoot or fight their own slack distribution.
+	if align.Vertical == VAlignTop {
+		if slack := box.H - totalH; slack > 0 {
+			fillIdx := make([]int, 0, len(nodes))
+			fillNodes := make([]SlideNode, 0, len(nodes))
+			fillHeights := make([]pptx.EMU, 0, len(nodes))
+			for i, nd := range nodes {
+				if isFillWant(nd) {
+					fillIdx = append(fillIdx, i)
+					fillNodes = append(fillNodes, nd)
+					fillHeights = append(fillHeights, heights[i])
+				}
+			}
+			if len(fillNodes) > 0 {
+				distributeFill(fillNodes, fillHeights, slack)
+				for i, idx := range fillIdx {
+					heights[idx] = fillHeights[i]
+				}
+			}
+		}
+	}
+
 	// VAlignFill: grow the flexible nodes (containers + Image/Chart) to consume
 	// the leftover body height, so the last node's bottom reaches box.Bottom().
 	// Top-pinned (startY stays box.Y) with the standard gap; only positive slack
@@ -1242,6 +1270,22 @@ func isFlexible(n SlideNode) bool {
 	case IconRows:
 		// Same as Checklist (R12.7): flexible so a Fill icon-row list can span a card.
 		return true
+	default:
+		return false
+	}
+}
+
+// isFillWant reports whether a node opts into claiming leftover body-stack
+// height under VAlignTop (D-143). This is narrower than isFlexible: the field is
+// a per-node opt-in on Grid/Bento only, and V1 deliberately restricts it to the
+// VAlignTop path so it does not fight VAlignCenter/Bottom/Justify/Balanced/Fit's
+// own startY/gap math.
+func isFillWant(n SlideNode) bool {
+	switch v := n.(type) {
+	case Grid:
+		return v.Fill
+	case Bento:
+		return v.Fill
 	default:
 		return false
 	}

@@ -10,7 +10,7 @@
 header, D-070), Phase 41 (Bento span geometry, D-072), Phase 48 (D-079 — the
 plan we partially supersede), Wave-11 checkpoint (the H3 "false positive" note
 this decision re-engages with)
-**Status:** Draft
+**Status:** Done
 
 ---
 
@@ -260,22 +260,26 @@ when OK ≥ 7 and FAIL == 0):
 
 ## 16. Plan deviations encountered during implementation
 
-*(empty until implementation)*
+- **No golden regeneration required in the existing suite.** D-142 was authored as a
+  deliberate correctness change mirroring R15.1/R1, but the shipped scene suite's
+  byte output stayed unchanged: the existing fixtures do not thread the estimator
+  through the box-edge overflow boundary the old pinned gap biased. The new
+  white-box parity tests carry the acceptance instead.
 
 ## 17. Sign-off
 
-- [ ] All acceptance criteria pass.
-- [ ] `make coverage` clean for `scene` (band-met).
-- [ ] `scripts/smoke/phase-103.sh` reports `OK ≥ 7` and `FAIL == 0`.
-- [ ] Prior phases' smoke scripts still pass.
-- [ ] Glossary updated (no new terms — confirm).
-- [ ] Decision entries added (D-142).
-- [ ] (Phase 21+) Docs site updated for user-facing surface changes —
+- [x] All acceptance criteria pass.
+- [x] `make coverage` clean for `scene` (band-met).
+- [x] `scripts/smoke/phase-103.sh` reports `OK ≥ 7` and `FAIL == 0`.
+- [x] Prior phases' smoke scripts still pass.
+- [x] Glossary updated (no new terms — confirmed).
+- [x] Decision entries added (D-142).
+- [x] (Phase 21+) Docs site updated for user-facing surface changes —
       **N/A** (no user-facing change).
-- [ ] (Phase 21+) Affected agent skill(s) updated — **N/A** (no user-facing
+- [x] (Phase 21+) Affected agent skill(s) updated — **N/A** (no user-facing
       change; the `define-a-theme` skill is untouched by an internal estimator
       change).
-- [ ] §19 drift-audit guard clean.
+- [x] §19 drift-audit guard clean.
 
 ---
 

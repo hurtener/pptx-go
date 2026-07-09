@@ -547,6 +547,16 @@ A shape's interior fill (builder). V1 ships `pptx.SolidFill(Color)` and
 `pptx.NoFill()`; a fill resolves its `Color` against the active `Theme` when
 applied. Gradient, pattern and picture (blip) fills are tracked for later.
 
+## Fill (Grid/Bento)
+
+The opt-in `Fill bool` on `scene.Grid` and `scene.Bento` (D-143): under
+`VAlignTop` only, a Fill-marked grid/bento claims the body stack's leftover
+height without enabling slide-wide `VAlignFill`. The taller slot is then
+subdivided by the existing grid/bento geometry into taller rows/cells. The zero
+value (`false`) is byte-identical. In V1 the field is intentionally inert under
+`VAlignCenter` / `VAlignBottom` / `VAlignJustify` / `VAlignBalanced` /
+`VAlignFit`; slide-wide fill modes keep owning slack distribution.
+
 ## Flexible node
 
 A scene node whose slot grows under `VAlignFill`: the containers (`Grid`,

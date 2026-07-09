@@ -142,6 +142,7 @@ Wave 12 — Component primitives        (R12 engine)
 Wave 13 — Backgrounds & finish        (R13 engine)
 Wave 14 — Coverage classes            (R14 engine)
 Wave 15 — Theme/soul engine bits      (R8 engine: dark palette, multi-accent, gradients, dark ext)
+Wave 16 — Content-fit fidelity        (R15 engine)
 ```
 
 Each wave ends with a checkpoint audit (`CLAUDE.md §17`). V1.0.0 ships at
@@ -2181,6 +2182,49 @@ establish-before-build (Deckard's authoring flow), R8.9 warm-neutral-surface
 fidelity (the engine half is the soul-settable `Surfaces` map + `WithPaper`,
 D-104; the product half is Deckard's). **The R1–R14 engine campaign is complete
 (modulo the documented product / V2 deferrals in D-133 and D-140).**
+
+### Wave 16 — Content-fit fidelity
+
+The first post-R1–R14 cleanup wave, driven by the 2026-07-07 Pengui dogfood's
+R15 findings. Product-tagged R15.1 / R15.3 / R15.5 live in Deckard's own repo;
+pptx-go implements the two engine halves: (a) the estimator gap parity fix and
+(b) the per-node Grid/Bento Fill mechanism. Both are deterministic; R15.2 is a
+deliberate correctness change (Phase 103, D-142) and R15.4 is additive (Phase
+104, D-143).
+
+#### Phase 103 — estimator inter-node gap derives from theme SpaceMD (R15.2, HIGH · engine)
+
+**Subsystem:** scene (estimator / layout parity)
+**Deps:** Phase 48 (D-079), Phase 22 (content-aware height).
+**What lands (R15.2):** rename `estGap` → `estGapFallback`, add
+`estGapOf(theme)` returning `theme.ResolveSpace(pptx.SpaceMD)` with a nil-theme
+fallback, and replace every estimator site (TwoColumn/Grid/Card/CardSection/
+Bento/nodesHeight) with the helper so `preferredHeight`/`nodesHeight` match the
+renderer's actual gap. White-box parity tests assert `nodesHeight` equals the
+composed stack height and `preferredHeight(TwoColumn)` equals
+`max(nodesHeight(left), nodesHeight(right))` exactly. Phase 48's
+"`estGap` stays pinned" clause is superseded by D-142.
+**Acceptance criteria:** the new parity tests pass; the scene suite is
+byte-identical where the estimator is unused; `go test -race ./...`, coverage,
+drift-audit, mirror, and `scripts/smoke/phase-103.sh` are green.
+
+#### Phase 104 — grid/bento Fill knob (R15.4, MED · engine half)
+
+**Subsystem:** scene (body-stack routing + container slot fill)
+**Deps:** Phase 13 (alignment), Phase 41 (bento weighted rows), Phase 44
+(fill-capped), Phase 103 (D-142 parity).
+**What lands (R15.4):** additive `Fill bool` on `Grid` and `Bento` plus a new
+`isFillWant` route in `alignedStackIn`: under `VAlignTop` only, any Fill-marked
+Grid/Bento claims the body stack's positive slack via the existing
+`distributeFill` algorithm, independent of slide-wide `VAlignFill`. The grid/
+bento geometry already honors a taller box, so cells/rows grow automatically.
+`Fill=false` is byte-identical; non-Top slide VAlign modes stay intentionally
+inert in V1. Surface hygiene in the same PR: glossary, docs site, and the
+`compose-a-scene` skill mention the new field.
+**Acceptance criteria:** `Grid{Fill:true}` and `Bento{Fill:true}` under
+`VAlignTop` fill the body region; `Fill=false` is byte-identical;
+worker-count determinism holds; the adversarial suite still passes;
+`scripts/smoke/phase-104.sh` is green.
 
 ---
 
