@@ -873,7 +873,7 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 	case Table:
 		return tableHeight(v, avail, theme)
 	case TwoColumn:
-		colW := (avail - estGap) / 2
+		colW := (avail - estGapOf(theme)) / 2
 		h := maxEMU(nodesHeight(v.Left, colW, theme), nodesHeight(v.Right, colW, theme))
 		// A top/bottom bridge reserves a band beyond the columns (R12.8); JoinSeam adds 0.
 		if v.Join != JoinNone && v.JoinPosition != JoinSeam {
@@ -889,23 +889,24 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		if rows < 1 {
 			rows = 1
 		}
-		cellW := (avail - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
+		gap := estGapOf(theme)
+		cellW := (avail - gap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU
 		for _, c := range v.Cells {
 			if h := preferredHeight(c, cellW, theme); h > maxCell {
 				maxCell = h
 			}
 		}
-		return pptx.EMU(rows)*maxCell + estGap*pptx.EMU(rows-1)
+		return pptx.EMU(rows)*maxCell + gap*pptx.EMU(rows-1)
 	case Card:
 		// Wrapped-header-aware chrome estimate (R10.10): the fixed cardChromeEst
 		// baseline plus the extra eyebrow/title lines a multi-line header wraps to,
 		// so the slot accounts for a wrapped header. Single-line → +0 (byte-identical).
 		c := cardChrome{header: v.Header, eyebrow: v.Eyebrow, icon: v.Icon, pill: v.HeaderPill, size: v.Size, layout: v.Layout, paddingScale: v.PaddingScale, ribbon: v.Ribbon}
-		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
+		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGapOf(theme)
 	case CardSection:
 		c := cardChrome{header: v.Header}
-		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGap
+		return cardChromeEst + cardHeaderExtraHeight(theme, avail, c) + nodesHeight(v.Body, avail-2*cardBodyInsetEst, theme) + estGapOf(theme)
 	case Bento:
 		cols := v.Columns
 		if cols < 1 {
@@ -915,6 +916,7 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		if nRows < 1 {
 			nRows = 1
 		}
+		gap := estGapOf(theme)
 		// Mirror bentoGeometry's content width: reserve the left label gutter when
 		// any row is labeled and subtract the inter-column gaps, so the span-1
 		// reference width is accurate and the slot is not under-sized (a too-wide
@@ -922,9 +924,9 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		// estimate height with this unit width, which is safe (a taller slot).
 		contentW := avail
 		if gutterW := bentoGutterWidthOf(theme, v); gutterW > 0 {
-			contentW -= gutterW + estGap
+			contentW -= gutterW + gap
 		}
-		unitW := (contentW - estGap*pptx.EMU(cols-1)) / pptx.EMU(cols)
+		unitW := (contentW - gap*pptx.EMU(cols-1)) / pptx.EMU(cols)
 		var maxCell pptx.EMU
 		for _, row := range v.Rows {
 			for _, cell := range row.Cells {
@@ -935,7 +937,7 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 				if span < 1 {
 					span = 1
 				}
-				spanW := pptx.EMU(span)*unitW + estGap*pptx.EMU(span-1)
+				spanW := pptx.EMU(span)*unitW + gap*pptx.EMU(span-1)
 				if h := preferredHeight(cell.Node, spanW, theme); h > maxCell {
 					maxCell = h
 				}
@@ -944,7 +946,7 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 		if maxCell == 0 {
 			maxCell = pptx.In(0.4)
 		}
-		return pptx.EMU(nRows)*maxCell + estGap*pptx.EMU(nRows-1)
+		return pptx.EMU(nRows)*maxCell + gap*pptx.EMU(nRows-1)
 	case Flow:
 		if v.Orientation == FlowVertical {
 			n := len(v.Steps)
@@ -962,8 +964,8 @@ func preferredHeight(n SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU {
 // Placement estimates (deterministic; not content opinions, D-026). Pinned
 // compile-time EMU literals so output is worker-count-independent (RFC §10.1).
 const (
-	cardChromeEst = pptx.EMU(1097280) // ~1.2"; card header row + padding above the body
-	estGap        = pptx.EMU(137160)  // ~0.15"; nested-container gap estimate
+	cardChromeEst  = pptx.EMU(1097280) // ~1.2"; card header row + padding above the body
+	estGapFallback = pptx.EMU(137160)  // ~0.15"; nil-theme fallback for estGapOf (D-142)
 
 	// Content-aware (Phase 22) increments and insets. quoteLineEst / calloutLineEst
 	// are the per-extra-wrapped-line height added to the fixed-chrome nodes;
@@ -974,6 +976,21 @@ const (
 	calloutInsetEst  = pptx.EMU(182880) // ~0.20"; accent bar + text inset (renderCallout)
 	cardBodyInsetEst = pptx.EMU(182880) // ~0.20"; per-side card body padding estimate
 )
+
+// estGapOf resolves the inter-node gap the estimators insert between stacked
+// nodes. It is the same SpaceMD token the renderer uses (Phase 103 / D-142):
+// the previous pinned `estGap` constant diverged from the renderer's token by
+// (~SpaceMD − 137160 EMU) = ~0.07" per gap, so `VAlignFill`/`VAlignFit`/
+// `VAlignFillCapped`/weighted Bento allocated biased geometry. The estimator
+// now reads the theme's SpaceMD for parity with the composed geometry; a
+// nil-theme guard falls back to the legacy literal so the rare theme=<nil>
+// call path (the parity tests) stays equivalent.
+func estGapOf(theme *pptx.Theme) pptx.EMU {
+	if theme == nil {
+		return estGapFallback
+	}
+	return theme.ResolveSpace(pptx.SpaceMD)
+}
 
 // tableHeight estimates a Table's slot height: each row is the tallest cell in
 // it (the cell's wrapped line count × a row line-height), summed over the header
@@ -1031,7 +1048,7 @@ func nodesHeight(nodes []SlideNode, avail pptx.EMU, theme *pptx.Theme) pptx.EMU 
 	var sum pptx.EMU
 	for i, n := range nodes {
 		if i > 0 {
-			sum += estGap
+			sum += estGapOf(theme)
 		}
 		sum += preferredHeight(n, avail, theme)
 	}
