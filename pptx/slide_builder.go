@@ -24,13 +24,15 @@ import (
 // slide content.
 type SlideBuilder struct {
 	slide *slide.SlidePart
+	theme *Theme
 }
 
 // NewSlideBuilder creates a SlideBuilder for the given SlidePart.
-func NewSlideBuilder(slide *slide.SlidePart) *SlideBuilder {
-	return &SlideBuilder{
-		slide: slide,
+func NewSlideBuilder(slide *slide.SlidePart, theme *Theme) *SlideBuilder {
+	if theme == nil {
+		theme = DefaultTheme()
 	}
+	return &SlideBuilder{slide: slide, theme: theme}
 }
 
 // Slide returns the underlying SlidePart.
@@ -64,7 +66,14 @@ func (b *SlideBuilder) AddTextBox(x, y, cx, cy int, text string) *slide.XSp {
 			BodyPr:   &slide.XBodyPr{},
 			LstStyle: &slide.XTextParagraphList{},
 			Paragraphs: []slide.XTextParagraph{
-				{Content: []any{&slide.XTextRun{Text: text}}},
+				{
+					Content: []any{
+						&slide.XTextRun{
+							Text:           text,
+							TextProperties: b.defaultTextProperties(),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -87,10 +96,26 @@ func (b *SlideBuilder) AddAutoShape(x, y, cx, cy int, presetID string) *slide.XS
 		},
 		ShapeProperties: &slide.XShapeProperties{
 			Transform2D: &slide.XTransform2D{
-				Offset: &slide.XOv2DrOffset{X: x, Y: y},
-				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
+				Offset: &slide.XOv2DrOffset{
+					X: x,
+					Y: y,
+				},
+				Extent: &slide.XOv2DrExtent{
+					Cx: cx,
+					Cy: cy,
+				},
 			},
-			PresetGeom: &slide.XPresetGeometry{Prst: presetID, AvLst: &slide.XAvLst{}},
+
+			PresetGeom: &slide.XPresetGeometry{
+				Prst:  presetID,
+				AvLst: &slide.XAvLst{},
+			},
+
+			SolidFill: b.themeAccentColor(),
+
+			Line: &slide.XLineProperties{
+				SolidFill: b.themeAccentColor(),
+			},
 		},
 	}
 
@@ -116,6 +141,11 @@ func (b *SlideBuilder) AddCustomShape(x, y, cx, cy int, geom *slide.XCustomGeome
 				Extent: &slide.XOv2DrExtent{Cx: cx, Cy: cy},
 			},
 			CustomGeom: geom,
+			SolidFill:  b.themeAccentColor(),
+
+			Line: &slide.XLineProperties{
+				SolidFill: b.themeAccentColor(),
+			},
 		},
 	}
 
@@ -179,12 +209,24 @@ func (b *SlideBuilder) AddTable(x, y, cx, cy, rows, cols int) *slide.XGraphicFra
 		cells := make([]slide.XTableCell, cols)
 		for c := range cells {
 			cells[c] = slide.XTableCell{
+
 				TextBody: &slide.XTextBody{
 					BodyPr:   &slide.XBodyPr{},
 					LstStyle: &slide.XTextParagraphList{},
 					Paragraphs: []slide.XTextParagraph{
-						{Content: []any{&slide.XTextRun{Text: ""}}},
+						{
+							Content: []any{
+								&slide.XTextRun{
+									Text:           "",
+									TextProperties: b.defaultTextProperties(),
+								},
+							},
+						},
 					},
+				},
+
+				Pr: &slide.XTableCellProps{
+					SolidFill: b.themeBackgroundColor(),
 				},
 			}
 		}
@@ -306,4 +348,44 @@ func (b *SlideBuilder) GetRelationshipURI(rId string) string {
 		return rel.TargetURI().URI()
 	}
 	return ""
+}
+
+// ============================================================================
+// Theme helpers
+// ============================================================================
+
+func (b *SlideBuilder) themeTextColor() *slide.XSolidFill {
+	return &slide.XSolidFill{
+		SchemeClr: &slide.XSchemeClr{
+			Val: "lt1", // Text 1 do theme
+		},
+	}
+}
+
+func (b *SlideBuilder) themeAccentColor() *slide.XSolidFill {
+	return &slide.XSolidFill{
+		SchemeClr: &slide.XSchemeClr{
+			Val: "accent1",
+		},
+	}
+}
+
+func (b *SlideBuilder) themeBackgroundColor() *slide.XSolidFill {
+	return &slide.XSolidFill{
+		SchemeClr: &slide.XSchemeClr{
+			Val: "dk1",
+		},
+	}
+}
+
+func (b *SlideBuilder) defaultTextProperties() *slide.XTextProperties {
+	return &slide.XTextProperties{
+		FontSize: 1800,
+
+		Latin: &slide.XLatinFont{
+			Typeface: b.theme.BodyFont,
+		},
+
+		SolidFill: b.themeTextColor(),
+	}
 }
