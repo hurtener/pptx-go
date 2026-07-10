@@ -186,7 +186,7 @@ func TestParts_CreateAndSerialize(t *testing.T) {
 
 	// 3.2 Create a new SlidePart and add text via the builder.
 	slidePart := slidex.NewSlidePart(1)
-	builder := pptx.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart, nil)
 	builder.AddTextBox(914400, 457200, 4572000, 457200, "Hello from Go Engine!")
 
 	// 3.3 Serialize PresentationPart.
@@ -242,7 +242,7 @@ func TestOPC_WriteAndRoute(t *testing.T) {
 
 	// 4.3 Create SlidePart.
 	slidePart4 := slidex.NewSlidePart(1)
-	slideBuilder4 := pptx.NewSlideBuilder(slidePart4)
+	slideBuilder4 := pptx.NewSlideBuilder(slidePart4, nil)
 	slideBuilder4.AddTextBox(914400, 457200, 4572000, 457200, "Hello from OPC!")
 	slideXML, _ := slidePart4.ToXML()
 	slidePart, err := pkg.CreatePart(
@@ -360,7 +360,7 @@ func TestParts_Update(t *testing.T) {
 	t.Logf("Stage 5: original shape count = %d", originalShapeCount)
 
 	// 5.3 Add a new text box.
-	slideBuilder5 := pptx.NewSlideBuilder(slidePart5)
+	slideBuilder5 := pptx.NewSlideBuilder(slidePart5, nil)
 	slideBuilder5.AddTextBox(1000000, 1000000, 2000000, 500000, "Updated Text!")
 
 	newShapeCount := slidePart5.ShapeIDCount()
@@ -420,7 +420,7 @@ func TestOPC_SecurePackaging(t *testing.T) {
 
 	// 6.3 Replace SlidePart content.
 	slide6 := slidex.NewSlidePart(1)
-	slideBuilder6 := pptx.NewSlideBuilder(slide6)
+	slideBuilder6 := pptx.NewSlideBuilder(slide6, nil)
 	slideBuilder6.AddTextBox(1000000, 1000000, 2000000, 500000, "Modified Content!")
 	newSlideXML, _ := slide6.ToXML()
 
@@ -509,7 +509,7 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	// Stage 3: create
 	t.Log("----- Stage 3: Parts creation and serialization -----")
 	newSlidePart3 := slidex.NewSlidePart(1)
-	newSlidePart3Builder := pptx.NewSlideBuilder(newSlidePart3)
+	newSlidePart3Builder := pptx.NewSlideBuilder(newSlidePart3, nil)
 	newSlidePart3Builder.AddTextBox(914400, 457200, 4572000, 457200, "Integration Test!")
 	newSlideXML, err := newSlidePart3.ToXML()
 	if err != nil {
@@ -550,7 +550,7 @@ func TestPipeline_FullIntegration(t *testing.T) {
 	t.Log("----- Stage 5: Parts data update -----")
 	updatedPkg, _ := opc.OpenFile(outputPath)
 	updatedSlide := slidex.NewSlidePart(1)
-	updatedSlideBuilder := pptx.NewSlideBuilder(updatedSlide)
+	updatedSlideBuilder := pptx.NewSlideBuilder(updatedSlide, nil)
 	updatedSlideBuilder.AddTextBox(500000, 500000, 3000000, 300000, "Updated via Stage 5!")
 	updatedXML, _ := updatedSlide.ToXML()
 	updatedPkg.RemovePart(opc.NewPackURI("/ppt/slides/slide1.xml"))

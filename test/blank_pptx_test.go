@@ -108,7 +108,7 @@ func TestBlankPresentation_Hardcore(t *testing.T) {
 
 	// --- 5. Create slide and link it to the layout ---
 	slidePart := slide.NewSlidePart(1)
-	builder := pptx.NewSlideBuilder(slidePart)
+	builder := pptx.NewSlideBuilder(slidePart, nil)
 	builder.AddTextBox(914400, 457200, 4572000, 457200, "Hello from Go Engine!")
 	slideXML, _ := slidePart.ToXML()
 
