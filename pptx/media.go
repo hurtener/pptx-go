@@ -234,23 +234,42 @@ func (im *Image) SetFit(f Fit) *Image {
 	return im
 }
 
+type GeometryOptions struct {
+	Shape  ShapeGeometry
+	Radius RadiusRole
+}
+
+func (im *Image) SetGeometry(opt GeometryOptions) *Image {
+	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil {
+		return im
+	}
+
+	spPr := im.pic.ShapeProperties
+	spPr.PresetGeom = &slide.XPresetGeometry{
+		Prst:  string(opt.Shape),
+		AvLst: &slide.XAvLst{},
+	}
+
+	if opt.Shape == ShapeRoundRect && im.s != nil {
+		r := im.s.activeTheme().ResolveRadius(opt.Radius)
+		if r > 0 {
+			applyCornerRadius(spPr, r, picBox(spPr))
+		}
+	}
+
+	return im
+}
+
 // SetCornerRadius rounds the picture's corners using a theme radius token (P2,
 // D-114): it sets the picture geometry to roundRect and converts the absolute
 // token radius to the OOXML adjust against the picture box. RadiusNone (the zero
 // value) resolves to 0 and leaves the picture rectangular — byte-identical. The
 // rounded picture matches the card/surface radius finish.
 func (im *Image) SetCornerRadius(role RadiusRole) *Image {
-	if im == nil || im.pic == nil || im.pic.ShapeProperties == nil || im.s == nil {
-		return im
-	}
-	radius := im.s.activeTheme().ResolveRadius(role)
-	if radius <= 0 {
-		return im // RadiusNone: leave the picture rectangular
-	}
-	spPr := im.pic.ShapeProperties
-	spPr.PresetGeom = &slide.XPresetGeometry{Prst: "roundRect", AvLst: &slide.XAvLst{}}
-	applyCornerRadius(spPr, radius, picBox(spPr))
-	return im
+	return im.SetGeometry(GeometryOptions{
+		Shape:  ShapeRoundRect,
+		Radius: role,
+	})
 }
 
 // SetElevation casts a soft drop shadow on the picture from a theme elevation

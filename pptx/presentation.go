@@ -436,7 +436,7 @@ func (p *Presentation) repopulateSlides() error {
 		s := &Slide{
 			presentation: p,
 			part:         sp,
-			builder:      NewSlideBuilder(sp),
+			builder:      NewSlideBuilder(sp, p.theme),
 			mediaManager: p.mediaManager,
 			index:        len(p.slides),
 			num:          num,
@@ -563,7 +563,7 @@ func (p *Presentation) AddSlide(layout ...string) *Slide {
 	s := &Slide{
 		presentation: p,
 		part:         slidePart,
-		builder:      NewSlideBuilder(slidePart),
+		builder:      NewSlideBuilder(slidePart, p.theme),
 		mediaManager: p.mediaManager,
 		index:        len(p.slides),
 		num:          slideNum,
@@ -613,7 +613,7 @@ func (p *Presentation) AddSlideAt(index int, layout ...string) (*Slide, error) {
 	s := &Slide{
 		presentation: p,
 		part:         slidePart,
-		builder:      NewSlideBuilder(slidePart),
+		builder:      NewSlideBuilder(slidePart, p.theme),
 		mediaManager: p.mediaManager,
 		index:        index,
 		num:          slideNum,
@@ -1036,7 +1036,7 @@ func (p *Presentation) Clone() (*Presentation, error) {
 		ns := &Slide{
 			presentation: newPres,
 			part:         newSlidePart,
-			builder:      NewSlideBuilder(newSlidePart),
+			builder:      NewSlideBuilder(newSlidePart, p.theme),
 			mediaManager: newPres.mediaManager,
 			index:        i,
 			num:          s.num,
